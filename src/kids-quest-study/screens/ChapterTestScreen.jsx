@@ -1,0 +1,204 @@
+// ============================================================
+// ほしのしれん — 6問ずつ、別日に2回。
+// 直近12問中9問できたら次の学年を解放する。
+// 「一発の不合格」ではなく、思い出す練習を挟んだ確認にする。
+// ============================================================
+
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { useGame, STAR_TRIAL_PASS_CORRECT, STAR_TRIAL_QUESTIONS, starTrialInfo } from '../state/GameContext.jsx'
+import { DOMAIN_BY_ID, domainName } from '../engine/activities.js'
+import { gradeOf, MAX_GRADE } from '../data/grades.js'
+import QuestionVisual, { CountGrid } from '../components/QuestionVisual.jsx'
+import TracingCanvas from '../components/TracingCanvas.jsx'
+import { AppHeader, Starfield, Confetti, ProgressDots } from '../components/common.jsx'
+import { speak, cancelSpeak } from '../engine/tts.js'
+import { sfx } from '../engine/sfx.js'
+import { reviewKeyFor, snapshotQuestion } from '../engine/reviewKey.js'
+import { trialUnlocked, promotionResult } from '../engine/learningUnits.js'
+import { makeTrialQuestions } from '../engine/trialQuestions.js'
+export { makeTrialQuestions } from '../engine/trialQuestions.js'
+
+export default function ChapterTestScreen({ onBack }) {
+  const { state, dispatch } = useGame()
+  const grade = state.grade
+  const trialInfo = starTrialInfo(state, grade)
+  const unlock = trialUnlocked(state, grade)
+  const questions = useMemo(() => makeTrialQuestions(state, grade), [grade, state.starTrials?.[grade]?.rounds?.length])
+  const [idx, setIdx] = useState(0)
+  const [chosen, setChosen] = useState(null)
+  const [done, setDone] = useState(false)
+  const resultsRef = useRef([])
+  const startedRef = useRef(false)
+
+  const q = questions[idx]
+  const total = questions.length
+  const trialNumber = Math.min(2, trialInfo.rounds.length + 1)
+
+  useEffect(() => {
+    if (!startedRef.current && !trialInfo.todayDone) {
+      startedRef.current = true
+      speak(`${gradeOf(grade).name}の ほしのしれん、${trialNumber}かいめ。きょうは ${total}もんだよ。ゆっくり いこう！`)
+    }
+  }, [grade, total, trialInfo.todayDone, trialNumber])
+
+  useEffect(() => {
+    if (!q || done || trialInfo.todayDone || q.type === 'trace') return undefined
+    const id = setTimeout(() => {
+      speak(q.speak)
+    }, 400)
+    return () => clearTimeout(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idx])
+
+  useEffect(() => () => cancelSpeak(), [])
+
+  const finish = () => {
+    const correct = resultsRef.current.filter((r) => r.correct).length
+    const correctDomains = [...new Set(resultsRef.current.filter((r) => r.correct).map((r) => r.domainId))]
+    const result = promotionResult(state, grade, { correct, total, correctDomains })
+    const { correct: combinedCorrect, total: combinedTotal, passed } = result
+    setDone(true)
+    dispatch({ type: 'STAR_TRIAL_RESULT', grade, correct, total, results: resultsRef.current })
+
+    if (passed) {
+      sfx.fanfare()
+      speak(grade < MAX_GRADE ? `ほしのしれん クリア！ ${combinedCorrect}こ できたよ。つぎの がくねんが あいた！` : `ほしのしれん クリア！ ${combinedCorrect}こ できたよ。ぜんぶの がくねんを クリアした！`)
+    } else if (trialInfo.rounds.length === 0) {
+      sfx.reward()
+      speak(`きょうは ${correct}こ できたよ。まちがえた もんだいは とっくんに いれたから、あした もう6もん やってみよう！`)
+    } else {
+      sfx.reward()
+      speak(`${combinedCorrect}こ できたよ。クリアまで あと ${Math.max(0, STAR_TRIAL_PASS_CORRECT - combinedCorrect)}こ。とっくんをして、また あした ちょうせんしよう！`)
+    }
+  }
+
+  const record = (correct) => {
+    const itemKey = reviewKeyFor(q)
+    resultsRef.current.push({
+      domainId: q._domainId,
+      correct,
+      itemKey,
+      unitId: q.unitId,
+      question: correct ? null : snapshotQuestion(q, itemKey)
+    })
+    correct ? sfx.pop() : sfx.tap()
+    setTimeout(() => {
+      if (idx + 1 < total) {
+        setChosen(null)
+        setIdx(idx + 1)
+      } else {
+        finish()
+      }
+    }, q.type === 'trace' ? 300 : 450)
+  }
+
+  if (!total) {
+    return <div className="screen fade-in"><Starfield /><div className="center-col"><div className="card">しれんを じゅんびできませんでした</div><button className="btn btn--primary btn--big" onClick={onBack}>もどる</button></div></div>
+  }
+
+  if (!unlock.unlocked && !done) {
+    return (
+      <div className="screen fade-in"><Starfield /><div className="center-col"><div className="card" style={{ textAlign: 'center', maxWidth: 560 }}>
+        <div style={{ fontSize: 52 }}>🌱</div><div style={{ fontSize: 'clamp(24px,5vw,34px)', fontWeight: 900 }}>しれんは もうすこし あと！</div>
+        <div className="muted" style={{ marginTop: 12, fontWeight: 800, lineHeight: 1.65 }}>いまは ならった たんげんを とっくん中だよ。<br />あと {unlock.missing.length}こ、べつの日にも できたら ちょうせんできるよ。</div>
+      </div><button className="btn btn--primary btn--big" onClick={onBack}>もどる</button></div></div>
+    )
+  }
+
+  // 1日に2回連続で採点せず、翌日の想起練習を残す。
+  if (trialInfo.todayDone && !done) {
+    return (
+      <div className="screen fade-in">
+        <Starfield />
+        <div className="center-col">
+          <div style={{ fontSize: 58 }}>🌟</div>
+          <div className="card" style={{ textAlign: 'center', maxWidth: 560 }}>
+            <div style={{ fontSize: 'clamp(25px,5vw,38px)', fontWeight: 900 }}>きょうの しれんは おしまい！</div>
+            <div className="muted" style={{ marginTop: 12, fontWeight: 800, lineHeight: 1.65 }}>まちがえた もんだいは「とっくん」で みなおせるよ。<br />つづきの しれんは あした やろう！</div>
+          </div>
+          <button className="btn btn--primary btn--big" onClick={onBack}>🏠 もどる</button>
+        </div>
+      </div>
+    )
+  }
+
+  if (done) {
+    const correct = resultsRef.current.filter((r) => r.correct).length
+    const correctDomains = [...new Set(resultsRef.current.filter((r) => r.correct).map((r) => r.domainId))]
+    const result = promotionResult(state, grade, { correct, total, correctDomains })
+    const { correct: combinedCorrect, total: combinedTotal, passed } = result
+    const missing = Math.max(0, STAR_TRIAL_PASS_CORRECT - combinedCorrect)
+    return (
+      <div className="screen fade-in">
+        <Starfield />
+        {passed && <Confetti pieces={60} />}
+        <div className="center-col scroll-col">
+          <div style={{ fontSize: 'clamp(34px,8vw,68px)', fontWeight: 900 }}>{passed ? '🌟 しれん クリア！' : '🌱 きょうの しれん かんりょう！'}</div>
+          <div className="card" style={{ textAlign: 'center', width: 'min(560px,94vw)' }}>
+            <div style={{ fontSize: 'clamp(30px,7vw,54px)', fontWeight: 900, color: passed ? 'var(--good)' : 'var(--accent-2)' }}>{correct} / {total}こ</div>
+            {passed ? (
+              <div className="muted" style={{ fontWeight: 800, marginTop: 10 }}>2かいで {combinedCorrect} / {combinedTotal}こ できたよ！</div>
+            ) : trialInfo.rounds.length === 0 ? (
+              <div className="muted" style={{ fontWeight: 800, marginTop: 10 }}>あした もう6もん。2かいで 9こ できたら クリア！</div>
+            ) : (
+              <div className="muted" style={{ fontWeight: 800, marginTop: 10 }}>2かいで {combinedCorrect} / {combinedTotal}こ。クリアまで あと {missing}こ！</div>
+            )}
+            {!passed && <div className="muted" style={{ marginTop: 12, fontSize: 13, lineHeight: 1.6 }}>{result.scorePassed && result.missingUnits.length ? <>しれんの もんだいは できたよ！<br />あと {result.missingUnits.length}この たんげんを、べつの日にも とっくんしよう。</> : <>まちがえた もんだいは「とっくん」に はいったよ。<br />おぼえてから、また ちょうせんしよう！</>}</div>}
+            {passed && grade < MAX_GRADE && <div className="pill" style={{ marginTop: 12, background: 'var(--good)', color: '#10231c', border: 'none' }}>🔓 {gradeOf(grade + 1).short} が あいた！</div>}
+          </div>
+          {resultsRef.current.some((r) => !r.correct && r.question) && (
+            <div className="card" style={{ width: 'min(560px,94vw)', textAlign: 'left' }}>
+              <div style={{ fontWeight: 900, marginBottom: 10, fontSize: 'clamp(16px,3vw,20px)' }}>📖 ふりかえり</div>
+              {resultsRef.current.filter((r) => !r.correct && r.question).map((r, i) => (
+                <div key={i} style={{ marginBottom: i < resultsRef.current.length - 1 ? 14 : 0 }}>
+                  <div style={{ fontWeight: 800, fontSize: 14 }}>{r.question.instruction}</div>
+                  {r.question.domain === 'english' && r.question.answerWord?.text && (
+                    <div className="explain-card__spelling" style={{ fontSize: 'clamp(18px,4vw,26px)', margin: '4px 0' }}>
+                      {r.question.answerWord.text}
+                    </div>
+                  )}
+                  {r.question.explain && (
+                    <div className="muted" style={{ fontSize: 13, lineHeight: 1.5 }}>{r.question.explain}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+          <button className="btn btn--primary btn--big" onClick={onBack}>🏠 もどる</button>
+        </div>
+      </div>
+    )
+  }
+
+  const grid = q.choices?.length === 3 ? 'choice-grid choice-grid--3' : 'choice-grid'
+  const dom = DOMAIN_BY_ID[q._domainId]
+  return (
+    <div className="screen screen-in">
+      <Starfield count={12} />
+      <AppHeader
+        className="app-header--progress"
+        onBack={onBack}
+        title={<ProgressDots total={total} index={idx} />}
+        right={<div className="pill">{dom?.emoji} {domainName(dom, grade)}</div>}
+      />
+      <div className="center-col scroll-col">
+        <div className="muted" style={{ fontSize: 'clamp(16px,3vw,24px)', fontWeight: 800, textAlign: 'center' }}>{q.instruction}</div>
+        {q.type === 'trace' ? (
+          <TracingCanvas key={`${idx}-${q.target}-${q.stage}`} target={q.target} stage={q.stage} allowGuide={false} onComplete={record} />
+        ) : (
+          <>
+            <QuestionVisual question={q} />
+            <div className={grid}>
+              {q.choices.map((c) => <button key={c.id} className={'choice' + (chosen === c.id ? ' choice--picked' : '')} disabled={!!chosen} onClick={() => { setChosen(c.id); record(c.id === q.answerId) }}>
+                {c.emoji && <span className="choice__emoji">{c.emoji}</span>}
+                {c.grid && <CountGrid emoji={c.grid.emoji} n={c.grid.n} mini />}
+                {c.label && <span className="choice__label">{c.label}</span>}
+              </button>)}
+            </div>
+          </>
+        )}
+        <div className="muted" style={{ fontSize: 12, fontWeight: 700 }}>ヒントなしで、いま おもいだせることを やってみよう</div>
+      </div>
+    </div>
+  )
+}
