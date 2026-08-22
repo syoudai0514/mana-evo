@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { SUBJECTS } from './study/questions.js'
 import {
   answerQuestion,
@@ -241,13 +241,13 @@ function Growth({ study, game }) {
 
 export default function App() {
   const initial = useMemo(loadSave, [])
-  const [study, setStudyRaw] = useState(initial.study)
-  const [game, setGameRaw] = useState(initial.game)
+  const [study, setStudy] = useState(initial.study)
+  const [game, setGame] = useState(initial.game)
   const [view, setView] = useState('home')
 
-  const persist = (nextStudy, nextGame) => localStorage.setItem(SAVE_KEY, JSON.stringify({ study: nextStudy, game: nextGame }))
-  const setStudy = (value) => setStudyRaw((prev) => { const next = typeof value === 'function' ? value(prev) : value; persist(next, game); return next })
-  const setGame = (value) => setGameRaw((prev) => { const next = typeof value === 'function' ? value(prev) : value; persist(study, next); return next })
+  useEffect(() => {
+    localStorage.setItem(SAVE_KEY, JSON.stringify({ study, game }))
+  }, [study, game])
 
   return (
     <div className="app-shell">
@@ -257,7 +257,7 @@ export default function App() {
       {view === 'free' && <FreeStudy study={study} setStudy={setStudy} setGame={setGame} onQuit={() => setView('home')} />}
       {view === 'battle' && <Battle game={game} setGame={setGame} onStudy={() => setView('free')} onQuit={() => setView('home')} />}
       {view === 'growth' && <Growth study={study} game={game} />}
-      {!['daily', 'free'].includes(view) && <nav><button className={view === 'home' ? 'active' : ''} onClick={() => setView('home')}>🏠<span>ホーム</span></button><button className={view === 'battle' ? 'active' : ''} onClick={() => setView('battle')}>⚔️<span>ぼうけん</span></button><button className={view === 'growth' ? 'active' : ''} onClick={() => setView('growth')}>⭐<span>モンスター</span></button><button onClick={() => setView('free')}>📚<span>まなぶ</span></button></nav>}
+      {!['daily', 'free'].includes(view) && <nav><button className={view === 'home' ? 'active' : ''} onClick={() => setView('home')}>🏠<span>ホーム</span></button><button className={view === 'battle' ? 'active' : ''} onClick={() => setView('battle')}>⚔️<span>ぼうけん</span></button><button className={view === 'growth' ? 'active' return false : ''} onClick={() => setView('growth')}>⭐<span>モンスター</span></button><button onClick={() => setView('free')}>📚<span>まなぶ</span></button></nav>}
     </div>
   )
 }
