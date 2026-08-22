@@ -1,16 +1,21 @@
 import { QUESTIONS, SUBJECTS, questionsFor } from './questions.js'
 import { dayNumber, scheduleAnswer } from './srs.js'
+import { applyResult, makeSkill } from './difficulty.js'
 
 export const DAILY_REQUIRED = 5
 export const DAILY_TICKET_REWARD = 3
 export const FREE_STUDY_TICKET_REWARD = 1
 
+const initialSkills = () => Object.fromEntries(SUBJECTS.map((s) => [s.id, makeSkill()]))
+const initialGrades = () => Object.fromEntries(SUBJECTS.map((s) => [s.id, 0]))
+
 export const createStudyState = () => ({
   answers: [],
   units: {},
   srs: {},
+  skills: initialSkills(),
   subjectStreaks: {},
-  subjectGrades: Object.fromEntries(SUBJECTS.map((s) => [s.id, 0])),
+  subjectGrades: initialGrades(),
   daily: { day: dayNumber(), answered: 0, completed: false, rewardClaimed: false }
 })
 
@@ -22,8 +27,10 @@ export function normalizeStudyState(state, today = dayNumber()) {
   next.answers ||= []
   next.units ||= {}
   next.srs ||= {}
+  next.skills ||= initialSkills()
   next.subjectStreaks ||= {}
-  next.subjectGrades ||= Object.fromEntries(SUBJECTS.map((s) => [s.id, 0]))
+  next.subjectGrades ||= initialGrades()
+  for (const subject of SUBJECTS) next.skills[subject.id] ||= makeSkill()
   return next
 }
 
@@ -40,12 +47,13 @@ export function pickDailyQuestions(state) {
 function questionScore(question, state, mode) {
   const attempts = state.answers.filter((a) => a.questionId === question.id)
   const wrong = attempts.filter((a) => !a.correct).length
-  const streak = state.subjectStreaks[question.subject] || 0
+  const skill = state.skills?.[question.subject] || makeSkill()
+  const targetDifficulty = Math.max(1, Math.min(3, Math.ceil(skill.level / 2)))
   let score = 0
-  if (mode === 'weak') score += wrong * 5
-  if (mode === 'strong') score += streak * question.difficulty
+  if (mode === 'weak') score += wrong * 5 + (skill.miss || 0) * 2
+  if (mode === 'strong') score += (skill.streak || 0) * question.difficulty
   if (mode === 'challenge') score += question.hard ? 20 : question.difficulty * 3
-  if (mode === 'recommended') score += wrong * 4 + (question.difficulty === Math.min(3, 1 + Math.floor(streak / 3)) ? 5 : 0)
+  if (mode === 'recommended') score += wrong * 4 + (question.difficulty === targetDifficulty ? 6 : 0)
   return score - attempts.length * 0.3
 }
 
@@ -63,14 +71,31 @@ export function pickFreeStudyQuestion(state, { mode = 'recommended', subject = n
 }
 
 function updateUnit(unit, question, correct, today, firstAttemptForQuestion) {
-  const next = unit ? structuredClone(unit) : { attempts: 0, firstTryCorrect: 0, days: [], itemKeys: [], hardCorrect: 0 }
+  const next = unit ? structuredClone(unit) : {
+    attempts: 0,
+    correctAttempts: 0,
+    firstTryCorrect: 0,
+    days: [],
+    itemKeys: [],
+    hardCorrect: 0,
+    mastered: false,
+    hardMastered: false
+  }
   next.attempts += 1
+  if (correct) next.correctAttempts = (next.correctAttempts || 0) + 1
   if (correct && firstAttemptForQuestion) next.firstTryCorrect += 1
   if (correct && !next.days.includes(today)) next.days.push(today)
   if (correct && question.itemKey && !next.itemKeys.includes(question.itemKey)) next.itemKeys.push(question.itemKey)
   if (correct && question.hard) next.hardCorrect += 1
-  next.mastered = next.attempts >= 4 && next.firstTryCorrect >= 3 && next.days.length >= 2 && next.itemKeys.length >= 2
-  next.hardMastered = next.mastered && next.hardCorrect >= 1
+
+  if (question.hard) {
+    // The vertical slice may have one challenge item per hard unit. Require repeat success
+    // across separate days instead of making a second item mandatory before the full
+    // Kids Quest hard-content pool is migrated.
+    next.hardMastered = next.attempts >= 3 && next.hardCorrect >= 2 && next.days.length >= 2
+  } else {
+    next.mastered = next.attempts >= 4 && next.firstTryCorrect >= 3 && next.days.length >= 2 && next.itemKeys.length >= 2
+  }
   return next
 }
 
@@ -80,6 +105,9 @@ export function answerQuestion(state, question, selected, { context = 'daily', t
   const priorForQuestion = next.answers.filter((a) => a.questionId === question.id)
   const answer = { questionId: question.id, subject: question.subject, unitId: question.unitId, correct, day: today, context }
   next.answers.push(answer)
+
+  const difficultyResult = applyResult(next.skills[question.subject] || makeSkill(), correct)
+  next.skills[question.subject] = difficultyResult.skill
   next.subjectStreaks[question.subject] = correct ? (next.subjectStreaks[question.subject] || 0) + 1 : 0
   next.units[question.unitId] = updateUnit(next.units[question.unitId], question, correct, today, priorForQuestion.length === 0)
 
@@ -100,7 +128,13 @@ export function answerQuestion(state, question, selected, { context = 'daily', t
   }
   if (context === 'free' && correct) ticketDelta += FREE_STUDY_TICKET_REWARD
 
-  return { state: next, correct, ticketDelta, unit: next.units[question.unitId] }
+  return {
+    state: next,
+    correct,
+    ticketDelta,
+    unit: next.units[question.unitId],
+    difficulty: difficultyResult
+  }
 }
 
 export function unitMastery(unit) {
