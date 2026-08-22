@@ -6,7 +6,7 @@ export const createGameState = () => ({
   burstCores: 0,
   battlesWon: 0,
   monsters: {
-    starter-001: {
+    'starter-001': {
       monsterId: 'starter-001',
       name: 'マナリィ（仮）',
       level: 1,
