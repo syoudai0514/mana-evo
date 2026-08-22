@@ -5,7 +5,8 @@ import { QUESTIONS } from '../src/study/questions.js'
 import { answerQuestion, createStudyState, pickDailyQuestions } from '../src/study/engine.js'
 import { makeSkill, applyResult, hintLevel } from '../src/study/difficulty.js'
 import { scheduleNext } from '../src/study/srs.js'
-import { addTickets, battleOnce, createGameState } from '../src/game/progression.js'
+import { addTickets, createGameState } from '../src/game/progression.js'
+import { startBattle } from '../src/game/engine.js'
 
 test('Kids Quest SRS compatibility: correct answers expand interval', () => {
   const first = scheduleNext(null, true, 100)
@@ -85,10 +86,11 @@ test('hard mastery is reachable after repeated success on separate days', () => 
   assert.equal(study.units[hard.unitId].hardMastered, true)
 })
 
-test('battle consumes one ticket and gives monster XP', () => {
+test('one study-earned ticket opens exactly one stage battle', () => {
   const game = addTickets(createGameState(), 1)
-  const result = battleOnce(game)
+  const result = startBattle(game, '1-1')
   assert.equal(result.ok, true)
   assert.equal(result.game.tickets, 0)
-  assert.equal(result.game.monsters[result.game.activeMonsterId].xp, 25)
+  assert.equal(result.battle.enemy.level, 5)
+  assert.equal(result.game.battlesStarted, 1)
 })
