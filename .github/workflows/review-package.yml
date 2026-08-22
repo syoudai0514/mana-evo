@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - review/mana-evo-20260822
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: read
@@ -29,7 +32,7 @@ jobs:
           Review source PR: #3
           Original implementation HEAD: 1281287a64b36f897e617da72fd2b152155fdc6b
           CI for original implementation: SUCCESS (run 32575588653)
-          Review package branch: $GITHUB_REF_NAME
+          Review package branch: $GITHUB_HEAD_REF
           Review package commit: $GITHUB_SHA
           Generated UTC: $(date -u +%Y-%m-%dT%H:%M:%SZ)
           EOF
