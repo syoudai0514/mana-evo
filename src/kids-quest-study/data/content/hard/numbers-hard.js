@@ -1,0 +1,961 @@
+// ============================================================
+// むずかしいモード（Phase 2）— さんすう（中学受験レベル）
+//
+// 対象は小4〜6。次の分野を扱う。
+//   特殊算   : つるかめ算・旅人算・植木算・過不足算・差集め算・
+//              仕事算・年令算・相当算
+//   数の性質 : 余りの問題・約数の個数・数列の規則性
+//   割合と比 : 食塩水の濃度・売買損益・比例配分・速さと比
+//   平面図形 : おうぎ形の面積・面積比・相似・正多角形の角・L字型
+//   立体図形 : 組み合わせた直方体・水そう・立方体の色ぬり・円柱・相似比と体積
+//   場合の数 : 順列・組合せ・道順・カードで整数を作る・総当たり戦
+//   速さ     : 通過算・すれちがい・流水算・時計算
+//
+// 通常モードとの分離（計画書§4.2(d)）:
+//   - itemKey は必ず `hard:n:${kind}` の名前空間を使う。
+//   - GameContext.jsx の ANSWER reducer が、この 'hard:' 接頭辞を見て
+//     srs/skills/unitStats/domainAccuracy を 'hard:suuji' へ切り分ける。
+//     通常の unitLedger・進級判定・ホームメーターには一切合流しない。
+//   - ほしのしれん（章末テスト, trialQuestions.js）はこのモジュールを
+//     呼ばない。進級はいつも ふつうモードの問題で判定する。
+//
+// 回答形式（計画書§8-③の決定）:
+//   4択からの逆算で正解できてしまわないよう、数値入力（type:'keypad'、
+//   既存の NumberPad を流用）を標準とする。答えは常に0以上の整数に
+//   そろえている（NumberPad は数字キーのみで負号・小数点を持たないため）。
+//
+// 解説（計画書§4.2(e)・むずかしいモードの本体価値）:
+//   explain（結論1文）に加えて、explainSteps（考え方を追った番号リスト）
+//   を必ず持たせる。答えを当てることより、式の組み立て方を残すことを
+//   優先する。
+// ============================================================
+
+import { generateHardPuzzleQuestion, HARD_PUZZLE_KINDS, HARD_PUZZLE_LABELS } from './suuji-puzzle-hard.js'
+import { generateHardAdvanceQuestion, HARD_ADVANCE_KINDS, HARD_ADVANCE_LABELS } from './suuji-advance-hard.js'
+
+function rng(min, max) {
+  return Math.floor(min + Math.random() * (max - min + 1))
+}
+function pick(arr) {
+  return arr[Math.floor(Math.random() * arr.length)]
+}
+function gcd(a, b) {
+  return b === 0 ? a : gcd(b, a % b)
+}
+
+function hardQ(kind, { visual, instruction, speak, answer, explain, explainSteps, explainWhy }) {
+  return {
+    domain: 'suuji',
+    type: 'keypad',
+    itemKey: `hard:n:${kind}`,
+    visual,
+    instruction,
+    speak,
+    answerId: String(answer),
+    answerWord: { text: String(answer) },
+    explain,
+    explainSteps,
+    explainWhy
+  }
+}
+
+const HARD_BUILDERS = {
+  // つるかめ算: 頭の数と足の数から、2種類の生き物の内訳を求める。
+  jrTsurukame() {
+    const turtles = rng(2, 8)
+    const cranes = rng(2, 8)
+    const total = turtles + cranes
+    const legs = cranes * 2 + turtles * 4
+    const assumedLegs = total * 2
+    const diff = legs - assumedLegs
+    return hardQ('jrTsurukame', {
+      visual: { kind: 'sentence', text: `つると かめが あわせて ${total}匹います。足の数は ぜんぶで ${legs}本です。` },
+      instruction: 'かめは何匹？',
+      speak: `つると かめが あわせて ${total}匹います。足の数は ぜんぶで ${legs}本です。かめは何匹でしょう？`,
+      answer: turtles,
+      explain: `かめは ${turtles}匹`,
+      explainSteps: [
+        `ぜんぶ つるだと すると、足の数は 2×${total}＝${assumedLegs}本`,
+        `本当の足の数との差は ${legs}－${assumedLegs}＝${diff}本`,
+        `かめは つるより 足が2本多いので、差の${diff}本は「かめの数×2」`,
+        `かめの数は ${diff}÷2＝${turtles}匹`
+      ]
+    })
+  },
+
+  // 旅人算（出会い）: 向かい合って歩く2人が出会うまでの時間。
+  jrTabibito() {
+    const speedA = rng(40, 90)
+    const speedB = rng(40, 90)
+    const combined = speedA + speedB
+    const time = rng(3, 12)
+    const distance = combined * time
+    return hardQ('jrTabibito', {
+      visual: { kind: 'sentence', text: `${distance}m はなれた 2人が、分速${speedA}mと 分速${speedB}mで むかい合って 歩きます。` },
+      instruction: '何分後に出会う？',
+      speak: `${distance}メートル はなれた 2人が、分速${speedA}メートルと 分速${speedB}メートルで むかい合って歩きます。何分後に出会いますか？`,
+      answer: time,
+      explain: `${time}分後`,
+      explainSteps: [
+        `2人は 近づき合うので、1分間に ちぢまる きょりは ${speedA}＋${speedB}＝${combined}m`,
+        `出会うまでに ちぢめる きょりは ぜんぶで ${distance}m`,
+        `かかる時間は ${distance}÷${combined}＝${time}分`
+      ]
+    })
+  },
+
+  // 植木算: 道の両端に木を植えるときの本数。
+  jrUekigi() {
+    const spacing = pick([3, 4, 5, 6])
+    const gaps = rng(4, 15)
+    const length = spacing * gaps
+    const trees = gaps + 1
+    return hardQ('jrUekigi', {
+      visual: { kind: 'sentence', text: `長さ${length}mの まっすぐな 道に、${spacing}mおきに、はしから はしまで 木を植えます。` },
+      instruction: '木は何本いる？',
+      speak: `長さ${length}メートルの まっすぐな道に、${spacing}メートルおきに、はしからはしまで木を植えます。木は何本いりますか？`,
+      answer: trees,
+      explain: `${trees}本`,
+      explainSteps: [
+        `木と木の 間の数は ${length}÷${spacing}＝${gaps}か所`,
+        `両はしに 木を植えるので、間の数より 1本 多く必要`,
+        `木の本数は ${gaps}＋1＝${trees}本`
+      ]
+    })
+  },
+
+  // 過不足算: 1人あたりの配り方で「あまり」と「たりない」が入れ替わる。
+  jrKafusoku() {
+    const people = rng(6, 18)
+    const a = rng(2, 6)
+    const b = a + rng(1, 4)
+    const surplus = rng(1, 8)
+    const total = a * people + surplus
+    const shortage = b * people - total
+    if (shortage <= 0) return HARD_BUILDERS.jrKafusoku()
+    return hardQ('jrKafusoku', {
+      visual: { kind: 'sentence', text: `1人に ${a}こずつ 配ると ${surplus}こ あまり、1人に ${b}こずつ 配ると ${shortage}こ たりません。` },
+      instruction: '何人に配る？',
+      speak: `みかんを 何人かで分けます。1人に${a}こずつ配ると${surplus}こあまり、1人に${b}こずつ配ると${shortage}こたりません。何人に配りますか？`,
+      answer: people,
+      explain: `${people}人`,
+      explainSteps: [
+        `1人分を ${a}こから ${b}こに 増やすと、1人あたり ${b - a}こ 多く必要になる`,
+        `全体で 必要になる差は、あまっていた ${surplus}こ と たりなかった ${shortage}こ を 合わせた ${surplus + shortage}こ`,
+        `人数は ${surplus + shortage}÷${b - a}＝${people}人`
+      ]
+    })
+  },
+
+  // 差集め算: 2通りの配り方が どちらも「あまる」ケース。
+  jrSashiatsume() {
+    const people = rng(6, 18)
+    const a = rng(2, 6)
+    const c = a + rng(1, 4)
+    const q = rng(1, 6)
+    const p = q + (c - a) * people
+    return hardQ('jrSashiatsume', {
+      visual: { kind: 'sentence', text: `1人に ${a}まいずつ 配ると ${p}まい あまり、1人に ${c}まいずつ 配ると ${q}まい あまります。` },
+      instruction: '何人に配る？',
+      speak: `色紙を 何人かで分けます。1人に${a}まいずつ配ると${p}まいあまり、1人に${c}まいずつ配ると${q}まいあまります。何人に配りますか？`,
+      answer: people,
+      explain: `${people}人`,
+      explainSteps: [
+        `1人分を ${a}まいから ${c}まいに 増やすと、1人あたり ${c - a}まい 多く配ることになる`,
+        `あまりの差は ${p}－${q}＝${p - q}まい。これは「1人あたりの差×人数」`,
+        `人数は ${p - q}÷${c - a}＝${people}人`
+      ]
+    })
+  },
+
+  // 仕事算: 2人がそれぞれ1人で仕上げる日数から、2人でやる日数を求める。
+  jrShigoto() {
+    const pairs = []
+    for (let x = 2; x <= 12; x++) {
+      for (let y = x; y <= 12; y++) {
+        const l = (x * y) / gcd(x, y)
+        const rate = l / x + l / y
+        if (l % rate === 0 && l / rate >= 1 && l / rate < Math.min(x, y)) pairs.push([x, y, l / rate])
+      }
+    }
+    const [daysA, daysB, together] = pick(pairs)
+    const whole = (daysA * daysB) / gcd(daysA, daysB)
+    return hardQ('jrShigoto', {
+      visual: { kind: 'sentence', text: `ある仕事を、Aさん1人だと${daysA}日、Bさん1人だと${daysB}日で 終わります。` },
+      instruction: '2人でやると何日？',
+      speak: `ある仕事を、Aさん1人でやると${daysA}日、Bさん1人でやると${daysB}日で終わります。2人いっしょにやると、何日で終わりますか？`,
+      answer: together,
+      explain: `${together}日`,
+      explainSteps: [
+        `仕事全体を ${daysA}と${daysB}の 最小公倍数、${whole} と考える`,
+        `Aさんは 1日に ${whole}÷${daysA}＝${whole / daysA}、Bさんは 1日に ${whole}÷${daysB}＝${whole / daysB} 進める`,
+        `2人合わせると 1日に ${whole / daysA + whole / daysB} 進む`,
+        `終わるまでの日数は ${whole}÷${whole / daysA + whole / daysB}＝${together}日`
+      ]
+    })
+  },
+
+  // 年令算: 父の年令が子の年令の何倍になるかを求める（未来）。
+  jrNenrei() {
+    const k = pick([2, 3])
+    const child = rng(6, 12)
+    const father = child + rng(20, 30)
+    const years = (father - k * child) / (k - 1)
+    if (!Number.isInteger(years) || years <= 0 || years > 40) return HARD_BUILDERS.jrNenrei()
+    return hardQ('jrNenrei', {
+      visual: { kind: 'sentence', text: `いま お父さんは${father}才、子どもは${child}才です。何年後に お父さんの年令が 子どもの${k}倍に なりますか？` },
+      instruction: '何年後？',
+      speak: `いま お父さんは${father}才、子どもは${child}才です。何年後に、お父さんの年令が子どもの${k}倍になりますか？`,
+      answer: years,
+      explain: `${years}年後`,
+      explainSteps: [
+        `何年後かを □年後とすると、そのとき お父さんは(${father}＋□)才、子どもは(${child}＋□)才`,
+        `お父さんの年令が子どもの${k}倍になるので、${father}＋□＝${k}×(${child}＋□)`,
+        `右の式を広げると ${father}＋□＝${k * child}＋${k}×□`,
+        `□について整理すると □＝${years}`
+      ]
+    })
+  },
+
+  // 相当算: 「全体の何分の何を使った残り」から、はじめの量を求める。
+  jrSoutou() {
+    const den = pick([3, 4, 5])
+    const num = rng(1, den - 1)
+    const whole = den * rng(4, 12)
+    const remaining = Math.round((whole * (den - num)) / den)
+    return hardQ('jrSoutou', {
+      visual: { kind: 'sentence', text: `持っていたお金の ${den}分の${num} を つかったら、残りが ${remaining}円に なりました。` },
+      instruction: 'はじめにいくら持っていた？',
+      speak: `持っていたお金の${den}分の${num}を使ったところ、残りが${remaining}円になりました。はじめにいくら持っていましたか？`,
+      answer: whole,
+      explain: `${whole}円`,
+      explainSteps: [
+        `${num}／${den} を使ったので、残りは 全体の (${den}－${num})／${den}`,
+        `残りの ${remaining}円 が、全体の (${den - num})／${den} にあたる`,
+        `全体は ${remaining}÷(${den - num})×${den}＝${whole}円`
+      ]
+    })
+  },
+
+  // ---- 数の性質 ----
+
+  // 余りの問題: 2つの条件をどちらも満たす、しきい値以上でいちばん小さい数。
+  jrAmari() {
+    const pair = pick([[3, 4], [3, 5], [3, 7], [4, 5], [4, 7], [5, 7]])
+    const [a, b] = pair
+    const ra = rng(1, a - 1)
+    const rb = rng(1, b - 1)
+    const threshold = rng(20, 60)
+    let n = threshold
+    while (!(n % a === ra && n % b === rb)) n++
+    return hardQ('jrAmari', {
+      visual: { kind: 'sentence', text: `${threshold}以上の整数で、${a}で割ると${ra}余り、${b}で割ると${rb}余る数のうち、いちばん小さい数はいくつですか。` },
+      instruction: 'いちばん小さい数は？',
+      speak: `${threshold}以上の整数で、${a}で割ると${ra}余り、${b}で割ると${rb}余る数のうち、いちばん小さい数はいくつですか。`,
+      answer: n,
+      explain: `${n}`,
+      explainSteps: [
+        `${a}で割ると${ra}余る数を小さい方から並べる: ${ra}、${ra + a}、${ra + 2 * a}、${ra + 3 * a}…`,
+        `この中から、${b}で割ると${rb}余る数をさがす`,
+        `${threshold}以上という条件にも合う、いちばん小さい数は${n}`
+      ]
+    })
+  },
+
+  // 約数の個数: 素因数分解して、指数+1の積で求める。
+  jrYakusuu() {
+    const n = pick([36, 48, 60, 72, 84, 90, 96, 108, 120, 144, 150, 168, 180, 196, 200])
+    const factors = {}
+    let x = n
+    for (let p = 2; p * p <= x; p++) {
+      while (x % p === 0) { factors[p] = (factors[p] || 0) + 1; x /= p }
+    }
+    if (x > 1) factors[x] = (factors[x] || 0) + 1
+    const exps = Object.values(factors)
+    const count = exps.reduce((acc, e) => acc * (e + 1), 1)
+    const factorStr = Object.entries(factors).map(([p, e]) => (e > 1 ? `${p}${e === 2 ? '×' + p : '^' + e}` : p)).join('×')
+    return hardQ('jrYakusuu', {
+      visual: { kind: 'sentence', text: `${n}の約数は、ぜんぶで何個ありますか。` },
+      instruction: '約数の個数は？',
+      speak: `${n}の約数は、ぜんぶで何個ありますか。`,
+      answer: count,
+      explain: `${count}個`,
+      explainSteps: [
+        `${n}を素因数分解すると ${factorStr}`,
+        `約数の個数は、それぞれの指数に1を足してかけ合わせる: ${exps.map((e) => e + 1).join('×')}＝${count}`
+      ]
+    })
+  },
+
+  // 数列の規則性: 等差数列のn番目の数を求める。
+  jrSuuretsu() {
+    const a1 = rng(2, 9)
+    const d = rng(2, 6)
+    const n = rng(15, 30)
+    const answer = a1 + (n - 1) * d
+    const shown = [a1, a1 + d, a1 + 2 * d, a1 + 3 * d]
+    return hardQ('jrSuuretsu', {
+      visual: { kind: 'sentence', text: `${shown.join('、')}、…と、きまりよく並んだ数があります。${n}番目の数はいくつですか。` },
+      instruction: `${n}番目の数は？`,
+      speak: `${shown.join('、')}と、きまりよく並んだ数があります。${n}番目の数はいくつですか。`,
+      answer,
+      explain: `${answer}`,
+      explainSteps: [
+        `となりの数との差は、いつも${d}`,
+        `${n}番目の数は、1番目の数${a1}に、${d}を(${n}－1)回たした数`,
+        `${a1}＋${d}×(${n}－1)＝${answer}`
+      ]
+    })
+  },
+
+  // ---- 割合と比 ----
+
+  // 食塩水の濃度: 同じ重さどうしを混ぜるので、濃度は2つの平均になる。
+  jrEnbun() {
+    const opts = [4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26]
+    const conc1 = pick(opts)
+    let conc2 = pick(opts)
+    while (conc2 === conc1) conc2 = pick(opts)
+    const weight = pick([100, 150, 200, 250, 300])
+    const answer = (conc1 + conc2) / 2
+    return hardQ('jrEnbun', {
+      visual: { kind: 'sentence', text: `濃度${conc1}%の食塩水${weight}gと、濃度${conc2}%の食塩水${weight}gを混ぜると、何%の食塩水になりますか。` },
+      instruction: '濃度は何%？',
+      speak: `のうど${conc1}パーセントの食塩水${weight}グラムと、のうど${conc2}パーセントの食塩水${weight}グラムを混ぜると、何パーセントの食塩水になりますか。`,
+      answer,
+      explain: `${answer}%`,
+      explainSteps: [
+        `食塩の重さは、それぞれ ${weight}×${conc1}÷100g と ${weight}×${conc2}÷100g`,
+        `同じ重さどうしを混ぜるので、全体の濃度は2つの濃度のちょうど真ん中になる`,
+        `(${conc1}＋${conc2})÷2＝${answer}%`
+      ]
+    })
+  },
+
+  // 売買損益: 原価→定価（利益を見こむ）→売り値（割引く）→利益、の順で計算する。
+  jrBaibaiSoneki() {
+    const genka = 1000 * rng(1, 5)
+    const rate = pick([10, 20, 30, 40, 50])
+    const discount = pick([10, 20, 30])
+    const teika = (genka * (100 + rate)) / 100
+    const uriage = (teika * (100 - discount)) / 100
+    const profit = uriage - genka
+    if (profit <= 0) return HARD_BUILDERS.jrBaibaiSoneki()
+    return hardQ('jrBaibaiSoneki', {
+      visual: { kind: 'sentence', text: `原価${genka}円の品物に${rate}%の利益を見こんで定価をつけましたが、定価の${discount}%引きで売りました。利益はいくらですか。` },
+      instruction: '利益はいくら？',
+      speak: `原価${genka}円の品物に、${rate}パーセントの利益を見こんで定価をつけましたが、定価の${discount}パーセント引きで売りました。利益はいくらですか。`,
+      answer: profit,
+      explain: `${profit}円`,
+      explainSteps: [
+        `定価は、原価に${rate}%の利益を足した金額: ${genka}×(100＋${rate})÷100＝${teika}円`,
+        `売った値段は、定価の${discount}%引き: ${teika}×(100－${discount})÷100＝${uriage}円`,
+        `利益は、売った値段から原価を引く: ${uriage}－${genka}＝${profit}円`
+      ]
+    })
+  },
+
+  // 比例配分: 全体を決まった比で分けたときの、一方の取り分。
+  jrHireiHaibun() {
+    // 比は必ず約分した形で出す（2：6 のような未約分の比は入試では出ない）。
+    const m = rng(2, 7)
+    let n = rng(2, 7)
+    while (n === m || gcd(m, n) !== 1) n = rng(2, 7)
+    // 1にあたる金額は、実際の入試問題と同じように切りのよい数にする
+    // （rng(50,300) だと 1111円のような不自然な合計金額になってしまう）。
+    const unit = pick([50, 100, 150, 200, 250, 300])
+    const total = (m + n) * unit
+    const answerPart = m * unit
+    return hardQ('jrHireiHaibun', {
+      visual: { kind: 'sentence', text: `${total}円を、AさんとBさんで ${m}：${n} の比になるように分けます。Aさんの分はいくらですか。` },
+      instruction: 'Aさんの分は？',
+      speak: `${total}円を、Aさんと Bさんで ${m}たい${n}の比になるように分けます。Aさんの分はいくらですか。`,
+      answer: answerPart,
+      explain: `${answerPart}円`,
+      explainSteps: [
+        `比の合計は ${m}＋${n}＝${m + n}`,
+        `${total}円を${m + n}等分すると、1にあたる金額は ${total}÷${m + n}＝${unit}円`,
+        `Aさんの分は、比の${m}にあたるので ${unit}×${m}＝${answerPart}円`
+      ]
+    })
+  },
+
+  // 速さと比: 同じ道のりを進むときの「時間の比」は「速さの比」の逆になる。
+  jrHayasaHi() {
+    const sa = rng(2, 6)
+    let sb = rng(2, 6)
+    while (sb === sa) sb = rng(2, 6)
+    const g = gcd(sa, sb)
+    const ra = sa / g
+    const rb = sb / g
+    const timeA = rb * rng(2, 8)
+    const timeB = (timeA * ra) / rb
+    return hardQ('jrHayasaHi', {
+      visual: { kind: 'sentence', text: `AさんとBさんの速さの比は ${ra}：${rb} です。同じ道のりを進むのに、Aさんは${timeA}分かかりました。Bさんは何分かかりますか。` },
+      instruction: 'Bさんは何分？',
+      speak: `Aさんと Bさんの速さの比は ${ra}たい${rb}です。同じ道のりを進むのに、Aさんは${timeA}分かかりました。Bさんは何分かかりますか。`,
+      answer: timeB,
+      explain: `${timeB}分`,
+      explainSteps: [
+        `同じ道のりを進むとき、かかる時間の比は、速さの比とちょうど逆になる`,
+        `速さの比が${ra}：${rb}なので、時間の比は${rb}：${ra}`,
+        `Aさんが${timeA}分なので、時間の比の${rb}にあたる量が${timeA}分`,
+        `Bさんの時間は、比の${ra}にあたる: ${timeA}÷${rb}×${ra}＝${timeB}分`
+      ]
+    })
+  },
+
+  // ---- 平面図形 ----
+  //
+  // 図をかかずに ことばだけで 形が決まる問題に限定している
+  // （この画面は任意の図形を描けないため、絵が無いと解けない問題は作らない）。
+
+  // おうぎ形の面積。答えが必ず整数になる「半径×中心角」の組だけを使う
+  // （キーパッドに小数点が無いため。3.14を使う以上、組合せは限られる）。
+  jrOugigata() {
+    const [radius, angles] = pick([
+      [20, [45, 90, 135, 180, 270]],
+      [30, [60, 120, 180, 240, 300]],
+      [60, [45, 60, 90, 120, 135, 150, 180, 270]]
+    ])
+    const angle = pick(angles)
+    const circle = radius * radius * 3.14
+    const area = Math.round((circle * angle) / 360)
+    return hardQ('jrOugigata', {
+      visual: { kind: 'sentence', text: `半径${radius}cm、中心角${angle}度の おうぎ形の面積は何cm²ですか。円周率は3.14とします。` },
+      instruction: '面積は何cm²？',
+      speak: `半径${radius}センチメートル、中心角${angle}度の おうぎ形の面積は何平方センチメートルですか。円周率は3.14とします。`,
+      answer: area,
+      explain: `${area}cm²`,
+      explainSteps: [
+        `まず、半径${radius}cmの円全体の面積を出す: ${radius}×${radius}×3.14＝${circle}cm²`,
+        `おうぎ形は、円全体を360度としたときの${angle}度分なので、${angle}／360 にあたる`,
+        `面積は ${circle}×${angle}÷360＝${area}cm²`
+      ]
+    })
+  },
+
+  // 面積比: 底辺を分けた比が、そのまま三角形の面積の比になる。
+  jrMensekiHi() {
+    const m = rng(2, 5)
+    let n = rng(2, 5)
+    while (n === m || gcd(m, n) !== 1) n = rng(2, 5)
+    const unit = rng(3, 12)
+    const small = m * unit
+    const whole = (m + n) * unit
+    return hardQ('jrMensekiHi', {
+      visual: { kind: 'sentence', text: `三角形ABCで、辺BCを ${m}：${n} に分ける点をDとします。三角形ABDの面積が${small}cm²のとき、三角形ABCの面積は何cm²ですか。` },
+      instruction: '三角形ABCの面積は？',
+      speak: `三角形ABCで、辺BCを ${m}たい${n}に分ける点をDとします。三角形ABDの面積が${small}平方センチメートルのとき、三角形ABCの面積は何平方センチメートルですか。`,
+      answer: whole,
+      explain: `${whole}cm²`,
+      explainSteps: [
+        `三角形ABDと三角形ABCは、頂点Aから見た高さが同じ`,
+        `高さが同じ三角形の面積の比は、底辺の比とそのまま同じになる`,
+        `BD：BC＝${m}：${m + n} なので、面積の比も ${m}：${m + n}`,
+        `三角形ABCの面積は ${small}÷${m}×${m + n}＝${whole}cm²`
+      ]
+    })
+  },
+
+  // 相似: 同じ時刻の影の長さの比は、高さの比と同じになる。
+  jrSouji() {
+    const poleHeight = rng(2, 5)
+    const poleShadow = rng(2, 6)
+    const times = rng(3, 9)
+    const treeShadow = poleShadow * times
+    const treeHeight = poleHeight * times
+    return hardQ('jrSouji', {
+      visual: { kind: 'sentence', text: `高さ${poleHeight}mの棒を まっすぐ立てると、影の長さは${poleShadow}mでした。同じ時刻に、木の影の長さは${treeShadow}mでした。木の高さは何mですか。` },
+      instruction: '木の高さは何m？',
+      speak: `高さ${poleHeight}メートルの棒を まっすぐ立てると、影の長さは${poleShadow}メートルでした。同じ時刻に、木の影の長さは${treeShadow}メートルでした。木の高さは何メートルですか。`,
+      answer: treeHeight,
+      explain: `${treeHeight}m`,
+      explainSteps: [
+        `同じ時刻の影なので、棒がつくる三角形と、木がつくる三角形は相似`,
+        `木の影は棒の影の ${treeShadow}÷${poleShadow}＝${times}倍`,
+        `高さも同じ${times}倍になるので、${poleHeight}×${times}＝${treeHeight}m`
+      ]
+    })
+  },
+
+  // 正多角形: 1つの内角から、辺の数を逆に求める（外角に直すのが近道）。
+  jrSeiTakakukei() {
+    const n = pick([5, 6, 8, 9, 10, 12, 15, 18, 20])
+    const outer = 360 / n
+    const inner = 180 - outer
+    return hardQ('jrSeiTakakukei', {
+      visual: { kind: 'sentence', text: `1つの内角の大きさが${inner}度である正多角形は、正何角形ですか。` },
+      instruction: '正何角形？',
+      speak: `1つの内角の大きさが${inner}度である正多角形は、正何角形ですか。`,
+      answer: n,
+      explain: `正${n}角形`,
+      explainSteps: [
+        `内角と外角を合わせると180度になるので、1つの外角は 180－${inner}＝${outer}度`,
+        `正多角形の外角をぜんぶ合わせると、いつでも360度になる`,
+        `辺の数は 360÷${outer}＝${n}なので、正${n}角形`
+      ]
+    })
+  },
+
+  // L字型の面積: 大きい長方形から、切り取った長方形を引く。
+  jrLjiMenseki() {
+    const height = rng(6, 15)
+    const width = rng(6, 15)
+    // 切り取る量は各辺の6割までにする。ほとんど全部を切り取ると、
+    // 細長すぎて形が想像しにくい問題になってしまう。
+    const cutH = rng(2, Math.floor(height * 0.6))
+    const cutW = rng(2, Math.floor(width * 0.6))
+    const area = height * width - cutH * cutW
+    return hardQ('jrLjiMenseki', {
+      visual: { kind: 'sentence', text: `たて${height}cm、よこ${width}cmの長方形の 右上のかどから、たて${cutH}cm、よこ${cutW}cmの長方形を 切り取りました。残った形の面積は何cm²ですか。` },
+      instruction: '残った面積は？',
+      speak: `たて${height}センチメートル、よこ${width}センチメートルの長方形の 右上のかどから、たて${cutH}センチメートル、よこ${cutW}センチメートルの長方形を切り取りました。残った形の面積は何平方センチメートルですか。`,
+      answer: area,
+      explain: `${area}cm²`,
+      explainSteps: [
+        `もとの長方形の面積は ${height}×${width}＝${height * width}cm²`,
+        `切り取った長方形の面積は ${cutH}×${cutW}＝${cutH * cutW}cm²`,
+        `残りは ${height * width}－${cutH * cutW}＝${area}cm²`
+      ]
+    })
+  },
+
+  // L字型の周りの長さ: 角を切り取っても、周りの長さは変わらないという気づき。
+  jrLjiMawari() {
+    const height = rng(6, 15)
+    const width = rng(6, 15)
+    const cutH = rng(2, Math.floor(height * 0.6))
+    const cutW = rng(2, Math.floor(width * 0.6))
+    const perimeter = 2 * (height + width)
+    return hardQ('jrLjiMawari', {
+      visual: { kind: 'sentence', text: `たて${height}cm、よこ${width}cmの長方形の 右上のかどから、たて${cutH}cm、よこ${cutW}cmの長方形を 切り取りました。残った形の まわりの長さは何cmですか。` },
+      instruction: 'まわりの長さは？',
+      speak: `たて${height}センチメートル、よこ${width}センチメートルの長方形の 右上のかどから、たて${cutH}センチメートル、よこ${cutW}センチメートルの長方形を切り取りました。残った形の まわりの長さは何センチメートルですか。`,
+      answer: perimeter,
+      explain: `${perimeter}cm`,
+      explainSteps: [
+        `切り取ってできた へこみの2辺を、外がわへ動かして考える`,
+        `動かすと、ちょうど もとの長方形の たてとよこに ぴったり重なる`,
+        `つまり かどを切り取っても、まわりの長さは もとの長方形と同じ`,
+        `まわりの長さは (${height}＋${width})×2＝${perimeter}cm`
+      ]
+    })
+  },
+
+  // ---- 立体図形 ----
+
+  // 直方体を2つ組み合わせた立体の体積。
+  jrRittaiL() {
+    const a = rng(3, 10)
+    const b = rng(3, 10)
+    const c = rng(2, 8)
+    const d = rng(2, a)
+    const e = rng(2, b)
+    const f = rng(2, 8)
+    const lower = a * b * c
+    const upper = d * e * f
+    return hardQ('jrRittaiL', {
+      visual: { kind: 'sentence', text: `たて${a}cm、よこ${b}cm、高さ${c}cmの直方体の上に、たて${d}cm、よこ${e}cm、高さ${f}cmの直方体を のせました。この立体の体積は何cm³ですか。` },
+      instruction: '体積は何cm³？',
+      speak: `たて${a}センチメートル、よこ${b}センチメートル、高さ${c}センチメートルの直方体の上に、たて${d}センチメートル、よこ${e}センチメートル、高さ${f}センチメートルの直方体をのせました。この立体の体積は何立方センチメートルですか。`,
+      answer: lower + upper,
+      explain: `${lower + upper}cm³`,
+      explainSteps: [
+        `2つの直方体に分けて、それぞれの体積を出す`,
+        `下の直方体は ${a}×${b}×${c}＝${lower}cm³`,
+        `上の直方体は ${d}×${e}×${f}＝${upper}cm³`,
+        `合わせて ${lower}＋${upper}＝${lower + upper}cm³`
+      ]
+    })
+  },
+
+  // 水そう: 底面積から「1分間に何cm深くなるか」を出すのが要点。
+  jrMizusou() {
+    const a = pick([10, 15, 20, 25, 30])
+    const b = pick([10, 15, 20, 25, 30])
+    const perMinute = rng(1, 4) // 1分あたり何cm深くなるか
+    const minutes = rng(3, 12)
+    const depth = perMinute * minutes
+    const rate = a * b * perMinute
+    const tankDepth = depth + rng(3, 10)
+    return hardQ('jrMizusou', {
+      visual: { kind: 'sentence', text: `たて${a}cm、よこ${b}cm、深さ${tankDepth}cmの直方体の水そうに、毎分${rate}cm³の水を入れます。水の深さが${depth}cmになるのは何分後ですか。` },
+      instruction: '何分後？',
+      speak: `たて${a}センチメートル、よこ${b}センチメートル、深さ${tankDepth}センチメートルの直方体の水そうに、毎分${rate}立方センチメートルの水を入れます。水の深さが${depth}センチメートルになるのは何分後ですか。`,
+      answer: minutes,
+      explain: `${minutes}分後`,
+      explainSteps: [
+        `水そうの底の面積は ${a}×${b}＝${a * b}cm²`,
+        `1分間に入る水は${rate}cm³なので、深さは1分で ${rate}÷${a * b}＝${perMinute}cm ずつ増える`,
+        `深さ${depth}cmになるのは ${depth}÷${perMinute}＝${minutes}分後`
+      ]
+    })
+  },
+
+  // 立方体の色ぬり: 外側をぬったとき、内側に残る立方体の個数。
+  jrCubePaint() {
+    const n = rng(3, 7)
+    const inner = (n - 2) ** 3
+    return hardQ('jrCubePaint', {
+      visual: { kind: 'sentence', text: `1辺1cmの立方体を積み上げて、1辺${n}cmの大きな立方体を作り、外側の面すべてに色をぬりました。色が1面もぬられていない立方体は何個ですか。` },
+      instruction: '何個？',
+      speak: `1辺1センチメートルの立方体を積み上げて、1辺${n}センチメートルの大きな立方体を作り、外側の面すべてに色をぬりました。色が1面もぬられていない立方体は何個ですか。`,
+      answer: inner,
+      explain: `${inner}個`,
+      explainSteps: [
+        `色がぬられていないのは、外側にふれていない「内がわ」の立方体だけ`,
+        `内がわは、たて・よこ・高さのそれぞれから 両はしの1個ずつを取りのぞいた部分`,
+        `1辺は ${n}－2＝${n - 2}個ぶん`,
+        `個数は ${n - 2}×${n - 2}×${n - 2}＝${inner}個`
+      ]
+    })
+  },
+
+  // 円柱の体積。答えが必ず整数になる「半径×高さ」の組だけを使う。
+  jrEnchuuTaiseki() {
+    const [radius, heights] = pick([
+      [5, [2, 4, 6, 8, 10, 12]],
+      [10, [2, 3, 4, 5, 6, 7, 8, 9, 10]],
+      [20, [2, 3, 4, 5]]
+    ])
+    const height = pick(heights)
+    const base = radius * radius * 3.14
+    const volume = Math.round(base * height)
+    return hardQ('jrEnchuuTaiseki', {
+      visual: { kind: 'sentence', text: `底面の半径が${radius}cm、高さが${height}cmの円柱の体積は何cm³ですか。円周率は3.14とします。` },
+      instruction: '体積は何cm³？',
+      speak: `底面の半径が${radius}センチメートル、高さが${height}センチメートルの円柱の体積は何立方センチメートルですか。円周率は3.14とします。`,
+      answer: volume,
+      explain: `${volume}cm³`,
+      explainSteps: [
+        `円柱の体積は「底面積×高さ」で求められる`,
+        `底面積は ${radius}×${radius}×3.14＝${base}cm²`,
+        `体積は ${base}×${height}＝${volume}cm³`
+      ]
+    })
+  },
+
+  // 相似な立体: 体積の比は、相似比を3回かけた比になる。
+  jrSoujiTaiseki() {
+    const [m, n] = pick([[1, 2], [2, 3], [1, 3], [3, 4], [2, 5], [3, 5]])
+    const k = rng(1, 5)
+    const small = m ** 3 * k
+    const large = n ** 3 * k
+    return hardQ('jrSoujiTaiseki', {
+      visual: { kind: 'sentence', text: `形が同じで、相似比が ${m}：${n} である2つの立体があります。小さい方の体積が${small}cm³のとき、大きい方の体積は何cm³ですか。` },
+      instruction: '大きい方の体積は？',
+      speak: `形が同じで、相似比が ${m}たい${n}である2つの立体があります。小さい方の体積が${small}立方センチメートルのとき、大きい方の体積は何立方センチメートルですか。`,
+      answer: large,
+      explain: `${large}cm³`,
+      explainSteps: [
+        `長さが${m}：${n}のとき、体積の比は それを3回かけた比になる`,
+        `体積の比は ${m}×${m}×${m}：${n}×${n}×${n}＝${m ** 3}：${n ** 3}`,
+        `大きい方の体積は ${small}÷${m ** 3}×${n ** 3}＝${large}cm³`
+      ]
+    })
+  },
+
+  // ---- 場合の数 ----
+
+  // 順列: 並べる順番まで区別して数える。
+  jrJunretsu() {
+    const n = rng(4, 7)
+    const r = rng(2, 3)
+    let total = 1
+    const terms = []
+    for (let i = 0; i < r; i++) { total *= n - i; terms.push(n - i) }
+    return hardQ('jrJunretsu', {
+      visual: { kind: 'sentence', text: `${n}人の中から${r}人を選んで、1列に並べます。並べ方は全部で何通りありますか。` },
+      instruction: '何通り？',
+      speak: `${n}人の中から${r}人を選んで、1列に並べます。並べ方は全部で何通りありますか。`,
+      answer: total,
+      explain: `${total}通り`,
+      explainSteps: [
+        `並ぶ順番がちがえば ちがう並べ方なので、前から順に決めていく`,
+        `${terms.map((t, i) => `${i + 1}番目は${t}通り`).join('、')}`,
+        `かけ合わせて ${terms.join('×')}＝${total}通り`
+      ]
+    })
+  },
+
+  // 組合せ: 選ぶだけで順番を区別しないので、並べ方を「並び順の数」で割る。
+  jrKumiawase() {
+    const n = rng(4, 8)
+    const r = rng(2, 3)
+    let perm = 1
+    const terms = []
+    for (let i = 0; i < r; i++) { perm *= n - i; terms.push(n - i) }
+    let fact = 1
+    for (let i = 1; i <= r; i++) fact *= i
+    const total = perm / fact
+    return hardQ('jrKumiawase', {
+      visual: { kind: 'sentence', text: `${n}人の中から${r}人を選びます。選び方は全部で何通りありますか。（選ぶだけで、順番は考えません）` },
+      instruction: '何通り？',
+      speak: `${n}人の中から${r}人を選びます。選び方は全部で何通りありますか。選ぶだけで、順番は考えません。`,
+      answer: total,
+      explain: `${total}通り`,
+      explainSteps: [
+        `まず、順番まで区別して並べる数を出す: ${terms.join('×')}＝${perm}通り`,
+        `同じ${r}人でも、並べ方が ${Array.from({ length: r }, (_, i) => i + 1).join('×')}＝${fact}通りある`,
+        `選び方はその${fact}通りを1つと数えるので、${perm}÷${fact}＝${total}通り`
+      ]
+    })
+  },
+
+  // 道順: 「右へ何回・上へ何回」のうち、どこで上へ行くかを選ぶ問題に置きかえる。
+  jrMichijun() {
+    const across = rng(2, 4)
+    const up = rng(2, 4)
+    const steps = across + up
+    let perm = 1
+    for (let i = 0; i < up; i++) perm *= steps - i
+    let fact = 1
+    for (let i = 1; i <= up; i++) fact *= i
+    const total = perm / fact
+    return hardQ('jrMichijun', {
+      visual: { kind: 'sentence', text: `右へ${across}区画、上へ${up}区画 進んだ先にある地点まで、遠回りせずに行きます。行き方は全部で何通りありますか。` },
+      instruction: '何通り？',
+      speak: `右へ${across}区画、上へ${up}区画 進んだ先にある地点まで、遠回りせずに行きます。行き方は全部で何通りありますか。`,
+      answer: total,
+      explain: `${total}通り`,
+      explainSteps: [
+        `遠回りしないので、進み方は「右へ${across}回」と「上へ${up}回」の合計${steps}回で決まる`,
+        `${steps}回のうち、どの回で上へ進むかを選べば道順が1つ決まる`,
+        `${steps}回から${up}回を選ぶ選び方なので、(${Array.from({ length: up }, (_, i) => steps - i).join('×')})÷(${Array.from({ length: up }, (_, i) => up - i).join('×')})＝${total}通り`
+      ]
+    })
+  },
+
+  // カードで整数を作る: 同じカードは2度使えないので、けたごとに1つずつ減る。
+  jrSeisuuTsukuru() {
+    const cards = rng(4, 6)
+    const digits = rng(2, 3)
+    let total = 1
+    const terms = []
+    for (let i = 0; i < digits; i++) { total *= cards - i; terms.push(cards - i) }
+    const list = Array.from({ length: cards }, (_, i) => i + 1).join('、')
+    return hardQ('jrSeisuuTsukuru', {
+      visual: { kind: 'sentence', text: `${list} と書かれた${cards}枚のカードから${digits}枚を使って、${digits}けたの整数を作ります。整数は全部で何個できますか。` },
+      instruction: '何個？',
+      speak: `${list}と書かれた${cards}枚のカードから${digits}枚を使って、${digits}けたの整数を作ります。整数は全部で何個できますか。`,
+      answer: total,
+      explain: `${total}個`,
+      explainSteps: [
+        `上のけたから順に、使えるカードの枚数を数えていく`,
+        `${terms.map((t, i) => `${i + 1}けた目は${t}通り`).join('、')}（一度使ったカードは もう使えない）`,
+        `かけ合わせて ${terms.join('×')}＝${total}個`
+      ]
+    })
+  },
+
+  // 総当たり戦: どの2チームの組にも試合が1つずつ対応する。
+  jrSoutotal() {
+    const teams = rng(4, 10)
+    const total = (teams * (teams - 1)) / 2
+    return hardQ('jrSoutotal', {
+      visual: { kind: 'sentence', text: `${teams}チームが、どのチームとも1回ずつ試合をします。試合は全部で何試合ありますか。` },
+      instruction: '何試合？',
+      speak: `${teams}チームが、どのチームとも1回ずつ試合をします。試合は全部で何試合ありますか。`,
+      answer: total,
+      explain: `${total}試合`,
+      explainSteps: [
+        `1チームは、自分以外の ${teams}－1＝${teams - 1}チームと試合をする`,
+        `${teams}チームぶんを数えると ${teams}×${teams - 1}＝${teams * (teams - 1)}`,
+        `ただし どの試合も2チームぶん 二重に数えているので、2でわる`,
+        `試合数は ${teams * (teams - 1)}÷2＝${total}試合`
+      ]
+    })
+  },
+
+  // ---- 速さ ----
+
+  // 通過算: 電車は「自分の長さ＋橋の長さ」だけ進んで渡り終わる。
+  jrTsuuka() {
+    // 橋も電車も、実際の問題と同じように切りのよい長さにする。
+    // そのうえで、割り切れる秒速だけを候補にする（答えを整数にするため）。
+    const trainLength = pick([100, 120, 140, 150, 160, 180, 200])
+    const bridge = pick([300, 400, 450, 500, 600, 700, 800])
+    const total = trainLength + bridge
+    const speeds = []
+    for (let v = 15; v <= 25; v++) if (total % v === 0) speeds.push(v)
+    if (!speeds.length) return HARD_BUILDERS.jrTsuuka()
+    const speed = pick(speeds)
+    const seconds = total / speed
+    return hardQ('jrTsuuka', {
+      visual: { kind: 'sentence', text: `長さ${trainLength}mの電車が、秒速${speed}mで 長さ${bridge}mの鉄橋を わたります。わたり始めてから わたり終わるまで何秒かかりますか。` },
+      instruction: '何秒？',
+      speak: `長さ${trainLength}メートルの電車が、秒速${speed}メートルで 長さ${bridge}メートルの鉄橋をわたります。わたり始めてから わたり終わるまで何秒かかりますか。`,
+      answer: seconds,
+      explain: `${seconds}秒`,
+      explainSteps: [
+        `「わたり終わる」のは、電車の最後尾が橋を出たとき`,
+        `そのとき電車は、橋の長さ＋電車の長さ ぶん進んでいる`,
+        `進む道のりは ${bridge}＋${trainLength}＝${bridge + trainLength}m`,
+        `かかる時間は ${bridge + trainLength}÷${speed}＝${seconds}秒`
+      ]
+    })
+  },
+
+  // 通過算（すれちがい）: 2つの電車の長さの合計を、速さの和で進む。
+  jrSurechigai() {
+    // 2本とも切りのよい長さにしてから、合計を割り切る速さの組を選ぶ。
+    const lengthA = pick([100, 120, 140, 150, 160, 180, 200])
+    const lengthB = pick([100, 120, 140, 150, 160, 180, 200])
+    const totalLength = lengthA + lengthB
+    const pairs = []
+    for (let a = 15; a <= 25; a++) {
+      for (let b = 15; b <= 25; b++) {
+        if (totalLength % (a + b) === 0) pairs.push([a, b])
+      }
+    }
+    if (!pairs.length) return HARD_BUILDERS.jrSurechigai()
+    const [speedA, speedB] = pick(pairs)
+    const seconds = totalLength / (speedA + speedB)
+    return hardQ('jrSurechigai', {
+      visual: { kind: 'sentence', text: `長さ${lengthA}mで秒速${speedA}mの電車と、長さ${lengthB}mで秒速${speedB}mの電車が 反対向きに走っています。出会ってから 完全にすれちがうまで何秒かかりますか。` },
+      instruction: '何秒？',
+      speak: `長さ${lengthA}メートルで秒速${speedA}メートルの電車と、長さ${lengthB}メートルで秒速${speedB}メートルの電車が反対向きに走っています。出会ってから完全にすれちがうまで何秒かかりますか。`,
+      answer: seconds,
+      explain: `${seconds}秒`,
+      explainSteps: [
+        `完全にすれちがうまでに進む道のりは、2つの電車の長さの合計`,
+        `合計の長さは ${lengthA}＋${lengthB}＝${totalLength}m`,
+        `反対向きなので、1秒に近づく速さは ${speedA}＋${speedB}＝${speedA + speedB}m`,
+        `かかる時間は ${totalLength}÷${speedA + speedB}＝${seconds}秒`
+      ]
+    })
+  },
+
+  // 流水算（下り）: 川を下るときは、船の速さに流れの速さが加わる。
+  jrRyuusuiKudari() {
+    // 下りの速さ（船＋流れ）が50の倍数になる組だけを使い、
+    // 道のりが 3025m のような半端な数にならないようにする。
+    const flow = pick([20, 25, 30, 40, 50])
+    const still = pick([2, 3, 4, 5, 6]) * 50 - flow
+    const minutes = rng(4, 15)
+    const distance = (still + flow) * minutes
+    return hardQ('jrRyuusuiKudari', {
+      visual: { kind: 'sentence', text: `静水での速さが分速${still}mの船が、流れの速さが分速${flow}mの川を ${distance}m下ります。何分かかりますか。` },
+      instruction: '何分？',
+      speak: `静水での速さが分速${still}メートルの船が、流れの速さが分速${flow}メートルの川を ${distance}メートル下ります。何分かかりますか。`,
+      answer: minutes,
+      explain: `${minutes}分`,
+      explainSteps: [
+        `川を下るときは、船の速さに 流れの速さが たされる`,
+        `下りの速さは ${still}＋${flow}＝${still + flow}m/分`,
+        `かかる時間は ${distance}÷${still + flow}＝${minutes}分`
+      ]
+    })
+  },
+
+  // 流水算（静水時の速さ）: 下りと上りの速さの平均が、船そのものの速さ。
+  jrRyuusuiJousui() {
+    const still = pick([120, 150, 180, 200, 240, 250])
+    const flow = pick([20, 30, 40, 50])
+    const down = still + flow
+    const up = still - flow
+    return hardQ('jrRyuusuiJousui', {
+      visual: { kind: 'sentence', text: `ある船が川を下るときの速さは分速${down}m、上るときの速さは分速${up}mです。静水での船の速さは分速何mですか。` },
+      instruction: '分速何m？',
+      speak: `ある船が川を下るときの速さは分速${down}メートル、上るときの速さは分速${up}メートルです。静水での船の速さは分速何メートルですか。`,
+      answer: still,
+      explain: `分速${still}m`,
+      explainSteps: [
+        `下りの速さは「船の速さ＋流れの速さ」、上りの速さは「船の速さ－流れの速さ」`,
+        `2つをたすと 流れの速さが消えて、船の速さの2つぶんになる`,
+        `${down}＋${up}＝${down + up} は 船の速さの2つぶん`,
+        `静水での船の速さは ${down + up}÷2＝${still}m/分`
+      ]
+    })
+  },
+
+  // 時計算: 長針は1分で6度、短針は1分で0.5度進む。
+  // 分は偶数だけにして、0.5×分 が必ず整数になるようにしている。
+  jrTokei() {
+    const hour = rng(1, 12)
+    const minute = rng(1, 29) * 2
+    const hourAngle = 30 * hour + 0.5 * minute
+    const minuteAngle = 6 * minute
+    const raw = Math.abs(hourAngle - minuteAngle)
+    const angle = raw > 180 ? 360 - raw : raw
+    if (angle === 0 || angle === 180) return HARD_BUILDERS.jrTokei()
+    return hardQ('jrTokei', {
+      visual: { kind: 'sentence', text: `${hour}時${minute}分のとき、時計の長針と短針が作る角のうち、小さい方は何度ですか。` },
+      instruction: '何度？',
+      speak: `${hour}時${minute}分のとき、時計の長針と短針が作る角のうち、小さい方は何度ですか。`,
+      answer: angle,
+      explain: `${angle}度`,
+      explainSteps: [
+        `長針は1分に6度進むので、${minute}分では 6×${minute}＝${minuteAngle}度`,
+        `短針は1時間で30度、つまり1分に0.5度進む`,
+        `短針は12時の位置から 30×${hour}＋0.5×${minute}＝${hourAngle}度`,
+        raw > 180
+          ? `2つの差は ${Math.max(hourAngle, minuteAngle)}－${Math.min(hourAngle, minuteAngle)}＝${raw}度。180度をこえるので、小さい方は 360－${raw}＝${angle}度`
+          : `2つの差は ${Math.max(hourAngle, minuteAngle)}－${Math.min(hourAngle, minuteAngle)}＝${angle}度`
+      ]
+    })
+  }
+}
+
+export const HARD_NUMBERS_KINDS = Object.keys(HARD_BUILDERS)
+
+// 特殊算は小4〜6のいずれも同じ種類を対象にする（複雑さは数値の範囲で吸収する）。
+// 数の性質・割合と比・立体の基本は小5から、円の面積・円柱・面積比・相似は小6から。
+export const HARD_NUMBERS_KINDS_BY_GRADE = {
+  4: ['jrTsurukame', 'jrUekigi', 'jrKafusoku', 'jrLjiMenseki', 'jrLjiMawari'],
+  5: [
+    'jrTsurukame', 'jrTabibito', 'jrUekigi', 'jrKafusoku', 'jrSashiatsume', 'jrSoutou',
+    'jrSuuretsu', 'jrHireiHaibun', 'jrEnbun',
+    'jrLjiMenseki', 'jrLjiMawari', 'jrSeiTakakukei',
+    'jrRittaiL', 'jrMizusou', 'jrCubePaint',
+    'jrSoutotal', 'jrSeisuuTsukuru',
+    'jrTsuuka', 'jrRyuusuiKudari', 'jrTokei'
+  ],
+  6: HARD_NUMBERS_KINDS
+}
+
+export function generateHardNumbersQuestion(params, reviewKey = null) {
+  const grade = params.grade || 4
+  // 小1〜3は特殊算の前提知識（比・割合など）がまだ無いため、中学受験
+  // レベルの特殊算ではなく、(a)ひらめきで解くパズル（suuji-puzzle-hard.js）
+  // と (b)1つ先の学年の考え方を先取りする問題（suuji-advance-hard.js）を
+  // 半々くらいの割合で混ぜて出す。itemKeyの名前空間（hard:n:xxx）とkind名は
+  // 3ファイルとも重ならないため、reviewKeyのkind名から正しいモジュールへ
+  // 振り分ければ、指定復習の取り違えは起きない。
+  if (grade <= 3) {
+    if (reviewKey && reviewKey.startsWith('hard:n:')) {
+      const kind = reviewKey.slice(7).split('#')[0]
+      if (HARD_ADVANCE_KINDS.includes(kind)) return generateHardAdvanceQuestion(params, reviewKey)
+      if (HARD_PUZZLE_KINDS.includes(kind)) return generateHardPuzzleQuestion(params, reviewKey)
+    }
+    return Math.random() < 0.5 ? generateHardAdvanceQuestion(params) : generateHardPuzzleQuestion(params)
+  }
+  if (reviewKey && reviewKey.startsWith('hard:n:')) {
+    const kind = reviewKey.slice(7).split('#')[0]
+    if (HARD_BUILDERS[kind]) return HARD_BUILDERS[kind]()
+  }
+  const kinds = HARD_NUMBERS_KINDS_BY_GRADE[grade] || HARD_NUMBERS_KINDS_BY_GRADE[4]
+  const kind = pick(kinds)
+  return HARD_BUILDERS[kind] ? HARD_BUILDERS[kind]() : null
+}
+
+export const HARD_NUMBERS_LABELS = {
+  jrTsurukame: 'つるかめ算', jrTabibito: '旅人算', jrUekigi: '植木算',
+  jrKafusoku: '過不足算', jrSashiatsume: '差集め算', jrShigoto: '仕事算',
+  jrNenrei: '年令算', jrSoutou: '相当算',
+  jrAmari: '余りの問題', jrYakusuu: '約数の個数', jrSuuretsu: '数列の規則性',
+  jrEnbun: '食塩水の濃度', jrBaibaiSoneki: '売買損益', jrHireiHaibun: '比例配分', jrHayasaHi: '速さと比',
+  jrOugigata: 'おうぎ形の面積', jrMensekiHi: '面積比', jrSouji: '相似',
+  jrSeiTakakukei: '正多角形の角', jrLjiMenseki: 'L字型の面積', jrLjiMawari: 'L字型のまわりの長さ',
+  jrRittaiL: '組み合わせた直方体', jrMizusou: '水そう', jrCubePaint: '立方体の色ぬり',
+  jrEnchuuTaiseki: '円柱の体積', jrSoujiTaiseki: '相似比と体積',
+  jrJunretsu: '順列（並べ方）', jrKumiawase: '組合せ（選び方）', jrMichijun: '道順',
+  jrSeisuuTsukuru: 'カードで整数を作る', jrSoutotal: '総当たり戦の試合数',
+  jrTsuuka: '通過算', jrSurechigai: '通過算（すれちがい）',
+  jrRyuusuiKudari: '流水算（下り）', jrRyuusuiJousui: '流水算（静水時の速さ）', jrTokei: '時計算',
+  // 小1〜3のパズル・先取り（suuji-puzzle-hard.js/suuji-advance-hard.js）も、
+  // ReviewScreenの 'skill:hard:math:' 分岐がそのまま拾えるよう合流させる。
+  ...HARD_PUZZLE_LABELS,
+  ...HARD_ADVANCE_LABELS
+}
