@@ -1,0 +1,86 @@
+name: Import Kids Quest study source
+
+on:
+  push:
+    branches: ['terra/mana-evo-copy-kidsquest-study']
+    paths: ['.github/workflows/import-kids-quest-study.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  import-study-source:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Mana Evo
+        uses: actions/checkout@v4
+        with:
+          path: mana-evo
+          fetch-depth: 0
+
+      - name: Checkout Kids Quest source
+        uses: actions/checkout@v4
+        with:
+          repository: syoudai0514/kids-quest
+          ref: main
+          path: kids-quest
+          fetch-depth: 1
+
+      - name: Copy study-only source snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          DEST="$GITHUB_WORKSPACE/mana-evo/src/kids-quest-study"
+          SRC="$GITHUB_WORKSPACE/kids-quest/src"
+          rm -rf "$DEST"
+          mkdir -p "$DEST/data" "$DEST/engine" "$DEST/components" "$DEST/screens"
+
+          # 学習コンテンツ。ゲーム用 monsters / weapons / planets はコピーしない。
+          cp -R "$SRC/data/content" "$DEST/data/content"
+          cp "$SRC/data/grades.js" "$DEST/data/grades.js"
+          cp "$SRC/data/kanjiByGrade.js" "$DEST/data/kanjiByGrade.js"
+          cp "$SRC/data/lessons.js" "$DEST/data/lessons.js"
+          cp "$SRC/data/strokeOrder.js" "$DEST/data/strokeOrder.js"
+
+          # 学習エンジンのみ。battle / monsterProgress / missions 等は除外。
+          for f in "$SRC"/engine/*.js; do
+            name="$(basename "$f")"
+            case "$name" in
+              activities.js|difficulty.js|english*.js|grade*.js|learning*.js|review*.js|srs.js|trial*.js|unitQuestions.js|tts*.js|narrator*.js|dictionary*.js|progressMigration.js)
+                cp "$f" "$DEST/engine/$name"
+                ;;
+            esac
+          done
+
+          # 問題表示・書字・英語発音など、学習UIの再利用候補。
+          for name in QuestionInteraction.jsx QuestionVisual.jsx TracingCanvas.jsx EnglishSpeakingPractice.jsx common.jsx; do
+            test -f "$SRC/components/$name" && cp "$SRC/components/$name" "$DEST/components/$name"
+          done
+          for name in ActivityPlayer.jsx FreeStudyScreen.jsx LessonScreen.jsx ChapterTestScreen.jsx ReviewScreen.jsx; do
+            test -f "$SRC/screens/$name" && cp "$SRC/screens/$name" "$DEST/screens/$name"
+          done
+
+          git -C "$GITHUB_WORKSPACE/kids-quest" rev-parse HEAD > "$DEST/SOURCE_COMMIT.txt"
+          cat > "$DEST/README.md" <<'EOF'
+          # Kids Quest study source snapshot
+
+          This directory is a study-only source snapshot copied from `syoudai0514/kids-quest` `main`.
+
+          It intentionally excludes game-specific monster, weapon, battle and mission data. Mana Evo's active runtime lives in `src/study` and `src/game`; this snapshot is the migration source for progressively wiring the complete Kids Quest curriculum into Mana Evo without modifying Kids Quest itself.
+
+          `SOURCE_COMMIT.txt` records the exact Kids Quest source commit.
+          EOF
+
+          # 一回限りの取り込みworkflowは成果物へ残さない。
+          rm -f "$GITHUB_WORKSPACE/mana-evo/.github/workflows/import-kids-quest-study.yml"
+
+      - name: Commit imported study snapshot
+        working-directory: mana-evo
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/kids-quest-study .github/workflows/import-kids-quest-study.yml
+          git commit -m "chore: import Kids Quest study-only source snapshot"
+          git push origin HEAD:terra/mana-evo-copy-kidsquest-study
