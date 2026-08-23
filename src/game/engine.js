@@ -99,12 +99,12 @@ export function healthyTeamIds(game, battle) {
   return (game.team || []).filter((id) => game.box?.[id] && (battle.partyHp?.[id] || 0) > 0)
 }
 
-export function startBattle(game, stageId, { dailyCompleted = false, today } = {}) {
+export function startBattle(game, stageId, { dailyCompleted = false, dailyDay = null, today } = {}) {
   if (game.activeBattle) return { ok: false, game, battle: game.activeBattle, reason: 'BATTLE_ALREADY_ACTIVE' }
   const stage = stageById(stageId)
   if (!stage) return { ok: false, game, reason: 'UNKNOWN_STAGE' }
   if (!isStageUnlocked(game, stage)) return { ok: false, game, reason: 'LOCKED_STAGE' }
-  if (!dailyCompleted) return { ok: false, game, reason: 'DAILY_NOT_COMPLETED' }
+  if (!dailyCompleted || (dailyDay != null && dailyDay !== today)) return { ok: false, game, reason: 'DAILY_NOT_COMPLETED' }
   const ticket = consumeTicket(game, today)
   if (!ticket.ok) return { ok: false, game: ticket.game, reason: 'NO_TICKET' }
   const activeId = ticket.game.activeMonsterId || ticket.game.team?.[0]
@@ -206,6 +206,12 @@ function enemyAttackOnce(game, battle, log) {
   return result
 }
 
+function grantStageEvolutionReward(game, stage) {
+  if (!stage?.evolutionReward) return { game, evolutionReward: null }
+  const granted = grantEvolutionItem(game, stage.evolutionReward.kind, stage.evolutionReward.itemId, stage.evolutionReward.count || 1)
+  return granted.ok ? { game: granted.game, evolutionReward: stage.evolutionReward } : { game, evolutionReward: null }
+}
+
 function awardWin(game, battle) {
   let next = structuredClone(game)
   const stage = stageById(battle.stageId)
@@ -216,15 +222,9 @@ function awardWin(game, battle) {
   next.battlesWon = (next.battlesWon || 0) + 1
   next.stagesCleared ||= []
   if (!next.stagesCleared.includes(stage.id)) next.stagesCleared.push(stage.id)
-  let evolutionReward = null
-  if (stage.evolutionReward) {
-    const granted = grantEvolutionItem(next, stage.evolutionReward.kind, stage.evolutionReward.itemId, stage.evolutionReward.count || 1)
-    if (granted.ok) {
-      next = granted.game
-      evolutionReward = stage.evolutionReward
-    }
-  }
-  return { game: next, levels: gained.levels, xp: stage.xp, mana: stage.mana, evolutionReward }
+  const granted = grantStageEvolutionReward(next, stage)
+  next = granted.game
+  return { game: next, levels: gained.levels, xp: stage.xp, mana: stage.mana, evolutionReward: granted.evolutionReward }
 }
 
 export function useMove(game, battle, moveId) {
@@ -293,7 +293,7 @@ export function attemptCapture(game, battle, rolls = null, itemType = 'star') {
     const reason = (battle.captureAttempts || 0) >= MAX_CAPTURE_ATTEMPTS ? 'CAPTURE_LIMIT' : 'CAPTURE_NOT_READY'
     return { ok: false, game, battle, reason }
   }
-  const nextGame = structuredClone(game)
+  let nextGame = structuredClone(game)
   nextGame.captureItems[itemType] -= 1
   const chance = captureChance(battle, itemType)
   const perStarChance = Math.pow(chance, 1 / 4)
@@ -329,10 +329,12 @@ export function attemptCapture(game, battle, rolls = null, itemType = 'star') {
   nextGame.mana = (nextGame.mana || 0) + Math.floor(stage.mana / 2)
   nextGame.stagesCleared ||= []
   if (!nextGame.stagesCleared.includes(stage.id)) nextGame.stagesCleared.push(stage.id)
+  const granted = grantStageEvolutionReward(nextGame, stage)
+  nextGame = granted.game
   nextBattle.status = 'caught'
   nextBattle.log = [...nextBattle.log.slice(-4), '★★★★ 「わ」が ひかった！ ゲット！']
   nextGame.activeBattle = structuredClone(nextBattle)
-  return { ok: true, caught: true, stars, chance, captured, game: nextGame, battle: nextBattle }
+  return { ok: true, caught: true, stars, chance, captured, evolutionReward: granted.evolutionReward, game: nextGame, battle: nextBattle }
 }
 
 export function switchBattleMonster(game, battle, instanceId) {
