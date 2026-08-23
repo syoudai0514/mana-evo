@@ -1,0 +1,15 @@
+Mana Evo PR #5 design-led re-review package
+Generated: 2026-08-23 JST
+Repository: syoudai0514/mana-evo
+PR: #5
+Branch: terra/mana-evo-pr4-review-fixes
+Implementation commit: 792af330163b054833b3be2fa3173c3cdf58dba8
+Implementation CI run: 32607089761 (#38)
+Implementation CI job: 97113666438
+Install dependencies: SUCCESS
+Test: SUCCESS
+Build: SUCCESS
+Local node --test tests/*.test.js: 52/52 PASS
+
+The final package commit that adds this metadata is recorded in the final response / package filename after push.
+Design hashes: see design/DESIGN-SOURCE-METADATA.txt

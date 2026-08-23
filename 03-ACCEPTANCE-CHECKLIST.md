@@ -67,5 +67,5 @@
 ## CI gate
 
 - [x] local `node --test tests/*.test.js` = 52/52 PASS before push
-- [ ] GitHub Actions Test
-- [ ] GitHub Actions Build
+- [x] GitHub Actions Test — run #38 SUCCESS
+- [x] GitHub Actions Build — run #38 SUCCESS
