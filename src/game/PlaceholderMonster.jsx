@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { speciesOf, typeLabel } from './content.js'
 import { monsterSpriteFrame } from './monsterSprite.js'
 
@@ -6,16 +6,68 @@ export default function PlaceholderMonster({ speciesId, stage = null, excited = 
   const species = speciesOf(speciesId)
   const resolvedStage = stage || species?.stage || 1
   const frame = monsterSpriteFrame(speciesId)
+  const size = compact ? 46 : 118
+  const canvasRef = useRef(null)
+  const [spriteFailed, setSpriteFailed] = useState(false)
 
-  if (frame) {
-    const size = compact ? 46 : 118
-    const handleImageError = (event) => {
-      const image = event.currentTarget
-      if (image.dataset.fallbackTried === '1') return
-      image.dataset.fallbackTried = '1'
-      image.src = frame.fallbackSrc
+  useEffect(() => {
+    setSpriteFailed(false)
+    if (!frame || !canvasRef.current) return undefined
+
+    let cancelled = false
+    const image = new Image()
+    image.decoding = 'async'
+
+    image.onload = () => {
+      if (cancelled || !canvasRef.current) return
+
+      const canvas = canvasRef.current
+      const dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 3))
+      const pixelSize = Math.round(size * dpr)
+      canvas.width = pixelSize
+      canvas.height = pixelSize
+
+      const ctx = canvas.getContext('2d')
+      if (!ctx) {
+        setSpriteFailed(true)
+        return
+      }
+
+      const cellWidth = image.naturalWidth / frame.cols
+      const cellHeight = image.naturalHeight / frame.rows
+      const sourceX = frame.col * cellWidth
+      const sourceY = frame.row * cellHeight
+
+      ctx.clearRect(0, 0, pixelSize, pixelSize)
+      ctx.imageSmoothingEnabled = true
+      ctx.imageSmoothingQuality = 'high'
+      ctx.drawImage(
+        image,
+        sourceX,
+        sourceY,
+        cellWidth,
+        cellHeight,
+        0,
+        0,
+        pixelSize,
+        pixelSize
+      )
     }
 
+    image.onerror = () => {
+      if (!cancelled) setSpriteFailed(true)
+    }
+
+    image.src = frame.src
+
+    return () => {
+      cancelled = true
+      image.onload = null
+      image.onerror = null
+    }
+  }, [frame?.src, frame?.col, frame?.row, frame?.cols, frame?.rows, size])
+
+  if (frame && !spriteFailed) {
     return (
       <div
         className={`placeholder-monster monster-art stage-${resolvedStage} ${excited ? 'excited' : ''} ${compact ? 'compact' : ''}`}
@@ -34,18 +86,13 @@ export default function PlaceholderMonster({ speciesId, stage = null, excited = 
           background: 'transparent'
         }}
       >
-        <img
-          src={frame.src}
-          alt=""
-          draggable="false"
-          onError={handleImageError}
+        <canvas
+          ref={canvasRef}
+          aria-hidden="true"
           style={{
-            position: 'absolute',
             display: 'block',
-            left: -frame.col * size,
-            top: -frame.row * size,
-            width: frame.cols * size,
-            height: frame.rows * size,
+            width: size,
+            height: size,
             maxWidth: 'none',
             maxHeight: 'none',
             userSelect: 'none',
