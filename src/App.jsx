@@ -16,6 +16,7 @@ import { availableTicketCount, createGameState, grantLearningReward, normalizeGa
 import { speciesOf } from './game/content.js'
 import PlaceholderMonster from './game/PlaceholderMonster.jsx'
 import { AdventureFlow, MonsterScreen } from './game/GameScreens.jsx'
+import HowToPlay from './HowToPlay.jsx'
 
 const SAVE_KEY = 'mana-evo-save-v1'
 
@@ -70,6 +71,8 @@ function Home({ study, game, go, today }) {
         <button className="menu-card" onClick={() => go('free')}><strong>📚 自由学習</strong><span>{dailyCompleted ? '正解1問で 🎫+1' : '基本5問まではチケットなし'}</span></button>
         <button className="menu-card" onClick={() => go('monsters')}><strong>🐾 モンスター</strong><span>{species?.name || '相棒'} Lv.{monster?.level || 1}</span></button>
       </section>
+
+      <button className="howto-home-card" onClick={() => go('howto')}><strong>❓ あそびかた</strong><span>シンカと アイテムの もらいかた →</span></button>
 
       <section className="home-loop-card">
         <strong>「もっと遊びたい」が勉強につながる！</strong>
@@ -279,6 +282,7 @@ export default function App() {
       {view === 'free' && <FreeStudy study={study} setStudy={setStudy} setGame={setGame} go={go} />}
       {view === 'adventure' && <AdventureFlow game={game} setGame={setGame} dailyCompleted={dailyCompleted} dailyDay={study.daily?.day} today={today} goHome={() => go('home')} goStudy={() => go(dailyCompleted ? 'free' : 'daily')} />}
       {view === 'monsters' && <MonsterScreen game={game} setGame={setGame} goHome={() => go('home')} />}
+      {view === 'howto' && <HowToPlay game={game} today={today} goHome={() => go('home')} goAdventure={() => go(dailyCompleted ? 'adventure' : 'daily')} goMonsters={() => go('monsters')} goStudy={() => go(dailyCompleted ? 'free' : 'daily')} />}
       {!['daily', 'free'].includes(view) && !navigationLocked && <nav><button className={view === 'home' ? 'active' : ''} onClick={() => go('home')}>🏠<span>ホーム</span></button><button className={view === 'adventure' ? 'active' : ''} onClick={() => go(dailyCompleted ? 'adventure' : 'daily')}>🗺️<span>ぼうけん</span></button><button className={view === 'monsters' ? 'active' : ''} onClick={() => go('monsters')}>🐾<span>モンスター</span></button><button onClick={() => go(dailyCompleted ? 'free' : 'daily')}>📚<span>まなぶ</span></button></nav>}
     </div>
   )
