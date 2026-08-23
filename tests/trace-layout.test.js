@@ -18,6 +18,14 @@ test('trace action buttons stay in normal flow below canvas', () => {
   assert.match(css, /flex-wrap:\s*nowrap/)
 })
 
+test('trace instruction and stroke counter cannot slide under the learning header', () => {
+  const css = read('src/kids-quest-study/styles/trace-mobile.css')
+  assert.match(css, /\.activity-screen:has\(\.trace-box\) \.topbar\.app-header\s*\{[\s\S]*position:\s*relative/)
+  assert.match(css, /\.activity-screen:has\(\.trace-box\) \.topbar\.app-header\s*\{[\s\S]*top:\s*auto/)
+  assert.match(css, /\.center-col\s*\{[\s\S]*overflow:\s*visible/)
+  assert.match(css, /> \.muted\s*\{[\s\S]*min-height:\s*26px/)
+})
+
 test('trace mobile overrides load after shared app styles', () => {
   const main = read('src/main.jsx')
   const appStyles = main.indexOf("import './styles.css'")
