@@ -1,0 +1,307 @@
+.howto-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 96px;
+}
+
+.howto-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, rgba(255,255,255,.96), rgba(237,245,255,.96));
+  box-shadow: 0 12px 30px rgba(43, 58, 94, .12);
+}
+
+.howto-hero h1,
+.howto-section h2,
+.howto-next-card h2,
+.howto-evo-card h3,
+.howto-step h3,
+.howto-coming-soon h3 {
+  margin: 0;
+}
+
+.howto-hero p,
+.howto-section p,
+.howto-next-card p,
+.howto-step p,
+.howto-evo-card p,
+.howto-coming-soon p {
+  margin: 6px 0 0;
+  line-height: 1.65;
+}
+
+.howto-mini {
+  margin: 0 !important;
+  font-size: .8rem;
+  font-weight: 800;
+  opacity: .7;
+}
+
+.howto-ticket {
+  min-width: 82px;
+  min-height: 82px;
+  border-radius: 22px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  background: rgba(255,255,255,.78);
+  box-shadow: inset 0 0 0 1px rgba(56, 74, 120, .08);
+  font-size: 1.25rem;
+}
+
+.howto-ticket strong {
+  display: block;
+  font-size: 1.65rem;
+  line-height: 1;
+}
+
+.howto-ticket span {
+  font-size: .75rem;
+  font-weight: 800;
+}
+
+.howto-next-card {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #fff7d6, #fffdf4);
+  box-shadow: 0 10px 24px rgba(96, 77, 31, .1);
+}
+
+.howto-next-monster {
+  display: grid;
+  place-items: center;
+  min-height: 92px;
+  border-radius: 18px;
+  background: rgba(255,255,255,.7);
+}
+
+.howto-section {
+  padding: 18px;
+  border-radius: 24px;
+  background: rgba(255,255,255,.95);
+  box-shadow: 0 10px 26px rgba(38, 50, 80, .09);
+}
+
+.howto-section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.howto-section-title > span {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: rgba(241, 246, 255, .95);
+  font-size: 1.5rem;
+}
+
+.howto-section-title p {
+  margin: 0 !important;
+  font-size: .75rem;
+  font-weight: 800;
+  opacity: .65;
+}
+
+.howto-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.howto-step {
+  display: grid;
+  grid-template-columns: 34px 42px 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 18px;
+  background: #f7f9ff;
+}
+
+.howto-step-number {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #252f53;
+  color: white;
+  font-weight: 900;
+}
+
+.howto-step-icon {
+  font-size: 1.65rem;
+  text-align: center;
+}
+
+.howto-step p {
+  font-size: .92rem;
+}
+
+.howto-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.howto-evolution-section {
+  background: linear-gradient(180deg, #fffdf5, #ffffff);
+}
+
+.howto-evo-card {
+  display: grid;
+  grid-template-columns: 38px 1fr;
+  gap: 12px;
+  padding: 14px;
+  margin-top: 10px;
+  border-radius: 18px;
+  background: #f7f9ff;
+}
+
+.howto-evo-card.special-item {
+  background: #fff9e9;
+  box-shadow: inset 0 0 0 1px rgba(185, 142, 36, .12);
+}
+
+.howto-evo-badge {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: #252f53;
+  color: #fff;
+  font-weight: 900;
+}
+
+.howto-route {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.howto-route span {
+  padding: 7px 9px;
+  border-radius: 12px;
+  background: rgba(255,255,255,.9);
+  font-size: .84rem;
+  font-weight: 800;
+  box-shadow: inset 0 0 0 1px rgba(35, 45, 78, .08);
+}
+
+.howto-route b {
+  opacity: .55;
+}
+
+.howto-evo-card small {
+  display: block;
+  margin-top: 8px;
+  line-height: 1.5;
+  opacity: .7;
+}
+
+.howto-monster-button,
+.howto-home-button {
+  width: 100%;
+  margin-top: 14px;
+}
+
+.howto-reward-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.howto-reward-grid article,
+.howto-coming-soon article {
+  padding: 13px;
+  border-radius: 17px;
+  background: #f7f9ff;
+}
+
+.howto-reward-grid p {
+  font-size: .88rem;
+}
+
+.howto-coming-soon {
+  background: linear-gradient(180deg, #f4f0ff, #ffffff);
+}
+
+.howto-coming-soon article + article {
+  margin-top: 10px;
+}
+
+.howto-soon-label {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  text-align: center;
+  font-weight: 900;
+  background: #fff3c9;
+}
+
+.howto-home-card {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 0;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #f3f0ff, #ffffff);
+  box-shadow: 0 8px 20px rgba(53, 45, 92, .08);
+  text-align: left;
+}
+
+.howto-home-card strong {
+  font-size: 1rem;
+}
+
+.howto-home-card span {
+  font-size: .82rem;
+  opacity: .7;
+}
+
+@media (max-width: 520px) {
+  .howto-hero {
+    padding: 16px;
+  }
+
+  .howto-next-card {
+    grid-template-columns: 76px 1fr;
+  }
+
+  .howto-step {
+    grid-template-columns: 30px 36px 1fr;
+  }
+
+  .howto-actions,
+  .howto-reward-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .howto-route {
+    gap: 5px;
+  }
+
+  .howto-route span {
+    font-size: .78rem;
+  }
+}
