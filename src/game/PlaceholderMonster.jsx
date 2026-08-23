@@ -1,31 +1,60 @@
 import React from 'react'
 import { speciesOf, typeLabel } from './content.js'
-import { monsterSpriteStyle } from './monsterSprite.js'
+import { monsterSpriteFrame } from './monsterSprite.js'
 
 export default function PlaceholderMonster({ speciesId, stage = null, excited = false, compact = false }) {
   const species = speciesOf(speciesId)
   const resolvedStage = stage || species?.stage || 1
-  const spriteStyle = monsterSpriteStyle(speciesId)
+  const frame = monsterSpriteFrame(speciesId)
 
-  if (spriteStyle) {
+  if (frame) {
     const size = compact ? 46 : 118
+    const frameHeight = Math.round(size * 5 / 6)
     return (
       <div
         className={`placeholder-monster monster-art stage-${resolvedStage} ${excited ? 'excited' : ''} ${compact ? 'compact' : ''}`}
         aria-label={species?.name || 'モンスター'}
         role="img"
         style={{
-          ...spriteStyle,
+          position: 'relative',
           width: size,
           height: size,
           flexBasis: size,
+          overflow: 'hidden',
           border: 0,
           borderRadius: 0,
           boxShadow: 'none',
-          backgroundColor: 'transparent',
-          backgroundRepeat: 'no-repeat'
+          background: 'transparent'
         }}
-      />
+      >
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: Math.round((size - frameHeight) / 2),
+            width: size,
+            height: frameHeight,
+            overflow: 'hidden'
+          }}
+        >
+          <img
+            src={frame.src}
+            alt=""
+            draggable="false"
+            style={{
+              position: 'absolute',
+              left: `${-frame.col * 100}%`,
+              top: `${-frame.row * 100}%`,
+              width: `${frame.cols * 100}%`,
+              height: `${frame.rows * 100}%`,
+              maxWidth: 'none',
+              userSelect: 'none',
+              pointerEvents: 'none'
+            }}
+          />
+        </div>
+      </div>
     )
   }
 

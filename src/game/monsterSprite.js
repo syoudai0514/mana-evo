@@ -25,15 +25,9 @@ const COORDS = Object.freeze({
   'wild-charm-2': [3, 3]
 })
 
-export function monsterSpriteStyle(speciesId) {
+export function monsterSpriteFrame(speciesId) {
   const coord = COORDS[speciesId]
   if (!coord) return null
   const [col, row] = coord
-  const x = COLS === 1 ? 0 : (col / (COLS - 1)) * 100
-  const y = ROWS === 1 ? 0 : (row / (ROWS - 1)) * 100
-  return {
-    backgroundImage: `url("${spriteUrl}")`,
-    backgroundSize: `${COLS * 100}% ${ROWS * 100}%`,
-    backgroundPosition: `${x}% ${y}%`
-  }
+  return { src: spriteUrl, col, row, cols: COLS, rows: ROWS }
 }
