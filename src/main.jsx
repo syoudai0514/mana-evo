@@ -1,5 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+import './kids-quest-study/engine/speechPacing.js'
 import App from './App.jsx'
 import { GameProvider as LearningProvider } from './kids-quest-study/state/GameContext.jsx'
 import './kids-quest-study/styles/learning.css'

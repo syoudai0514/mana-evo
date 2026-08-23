@@ -2,13 +2,33 @@
    TracingCanvasのcanvasはabsolute配置なので、必ずサイズを持つrelative親を用意する。
    これが無いとcanvasが問題文/操作ボタンへ重なり、iPhoneで画面上部に潰れて見える。 */
 
+/* 学習の共通ヘッダーはKids Quest単体では上に別ヘッダーがある前提で top:62px だった。
+   ManaEvoの集中学習画面では上位ヘッダーを非表示にしているため、そのままだと
+   スクロール時に「1かくめ / ぜんぶで…」が青いバーの下へ潜り込む。
+   トレース中はこのヘッダー自身を画面上端に置き、本文とは通常フローで分離する。 */
+.activity-screen:has(.trace-box) .topbar.app-header {
+  position: relative;
+  top: auto;
+  flex: 0 0 auto;
+  margin: 0 0 6px;
+}
+
+.activity-screen:has(.trace-box) {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
 .activity-screen:has(.trace-box) .center-col {
   justify-content: flex-start;
   gap: 10px;
-  padding-top: 12px;
+  padding-top: 14px;
   padding-bottom: max(24px, env(safe-area-inset-bottom));
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  /* 前の問題で内部スクロールした位置を次のトレース問題へ持ち越さない。
+     トレース時は外側のactivity-screenだけをスクロール領域にする。 */
+  overflow: visible;
+  -webkit-overflow-scrolling: auto;
+  overflow-anchor: none;
 }
 
 .activity-screen:has(.trace-box) .activity-instruction {
@@ -16,6 +36,16 @@
   margin: 0;
   min-height: 30px;
   line-height: 1.35;
+}
+
+/* 「1かくめ / ぜんぶで…」「おてほんをみててね」はキャンバスとは別の行として
+   必ず高さを確保する。文字の上端がヘッダーに隠れる回帰を防ぐ。 */
+.activity-screen:has(.trace-box) .center-col > div:has(> .trace-box) > .muted {
+  flex: 0 0 auto;
+  min-height: 26px;
+  padding-top: 2px;
+  line-height: 1.4;
+  text-align: center;
 }
 
 .trace-box {
@@ -97,7 +127,7 @@
 @media (max-width: 390px) and (orientation: portrait) {
   .activity-screen:has(.trace-box) .center-col {
     gap: 8px;
-    padding-top: 8px;
+    padding-top: 10px;
   }
 
   .trace-box {
@@ -126,6 +156,6 @@
   }
   .activity-screen:has(.trace-box) .center-col {
     gap: 6px;
-    padding-top: 6px;
+    padding-top: 8px;
   }
 }
