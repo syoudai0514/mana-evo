@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react'
+import { dayNumber } from '../study/srs.js'
 import PlaceholderMonster from './PlaceholderMonster.jsx'
 import { CAPTURE_CONFIG, EVOLUTION_ITEMS, SPECIES, STAGES, effectivenessLabel, moveOf, speciesOf, typeEffectiveness, typeLabel } from './content.js'
 import {
@@ -26,7 +27,6 @@ import { CAPTURE_ITEM_IDS, availableTicketCount, equipHeldItem, specialProgressi
 import './game.css'
 
 const CAPTURE_META = CAPTURE_CONFIG
-
 
 function TypePills({ types = [] }) {
   return <div className="type-pills">{types.map((type) => <span key={type}>{typeLabel(type)}</span>)}</div>
@@ -90,14 +90,19 @@ function BattleView({ game, setGame, onExitToMap, goStudy }) {
   }
 
   const exit = () => {
+    const today = dayNumber()
     if (finished) {
-      const result = clearFinishedBattle(game)
+      const result = clearFinishedBattle(game, { today })
       if (result.ok) setGame(result.game)
       onExitToMap()
       return
     }
-    if (typeof window !== 'undefined' && !window.confirm('バトルを やめる？ チケット1まいは もどるよ。')) return
-    const result = abandonBattle(game)
+    const refundable = !battle.ticketRefunded && battle.ticketSource && battle.ticketSource.expiresDay > today
+    const message = refundable
+      ? 'バトルを やめる？ チケット1まいは もどるよ。'
+      : 'バトルを やめる？ チケットは期限をすぎているので もどらないよ。'
+    if (typeof window !== 'undefined' && !window.confirm(message)) return
+    const result = abandonBattle(game, { today })
     if (result.ok) setGame(result.game)
     onExitToMap()
   }
@@ -152,7 +157,7 @@ function BattleView({ game, setGame, onExitToMap, goStudy }) {
       {finished && <section className="battle-result-card">
         <h2>{battle.status === 'won' ? 'かち！ 🎉' : battle.status === 'caught' ? 'ゲット！ ★★★★' : 'まけちゃった…'}</h2>
         {battle.status === 'caught' && <p>新しい仲間はボックスに入ったよ。手持ちが2体以下なら自動でチーム入り！</p>}
-        {battle.status === 'lost' && <p>🎫は1まい返ってきたよ。仲間を育てて再挑戦しよう！</p>}
+        {battle.status === 'lost' && <p>{battle.ticketRefunded ? '🎫は1まい返ってきたよ。仲間を育てて再挑戦しよう！' : '🎫は期限をすぎていたので戻らなかったよ。もう一度学んで挑戦しよう！'}</p>}
         <button className="primary" onClick={exit}>マップへ</button>
         {game.tickets < 1 && <button className="secondary" onClick={goStudy}>まなぶ！</button>}
       </section>}
@@ -160,10 +165,12 @@ function BattleView({ game, setGame, onExitToMap, goStudy }) {
   )
 }
 
-export function AdventureFlow({ game, setGame, goHome, goStudy, dailyCompleted, today }) {
+export function AdventureFlow({ game, setGame, goHome, goStudy, dailyCompleted, dailyDay, today }) {
   const [mapNonce, setMapNonce] = useState(0)
   const start = (stageId) => {
-    const result = startBattle(game, stageId, { dailyCompleted, today })
+    const liveToday = dayNumber()
+    const liveDailyCompleted = dailyCompleted && dailyDay === liveToday
+    const result = startBattle(game, stageId, { dailyCompleted: liveDailyCompleted, today: liveToday })
     if (!result.ok) {
       if (['NO_TICKET', 'DAILY_NOT_COMPLETED'].includes(result.reason)) goStudy()
       return
