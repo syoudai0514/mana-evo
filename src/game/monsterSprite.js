@@ -23,15 +23,26 @@ const COORDS = Object.freeze({
   'wild-charm-2': [3, 3]
 })
 
+const SPRITE_FILE = 'monsters/manaevo-monsters-v1.webp'
+const RAW_FALLBACK = 'https://raw.githubusercontent.com/syoudai0514/mana-evo/main/public/monsters/manaevo-monsters-v1.webp'
+
+function localSpriteUrl() {
+  if (typeof window !== 'undefined' && window.location.hostname.endsWith('github.io')) {
+    return `/mana-evo/${SPRITE_FILE}`
+  }
+  return `/${SPRITE_FILE}`
+}
+
 export function monsterSpriteStyle(speciesId) {
   const coord = COORDS[speciesId]
   if (!coord) return null
   const [col, row] = coord
   const x = COLS === 1 ? 0 : (col / (COLS - 1)) * 100
   const y = ROWS === 1 ? 0 : (row / (ROWS - 1)) * 100
+  const local = localSpriteUrl()
   return {
-    backgroundImage: `url(${import.meta.env.BASE_URL}monsters/manaevo-monsters-v1.webp)`,
-    backgroundSize: `${COLS * 100}% ${ROWS * 100}%`,
-    backgroundPosition: `${x}% ${y}%`
+    backgroundImage: `url("${local}"), url("${RAW_FALLBACK}")`,
+    backgroundSize: `${COLS * 100}% ${ROWS * 100}%, ${COLS * 100}% ${ROWS * 100}%`,
+    backgroundPosition: `${x}% ${y}%, ${x}% ${y}%`
   }
 }
