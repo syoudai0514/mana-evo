@@ -1,0 +1,14 @@
+Mana Evo design snapshot metadata
+Generated: 2026-08-23
+Canonical inputs used:
+- sol_game_review_for_claude_v3.md
+- sol_game_review_for_claude_v2.md
+- MANA-EVO-CANONICAL-REVIEW-BASELINE-20260823.md
+- User decision 2026-08-23: ticket loss/explicit quit refunds; ring proposal B/C approved
+
+SHA-256:
+32a9ed4f71848652ed7d7700bf6325e4fd0b813e9196f4f500e490aa73eb9e4a  design/00-README.md
+b596f89882a9db07f7c4c63abeb68f7294ee65529b710124a7a2347ec016fb78  design/01-catch-and-evolution-design.md
+8a11d027c5bdafd5a939b0b977cd245fd3f3e8a44b4c829918f0f05a47809bc2  design/02-dex-200.md
+733661258334d7a16d7417cfe67329459c02aca18f43d7331f256e4d8782736b  design/03-screens-catch-and-raise.md
+030b1bc2adfddb765a36bfed878a22ce2a6d60851c468dc2994ae1fed7e7a055  design/06-battle-and-progression-design.md

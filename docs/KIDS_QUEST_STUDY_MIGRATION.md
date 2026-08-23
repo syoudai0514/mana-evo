@@ -7,48 +7,72 @@
 - 移植元: `syoudai0514/kids-quest` `main`
 - 移植先: `syoudai0514/mana-evo`
 - Kids Quest 本体は変更しない
+- `src/kids-quest-study/` を学習専用ソーススナップショットとして保持する
 - `itemKey` / `unitId` を互換境界として使う
-- バトル、モンスター、図鑑、武器などのゲーム固有実装はコピーしない
-- キャラクターアートは Mana Evo 側で別管理し、現段階では placeholder を使う
+- battle / monsters / weapons / missions 等のゲーム固有資産はコピーしない
+- キャラクターアート・正式名称は Mana Evo 側で別管理し、現段階では placeholder を使う
 
-## 実移植済み
+## コピー済み学習資産
 
-| Kids Quest | Mana Evo | 状態 | 備考 |
-|---|---|---|---|
-| `src/engine/srs.js` | `src/study/srs.js` | 移植済み | 0/1/3/7/14/30日のライトナー式SRS互換 |
-| `src/engine/difficulty.js` | `src/study/difficulty.js` | 移植済み | 直近正誤による難易度UP/DOWN・hintLevel互換 |
-| `itemKey` / `unitId` の考え方 | `src/study/questions.js` / `engine.js` | 互換化済み | 全問題移植の受け皿 |
-| 単元MASTER条件 | `src/study/engine.js` | 実装済み | 4回挑戦 / 初回正解3 / 別日2 / 2形式 |
-| 苦手・得意に応じる学習 | `src/study/engine.js` | 実装済み | Kids Quest difficulty の skill を利用 |
+Kids Quest `main` の学習専用資産は `src/kids-quest-study/` へ機械的にコピー済みです。コピー元の正確なcommit SHAは `SOURCE_COMMIT.txt` に保存します。
 
-## Mana Evo 側で新規実装
+含むもの:
 
-- 基本学習5問 → バトルチケット3枚
-- 自由学習1問正解 → バトルチケット1枚（回数上限なし）
-- おすすめ / 苦手克服 / 得意を伸ばす / チャレンジ
-- 学習報酬 → Mana / スターのかけら
-- バトルチケット消費 → バトル → XP / レベル / 通常進化
-- スター覚醒 / ギガ進化 / キョダイバーストの解放判定
-- Mana Evo 専用 UI / セーブ
+- `data/content/**` の各教科学習データ
+- 学年、漢字、授業カード、書き順
+- SRS、難易度、learningUnits、review、trial、英語、TTS等の学習エンジン
+- 問題表示、書字、英語発音、自由学習、章末問題等の学習UI候補
 
-## 現在の縦切りで未移植の Kids Quest 学習資産
+含めないもの:
 
-以下は「捨てる」のではなく、互換レイヤーへ次に載せる対象です。
+- battle / battleTickets
+- monsters / monsterAssets / monsterMaster / monsterProgress
+- weapons
+- missions
+- planets
+- その他 Kids Quest 固有のゲーム進行
 
-- 全学年の問題データ
+## Mana Evo実行系へ接続済み
+
+| Kids Quest資産 | Mana Evo | 状態 |
+|---|---|---|
+| `engine/srs.js` | `src/study/srs.js` | スナップショットを直接re-exportして実行 |
+| `engine/difficulty.js` | `src/study/difficulty.js` | スナップショットを直接re-exportして実行 |
+| `itemKey` / `unitId` | `src/study/questions.js` / `engine.js` | 互換境界として利用 |
+| 単元MASTER条件 | `src/study/engine.js` | Kids Quest `unitReady`互換。4回挑戦 / 初回正解3 / 別日2 / unitごとのitemRequirement |
+| 苦手・得意に応じる学習 | `src/study/engine.js` | Kids Quest difficulty skillを利用 |
+
+## コピー済みだが現行UIへ段階接続中
+
+以下はファイル自体はすでに `src/kids-quest-study/` にあります。現在の最小縦切りではまだ全件をMana Evo画面へ接続していません。
+
+- 全学年・全教科の問題生成
 - `learningUnits.js` の全単元台帳
 - `lessons.js` の「まず教えてから解く」授業カード
-- 国語の漢字・読解・書字データ
+- 漢字・読解・書字・書き順
 - 算数の全kindと学年別問題生成
-- 英語のネイティブ音声キャッシュ / 発音系
-- 理科・社会・生活・道徳コンテンツ
-- 書き順 / トレース
+- 英語ネイティブ音声キャッシュ / 発音系
+- 理科・社会・生活・道徳
 - 章の試練 / 学年最終試練
 - 復習画面・保護者向け学習状況
 
-## 移植ゲート
+これは「未コピー」ではなく「コピー済み・接続待ち」です。
 
-全問題データを移すときは、以下を満たすまで「移植完了」と呼ばない。
+## Mana Evo側の新規ゲーム実装
+
+- 基本学習5問 → バトルチケット3枚 + ほしのわ3個
+- 自由学習1問正解 → バトルチケット1枚（daily完了後・回数上限なし）
+- 追加学習3正解ごと → ほしのわ1個、MASTER → 上位の「わ」
+- マップ / 固定Lvステージ
+- 18タイプ / 4技 / タイプ一致 / タイプ相性 / 手持ち3体 / 交代
+- 敵HP50%以下から「わ」で捕獲 / 4段階★判定
+- ボックス / 図鑑 / 通常進化 / 進化までの残りレベル表示
+- 正式特殊変身名: ギガシンカ / キョダイバースト
+- `スター覚醒` は現行最終レビューにないため不採用
+
+## 接続完了ゲート
+
+Kids Quest学習資産を「Mana Evoへ完全接続済み」と呼ぶには、以下を満たす。
 
 1. Kids Quest の `unitId` と Mana Evo の単元台帳に欠落がない
 2. 学年別の問題数・教科数を自動検証する
@@ -59,4 +83,6 @@
 7. 単元MASTER報酬は初回達成時だけ
 8. 学習進捗とゲーム進捗を別データとして保存する
 9. 正式キャラ画像の有無が学習ロジックに影響しない
-10. `npm test && npm run build` が成功する
+10. 全学年の授業・問題・書字・音声・試練がMana Evo画面から到達可能
+11. iPhone実機で主要導線を確認する
+12. `npm test && npm run build` が成功する
