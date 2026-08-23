@@ -7,9 +7,11 @@ const read = (path) => fs.readFileSync(new URL(`../${path}`, import.meta.url), '
 
 test('runtime uses the authentic Kids Quest learning screens instead of simplified study engine', () => {
   const app = read('src/App.jsx')
-  for (const screen of ['ActivityPlayer','FreeStudyScreen','ReviewScreen','ChapterTestScreen','EnglishDictionaryScreen','ParentScreen']) {
+  for (const screen of ['ActivityPlayer','FreeStudyScreen','ReviewScreen','ChapterTestScreen','EnglishDictionaryScreen']) {
     assert.match(app, new RegExp(`kids-quest-study/.+${screen}`), screen)
   }
+  assert.match(app, /parent\/ParentGate\.jsx/)
+  assert.match(read('src/parent/ParentGate.jsx'), /kids-quest-study\/screens\/ParentScreen\.jsx/)
   assert.doesNotMatch(app, /from ['"]\.\/study\/engine\.js['"]/)
   assert.doesNotMatch(app, /from ['"]\.\/study\/questions\.js['"]/)
 })
@@ -36,6 +38,48 @@ test('full learning state supports SRS, lessons, star trial, grade advancement a
   const context = read('src/kids-quest-study/state/GameContext.jsx')
   for (const action of ['ANSWER','CLEAR_TASK','PICK_CORE_TASK','LESSON_SEEN','STAR_TRIAL_RESULT','SET_GRADE','FORCE_GRADE_MAX','LOWER_GRADE_MAX','SET_MIN_SELECTABLE_GRADE','ENGLISH_SPEAKING_DONE']) assert.match(context, new RegExp(`['"]${action}['"]`), action)
   for (const field of ['unitStats','writingStats','englishWordStats','englishPhraseStats','starTrials','lessonSeen','domainAccuracy','srs']) assert.match(context, new RegExp(field), field)
+})
+
+test('child learning hub cannot change grade, ahead-grade unlock or hard mode', () => {
+  const app = read('src/App.jsx')
+  const start = app.indexOf('function StudyHub')
+  const end = app.indexOf('export default function App')
+  const studyHub = app.slice(start, end)
+  assert.ok(start >= 0 && end > start)
+  assert.doesNotMatch(studyHub, /SET_GRADE/)
+  assert.doesNotMatch(studyHub, /FORCE_GRADE_MAX/)
+  assert.doesNotMatch(studyHub, /LOWER_GRADE_MAX/)
+  assert.doesNotMatch(studyHub, /SET_MIN_SELECTABLE_GRADE/)
+  assert.doesNotMatch(studyHub, /grade-picker/)
+  assert.doesNotMatch(studyHub, /parent-link/)
+  assert.match(studyHub, /study-grade-locked/)
+  assert.match(studyHub, /おうちのひとが きめるよ/)
+})
+
+test('parent controls are discoverable from home and protected by a four digit PIN gate', () => {
+  const app = read('src/App.jsx')
+  const gate = read('src/parent/ParentGate.jsx')
+  const parent = read('src/kids-quest-study/screens/ParentScreen.jsx')
+  assert.match(app, /parent-home-card/)
+  assert.match(app, /学年・先取り・むずかしさ・つくよみちゃん設定/)
+  assert.match(gate, /mana-evo-parent-pin-v1/)
+  assert.match(gate, /\^\\d\{4\}\$/)
+  assert.match(gate, /おとなの かくにん/)
+  assert.match(parent, /type:'SET_GRADE'/)
+  assert.match(parent, /type:'FORCE_GRADE_MAX'/)
+  assert.match(parent, /type:'LOWER_GRADE_MAX'/)
+  assert.match(parent, /parent-voice/)
+  assert.match(parent, /つくよみちゃんを使う場合は/)
+  assert.match(parent, /子ども画面からは変更できません/)
+})
+
+test('learning focus screens do not stack the ManaEvo header over the Kids Quest header', () => {
+  const app = read('src/App.jsx')
+  const css = read('src/parent-controls.css')
+  assert.match(app, /focusView=\['activity','free','review','trial','dictionary','parent'\]/)
+  assert.match(app, /!focusView && <header>/)
+  assert.match(css, /\.app-shell--focus \.topbar\.app-header\{top:0/)
+  assert.match(css, /\.app-shell--focus>\.screen\{padding:0 0 28px/)
 })
 
 test('Tsukuyomi narrator runtime is installed, selectable and uses the Kids Quest offline model pipeline', () => {
