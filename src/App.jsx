@@ -11,6 +11,7 @@ import {
   remainingDailyQuestions,
   startDailySession
 } from './study/engine.js'
+import { dayNumber } from './study/srs.js'
 import { availableTicketCount, createGameState, grantLearningReward, normalizeGameState } from './game/progression.js'
 import { speciesOf } from './game/content.js'
 import PlaceholderMonster from './game/PlaceholderMonster.jsx'
@@ -35,36 +36,38 @@ function StatusBar({ game, today }) {
   return <div className="status-bar"><span>🎫 {tickets}</span><span>💎 {game.mana}</span><span>⭐ {game.captureItems?.star || 0}</span></div>
 }
 
-function Home({ study, game, go }) {
-  const doneCount = study.daily?.completedQuestionIds?.length ?? study.daily?.answered ?? 0
+function Home({ study, game, go, today }) {
+  const isToday = study.daily?.day === today
+  const dailyCompleted = isToday && !!study.daily?.completed
+  const doneCount = isToday ? (study.daily?.completedQuestionIds?.length ?? study.daily?.answered ?? 0) : 0
   const left = Math.max(0, 5 - doneCount)
-  const ticketCount = availableTicketCount(game, study.daily?.day)
+  const ticketCount = availableTicketCount(game, today)
   const monster = game.box[game.activeMonsterId]
   const species = monster ? speciesOf(monster.speciesId) : null
-  const canAdventure = study.daily.completed && ticketCount > 0
+  const canAdventure = dailyCompleted && ticketCount > 0
   return (
     <main className="screen home-screen">
       <section className="hero-card">
         <div>
           <p className="eyebrow">きょうの まなび</p>
-          <h1>{study.daily.completed ? 'クリア！' : `あと ${left} もん！`}</h1>
+          <h1>{dailyCompleted ? 'クリア！' : `あと ${left} もん！`}</h1>
           <div className="progress-dots">{Array.from({ length: 5 }, (_, i) => <span key={i} className={i < doneCount ? 'done' : ''} />)}</div>
-          <button className="primary" onClick={() => go(study.daily.completed ? 'free' : 'daily')}>{study.daily.completed ? 'もっと まなぶ' : 'まなぶ！'}</button>
+          <button className="primary" onClick={() => go(dailyCompleted ? 'free' : 'daily')}>{dailyCompleted ? 'もっと まなぶ' : 'まなぶ！'}</button>
         </div>
-        {monster && <PlaceholderMonster speciesId={monster.speciesId} excited={study.daily.completed} />}
+        {monster && <PlaceholderMonster speciesId={monster.speciesId} excited={dailyCompleted} />}
       </section>
 
       <section className={`adventure-card ${!canAdventure ? 'locked' : ''}`}>
         <div>
           <p className="eyebrow">ぼうけん</p>
-          {!study.daily.completed && <><h2>🎫 {ticketCount}まい もってるよ</h2><p>でも、新しいバトルはまず今日の基本5問を終えてから！</p></>}
-          {study.daily.completed && <><h2>{ticketCount > 0 ? `あと ${ticketCount} かい ぼうけん！` : 'チケットが ないよ'}</h2><p>{ticketCount > 0 ? 'マップで敵を見つけて、バトル・捕獲・育成！' : '追加で1もん正解すると、バトルチケット +1！'}</p></>}
+          {!dailyCompleted && <><h2>🎫 {ticketCount}まい もってるよ</h2><p>でも、新しいバトルはまず今日の基本5問を終えてから！</p></>}
+          {dailyCompleted && <><h2>{ticketCount > 0 ? `あと ${ticketCount} かい ぼうけん！` : 'チケットが ないよ'}</h2><p>{ticketCount > 0 ? 'マップで敵を見つけて、バトル・捕獲・育成！' : '追加で1もん正解すると、バトルチケット +1！'}</p></>}
         </div>
-        <button className={canAdventure ? 'battle' : 'secondary'} onClick={() => go(canAdventure ? 'adventure' : study.daily.completed ? 'free' : 'daily')}>{canAdventure ? 'マップへ！' : study.daily.completed ? 'もう1もん！' : '基本5もん！'}</button>
+        <button className={canAdventure ? 'battle' : 'secondary'} onClick={() => go(canAdventure ? 'adventure' : dailyCompleted ? 'free' : 'daily')}>{canAdventure ? 'マップへ！' : dailyCompleted ? 'もう1もん！' : '基本5もん！'}</button>
       </section>
 
       <section className="grid-two">
-        <button className="menu-card" onClick={() => go('free')}><strong>📚 自由学習</strong><span>{study.daily.completed ? '正解1問で 🎫+1' : '基本5問まではチケットなし'}</span></button>
+        <button className="menu-card" onClick={() => go('free')}><strong>📚 自由学習</strong><span>{dailyCompleted ? '正解1問で 🎫+1' : '基本5問まではチケットなし'}</span></button>
         <button className="menu-card" onClick={() => go('monsters')}><strong>🐾 モンスター</strong><span>{species?.name || '相棒'} Lv.{monster?.level || 1}</span></button>
       </section>
 
@@ -226,22 +229,57 @@ export default function App() {
   const [study, setStudy] = useState(initial.study)
   const [game, setGame] = useState(initial.game)
   const [view, setView] = useState(initial.game.activeBattle ? 'adventure' : 'home')
+  const initialDay = dayNumber()
+  const dayRef = useRef(initialDay)
+  const [today, setToday] = useState(initialDay)
   const go = setView
 
   useEffect(() => {
     localStorage.setItem(SAVE_KEY, JSON.stringify({ study, game }))
   }, [study, game])
 
+  useEffect(() => {
+    let timer = null
+    const refreshDay = () => {
+      const nextDay = dayNumber()
+      if (nextDay !== dayRef.current) {
+        dayRef.current = nextDay
+        setToday(nextDay)
+        setStudy((current) => normalizeStudyState(current, nextDay))
+        setGame((current) => normalizeGameState(current, nextDay))
+      }
+    }
+    const scheduleMidnightRefresh = () => {
+      if (timer) clearTimeout(timer)
+      const now = new Date()
+      const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+      timer = setTimeout(() => {
+        refreshDay()
+        scheduleMidnightRefresh()
+      }, Math.max(1000, nextMidnight.getTime() - now.getTime() + 250))
+    }
+    const onVisibility = () => { if (document.visibilityState === 'visible') refreshDay() }
+    window.addEventListener('focus', refreshDay)
+    document.addEventListener('visibilitychange', onVisibility)
+    scheduleMidnightRefresh()
+    return () => {
+      if (timer) clearTimeout(timer)
+      window.removeEventListener('focus', refreshDay)
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
+  }, [])
+
+  const dailyCompleted = study.daily?.day === today && !!study.daily?.completed
   const navigationLocked = !!game.activeBattle
   return (
     <div className="app-shell">
-      <header><div className="logo"><b>Mana</b><strong>Evo</strong><small>マナエボ</small></div><StatusBar game={game} today={study.daily?.day} /></header>
-      {view === 'home' && <Home study={study} game={game} go={go} />}
+      <header><div className="logo"><b>Mana</b><strong>Evo</strong><small>マナエボ</small></div><StatusBar game={game} today={today} /></header>
+      {view === 'home' && <Home study={study} game={game} go={go} today={today} />}
       {view === 'daily' && <DailyStudy study={study} setStudy={setStudy} setGame={setGame} go={go} />}
       {view === 'free' && <FreeStudy study={study} setStudy={setStudy} setGame={setGame} go={go} />}
-      {view === 'adventure' && <AdventureFlow game={game} setGame={setGame} dailyCompleted={!!study.daily.completed} today={study.daily.day} goHome={() => go('home')} goStudy={() => go(study.daily.completed ? 'free' : 'daily')} />}
+      {view === 'adventure' && <AdventureFlow game={game} setGame={setGame} dailyCompleted={dailyCompleted} dailyDay={study.daily?.day} today={today} goHome={() => go('home')} goStudy={() => go(dailyCompleted ? 'free' : 'daily')} />}
       {view === 'monsters' && <MonsterScreen game={game} setGame={setGame} goHome={() => go('home')} />}
-      {!['daily', 'free'].includes(view) && !navigationLocked && <nav><button className={view === 'home' ? 'active' : ''} onClick={() => go('home')}>🏠<span>ホーム</span></button><button className={view === 'adventure' ? 'active' : ''} onClick={() => go(study.daily.completed ? 'adventure' : 'daily')}>🗺️<span>ぼうけん</span></button><button className={view === 'monsters' ? 'active' : ''} onClick={() => go('monsters')}>🐾<span>モンスター</span></button><button onClick={() => go(study.daily.completed ? 'free' : 'daily')}>📚<span>まなぶ</span></button></nav>}
+      {!['daily', 'free'].includes(view) && !navigationLocked && <nav><button className={view === 'home' ? 'active' : ''} onClick={() => go('home')}>🏠<span>ホーム</span></button><button className={view === 'adventure' ? 'active' : ''} onClick={() => go(dailyCompleted ? 'adventure' : 'daily')}>🗺️<span>ぼうけん</span></button><button className={view === 'monsters' ? 'active' : ''} onClick={() => go('monsters')}>🐾<span>モンスター</span></button><button onClick={() => go(dailyCompleted ? 'free' : 'daily')}>📚<span>まなぶ</span></button></nav>}
     </div>
   )
 }
