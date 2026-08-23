@@ -1,0 +1,181 @@
+diff --git a/node_modules/piper-plus/src/index.js b/node_modules/piper-plus/src/index.js
+index 885d291..6b0df53 100644
+--- a/node_modules/piper-plus/src/index.js
++++ b/node_modules/piper-plus/src/index.js
+@@ -352,6 +352,7 @@ export class PiperPlus {
+    *   (e.g. "ayousanz/piper-plus-css10-ja-6lang") or direct URL to an ONNX file.
+    * @param {Object} [options.ort] - onnxruntime-web instance.  When omitted
+    *   the global `globalThis.ort` is used.
++   * @param {Object} [options.modelConfig] - Already-cached Piper model config.
+    * @param {Function} [options.onProgress] - Progress callback receiving
+    *   `{ stage: string, progress: number, message: string }`.
+    * @param {string} [options.wasmG2pUrl] - Custom URL for Rust WASM G2P module.
+@@ -598,15 +599,22 @@ export class PiperPlus {
+       const modelManager = new ModelManager();
+       const { modelUrl, configUrl, configFallbackUrl } = await modelManager.resolveUrls(options.model);
+
+-      progress({ stage: 'model', progress: 0.1, message: 'Downloading config...' });
+-      let configResponse = await fetch(configUrl);
+-      if (!configResponse.ok && configResponse.status === 404 && configFallbackUrl) {
+-        configResponse = await fetch(configFallbackUrl);
+-      }
+-      if (!configResponse.ok) {
+-        throw new Error(`Failed to fetch config: ${configResponse.status} ${configResponse.statusText}`);
++      progress({ stage: 'model', progress: 0.1, message: 'Loading config...' });
++      // Applications that explicitly cache a model already have its matching
++      // config in IndexedDB. Reuse it so a cached/offline voice never needs a
++      // second network request merely to initialize Piper.
++      if (options.modelConfig) {
++        this._config = options.modelConfig;
++      } else {
++        let configResponse = await fetch(configUrl);
++        if (!configResponse.ok && configResponse.status === 404 && configFallbackUrl) {
++          configResponse = await fetch(configFallbackUrl);
++        }
++        if (!configResponse.ok) {
++          throw new Error(`Failed to fetch config: ${configResponse.status} ${configResponse.statusText}`);
++        }
++        this._config = await configResponse.json();
+       }
+-      this._config = await configResponse.json();
+
+       // --- PUA compatibility check ------------------------------------------
+       const puaCheck = checkPuaCompat(this._config.pua_compat_version);
+@@ -627,6 +635,36 @@ export class PiperPlus {
+       this._modelUrl = modelUrl;
+       this._session = await this._sessionManager.createSession(modelUrl);
+ 
++      // Some current Piper Plus models (including Tsukuyomi) expose speaker
++      // embedding inputs even when using the model's built-in voice. Remember
++      // the actual graph inputs so inference can always provide required feeds.
++      const inputNames = this._session.inputNames || [];
++      this._hasSpeakerEmbedding = inputNames.includes('speaker_embedding');
++      this._hasProsodyFeatures = inputNames.includes('prosody_features');
++      const speakerInputIndex = inputNames.indexOf('speaker_embedding');
++      const inputMetadata = this._session.inputMetadata;
++      const speakerMetadata = Array.isArray(inputMetadata)
++        ? inputMetadata[speakerInputIndex]
++        : inputMetadata?.speaker_embedding;
++      const speakerShape = speakerMetadata?.shape
++        || speakerMetadata?.dimensions
++        || speakerMetadata?.dims;
++      this._speakerEmbeddingSize = Number.isInteger(speakerShape?.[1]) && speakerShape[1] > 0
++        ? speakerShape[1]
++        : 256;
++      const speakerMaskInputIndex = inputNames.indexOf('speaker_embedding_mask');
++      const speakerMaskMetadata = Array.isArray(inputMetadata)
++        ? inputMetadata[speakerMaskInputIndex]
++        : inputMetadata?.speaker_embedding_mask;
++      const speakerMaskShape = speakerMaskMetadata?.shape
++        || speakerMaskMetadata?.dimensions
++        || speakerMaskMetadata?.dims;
++      this._speakerEmbeddingMaskShape = Array.isArray(speakerMaskShape)
++        && speakerMaskShape.length > 0
++        && speakerMaskShape.every((dimension) => Number.isInteger(dimension) && dimension > 0)
++        ? speakerMaskShape
++        : [1, 1];
++
+       progress({ stage: 'model', progress: 0.7, message: 'Model loaded.' });
+ 
+       // --- 3. Initialise phonemizer (Adapter pattern) --------------------------
+@@ -835,22 +873,45 @@ export class PiperPlus {
+       }
+     }
+ 
+-    // Attach speaker embedding for voice cloning
+-    if (speakerEmbedding && speakerEmbedding.length > 0) {
++    // Newer zero-shot exports make speaker_embedding a required graph input.
++    // A zero vector with mask=0 selects the model's built-in voice; mask=1 is
++    // reserved for an explicitly supplied cloned-voice embedding.
++    const sessionInputNames = new Set(this._session.inputNames || []);
++    const hasSpeakerEmbeddingMask = sessionInputNames.has('speaker_embedding_mask');
++    if (this._hasSpeakerEmbedding) {
++      const hasEmbedding = speakerEmbedding && speakerEmbedding.length > 0;
++      const embedding = hasEmbedding
++        ? speakerEmbedding
++        : new Float32Array(this._speakerEmbeddingSize || 256);
++      feeds.speaker_embedding = new ort.Tensor(
++        'float32',
++        embedding,
++        [1, embedding.length]
++      );
++      if (hasSpeakerEmbeddingMask) {
++        feeds.speaker_embedding_mask = new ort.Tensor(
++          'int64',
++          new BigInt64Array([hasEmbedding ? 1n : 0n]),
++          this._speakerEmbeddingMaskShape || [1, 1]
++        );
++      }
++    } else if (speakerEmbedding && speakerEmbedding.length > 0) {
+       feeds.speaker_embedding = new ort.Tensor(
+         'float32',
+         speakerEmbedding,
+         [1, speakerEmbedding.length]
+       );
+-      feeds.speaker_embedding_mask = new ort.Tensor(
+-        'int64',
+-        new BigInt64Array([1n]),
+-        [1]
+-      );
++      if (hasSpeakerEmbeddingMask) {
++        feeds.speaker_embedding_mask = new ort.Tensor(
++          'int64',
++          new BigInt64Array([1n]),
++          this._speakerEmbeddingMaskShape || [1, 1]
++        );
++      }
+     }
+ 
+     // Attach prosody features when the model supports them
+-    if (prosodyFeatures && this._config.prosody_id_map) {
++    if (prosodyFeatures && this._config.prosody_id_map && this._hasProsodyFeatures) {
+       const flat = [];
+       for (const [a1, a2, a3] of prosodyFeatures) {
+         flat.push(BigInt(a1), BigInt(a2), BigInt(a3));
+@@ -886,12 +947,19 @@ export class PiperPlus {
+       }
+     }
+     const audioTensor = results.output || results[Object.keys(results)[0]];
+-    const audio = new Float32Array(audioTensor.data);
++    // ORT Web already returns Float32Array. Copying it again doubles the
++    // generated waveform in JavaScript memory until GC, which is especially
++    // costly when a canceled iPhone request is followed by another request.
++    const audio = audioTensor.data instanceof Float32Array
++      ? audioTensor.data
++      : new Float32Array(audioTensor.data);
+ 
+     // Extract durations tensor if the model supports it (optional output)
+     let durations = null;
+     if (results.durations && results.durations.data) {
+-      durations = new Float32Array(results.durations.data);
++      durations = results.durations.data instanceof Float32Array
++        ? results.durations.data
++        : new Float32Array(results.durations.data);
+     }
+ 
+     return { audio, durations };
+diff --git a/node_modules/piper-plus/src/webgpu-session-manager.js b/node_modules/piper-plus/src/webgpu-session-manager.js
+index 3aef7e6..f14cfb4 100644
+--- a/node_modules/piper-plus/src/webgpu-session-manager.js
++++ b/node_modules/piper-plus/src/webgpu-session-manager.js
+@@ -48,10 +48,19 @@ export class WebGPUSessionManager {
+     const errors = [];
+     for (const provider of providers) {
+       try {
++        const ua = globalThis.navigator?.userAgent || '';
++        const platform = globalThis.navigator?.platform || '';
++        const appleTouchDevice = /iPad|iPhone|iPod/.test(ua)
++          || (platform === 'MacIntel' && globalThis.navigator?.maxTouchPoints > 1);
+         const options = {
+           executionProviders: [provider],
+           graphOptimizationLevel: 'extended',
+-          enableMemPattern: true,
++          // iOS PWA has a tighter per-process memory budget. Avoid retaining
++          // the arena and shape-specific memory pattern between short TTS
++          // requests; the application serializes inference instead.
++          enableMemPattern: !appleTouchDevice,
++          enableCpuMemArena: !appleTouchDevice,
++          executionMode: 'sequential',
+         };
+         const session = await this._ort.InferenceSession.create(modelPath, options);
+ 
