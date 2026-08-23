@@ -42,7 +42,7 @@ test('adaptive difficulty adds scaffold after repeated misses', () => {
   assert.equal(hintLevel(skill), 2)
 })
 
-test('daily five-subject study grants exactly 3 tickets and 3 star rings once', () => {
+test('legacy daily five-subject runtime grants exactly 3 tickets and 3 star rings once', () => {
   let study = createStudyState()
   const started = startDailySession(study, 200)
   study = started.state
@@ -64,7 +64,7 @@ test('daily five-subject study grants exactly 3 tickets and 3 star rings once', 
   assert.equal(extra.captureItemDelta.star, 0)
 })
 
-test('free study before daily completion grants no game reward; after daily completion grants +1 ticket', () => {
+test('free study never grants battle tickets, before or after daily completion', () => {
   let study = createStudyState()
   const freeQuestion = QUESTIONS.find((q) => !q.hard)
   const before = answerQuestion(study, freeQuestion, freeQuestion.answer, { context: 'free', today: 300, elapsedMs: 3000 })
@@ -75,21 +75,25 @@ test('free study before daily completion grants no game reward; after daily comp
   study = started.state
   for (const q of started.questions) study = answerQuestion(study, q, q.answer, { context: 'daily', today: 300, elapsedMs: 3000 }).state
   const after = answerQuestion(study, freeQuestion, freeQuestion.answer, { context: 'free', today: 300, elapsedMs: 3000 })
-  assert.equal(after.ticketDelta, 1)
+  assert.equal(after.ticketDelta, 0)
+  assert.equal(after.captureItemDelta.star, 0)
 })
 
-test('extra learning awards one star ring every three valid correct answers', () => {
+test('repeated free study correct answers do not mint tickets or star rings', () => {
   let study = startDailySession(createStudyState(), 310).state
   for (const q of startDailySession(study, 310).questions) study = answerQuestion(study, q, q.answer, { context: 'daily', today: 310, elapsedMs: 3000 }).state
   const q = QUESTIONS.find((item) => !item.hard)
+  let tickets = 0
   let stars = 0
   for (let i = 0; i < 6; i++) {
     const result = answerQuestion(study, q, q.answer, { context: 'free', today: 310, elapsedMs: 3000 })
     study = result.state
+    tickets += result.ticketDelta
     stars += result.captureItemDelta.star
   }
-  assert.equal(stars, 2)
-  assert.equal(study.daily.extraCorrect, 6)
+  assert.equal(tickets, 0)
+  assert.equal(stars, 0)
+  assert.equal(study.daily.extraCorrect, 0)
 })
 
 test('five fast wrong taps do not unlock daily reward or complete any item', () => {

@@ -94,11 +94,12 @@ export default function HowToPlay({ game, today, goHome, goAdventure, goMonsters
       <section className="howto-section">
         <div className="howto-section-title"><span>⭐</span><div><p>まずは ここから！</p><h2>あそぶ じゅんばん</h2></div></div>
         <div className="howto-steps">
-          <Step number="1" icon="📚" title="きょうの 5もん！">5もん おわると、バトルチケットが 3まいと、ほしのわが 3こ もらえるよ！</Step>
+          <Step number="1" icon="📚" title="きょうの 5きょうか！">すきな じゅんばんで 5きょうか。こくご・さんすうは 5もん、ほかは 4もんくらい。ぜんぶ おわると、バトルチケットが 3まいと、ほしのわが 3こ もらえるよ！</Step>
           <Step number="2" icon="🗺️" title="マップへ いこう！">バトルを はじめると、チケットを 1まい つかうよ。</Step>
           <Step number="3" icon="⚔️" title="バトルしよう！">あいての たいりょくを はんぶんまで へらすと、「わ」で ゲットに ちょうせんできるよ！</Step>
           <Step number="4" icon="⭐" title="なかまを ゲット！">「わ」は 1かいの バトルで 3かいまで。4つ ひかると ゲットだよ！</Step>
-          <Step number="5" icon="✨" title="そだてて シンカ！">バトルで けいけんを ためて レベルアップ！ シンカの じょうけんが そろったら シンカできるよ。</Step>
+          <Step number="5" icon="🎯" title="もっと バトルしたい！">ついかチャレンジは 3もん。2もん できたら、バトルチケットが 1まい もらえるよ！</Step>
+          <Step number="6" icon="✨" title="そだてて シンカ！">バトルで けいけんを ためて レベルアップ！ シンカの じょうけんが そろったら シンカできるよ。</Step>
         </div>
         <div className="howto-actions">
           <button className="primary" onClick={goStudy}>📚 まなぶ！</button>
@@ -140,8 +141,9 @@ export default function HowToPlay({ game, today, goHome, goAdventure, goMonsters
       <section className="howto-section">
         <div className="howto-section-title"><span>🎁</span><div><p>もっと ほしいときは？</p><h2>ごほうびの もらいかた</h2></div></div>
         <div className="howto-reward-grid">
-          <article><strong>🎫 バトルチケット</strong><p>きょうの 5もんで 3まい。5もんの あとは、じゆうに 1もん せいかいするたび 1まい！</p></article>
-          <article><strong>⭐ ほしのわ</strong><p>きょうの 5もんで 3こ。5もんの あとは、3もん せいかいするたび 1こ！</p></article>
+          <article><strong>🎫 バトルチケット</strong><p>きょうの 5きょうかを ぜんぶ クリアで 3まい。そのあとは「ついかチャレンジ」3もん中2もんで 1まい！</p></article>
+          <article><strong>📚 じゆうべんきょう</strong><p>すきな きょうかを いつでも べんきょうできるよ。ここでは バトルチケットは でないよ。</p></article>
+          <article><strong>⭐ ほしのわ</strong><p>きょうの 5きょうかを ぜんぶ クリアすると 3こ もらえるよ！</p></article>
           <article><strong>⚪ ぎんのわ</strong><p>ひとつの まなびを しっかり マスターすると 1こ もらえるよ！</p></article>
           <article><strong>🟡 きんのわ</strong><p>「むずかしい」を しっかり マスターすると 1こ もらえるよ！</p></article>
         </div>
