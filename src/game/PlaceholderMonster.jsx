@@ -9,7 +9,13 @@ export default function PlaceholderMonster({ speciesId, stage = null, excited = 
 
   if (frame) {
     const size = compact ? 46 : 118
-    const frameHeight = Math.round(size * 5 / 6)
+    const handleImageError = (event) => {
+      const image = event.currentTarget
+      if (image.dataset.fallbackTried === '1') return
+      image.dataset.fallbackTried = '1'
+      image.src = frame.fallbackSrc
+    }
+
     return (
       <div
         className={`placeholder-monster monster-art stage-${resolvedStage} ${excited ? 'excited' : ''} ${compact ? 'compact' : ''}`}
@@ -19,6 +25,7 @@ export default function PlaceholderMonster({ speciesId, stage = null, excited = 
           position: 'relative',
           width: size,
           height: size,
+          minWidth: size,
           flexBasis: size,
           overflow: 'hidden',
           border: 0,
@@ -27,33 +34,24 @@ export default function PlaceholderMonster({ speciesId, stage = null, excited = 
           background: 'transparent'
         }}
       >
-        <div
-          aria-hidden="true"
+        <img
+          src={frame.src}
+          alt=""
+          draggable="false"
+          onError={handleImageError}
           style={{
             position: 'absolute',
-            left: 0,
-            top: Math.round((size - frameHeight) / 2),
-            width: size,
-            height: frameHeight,
-            overflow: 'hidden'
+            display: 'block',
+            left: -frame.col * size,
+            top: -frame.row * size,
+            width: frame.cols * size,
+            height: frame.rows * size,
+            maxWidth: 'none',
+            maxHeight: 'none',
+            userSelect: 'none',
+            pointerEvents: 'none'
           }}
-        >
-          <img
-            src={frame.src}
-            alt=""
-            draggable="false"
-            style={{
-              position: 'absolute',
-              left: `${-frame.col * 100}%`,
-              top: `${-frame.row * 100}%`,
-              width: `${frame.cols * 100}%`,
-              height: `${frame.rows * 100}%`,
-              maxWidth: 'none',
-              userSelect: 'none',
-              pointerEvents: 'none'
-            }}
-          />
-        </div>
+        />
       </div>
     )
   }
