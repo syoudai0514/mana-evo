@@ -3,9 +3,12 @@ import { dayNumber, scheduleAnswer } from './srs.js'
 import { applyResult, makeSkill } from './difficulty.js'
 import { unitReady as kidsQuestUnitReady } from '../kids-quest-study/engine/learningUnits.js'
 
+// DAILY_* は旧5問runtime互換のため残す。現行画面の毎日ミッションは
+// kidsQuestMission.js を正本とする。
 export const DAILY_REQUIRED = 5
 export const DAILY_TICKET_REWARD = 3
-export const FREE_STUDY_TICKET_REWARD = 1
+// Kids Questでは自由勉強はチケット獲得の抜け道にしない。
+export const FREE_STUDY_TICKET_REWARD = 0
 export const FAST_WRONG_MS = 1500
 
 const initialSkills = () => Object.fromEntries(SUBJECTS.map((s) => [s.id, makeSkill()]))
@@ -296,11 +299,8 @@ export function answerQuestion(state, question, selected, { context = 'daily', t
     }
   }
 
-  if (context === 'free' && attempt.correct && next.daily.completed) {
-    ticketDelta += FREE_STUDY_TICKET_REWARD
-    next.daily.extraCorrect += 1
-    if (next.daily.extraCorrect % 3 === 0) captureItemDelta.star += 1
-  }
+  // `free` は旧呼び出し互換として受け付けるが、Kids Quest と同じく
+  // バトルチケットや「ほしのわ」の追加報酬は一切発生させない。
 
   return {
     state: next,
