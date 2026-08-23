@@ -13,7 +13,7 @@ index 885d291..6b0df53 100644
 @@ -598,15 +599,22 @@ export class PiperPlus {
        const modelManager = new ModelManager();
        const { modelUrl, configUrl, configFallbackUrl } = await modelManager.resolveUrls(options.model);
- 
+
 -      progress({ stage: 'model', progress: 0.1, message: 'Downloading config...' });
 -      let configResponse = await fetch(configUrl);
 -      if (!configResponse.ok && configResponse.status === 404 && configFallbackUrl) {
@@ -22,6 +22,9 @@ index 885d291..6b0df53 100644
 -      if (!configResponse.ok) {
 -        throw new Error(`Failed to fetch config: ${configResponse.status} ${configResponse.statusText}`);
 +      progress({ stage: 'model', progress: 0.1, message: 'Loading config...' });
++      // Applications that explicitly cache a model already have its matching
++      // config in IndexedDB. Reuse it so a cached/offline voice never needs a
++      // second network request merely to initialize Piper.
 +      if (options.modelConfig) {
 +        this._config = options.modelConfig;
 +      } else {
@@ -35,13 +38,16 @@ index 885d291..6b0df53 100644
 +        this._config = await configResponse.json();
        }
 -      this._config = await configResponse.json();
- 
+
        // --- PUA compatibility check ------------------------------------------
        const puaCheck = checkPuaCompat(this._config.pua_compat_version);
 @@ -627,6 +635,36 @@ export class PiperPlus {
        this._modelUrl = modelUrl;
        this._session = await this._sessionManager.createSession(modelUrl);
  
++      // Some current Piper Plus models (including Tsukuyomi) expose speaker
++      // embedding inputs even when using the model's built-in voice. Remember
++      // the actual graph inputs so inference can always provide required feeds.
 +      const inputNames = this._session.inputNames || [];
 +      this._hasSpeakerEmbedding = inputNames.includes('speaker_embedding');
 +      this._hasProsodyFeatures = inputNames.includes('prosody_features');
@@ -50,13 +56,19 @@ index 885d291..6b0df53 100644
 +      const speakerMetadata = Array.isArray(inputMetadata)
 +        ? inputMetadata[speakerInputIndex]
 +        : inputMetadata?.speaker_embedding;
-+      const speakerShape = speakerMetadata?.shape || speakerMetadata?.dimensions || speakerMetadata?.dims;
-+      this._speakerEmbeddingSize = Number.isInteger(speakerShape?.[1]) && speakerShape[1] > 0 ? speakerShape[1] : 256;
++      const speakerShape = speakerMetadata?.shape
++        || speakerMetadata?.dimensions
++        || speakerMetadata?.dims;
++      this._speakerEmbeddingSize = Number.isInteger(speakerShape?.[1]) && speakerShape[1] > 0
++        ? speakerShape[1]
++        : 256;
 +      const speakerMaskInputIndex = inputNames.indexOf('speaker_embedding_mask');
 +      const speakerMaskMetadata = Array.isArray(inputMetadata)
 +        ? inputMetadata[speakerMaskInputIndex]
 +        : inputMetadata?.speaker_embedding_mask;
-+      const speakerMaskShape = speakerMaskMetadata?.shape || speakerMaskMetadata?.dimensions || speakerMaskMetadata?.dims;
++      const speakerMaskShape = speakerMaskMetadata?.shape
++        || speakerMaskMetadata?.dimensions
++        || speakerMaskMetadata?.dims;
 +      this._speakerEmbeddingMaskShape = Array.isArray(speakerMaskShape)
 +        && speakerMaskShape.length > 0
 +        && speakerMaskShape.every((dimension) => Number.isInteger(dimension) && dimension > 0)
@@ -64,21 +76,34 @@ index 885d291..6b0df53 100644
 +        : [1, 1];
 +
        progress({ stage: 'model', progress: 0.7, message: 'Model loaded.' });
+ 
+       // --- 3. Initialise phonemizer (Adapter pattern) --------------------------
 @@ -835,22 +873,45 @@ export class PiperPlus {
        }
      }
  
 -    // Attach speaker embedding for voice cloning
 -    if (speakerEmbedding && speakerEmbedding.length > 0) {
++    // Newer zero-shot exports make speaker_embedding a required graph input.
++    // A zero vector with mask=0 selects the model's built-in voice; mask=1 is
++    // reserved for an explicitly supplied cloned-voice embedding.
 +    const sessionInputNames = new Set(this._session.inputNames || []);
 +    const hasSpeakerEmbeddingMask = sessionInputNames.has('speaker_embedding_mask');
 +    if (this._hasSpeakerEmbedding) {
 +      const hasEmbedding = speakerEmbedding && speakerEmbedding.length > 0;
-+      const embedding = hasEmbedding ? speakerEmbedding : new Float32Array(this._speakerEmbeddingSize || 256);
-+      feeds.speaker_embedding = new ort.Tensor('float32', embedding, [1, embedding.length]);
++      const embedding = hasEmbedding
++        ? speakerEmbedding
++        : new Float32Array(this._speakerEmbeddingSize || 256);
++      feeds.speaker_embedding = new ort.Tensor(
++        'float32',
++        embedding,
++        [1, embedding.length]
++      );
 +      if (hasSpeakerEmbeddingMask) {
 +        feeds.speaker_embedding_mask = new ort.Tensor(
-+          'int64', new BigInt64Array([hasEmbedding ? 1n : 0n]), this._speakerEmbeddingMaskShape || [1, 1]
++          'int64',
++          new BigInt64Array([hasEmbedding ? 1n : 0n]),
++          this._speakerEmbeddingMaskShape || [1, 1]
 +        );
 +      }
 +    } else if (speakerEmbedding && speakerEmbedding.length > 0) {
@@ -93,25 +118,39 @@ index 885d291..6b0df53 100644
 -        [1]
 -      );
 +      if (hasSpeakerEmbeddingMask) {
-+        feeds.speaker_embedding_mask = new ort.Tensor('int64', new BigInt64Array([1n]), this._speakerEmbeddingMaskShape || [1, 1]);
++        feeds.speaker_embedding_mask = new ort.Tensor(
++          'int64',
++          new BigInt64Array([1n]),
++          this._speakerEmbeddingMaskShape || [1, 1]
++        );
 +      }
      }
  
      // Attach prosody features when the model supports them
 -    if (prosodyFeatures && this._config.prosody_id_map) {
 +    if (prosodyFeatures && this._config.prosody_id_map && this._hasProsodyFeatures) {
+       const flat = [];
+       for (const [a1, a2, a3] of prosodyFeatures) {
+         flat.push(BigInt(a1), BigInt(a2), BigInt(a3));
 @@ -886,12 +947,19 @@ export class PiperPlus {
        }
      }
      const audioTensor = results.output || results[Object.keys(results)[0]];
 -    const audio = new Float32Array(audioTensor.data);
-+    const audio = audioTensor.data instanceof Float32Array ? audioTensor.data : new Float32Array(audioTensor.data);
++    // ORT Web already returns Float32Array. Copying it again doubles the
++    // generated waveform in JavaScript memory until GC, which is especially
++    // costly when a canceled iPhone request is followed by another request.
++    const audio = audioTensor.data instanceof Float32Array
++      ? audioTensor.data
++      : new Float32Array(audioTensor.data);
  
      // Extract durations tensor if the model supports it (optional output)
      let durations = null;
      if (results.durations && results.durations.data) {
 -      durations = new Float32Array(results.durations.data);
-+      durations = results.durations.data instanceof Float32Array ? results.durations.data : new Float32Array(results.durations.data);
++      durations = results.durations.data instanceof Float32Array
++        ? results.durations.data
++        : new Float32Array(results.durations.data);
      }
  
      return { audio, durations };
@@ -131,8 +170,12 @@ index 3aef7e6..f14cfb4 100644
            executionProviders: [provider],
            graphOptimizationLevel: 'extended',
 -          enableMemPattern: true,
++          // iOS PWA has a tighter per-process memory budget. Avoid retaining
++          // the arena and shape-specific memory pattern between short TTS
++          // requests; the application serializes inference instead.
 +          enableMemPattern: !appleTouchDevice,
 +          enableCpuMemArena: !appleTouchDevice,
 +          executionMode: 'sequential',
          };
          const session = await this._ort.InferenceSession.create(modelPath, options);
+ 
