@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react'
 import PlaceholderMonster from './PlaceholderMonster.jsx'
-import { SPECIES, STAGES, effectivenessLabel, moveOf, speciesOf, typeEffectiveness, typeLabel } from './content.js'
+import { CAPTURE_CONFIG, EVOLUTION_ITEMS, SPECIES, STAGES, effectivenessLabel, moveOf, speciesOf, typeEffectiveness, typeLabel } from './content.js'
 import {
   MAX_CAPTURE_ATTEMPTS,
   abandonBattle,
@@ -22,15 +22,11 @@ import {
   useMove,
   xpToNext
 } from './engine.js'
-import { CAPTURE_ITEM_IDS, specialProgressionStatus } from './progression.js'
+import { CAPTURE_ITEM_IDS, availableTicketCount, equipHeldItem, specialProgressionStatus } from './progression.js'
 import './game.css'
 
-const CAPTURE_META = {
-  star: { label: 'ほしのわ', icon: '⭐' },
-  silver: { label: 'ぎんのわ', icon: '⚪' },
-  gold: { label: 'きんのわ', icon: '🟡' },
-  rainbow: { label: 'にじのわ', icon: '🌈' }
-}
+const CAPTURE_META = CAPTURE_CONFIG
+
 
 function TypePills({ types = [] }) {
   return <div className="type-pills">{types.map((type) => <span key={type}>{typeLabel(type)}</span>)}</div>
@@ -41,27 +37,29 @@ function HpBar({ value, max }) {
   return <div className="hp-wrap"><div className="hp-fill" style={{ width: `${ratio * 100}%` }} /></div>
 }
 
-function StageMap({ game, onStart, goStudy, goHome }) {
+function StageMap({ game, onStart, goStudy, goHome, dailyCompleted, today }) {
+  const ticketCount = availableTicketCount(game, today)
   return (
     <main className="screen adventure-map">
       <button className="back" onClick={goHome}>← ホーム</button>
-      <div className="screen-title-row"><div><p className="eyebrow">ぼうけんマップ</p><h1>はじまりの森（仮）</h1></div><strong>🎫 {game.tickets}</strong></div>
-      <p className="kid-note">敵のレベルはステージごとに決まっているよ。育てた仲間で戻ると、ぐっと強く感じられる！</p>
+      <div className="screen-title-row"><div><p className="eyebrow">ぼうけんマップ</p><h1>はじまりの森（仮）</h1></div><strong>🎫 {ticketCount}</strong></div>
+      <p className="kid-note">{dailyCompleted ? '今日の基本5問クリア！ チケットを使って冒険できるよ。' : 'チケットを持っていても、新しいバトルは今日の基本5問を終えてから。'} 敵レベルはステージ固定だよ。</p>
       <div className="stage-list">
         {STAGES.map((stage) => {
           const unlocked = isStageUnlocked(game, stage)
           const cleared = (game.stagesCleared || []).includes(stage.id)
           const enemy = speciesOf(stage.enemySpeciesId)
           return (
-            <button key={stage.id} className={`stage-card ${!unlocked ? 'locked' : ''}`} disabled={!unlocked} onClick={() => onStart(stage.id)}>
+            <button key={stage.id} className={`stage-card ${!unlocked ? 'locked' : ''}`} disabled={!unlocked || !dailyCompleted || ticketCount < 1} onClick={() => onStart(stage.id)}>
               <div className="stage-number">{cleared ? '✅' : unlocked ? '⚔️' : '🔒'}</div>
               <div className="stage-copy"><strong>{stage.label}</strong><span>{enemy.name}　Lv.{stage.enemyLevel}</span><TypePills types={enemy.types} /></div>
-              <div className="stage-cost">🎫×1</div>
+              <div className="stage-cost">🎫×1{stage.evolutionReward ? ' ＋進化アイテム' : ''}</div>
             </button>
           )
         })}
       </div>
-      {game.tickets < 1 && <section className="no-ticket"><h2>チケットが ないよ</h2><p>今日の基本学習のあと、自由学習1問正解で 🎫+1！</p><button className="primary" onClick={goStudy}>まなぶ！</button></section>}
+      {!dailyCompleted && <section className="no-ticket"><h2>まず きょうの5もん！</h2><p>🎫を{ticketCount}まい持っていても、今日の基本学習を終えると新しいバトルが開くよ。</p><button className="primary" onClick={goStudy}>基本5もん！</button></section>}
+      {dailyCompleted && ticketCount < 1 && <section className="no-ticket"><h2>チケットが ないよ</h2><p>自由学習1問正解で 🎫+1！</p><button className="primary" onClick={goStudy}>まなぶ！</button></section>}
     </main>
   )
 }
@@ -73,7 +71,6 @@ function BattleView({ game, setGame, onExitToMap, goStudy }) {
   const enemySpecies = speciesOf(battle.enemy.speciesId)
   const playerMax = statsFor(active.speciesId, active.level).hp
   const playerHp = currentPlayerHp(battle)
-  const chance = captureChance(battle)
   const finished = ['won', 'lost', 'caught'].includes(battle.status)
   const forcedSwitch = battle.status === 'needs_switch'
 
@@ -99,7 +96,7 @@ function BattleView({ game, setGame, onExitToMap, goStudy }) {
       onExitToMap()
       return
     }
-    if (typeof window !== 'undefined' && !window.confirm('バトルを やめる？ チケット1まいは つかったままだよ。')) return
+    if (typeof window !== 'undefined' && !window.confirm('バトルを やめる？ チケット1まいは もどるよ。')) return
     const result = abandonBattle(game)
     if (result.ok) setGame(result.game)
     onExitToMap()
@@ -132,11 +129,12 @@ function BattleView({ game, setGame, onExitToMap, goStudy }) {
 
         <section className="battle-tools">
           <div className="capture-stars" aria-label="捕獲4段階">{Array.from({ length: 4 }, (_, i) => <span key={i}>{i < battle.captureStars ? '★' : '☆'}</span>)}</div>
-          <p>「わ」は1バトル最大3回：{battle.captureAttempts || 0}/{MAX_CAPTURE_ATTEMPTS}　成功率目安 {Math.round(chance * 100)}%</p>
+          <p>「わ」は1バトル最大3回：{battle.captureAttempts || 0}/{MAX_CAPTURE_ATTEMPTS}　上位の「わ」ほどつかまえやすいよ。</p>
           <div className="capture-item-grid">{CAPTURE_ITEM_IDS.map((id) => {
             const meta = CAPTURE_META[id]
             const ready = canAttemptCapture(game, battle, id)
-            return <button key={id} className={ready ? 'capture-ready' : ''} disabled={!ready} onClick={() => capture(id)}>{meta.icon} {meta.label}<small>×{game.captureItems?.[id] || 0}</small></button>
+            const chance = captureChance(battle, id)
+            return <button key={id} className={ready ? 'capture-ready' : ''} disabled={!ready} onClick={() => capture(id)}>{meta.icon} {meta.label}<small>×{game.captureItems?.[id] || 0}　{Math.round(chance * 100)}%</small></button>
           })}</div>
         </section>
       </>}
@@ -154,7 +152,7 @@ function BattleView({ game, setGame, onExitToMap, goStudy }) {
       {finished && <section className="battle-result-card">
         <h2>{battle.status === 'won' ? 'かち！ 🎉' : battle.status === 'caught' ? 'ゲット！ ★★★★' : 'まけちゃった…'}</h2>
         {battle.status === 'caught' && <p>新しい仲間はボックスに入ったよ。手持ちが2体以下なら自動でチーム入り！</p>}
-        {battle.status === 'lost' && <p>学習でチケットを増やしたり、仲間を育てて再挑戦しよう。</p>}
+        {battle.status === 'lost' && <p>🎫は1まい返ってきたよ。仲間を育てて再挑戦しよう！</p>}
         <button className="primary" onClick={exit}>マップへ</button>
         {game.tickets < 1 && <button className="secondary" onClick={goStudy}>まなぶ！</button>}
       </section>}
@@ -162,18 +160,18 @@ function BattleView({ game, setGame, onExitToMap, goStudy }) {
   )
 }
 
-export function AdventureFlow({ game, setGame, goHome, goStudy }) {
+export function AdventureFlow({ game, setGame, goHome, goStudy, dailyCompleted, today }) {
   const [mapNonce, setMapNonce] = useState(0)
   const start = (stageId) => {
-    const result = startBattle(game, stageId)
+    const result = startBattle(game, stageId, { dailyCompleted, today })
     if (!result.ok) {
-      if (result.reason === 'NO_TICKET') goStudy()
+      if (['NO_TICKET', 'DAILY_NOT_COMPLETED'].includes(result.reason)) goStudy()
       return
     }
     setGame(result.game)
   }
   if (game.activeBattle) return <BattleView game={game} setGame={setGame} onExitToMap={() => setMapNonce((n) => n + 1)} goStudy={goStudy} />
-  return <StageMap key={mapNonce} game={game} onStart={start} goStudy={goStudy} goHome={goHome} />
+  return <StageMap key={mapNonce} game={game} onStart={start} goStudy={goStudy} goHome={goHome} dailyCompleted={dailyCompleted} today={today} />
 }
 
 function MonsterRow({ monster, game, setGame, selected, setSelected }) {
@@ -207,13 +205,19 @@ function DetailPanel({ game, setGame, instanceId }) {
     const result = evolveInstance(game, instanceId)
     if (result.ok) setGame(result.game)
   }
+  const equipRequiredItem = () => {
+    const itemId = species.evolution?.heldItemId
+    if (!itemId) return
+    const result = equipHeldItem(game, instanceId, itemId)
+    if (result.ok) setGame(result.game)
+  }
   return <section className="monster-detail-v2">
     <div className="monster-detail-hero"><PlaceholderMonster speciesId={monster.speciesId} /><div><h2>{species.name}</h2><p>Lv.{monster.level} / 進化段階 {species.stage}</p><TypePills types={species.types} /></div></div>
     <div className="stat-grid"><span>HP <b>{stats.hp}</b></span><span>こうげき <b>{stats.attack}</b></span><span>ぼうぎょ <b>{stats.defense}</b></span><span>すばやさ <b>{stats.speed}</b></span></div>
-    <div className="evo-progress"><strong>通常進化</strong>{species.evolution ? <><p>次：{speciesOf(species.evolution.to).name}</p><p>{canNormalEvolve(monster, game) ? '条件達成！' : describeEvolutionCondition(monster)}</p><button className="primary" disabled={!canNormalEvolve(monster, game)} onClick={evolve}>進化させる！</button></> : <p>最終進化まで到達！</p>}</div>
+    <div className="evo-progress"><strong>通常進化</strong>{species.evolution ? <><p>次：{speciesOf(species.evolution.to).name}</p><p>{canNormalEvolve(monster, game) ? '条件達成！' : describeEvolutionCondition(monster)}</p>{species.evolution.method === 'stone' && <small>所持：{EVOLUTION_ITEMS.stones[species.evolution.itemId]?.name} ×{game.evolutionItems?.stones?.[species.evolution.itemId] || 0}</small>}{species.evolution.method === 'held_item_level' && <><small>所持：{EVOLUTION_ITEMS.heldItems[species.evolution.heldItemId]?.name} ×{game.evolutionItems?.heldItems?.[species.evolution.heldItemId] || 0} ／ 装備：{monster.heldItemId === species.evolution.heldItemId ? '済み' : 'なし'}</small>{monster.heldItemId !== species.evolution.heldItemId && (game.evolutionItems?.heldItems?.[species.evolution.heldItemId] || 0) > 0 && <button className="secondary" onClick={equipRequiredItem}>必要なもちものを持たせる</button>}</>}<button className="primary" disabled={!canNormalEvolve(monster, game)} onClick={evolve}>進化させる！</button></> : <p>最終進化まで到達！</p>}</div>
     <div className="special-cards">
       <article><strong>🔷 {special.giga.label}</strong><p>{!special.giga.isFinal ? 'まずは最終進化をめざそう！' : !special.giga.eligibleSpecies ? 'このモンスターは対象外' : special.giga.hasKey && special.giga.hasCore ? '必要な所有権はそろっている（発動条件は未接続）' : 'ギガキー／種族専用ギガコアを集めよう'}</p><small>ギガキーは永久所持、ギガコアは種族ごとの永久解放として保存</small></article>
-      <article><strong>💥 {special.burst.label}</strong><p>{special.burst.hasMark ? 'この種族の「しるし」を所持' : '対象種族の「しるし」は未取得'}</p><small>取得条件は設計確定後に接続</small></article>
+      <article><strong>💥 {special.burst.label}</strong><p>{special.burst.hasMark ? 'この種族の「しるし」を所持' : '対象種族の「しるし」は未取得'}</p><small>1戦1回・3ターン。ギガシンカと同時使用不可。しるしは永久所持。</small></article>
     </div>
   </section>
 }

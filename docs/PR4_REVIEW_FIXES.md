@@ -1,6 +1,8 @@
 # PR4 review fixes
 
 Source review: `mana-evo-pr4-review-20260823`
+Implementation PR: `#5 fix: PR4レビュー P0/P1対応`
+Review commit: `15357479412d1c624c2b87ccd7ab64bbfa069afb`
 
 ## Fixed P0
 
@@ -23,15 +25,12 @@ Source review: `mana-evo-pr4-review-20260823`
 - Giga/Burst persistence uses permanent ownership data (`gigaKeyOwned`, `gigaCoreSpecies`, `burstMarks`) rather than consumable global counters.
 - Unknown/removed species in saves are discarded during normalization instead of crashing later rendering.
 
-## Verification added
+## Verification
 
-`node --test tests/*.test.js`: 38/38 PASS locally before push.
-
-Acceptance coverage includes daily bypass, all-wrong tapping, remediation, daily resume, one-item mastery, all current normal units masterable, SRS due selection, difficulty selection, battle resume, HP-preserving switches, capture limit, generic evolution and save migration.
+- Local: `node --test tests/*.test.js` = 38/38 PASS.
+- GitHub Actions PR #5 run #36: Install dependencies / Test / Build = all SUCCESS.
 
 ## Still intentionally unresolved / next review targets
-
-These are not guessed in this patch:
 
 1. Exact acquisition conditions for `ギガキー`, species `ギガコア`, and `キョダイバースト` marks.
 2. Balance differences among the four capture-ring types. Inventory/types and the three-throw lifecycle exist, but different success multipliers are not invented yet.
@@ -39,4 +38,17 @@ These are not guessed in this patch:
 4. Final character names/art are placeholders and stay independent from `speciesId`.
 5. PWA/offline installation polish, unified TTS runtime, device E2E and lockfile reproducibility remain P2 work.
 
-Do not merge solely on this note: require repository CI and external re-review before `main` merge.
+Do not merge solely on this note: external re-review GO is required before `main` merge.
+
+---
+
+## Superseded note — 2026-08-23
+
+The earlier ticket sentence in this document (`defeat or explicit quit consumes`) is superseded by the user's later explicit decision:
+
+- defeat => refund one reserved ticket
+- explicit quit/escape => refund one reserved ticket
+- win/capture => consume
+- technical interruption => resume active battle
+
+Current authoritative implementation note: `docs/PR5_DESIGN_REVIEW_FIXES.md` and `design/`.

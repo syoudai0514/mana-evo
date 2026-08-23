@@ -15,6 +15,10 @@ const newDaily = (day = dayNumber()) => ({
   questionIds: [],
   completedQuestionIds: [],
   remediatedQuestionIds: [],
+  explanationAcknowledgedQuestionIds: [],
+  remediationPassedQuestionIds: [],
+  reinforcementPassedQuestionIds: [],
+  extraCorrect: 0,
   answered: 0,
   completed: false,
   rewardClaimed: false,
@@ -38,6 +42,10 @@ function normalizeDaily(daily, today) {
   migrated.questionIds = Array.isArray(daily.questionIds) ? [...new Set(daily.questionIds)] : []
   migrated.completedQuestionIds = Array.isArray(daily.completedQuestionIds) ? [...new Set(daily.completedQuestionIds)] : []
   migrated.remediatedQuestionIds = Array.isArray(daily.remediatedQuestionIds) ? [...new Set(daily.remediatedQuestionIds)] : []
+  migrated.explanationAcknowledgedQuestionIds = Array.isArray(daily.explanationAcknowledgedQuestionIds) ? [...new Set(daily.explanationAcknowledgedQuestionIds)] : []
+  migrated.remediationPassedQuestionIds = Array.isArray(daily.remediationPassedQuestionIds) ? [...new Set(daily.remediationPassedQuestionIds)] : []
+  migrated.reinforcementPassedQuestionIds = Array.isArray(daily.reinforcementPassedQuestionIds) ? [...new Set(daily.reinforcementPassedQuestionIds)] : []
+  migrated.extraCorrect = Math.max(0, Number(daily.extraCorrect) || 0)
   // Old saves only stored `answered`, which could count wrong taps. Never reconstruct
   // completion from that unsafe counter. Preserve an already-claimed daily reward only.
   if (!Array.isArray(daily.completedQuestionIds)) {
@@ -184,29 +192,44 @@ function updateUnit(unit, question, correct, today, firstAttemptForPresentation)
   return next
 }
 
+function emptyCaptureDelta() {
+  return { star: 0, silver: 0, gold: 0, rainbow: 0 }
+}
+
 function completeDailyItem(next, questionId) {
-  if (!next.daily.questionIds.includes(questionId)) return 0
+  const reward = { ticketDelta: 0, captureItemDelta: emptyCaptureDelta() }
+  if (!next.daily.questionIds.includes(questionId)) return reward
   if (!next.daily.completedQuestionIds.includes(questionId)) next.daily.completedQuestionIds.push(questionId)
   next.daily.answered = Math.min(DAILY_REQUIRED, next.daily.completedQuestionIds.length)
-  let ticketDelta = 0
   if (!next.daily.completed && next.daily.completedQuestionIds.length >= DAILY_REQUIRED) {
     next.daily.completed = true
     if (!next.daily.rewardClaimed) {
       next.daily.rewardClaimed = true
-      ticketDelta = DAILY_TICKET_REWARD
+      reward.ticketDelta = DAILY_TICKET_REWARD
+      reward.captureItemDelta.star = 3
     }
   }
-  return ticketDelta
+  return reward
 }
 
-export function answerQuestion(state, question, selected, { context = 'daily', today = dayNumber(), elapsedMs = null } = {}) {
-  let next = normalizeStudyState(state, today)
-  if (context === 'daily' && !next.daily.questionIds.length) next = startDailySession(next, today).state
+function mergeCaptureDelta(a = emptyCaptureDelta(), b = emptyCaptureDelta()) {
+  return Object.fromEntries(['star', 'silver', 'gold', 'rainbow'].map((id) => [id, (a[id] || 0) + (b[id] || 0)]))
+}
+
+function recordAttempt(next, question, selected, { context, today, elapsedMs = null } = {}) {
   const correct = selected === question.answer
   const priorTodayForQuestion = next.answers.filter((a) => a.questionId === question.id && a.day === today)
   const fastWrong = !correct && Number.isFinite(elapsedMs) && elapsedMs < FAST_WRONG_MS
-  const answer = { questionId: question.id, subject: question.subject, unitId: question.unitId, correct, day: today, context, elapsedMs: Number.isFinite(elapsedMs) ? elapsedMs : null, fastWrong }
-  next.answers.push(answer)
+  next.answers.push({
+    questionId: question.id,
+    subject: question.subject,
+    unitId: question.unitId,
+    correct,
+    day: today,
+    context,
+    elapsedMs: Number.isFinite(elapsedMs) ? elapsedMs : null,
+    fastWrong
+  })
 
   const difficultyResult = applyResult(next.skills[question.subject] || makeSkill(), correct)
   next.skills[question.subject] = difficultyResult.skill
@@ -217,36 +240,120 @@ export function answerQuestion(state, question, selected, { context = 'daily', t
   const itemKey = question.itemKey || question.id
   const scheduled = scheduleAnswer(next.srs[question.subject][itemKey], correct, today)
   next.srs[question.subject][itemKey] = scheduled.entry
+  return { correct, fastWrong, difficultyResult }
+}
+
+export function reinforcementQuestionFor(state, originalQuestion) {
+  if (!originalQuestion) return null
+  const grade = state?.subjectGrades?.[originalQuestion.subject] ?? originalQuestion.grade ?? 0
+  const pool = QUESTIONS.filter((q) =>
+    !q.hard && q.subject === originalQuestion.subject && q.grade <= grade && q.id !== originalQuestion.id
+  )
+  return [...pool].sort((a, b) => {
+    const sameUnitA = a.unitId === originalQuestion.unitId ? 1 : 0
+    const sameUnitB = b.unitId === originalQuestion.unitId ? 1 : 0
+    return sameUnitB - sameUnitA || selectionScore(b, state) - selectionScore(a, state) || a.id.localeCompare(b.id)
+  })[0] || originalQuestion
+}
+
+export function answerQuestion(state, question, selected, { context = 'daily', today = dayNumber(), elapsedMs = null } = {}) {
+  let next = normalizeStudyState(state, today)
+  if (context === 'daily' && !next.daily.questionIds.length) next = startDailySession(next, today).state
+  const hadWrongBefore = next.answers.some((a) => a.day === today && a.questionId === question.id && a.context === 'daily' && !a.correct)
+  const attempt = recordAttempt(next, question, selected, { context, today, elapsedMs })
 
   let ticketDelta = 0
+  let captureItemDelta = emptyCaptureDelta()
+  let needsRemediation = false
+  let needsReinforcement = false
+
   if (context === 'daily') {
-    if (fastWrong) next.daily.fastWrong += 1
+    if (attempt.fastWrong) next.daily.fastWrong += 1
     next.daily.suspicious = next.daily.fastWrong >= Math.ceil(DAILY_REQUIRED / 2)
-    if (correct) ticketDelta += completeDailyItem(next, question.id)
+
+    if (!attempt.correct) {
+      needsRemediation = true
+    } else if (!hadWrongBefore) {
+      const reward = completeDailyItem(next, question.id)
+      ticketDelta += reward.ticketDelta
+      captureItemDelta = mergeCaptureDelta(captureItemDelta, reward.captureItemDelta)
+    } else {
+      const acknowledged = next.daily.explanationAcknowledgedQuestionIds.includes(question.id)
+      if (!acknowledged) {
+        // A caller cannot bypass remediation simply by calling answerQuestion again.
+        needsRemediation = true
+      } else {
+        if (!next.daily.remediationPassedQuestionIds.includes(question.id)) next.daily.remediationPassedQuestionIds.push(question.id)
+        if (next.daily.suspicious && !next.daily.reinforcementPassedQuestionIds.includes(question.id)) {
+          needsReinforcement = true
+        } else {
+          if (!next.daily.remediatedQuestionIds.includes(question.id)) next.daily.remediatedQuestionIds.push(question.id)
+          const reward = completeDailyItem(next, question.id)
+          ticketDelta += reward.ticketDelta
+          captureItemDelta = mergeCaptureDelta(captureItemDelta, reward.captureItemDelta)
+        }
+      }
+    }
   }
-  // Free study is intentionally never a bypass around the daily five-subject baseline.
-  if (context === 'free' && correct && next.daily.completed) ticketDelta += FREE_STUDY_TICKET_REWARD
+
+  if (context === 'free' && attempt.correct && next.daily.completed) {
+    ticketDelta += FREE_STUDY_TICKET_REWARD
+    next.daily.extraCorrect += 1
+    if (next.daily.extraCorrect % 3 === 0) captureItemDelta.star += 1
+  }
 
   return {
     state: next,
-    correct,
-    fastWrong,
-    needsRemediation: context === 'daily' && !correct,
+    correct: attempt.correct,
+    fastWrong: attempt.fastWrong,
+    needsRemediation,
+    needsReinforcement,
     ticketDelta,
+    captureItemDelta,
     unit: next.units[question.unitId],
-    difficulty: difficultyResult
+    difficulty: attempt.difficultyResult
   }
 }
 
-export function completeRemediation(state, question, { context = 'daily', today = dayNumber() } = {}) {
+export function acknowledgeExplanation(state, question, { context = 'daily', today = dayNumber() } = {}) {
   let next = normalizeStudyState(state, today)
-  if (context !== 'daily') return { state: next, completed: false, ticketDelta: 0 }
+  if (context !== 'daily') return { state: next, acknowledged: false }
   if (!next.daily.questionIds.length) next = startDailySession(next, today).state
   const hadWrongAttempt = next.answers.some((a) => a.day === today && a.questionId === question.id && a.context === 'daily' && !a.correct)
-  if (!hadWrongAttempt) return { state: next, completed: false, ticketDelta: 0 }
-  if (!next.daily.remediatedQuestionIds.includes(question.id)) next.daily.remediatedQuestionIds.push(question.id)
-  const ticketDelta = completeDailyItem(next, question.id)
-  return { state: next, completed: true, ticketDelta }
+  if (!hadWrongAttempt) return { state: next, acknowledged: false }
+  if (!next.daily.explanationAcknowledgedQuestionIds.includes(question.id)) next.daily.explanationAcknowledgedQuestionIds.push(question.id)
+  return { state: next, acknowledged: true }
+}
+
+export function answerReinforcementQuestion(state, originalQuestion, checkQuestion, selected, { today = dayNumber(), elapsedMs = null } = {}) {
+  let next = normalizeStudyState(state, today)
+  const remediationPassed = next.daily.remediationPassedQuestionIds.includes(originalQuestion.id)
+  if (!next.daily.suspicious || !remediationPassed) {
+    return { state: next, correct: false, completed: false, ticketDelta: 0, captureItemDelta: emptyCaptureDelta(), reason: 'REINFORCEMENT_NOT_REQUIRED' }
+  }
+
+  const attempt = recordAttempt(next, checkQuestion, selected, { context: 'reinforcement', today, elapsedMs })
+  if (!attempt.correct) {
+    return { state: next, correct: false, completed: false, needsRemediation: true, ticketDelta: 0, captureItemDelta: emptyCaptureDelta() }
+  }
+
+  if (!next.daily.reinforcementPassedQuestionIds.includes(originalQuestion.id)) next.daily.reinforcementPassedQuestionIds.push(originalQuestion.id)
+  if (!next.daily.remediatedQuestionIds.includes(originalQuestion.id)) next.daily.remediatedQuestionIds.push(originalQuestion.id)
+  const reward = completeDailyItem(next, originalQuestion.id)
+  return {
+    state: next,
+    correct: true,
+    completed: true,
+    ticketDelta: reward.ticketDelta,
+    captureItemDelta: reward.captureItemDelta
+  }
+}
+
+// Backward-compatible name kept only for old callers/tests. It now acknowledges the
+// explanation and deliberately does NOT complete the daily item.
+export function completeRemediation(state, question, options = {}) {
+  const result = acknowledgeExplanation(state, question, options)
+  return { state: result.state, completed: false, acknowledged: result.acknowledged, ticketDelta: 0, captureItemDelta: emptyCaptureDelta() }
 }
 
 export function unitMastery(unit) {

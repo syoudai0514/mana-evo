@@ -39,7 +39,7 @@ Kids Quest `main` の学習専用資産は `src/kids-quest-study/` へ機械的�
 | `engine/srs.js` | `src/study/srs.js` | スナップショットを直接re-exportして実行 |
 | `engine/difficulty.js` | `src/study/difficulty.js` | スナップショットを直接re-exportして実行 |
 | `itemKey` / `unitId` | `src/study/questions.js` / `engine.js` | 互換境界として利用 |
-| 単元MASTER条件 | `src/study/engine.js` | 4回挑戦 / 初回正解3 / 別日2 / 2形式 |
+| 単元MASTER条件 | `src/study/engine.js` | Kids Quest `unitReady`互換。4回挑戦 / 初回正解3 / 別日2 / unitごとのitemRequirement |
 | 苦手・得意に応じる学習 | `src/study/engine.js` | Kids Quest difficulty skillを利用 |
 
 ## コピー済みだが現行UIへ段階接続中
@@ -60,8 +60,9 @@ Kids Quest `main` の学習専用資産は `src/kids-quest-study/` へ機械的�
 
 ## Mana Evo側の新規ゲーム実装
 
-- 基本学習5問 → バトルチケット3枚
-- 自由学習1問正解 → バトルチケット1枚（回数上限なし）
+- 基本学習5問 → バトルチケット3枚 + ほしのわ3個
+- 自由学習1問正解 → バトルチケット1枚（daily完了後・回数上限なし）
+- 追加学習3正解ごと → ほしのわ1個、MASTER → 上位の「わ」
 - マップ / 固定Lvステージ
 - 18タイプ / 4技 / タイプ一致 / タイプ相性 / 手持ち3体 / 交代
 - 敵HP50%以下から「わ」で捕獲 / 4段階★判定

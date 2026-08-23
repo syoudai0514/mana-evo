@@ -3,16 +3,17 @@ import assert from 'node:assert/strict'
 
 import { QUESTIONS } from '../src/study/questions.js'
 import {
+  acknowledgeExplanation,
   answerQuestion,
-  completeRemediation,
+  answerReinforcementQuestion,
   createStudyState,
-  pickFreeStudyQuestion,
+  reinforcementQuestionFor,
   remainingDailyQuestions,
   startDailySession
 } from '../src/study/engine.js'
 import { makeSkill, applyResult, hintLevel } from '../src/study/difficulty.js'
 import { scheduleNext } from '../src/study/srs.js'
-import { addTickets, createGameState } from '../src/game/progression.js'
+import { availableTicketCount, createGameState, grantLearningReward } from '../src/game/progression.js'
 import { startBattle } from '../src/game/engine.js'
 
 test('Kids Quest SRS compatibility: correct answers expand interval', () => {
@@ -41,29 +42,34 @@ test('adaptive difficulty adds scaffold after repeated misses', () => {
   assert.equal(hintLevel(skill), 2)
 })
 
-test('daily five-subject study grants exactly 3 tickets once', () => {
+test('daily five-subject study grants exactly 3 tickets and 3 star rings once', () => {
   let study = createStudyState()
   const started = startDailySession(study, 200)
   study = started.state
   assert.equal(started.questions.length, 5)
-  let reward = 0
+  let ticketReward = 0
+  let starReward = 0
   for (const question of started.questions) {
     const outcome = answerQuestion(study, question, question.answer, { context: 'daily', today: 200, elapsedMs: 3000 })
     study = outcome.state
-    reward += outcome.ticketDelta
+    ticketReward += outcome.ticketDelta
+    starReward += outcome.captureItemDelta.star
   }
   assert.equal(study.daily.completed, true)
-  assert.equal(reward, 3)
+  assert.equal(ticketReward, 3)
+  assert.equal(starReward, 3)
 
   const extra = answerQuestion(study, started.questions[0], started.questions[0].answer, { context: 'daily', today: 200, elapsedMs: 3000 })
   assert.equal(extra.ticketDelta, 0)
+  assert.equal(extra.captureItemDelta.star, 0)
 })
 
-test('free study before daily completion grants 0 tickets; after daily completion grants +1', () => {
+test('free study before daily completion grants no game reward; after daily completion grants +1 ticket', () => {
   let study = createStudyState()
   const freeQuestion = QUESTIONS.find((q) => !q.hard)
   const before = answerQuestion(study, freeQuestion, freeQuestion.answer, { context: 'free', today: 300, elapsedMs: 3000 })
   assert.equal(before.ticketDelta, 0)
+  assert.equal(before.captureItemDelta.star, 0)
 
   const started = startDailySession(before.state, 300)
   study = started.state
@@ -72,7 +78,21 @@ test('free study before daily completion grants 0 tickets; after daily completio
   assert.equal(after.ticketDelta, 1)
 })
 
-test('five fast wrong taps do not unlock the daily reward', () => {
+test('extra learning awards one star ring every three valid correct answers', () => {
+  let study = startDailySession(createStudyState(), 310).state
+  for (const q of startDailySession(study, 310).questions) study = answerQuestion(study, q, q.answer, { context: 'daily', today: 310, elapsedMs: 3000 }).state
+  const q = QUESTIONS.find((item) => !item.hard)
+  let stars = 0
+  for (let i = 0; i < 6; i++) {
+    const result = answerQuestion(study, q, q.answer, { context: 'free', today: 310, elapsedMs: 3000 })
+    study = result.state
+    stars += result.captureItemDelta.star
+  }
+  assert.equal(stars, 2)
+  assert.equal(study.daily.extraCorrect, 6)
+})
+
+test('five fast wrong taps do not unlock daily reward or complete any item', () => {
   let study = createStudyState()
   const started = startDailySession(study, 320)
   study = started.state
@@ -89,18 +109,49 @@ test('five fast wrong taps do not unlock the daily reward', () => {
   assert.equal(study.daily.suspicious, true)
 })
 
-test('wrong -> remediation -> confirmation completes one learning item without treating it as correct', () => {
-  let study = createStudyState()
-  const started = startDailySession(study, 330)
-  study = started.state
-  const q = started.questions[0]
+test('wrong + explanation acknowledgement alone still does not complete a daily item', () => {
+  let study = startDailySession(createStudyState(), 330).state
+  const q = startDailySession(study, 330).questions[0]
   const wrong = q.choices.find((choice) => choice !== q.answer)
   const miss = answerQuestion(study, q, wrong, { context: 'daily', today: 330, elapsedMs: 2500 })
-  assert.equal(miss.state.daily.completedQuestionIds.length, 0)
-  const remediated = completeRemediation(miss.state, q, { context: 'daily', today: 330 })
-  assert.equal(remediated.completed, true)
-  assert.deepEqual(remediated.state.daily.completedQuestionIds, [q.id])
-  assert.equal(remediated.ticketDelta, 0)
+  const ack = acknowledgeExplanation(miss.state, q, { context: 'daily', today: 330 })
+  assert.equal(ack.acknowledged, true)
+  assert.equal(ack.state.daily.completedQuestionIds.length, 0)
+  assert.equal(ack.state.daily.completed, false)
+})
+
+test('wrong + explanation + correct retry completes one non-suspicious learning item', () => {
+  let study = startDailySession(createStudyState(), 340).state
+  const q = startDailySession(study, 340).questions[0]
+  const wrong = q.choices.find((choice) => choice !== q.answer)
+  const miss = answerQuestion(study, q, wrong, { context: 'daily', today: 340, elapsedMs: 2500 })
+  const ack = acknowledgeExplanation(miss.state, q, { context: 'daily', today: 340 })
+  const retry = answerQuestion(ack.state, q, q.answer, { context: 'daily', today: 340, elapsedMs: 2500 })
+  assert.equal(retry.correct, true)
+  assert.equal(retry.needsReinforcement, false)
+  assert.deepEqual(retry.state.daily.completedQuestionIds, [q.id])
+  assert.equal(retry.ticketDelta, 0)
+})
+
+test('suspicious fast-wrong flow requires a separate reinforcement success before completion', () => {
+  let study = startDailySession(createStudyState(), 345).state
+  const session = startDailySession(study, 345)
+  study = session.state
+  // Trigger suspicious state with three fast misses on three requirements.
+  for (const q of session.questions.slice(0, 3)) {
+    const wrong = q.choices.find((choice) => choice !== q.answer)
+    study = answerQuestion(study, q, wrong, { context: 'daily', today: 345, elapsedMs: 100 }).state
+  }
+  assert.equal(study.daily.suspicious, true)
+  const original = session.questions[0]
+  study = acknowledgeExplanation(study, original, { context: 'daily', today: 345 }).state
+  const retry = answerQuestion(study, original, original.answer, { context: 'daily', today: 345, elapsedMs: 2500 })
+  assert.equal(retry.needsReinforcement, true)
+  assert.equal(retry.state.daily.completedQuestionIds.includes(original.id), false)
+  const check = reinforcementQuestionFor(retry.state, original)
+  const reinforced = answerReinforcementQuestion(retry.state, original, check, check.answer, { today: 345, elapsedMs: 2500 })
+  assert.equal(reinforced.completed, true)
+  assert.equal(reinforced.state.daily.completedQuestionIds.includes(original.id), true)
 })
 
 test('daily quit after 2 and resume keeps the same remaining 3 requirements', () => {
@@ -170,11 +221,30 @@ test('hard mastery is reachable after repeated success on separate days', () => 
   assert.equal(study.units[hard.unitId].hardMastered, true)
 })
 
-test('one study-earned ticket opens exactly one fixed-level stage battle', () => {
-  const game = addTickets(createGameState(), 1)
-  const result = startBattle(game, '1-1')
+test('unit and hard mastery grant silver and gold rings through game reward domain', () => {
+  const initial = createGameState()
+  const normal = grantLearningReward(initial, { unitMastered: true, today: 800 })
+  assert.equal(normal.captureItems.silver, 1)
+  const hard = grantLearningReward(normal, { hardMastered: true, today: 800 })
+  assert.equal(hard.captureItems.gold, 1)
+})
+
+test('a carried ticket cannot start a new battle before today daily is complete', () => {
+  const day = 900
+  const game = grantLearningReward(createGameState(), { ticketDelta: 1, today: day })
+  assert.equal(availableTicketCount(game, day + 1), 1)
+  const blocked = startBattle(game, '1-1', { dailyCompleted: false, today: day + 1 })
+  assert.equal(blocked.ok, false)
+  assert.equal(blocked.reason, 'DAILY_NOT_COMPLETED')
+  assert.equal(availableTicketCount(blocked.game, day + 1), 1)
+})
+
+test('one study-earned ticket opens exactly one fixed-level stage after daily gate', () => {
+  const day = 910
+  const game = grantLearningReward(createGameState(), { ticketDelta: 1, today: day })
+  const result = startBattle(game, '1-1', { dailyCompleted: true, today: day })
   assert.equal(result.ok, true)
-  assert.equal(result.game.tickets, 0)
+  assert.equal(availableTicketCount(result.game, day), 0)
   assert.equal(result.battle.enemy.level, 5)
   assert.equal(result.game.battlesStarted, 1)
   assert.deepEqual(result.game.activeBattle, result.battle)

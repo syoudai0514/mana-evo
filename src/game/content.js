@@ -42,6 +42,24 @@ export function effectivenessLabel(factor) {
   return '○ ふつう'
 }
 
+
+export const CAPTURE_CONFIG = Object.freeze({
+  star: { label: 'ほしのわ', icon: '⭐', multiplier: 1.0, guaranteed: false },
+  silver: { label: 'ぎんのわ', icon: '⚪', multiplier: 1.2, guaranteed: false },
+  gold: { label: 'きんのわ', icon: '🟡', multiplier: 1.5, guaranteed: false },
+  rainbow: { label: 'にじのわ', icon: '🌈', multiplier: 1.0, guaranteed: true },
+  nonRainbowCap: 0.92
+})
+
+export const EVOLUTION_ITEMS = Object.freeze({
+  stones: {
+    'glow-stone': { id: 'glow-stone', name: 'ひかりのいし（仮）' }
+  },
+  heldItems: {
+    'bond-charm': { id: 'bond-charm', name: 'きずなのチャーム（仮）' }
+  }
+})
+
 export const MOVES = {
   tackle: { id: 'tackle', name: 'たいあたり', type: 'normal', power: 35 },
   ember: { id: 'ember', name: 'ひのこ（仮）', type: 'fire', power: 42 },
@@ -76,14 +94,24 @@ export const SPECIES = {
 
   'wild-bug-1': { id: 'wild-bug-1', family: 'wild-bug', stage: 1, name: 'むしの野生・幼体（仮）', types: ['bug'], base: { hp: 36, attack: 18, defense: 18, speed: 24 }, moves: ['tackle', 'bugBite', 'leafShot', 'gust'], evolution: { to: 'wild-bug-2', method: 'level', level: 7 }, catchRank: 1 },
   'wild-bug-2': { id: 'wild-bug-2', family: 'wild-bug', stage: 2, name: 'むしの野生・中間（仮）', types: ['bug', 'flying'], base: { hp: 47, attack: 25, defense: 22, speed: 34 }, moves: ['tackle', 'bugBite', 'gust', 'leafShot'], evolution: { to: 'wild-bug-3', method: 'level', level: 12 }, catchRank: 2 },
-  'wild-bug-3': { id: 'wild-bug-3', family: 'wild-bug', stage: 3, name: 'むしの野生・最終（仮）', types: ['bug', 'flying'], base: { hp: 62, attack: 34, defense: 29, speed: 45 }, moves: ['tackle', 'bugBite', 'gust', 'leafShot'], catchRank: 3 }
+  'wild-bug-3': { id: 'wild-bug-3', family: 'wild-bug', stage: 3, name: 'むしの野生・最終（仮）', types: ['bug', 'flying'], base: { hp: 62, attack: 34, defense: 29, speed: 45 }, moves: ['tackle', 'bugBite', 'gust', 'leafShot'], catchRank: 3 },
+
+  // Vertical-slice real content for stone evolution.
+  'wild-stone-1': { id: 'wild-stone-1', family: 'wild-stone', stage: 1, name: 'いし進化の野生・幼体（仮）', types: ['rock'], base: { hp: 48, attack: 27, defense: 32, speed: 14 }, moves: ['tackle', 'rockHit', 'gust', 'bugBite'], evolution: { to: 'wild-stone-2', method: 'stone', itemId: 'glow-stone' }, catchRank: 2 },
+  'wild-stone-2': { id: 'wild-stone-2', family: 'wild-stone', stage: 2, name: 'いし進化の野生・進化形（仮）', types: ['rock', 'fairy'], base: { hp: 72, attack: 39, defense: 47, speed: 23 }, moves: ['tackle', 'rockHit', 'gust', 'leafShot'], catchRank: 3 },
+
+  // Vertical-slice real content for held-item + level evolution.
+  'wild-charm-1': { id: 'wild-charm-1', family: 'wild-charm', stage: 1, name: 'もちもの進化の野生・幼体（仮）', types: ['ghost'], base: { hp: 43, attack: 24, defense: 21, speed: 30 }, moves: ['tackle', 'gust', 'bugBite', 'spark'], evolution: { to: 'wild-charm-2', method: 'held_item_level', heldItemId: 'bond-charm', level: 10 }, catchRank: 2 },
+  'wild-charm-2': { id: 'wild-charm-2', family: 'wild-charm', stage: 2, name: 'もちもの進化の野生・進化形（仮）', types: ['ghost', 'fairy'], base: { hp: 65, attack: 36, defense: 31, speed: 44 }, moves: ['tackle', 'gust', 'bugBite', 'spark'], catchRank: 3 }
 }
 
 export const STAGES = [
   { id: '1-1', area: 'エリア1 はじまりの森（仮）', label: '1-1 はじめの道', enemySpeciesId: 'wild-grass-1', enemyLevel: 5, xp: 32, mana: 15, unlockedBy: null },
   { id: '1-2', area: 'エリア1 はじまりの森（仮）', label: '1-2 みずべ', enemySpeciesId: 'wild-water-1', enemyLevel: 6, xp: 36, mana: 17, unlockedBy: '1-1' },
   { id: '1-3', area: 'エリア1 はじまりの森（仮）', label: '1-3 いなずま草原', enemySpeciesId: 'wild-electric-1', enemyLevel: 7, xp: 40, mana: 19, unlockedBy: '1-2' },
-  { id: '1-4', area: 'エリア1 はじまりの森（仮）', label: '1-4 むしの小道', enemySpeciesId: 'wild-bug-1', enemyLevel: 8, xp: 45, mana: 21, unlockedBy: '1-3' }
+  { id: '1-4', area: 'エリア1 はじまりの森（仮）', label: '1-4 むしの小道', enemySpeciesId: 'wild-bug-1', enemyLevel: 8, xp: 45, mana: 21, unlockedBy: '1-3' },
+  { id: '1-5', area: 'エリア1 はじまりの森（仮）', label: '1-5 ひかり岩場', enemySpeciesId: 'wild-stone-1', enemyLevel: 9, xp: 50, mana: 23, unlockedBy: '1-4', evolutionReward: { kind: 'stone', itemId: 'glow-stone', count: 1 } },
+  { id: '1-6', area: 'エリア1 はじまりの森（仮）', label: '1-6 きずなの夜道', enemySpeciesId: 'wild-charm-1', enemyLevel: 9, xp: 52, mana: 24, unlockedBy: '1-5', evolutionReward: { kind: 'held', itemId: 'bond-charm', count: 1 } }
 ]
 
 export function speciesOf(id) { return SPECIES[id] }
