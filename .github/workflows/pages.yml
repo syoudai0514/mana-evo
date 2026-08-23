@@ -31,6 +31,8 @@ jobs:
         run: npm test
       - name: Build
         run: npm run build
+        env:
+          VITE_BASE_PATH: /mana-evo/
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Upload Pages artifact
