@@ -66,6 +66,15 @@ test('battle consumes the nearest-expiry ticket first and records its source', (
   assert.equal(availableTicketCount(result.game, day + 2), 1)
 })
 
+test('yesterday daily completion cannot open a new battle after day rollover', () => {
+  const day = 1150
+  const game = addTickets(createGameState(), 1, day)
+  const blocked = startBattle(game, '1-1', { dailyCompleted: true, dailyDay: day, today: day + 1 })
+  assert.equal(blocked.ok, false)
+  assert.equal(blocked.reason, 'DAILY_NOT_COMPLETED')
+  assert.equal(availableTicketCount(blocked.game, day + 1), 1)
+})
+
 test('starting a fixed stage persists activeBattle and does not scale enemy', () => {
   const day = 1200
   let game = addTickets(createGameState(), 1, day)
@@ -228,6 +237,22 @@ test('four successful checks capture, consume selected ring and register dex', (
   assert.equal(result.game.captureItems.star, ringsBefore - 1)
   assert.equal(result.game.dex.caught['wild-grass-1'], true)
   assert.ok(Object.values(result.game.box).some((monster) => monster.speciesId === 'wild-grass-1'))
+})
+
+test('capture success on a reward stage grants the configured evolution item', () => {
+  const day = 2350
+  let game = createGameState()
+  game.stagesCleared = ['1-1', '1-2', '1-3', '1-4']
+  game.captureItems.rainbow = 1
+  const started = start(addTickets(game, 1, day), '1-5', day)
+  const weakened = structuredClone(started.battle)
+  weakened.enemy.hp = 1
+  const result = attemptCapture(started.game, weakened, [1, 1, 1, 1], 'rainbow')
+  assert.equal(result.ok, true)
+  assert.equal(result.caught, true)
+  assert.equal(result.evolutionReward?.itemId, 'glow-stone')
+  assert.equal(result.game.evolutionItems.stones['glow-stone'], 1)
+  assert.ok(result.game.stagesCleared.includes('1-5'))
 })
 
 test('capture inventory has four types, failed capture consumes turn, and one battle allows max three attempts', () => {
