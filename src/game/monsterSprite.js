@@ -1,3 +1,5 @@
+import spriteUrl from './manaevo-monsters-v3.webp'
+
 const COLS = 5
 const ROWS = 4
 
@@ -23,22 +25,13 @@ const COORDS = Object.freeze({
   'wild-charm-2': [3, 3]
 })
 
-const FILE = 'monsters/manaevo-monsters-v1.webp?v=20260823-2247'
-const RAW_FALLBACK = 'https://raw.githubusercontent.com/syoudai0514/mana-evo/main/public/monsters/manaevo-monsters-v1.webp'
-
-function localSpriteUrl() {
-  if (typeof window === 'undefined') return `/${FILE}`
-  const base = window.location.hostname.endsWith('github.io') ? '/mana-evo/' : '/'
-  return `${window.location.origin}${base}${FILE}`
-}
-
 export function monsterSpriteFrame(speciesId) {
   const coord = COORDS[speciesId]
   if (!coord) return null
   const [col, row] = coord
   return {
-    src: localSpriteUrl(),
-    fallbackSrc: RAW_FALLBACK,
+    src: spriteUrl,
+    fallbackSrc: spriteUrl,
     col,
     row,
     cols: COLS,
