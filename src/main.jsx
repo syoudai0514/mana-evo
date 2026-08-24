@@ -11,8 +11,9 @@ import './game/runtime.css'
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js?v=3`, {
-      scope: import.meta.env.BASE_URL,
+    const baseUrl = import.meta.env.BASE_URL || '/'
+    navigator.serviceWorker.register(`${baseUrl}sw.js`, {
+      scope: baseUrl,
       updateViaCache: 'none'
     }).then((registration) => registration.update()).catch((error) => {
       console.warn('ManaEvo service worker registration failed', error)
