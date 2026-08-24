@@ -22,3 +22,8 @@ test('study hub keeps bottom navigation available', () => {
 test('how-to adventure navigation opens the map even before daily study is complete', () => {
   assert.match(source, /goAdventure=\{\(\)=>setView\('adventure'\)\}/)
 })
+
+test('battle gate receives the same numeric day representation as the game engine', () => {
+  assert.match(source, /dailyDay=\{today\} today=\{today\}/)
+  assert.doesNotMatch(source, /dailyDay=\{learning\.daily\?\.date\}/)
+})
