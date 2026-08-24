@@ -4,6 +4,8 @@ import assert from 'node:assert/strict'
 import { speciesOf } from '../src/game/content.js'
 import {
   BALANCE_VERSION,
+  NORMAL_REPEAT_CAP,
+  battleXpForStage,
   bossReferencePower,
   buildEnemyPlan,
   combatPowerFromStats,
@@ -12,11 +14,11 @@ import {
   statsFromBase
 } from '../src/game/balance.js'
 
-const monster = (instanceId, speciesId, level) => ({ instanceId, speciesId, level, xp: 0, heldItemId: null, caughtAt: 1 })
+const monster = (instanceId, speciesId, level) => ({ instanceId, speciesId, level, xp: 0, heldItemId: null, evolutionReady: false, caughtAt: 1 })
 
 function gameWith(monsters, team = null) {
   const box = Object.fromEntries(monsters.map((entry) => [entry.instanceId, entry]))
-  return { box, team: team || monsters.slice(0, 3).map((entry) => entry.instanceId) }
+  return { box, team: team || monsters.slice(0, 3).map((entry) => entry.instanceId), normalStageSnapshots: {} }
 }
 
 test('level stats use species base values and grow monotonically through level 100', () => {
@@ -54,6 +56,32 @@ test('normal reference uses current team so strong boxed monsters do not block t
   ], ['a', 'b', 'c']), speciesOf)
   assert.equal(normalRef, withoutBoxed)
   assert.equal(referencePower(game, speciesOf), normalRef)
+})
+
+test('cleared normal stage caps upward rescaling but never floors a weak training team', () => {
+  const stage = { id: 'normal-test', enemySpeciesId: 'wild-grass-1', enemyDifficulty: 'normal' }
+  const firstGame = gameWith([monster('a', 'starter-fire-1', 20)])
+  const firstReference = normalReferencePower(firstGame, speciesOf)
+
+  const grown = gameWith([monster('a', 'starter-fire-3', 80)])
+  grown.normalStageSnapshots[stage.id] = { stageId: stage.id, firstClearReferencePower: firstReference, balanceVersion: BALANCE_VERSION }
+  const capped = buildEnemyPlan(grown, stage, speciesOf)
+  assert.equal(capped.mode, 'normal-repeat-cap')
+  assert.equal(capped.referencePower, firstReference * NORMAL_REPEAT_CAP)
+  assert.ok(capped.currentReferencePower > capped.referencePower)
+
+  const weak = gameWith([monster('a', 'wild-bug-1', 5)])
+  weak.normalStageSnapshots[stage.id] = { stageId: stage.id, firstClearReferencePower: firstReference, balanceVersion: BALANCE_VERSION }
+  const training = buildEnemyPlan(weak, stage, speciesOf)
+  assert.equal(training.mode, 'normal-repeat-soft')
+  assert.equal(training.referencePower, training.currentReferencePower)
+  assert.ok(training.referencePower < firstReference)
+})
+
+test('battle XP comes from difficulty/rank tables rather than legacy stage xp', () => {
+  assert.equal(battleXpForStage({ enemyDifficulty: 'normal', xp: 1 }), 110)
+  assert.equal(battleXpForStage({ enemyDifficulty: 'elite', xp: 9999 }), 165)
+  assert.equal(battleXpForStage({ bossRank: 'A', xp: 1 }), 220)
 })
 
 test('boss reference keeps a carry floor for Lv80 plus two weak teammates', () => {
