@@ -1,6 +1,6 @@
 import { EVOLUTION_ITEMS, STAGES, speciesOf } from './content.js'
 
-export const CURRENT_GAME_VERSION = 5
+export const CURRENT_GAME_VERSION = 6
 export const CAPTURE_ITEM_IDS = ['star', 'silver', 'gold', 'rainbow']
 export const TICKET_TTL_DAYS = 7
 
@@ -16,6 +16,7 @@ function starterState(level = 5, xp = 0, speciesId = 'starter-fire-1') {
     level: Math.max(1, Number(level) || 1),
     xp: Math.max(0, Number(xp) || 0),
     heldItemId: null,
+    evolutionReady: false,
     caughtAt: Date.now()
   }
 }
@@ -40,6 +41,7 @@ export function createGameState() {
     gigaCoreSpecies: {},
     burstMarks: {},
     bossBalanceSnapshots: {},
+    normalStageSnapshots: {},
     battlesStarted: 0,
     battlesWon: 0,
     battlesAbandoned: 0,
@@ -129,6 +131,22 @@ function normalizeBossBalanceSnapshots(value) {
   return result
 }
 
+function normalizeNormalStageSnapshots(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {}
+  const result = {}
+  for (const [stageId, raw] of Object.entries(value)) {
+    const stage = STAGES.find((entry) => entry.id === stageId && !entry.bossRank)
+    const firstClearReferencePower = Number(raw?.firstClearReferencePower)
+    if (!stage || !raw || typeof raw !== 'object' || !Number.isFinite(firstClearReferencePower) || firstClearReferencePower <= 0) continue
+    result[stageId] = {
+      stageId,
+      firstClearReferencePower: Math.max(1, firstClearReferencePower),
+      balanceVersion: positiveInt(raw.balanceVersion) || 1
+    }
+  }
+  return result
+}
+
 function normalizeBox(savedBox) {
   const box = {}
   for (const [instanceId, raw] of Object.entries(savedBox || {})) {
@@ -140,6 +158,7 @@ function normalizeBox(savedBox) {
       level: Math.max(1, positiveInt(raw.level) || 1),
       xp: positiveInt(raw.xp),
       heldItemId,
+      evolutionReady: !!raw.evolutionReady,
       caughtAt: Number(raw.caughtAt) || Date.now()
     }
   }
@@ -161,10 +180,14 @@ function normalizeActiveBattle(raw, box, team) {
         expiresDay: Math.floor(Number(raw.ticketSource.expiresDay) || 0)
       }
     : null
+  const teamAtStart = (Array.isArray(raw.teamAtStart) ? raw.teamAtStart : team)
+    .filter((id, index, all) => !!box[id] && all.indexOf(id) === index)
+    .slice(0, 3)
   return {
     ...structuredClone(raw),
     activeInstanceId: activeId,
     partyHp,
+    teamAtStart,
     ticketSource,
     ticketRefunded: !!raw.ticketRefunded,
     captureAttempts: Math.max(0, Math.min(3, positiveInt(raw.captureAttempts))),
@@ -218,6 +241,7 @@ export function normalizeGameState(saved, today = localDayNumber()) {
     gigaCoreSpecies: normalizeOwnershipMap(saved.gigaCoreSpecies),
     burstMarks: normalizeOwnershipMap(saved.burstMarks),
     bossBalanceSnapshots: normalizeBossBalanceSnapshots(saved.bossBalanceSnapshots),
+    normalStageSnapshots: normalizeNormalStageSnapshots(saved.normalStageSnapshots),
     battlesStarted: positiveInt(saved.battlesStarted),
     battlesWon: positiveInt(saved.battlesWon),
     battlesAbandoned: positiveInt(saved.battlesAbandoned),
@@ -298,6 +322,7 @@ export function equipHeldItem(game, instanceId, itemId, today = localDayNumber()
   next.evolutionItems.heldItems[itemId] -= 1
   if (next.evolutionItems.heldItems[itemId] <= 0) delete next.evolutionItems.heldItems[itemId]
   monster.heldItemId = itemId
+  monster.evolutionReady = false
   return { ok: true, game: next }
 }
 
