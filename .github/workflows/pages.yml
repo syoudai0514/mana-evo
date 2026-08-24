@@ -42,15 +42,18 @@ jobs:
           test -f dist/sw.js
           test -f dist/icons/icon-192.png
           test -f dist/icons/icon-512.png
-          test -f dist/icons/apple-touch-icon.png
           grep -q '/mana-evo/manifest.webmanifest' dist/index.html
           grep -q '/mana-evo/icons/icon-192.png' dist/index.html
-          grep -q '/mana-evo/icons/apple-touch-icon.png' dist/index.html
+          grep -q 'rel="apple-touch-icon"' dist/index.html
           node - <<'NODE'
           const fs = require('fs')
           const manifest = JSON.parse(fs.readFileSync('dist/manifest.webmanifest', 'utf8'))
+          const html = fs.readFileSync('dist/index.html', 'utf8')
           for (const key of ['id', 'start_url', 'scope']) {
             if (manifest[key] !== '/mana-evo/') throw new Error(`${key} must be /mana-evo/`)
+          }
+          if (!html.includes('rel="apple-touch-icon"') || !html.includes('/mana-evo/icons/icon-192.png')) {
+            throw new Error('apple-touch-icon must reference the shipped 192px icon')
           }
           for (const [file, size] of [['dist/icons/icon-192.png', 192], ['dist/icons/icon-512.png', 512]]) {
             const png = fs.readFileSync(file)
