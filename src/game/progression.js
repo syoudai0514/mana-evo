@@ -1,6 +1,6 @@
 import { EVOLUTION_ITEMS, STAGES, speciesOf } from './content.js'
 
-export const CURRENT_GAME_VERSION = 4
+export const CURRENT_GAME_VERSION = 5
 export const CAPTURE_ITEM_IDS = ['star', 'silver', 'gold', 'rainbow']
 export const TICKET_TTL_DAYS = 7
 
@@ -31,7 +31,7 @@ export function createGameState() {
   const starter = starterState()
   return {
     version: CURRENT_GAME_VERSION,
-    tickets: 0, // compatibility/display mirror of valid ticketGrants
+    tickets: 0,
     ticketGrants: [],
     mana: 0,
     captureItems: { star: 8, silver: 0, gold: 0, rainbow: 0 },
@@ -39,6 +39,7 @@ export function createGameState() {
     gigaKeyOwned: false,
     gigaCoreSpecies: {},
     burstMarks: {},
+    bossBalanceSnapshots: {},
     battlesStarted: 0,
     battlesWon: 0,
     battlesAbandoned: 0,
@@ -99,6 +100,33 @@ function normalizeInventory(saved) {
     stones: clean(evo.stones, (id) => EVOLUTION_ITEMS.stones[id]),
     heldItems: clean(evo.heldItems, (id) => EVOLUTION_ITEMS.heldItems[id])
   }
+}
+
+function normalizeBossBalanceSnapshots(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {}
+  const result = {}
+  for (const [stageId, raw] of Object.entries(value)) {
+    const stage = STAGES.find((entry) => entry.id === stageId && entry.bossRank)
+    if (!stage || !raw || typeof raw !== 'object') continue
+    const lockedLevel = Math.max(1, Math.min(100, positiveInt(raw.lockedLevel) || 1))
+    const multipliers = raw.statMultipliers || {}
+    result[stageId] = {
+      stageId,
+      bossId: String(raw.bossId || stage.bossId || stage.enemySpeciesId),
+      bossRank: String(raw.bossRank || stage.bossRank),
+      lockedLevel,
+      referencePower: Math.max(1, Number(raw.referencePower) || 1),
+      targetPower: Math.max(1, Number(raw.targetPower) || 1),
+      statMultipliers: {
+        hp: Math.max(1, Number(multipliers.hp) || 1),
+        attack: Math.max(1, Number(multipliers.attack) || 1),
+        defense: Math.max(1, Number(multipliers.defense) || 1),
+        speed: Math.max(1, Number(multipliers.speed) || 1)
+      },
+      balanceVersion: positiveInt(raw.balanceVersion) || 1
+    }
+  }
+  return result
 }
 
 function normalizeBox(savedBox) {
@@ -189,6 +217,7 @@ export function normalizeGameState(saved, today = localDayNumber()) {
     gigaKeyOwned: !!saved.gigaKeyOwned || positiveInt(saved.gigaKeys) > 0,
     gigaCoreSpecies: normalizeOwnershipMap(saved.gigaCoreSpecies),
     burstMarks: normalizeOwnershipMap(saved.burstMarks),
+    bossBalanceSnapshots: normalizeBossBalanceSnapshots(saved.bossBalanceSnapshots),
     battlesStarted: positiveInt(saved.battlesStarted),
     battlesWon: positiveInt(saved.battlesWon),
     battlesAbandoned: positiveInt(saved.battlesAbandoned),
@@ -305,14 +334,11 @@ export function specialProgressionStatus(monster, game) {
       isFinal,
       hasKey: !!game?.gigaKeyOwned,
       hasCore: !!game?.gigaCoreSpecies?.[monster?.speciesId],
-      // Canonical rule is fixed: final form -> species challenge/boss -> permanent core.
-      // Species allocations/challenge masters and battle activation are still to be wired.
       activatable: false
     },
     burst: {
       label: 'キョダイバースト',
       hasMark: !!game?.burstMarks?.[monster?.speciesId],
-      // Canonical battle rule: once per battle, 3 turns, HP/unique-move boost, no simultaneous Giga.
       activatable: false
     }
   }
