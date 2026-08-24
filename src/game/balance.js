@@ -1,6 +1,7 @@
 export const BALANCE_VERSION = 3
 export const MAX_MONSTER_LEVEL = 100
-export const NORMAL_REPEAT_CAP = 0.90
+export const NORMAL_REPEAT_CAP = 1.10
+export const NORMAL_REPEAT_MASTERY_FLOOR = 0.70
 
 export const NORMAL_DIFFICULTY = Object.freeze({
   weak: { targetMultiplier: 0.82, label: 'いけそう', xp: 90 },
@@ -20,13 +21,14 @@ export const BOSS_RANKS = Object.freeze({
 
 const clamp = (min, value, max) => Math.max(min, Math.min(max, value))
 const positive = (value, fallback = 1) => Math.max(1, Number(value) || fallback)
+const statMultiplier = (value, fallback = 1) => clamp(0.5, Number(value) || fallback, 4)
 
 export function normalizeStatMultipliers(value = null) {
   return {
-    hp: positive(value?.hp, 1),
-    attack: positive(value?.attack, 1),
-    defense: positive(value?.defense, 1),
-    speed: positive(value?.speed, 1)
+    hp: statMultiplier(value?.hp, 1),
+    attack: statMultiplier(value?.attack, 1),
+    defense: statMultiplier(value?.defense, 1),
+    speed: statMultiplier(value?.speed, 1)
   }
 }
 
@@ -110,7 +112,6 @@ export function bossReferencePower(game, speciesOf) {
   return Math.max(1, teamWeighted, rosterWeighted, carryFloor)
 }
 
-// Backward-compatible alias for code/tests that only need the normal encounter reference.
 export function referencePower(game, speciesOf) {
   return normalReferencePower(game, speciesOf)
 }
@@ -145,6 +146,16 @@ function validBossSnapshot(snapshot, stage) {
 
 function validNormalSnapshot(snapshot, stage) {
   return !!snapshot && snapshot.stageId === stage?.id && Number(snapshot.firstClearReferencePower) > 0
+}
+
+function repeatMasteryMultipliers(currentRef, firstClearReferencePower) {
+  const growthRatio = currentRef / Math.max(1, firstClearReferencePower)
+  if (growthRatio <= 1) return normalizeStatMultipliers()
+  // When the team has genuinely grown, old cleared stages should feel easier.
+  // At roughly +20% combat power this reaches 0.75 HP/DEF, while enemy attack
+  // stays intact so repeat farming is faster without becoming consequence-free.
+  const ease = clamp(NORMAL_REPEAT_MASTERY_FLOOR, 1 - (growthRatio - 1) * 1.25, 1)
+  return normalizeStatMultipliers({ hp: ease, attack: 1, defense: ease, speed: 1 })
 }
 
 export function buildEnemyPlan(game, stage, speciesOf, existingSnapshot = null, { challenge = false } = {}) {
@@ -203,20 +214,25 @@ export function buildEnemyPlan(game, stage, speciesOf, existingSnapshot = null, 
   let ref = currentRef
   let repeatCap = null
   let mode = 'normal-soft'
+  let statMultipliers = normalizeStatMultipliers()
   if (validNormalSnapshot(stored, stage)) {
     repeatCap = stored.firstClearReferencePower * NORMAL_REPEAT_CAP
     ref = Math.min(currentRef, repeatCap)
     mode = currentRef > repeatCap ? 'normal-repeat-cap' : 'normal-repeat-soft'
+    statMultipliers = repeatMasteryMultipliers(currentRef, stored.firstClearReferencePower)
   }
 
   const difficulty = NORMAL_DIFFICULTY[stage.enemyDifficulty] || NORMAL_DIFFICULTY.normal
   const targetPower = ref * difficulty.targetMultiplier
+  // Pick the normal level from the capped reference first, then apply repeat
+  // mastery HP/DEF easing. Including easing in level search would cancel the
+  // intended "I got stronger" feeling by raising the enemy level again.
   const level = levelForTargetPower(species, targetPower)
-  const actualPower = combatPowerFromStats(statsFromBase(species.base, level))
+  const actualPower = combatPowerFromStats(statsFromBase(species.base, level, statMultipliers))
   return {
     mode,
     level,
-    statMultipliers: normalizeStatMultipliers(),
+    statMultipliers,
     referencePower: ref,
     currentReferencePower: currentRef,
     repeatCap,
