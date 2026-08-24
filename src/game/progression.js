@@ -327,15 +327,18 @@ export function consumeTicket(game, today = localDayNumber()) {
   return { ok: true, game: next, consumed }
 }
 
-export function refundTicket(game, ticketSource, today = localDayNumber()) {
-  const next = structuredClone(normalizeGameState(game, today))
-  if (!ticketSource || Number(ticketSource.expiresDay) <= today) return { game: next, refunded: false, reason: 'TICKET_EXPIRED' }
+export function refundTicket(game, ticketSource, today = null) {
+  const effectiveToday = today == null
+    ? Math.floor(Number(ticketSource?.earnedDay) || localDayNumber())
+    : Math.floor(Number(today))
+  const next = structuredClone(normalizeGameState(game, effectiveToday))
+  if (!ticketSource || Number(ticketSource.expiresDay) <= effectiveToday) return { game: next, refunded: false, reason: 'TICKET_EXPIRED' }
   const sourceId = String(ticketSource.id || 'refund')
   const existing = next.ticketGrants.find((grant) => grant.id === sourceId && grant.earnedDay === ticketSource.earnedDay && grant.expiresDay === ticketSource.expiresDay)
   if (existing) existing.count += 1
   else next.ticketGrants.push({ id: sourceId, count: 1, earnedDay: ticketSource.earnedDay, expiresDay: ticketSource.expiresDay })
   next.ticketGrants.sort((a, b) => a.expiresDay - b.expiresDay || a.earnedDay - b.earnedDay)
-  next.tickets = availableTicketCount(next, today)
+  next.tickets = availableTicketCount(next, effectiveToday)
   return { game: next, refunded: true }
 }
 
