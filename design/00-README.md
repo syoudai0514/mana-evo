@@ -1,147 +1,123 @@
-# Mana Evo 正本設計スナップショット — 2026-08-24
+# ManaEvo 正本設計 — 現行runtime
 
-この `design/` は PR #15 で No.001〜238正式masterと戦闘バランスを実装するための**レビュー用正本スナップショット**です。
+更新日: 2026-08-25
+状態: **IMPLEMENTED / MAIN運用中**
 
-現在の状態は **SOL REVIEWED / NO-GO / runtime実装ロック継続** です。
+この `design/00-README.md` を、ManaEvo の設計を読むときの唯一の入口とする。
+PR #4 / #5 / #15 時点のレビュー文書に残る `NO-GO`、`runtime実装ロック`、`未実装` 等の記述は、その時点の履歴であり現行状態を上書きしない。
 
-SOL全力レビュー結果は `design/16-sol-pr15-full-review.md`。P0/P1修正・再バリデーション後に判定を `GO WITH FIX` 以上へ更新するまで、No.001〜238正式runtime master・XP・技・ボスAI・捕獲・特殊形態の本実装へ進みません。
+## 現在の正本
 
-## レビュー実施順
+実装と仕様が競合した場合は、以下の順で確認する。
 
-`SOL-REVIEW-REQUEST-PR15-BALANCE.md` の指定どおり、以下を順番に確認済み。
+1. この文書 — 現在の実装状態と優先ルール
+2. `design/19-sol-pr15-runtime-completion.md` — 238体runtime完成時の最終判定
+3. `design/09-special-forms-master.md` — ギガシンカ12体 / キョダイバースト8体の対象割当
+4. `design/12-detailed-balance-design-for-sol-review.md` — 戦闘バランス原則
+5. `design/13*` / `design/14*` — 238体成長・155進化・32アイテム取得master
+6. `README.md` — 利用者・開発者向け現行仕様
 
-1. `design/12-detailed-balance-design-for-sol-review.md`
-2. `design/15-sol-review-validation-report.md`
-3. `design/13-monster-growth-master-238.md`
-4. `design/13a`〜`13d` の成長CSV（実体7ファイル、合計238体）
-5. `design/14a`〜`14d` の進化比較CSV（合計155遷移）
-6. `design/09-special-forms-master.md`
-7. `design/11-battle-character-boss-review.md`
+`design/16-sol-pr15-full-review.md` 以前のレビュー文書は履歴として参照してよいが、現在の実装可否判定には使わない。
 
-レビュー結果・P0/P1/P2・R1〜R5回答は `design/16-sol-pr15-full-review.md` を参照。
+## 現在実装済み
 
-## 数値・仕様競合時の優先順位
+- No.001〜238 正式runtime master（No.239は対象外）
+- 83系列 / 18タイプ / 155進化
+- 960技（238体×通常4技 + バースト専用8技）
+- 32種類の進化アイテム取得試練
+- 4エリア、エリアボス、ギガ/バースト専用試練、イベント、EX
+- Lv1〜100、XP、Battle XP、敵ソフトスケーリング、ボスsnapshot/challenge
+- 手持ち3体、交代、個体別HP、まもる、ボス予告大技
+- 4種類の「わ」による捕獲。敵HP50%以下から1バトル最大3投
+- 学習→チケット→探索/バトル→捕獲→育成→進化の循環
+- Kids Quest完成済み学習runtime（5教科、SRS、授業、自由勉強、ほしのしれん、先取り、つくよみちゃん）
+- 保護者PIN、複数子どもプロフィール
+- GitHub Pages PWA (`https://syoudai0514.github.io/mana-evo/`)
 
-SOLレビュー後は以下を優先する。
+## 学習仕様
 
-1. `design/16-sol-pr15-full-review.md` — 今回レビューで確定した判断と実装前ブロッカー
-2. `design/12-detailed-balance-design-for-sol-review.md`
-3. `design/13*` / `design/14*` の個別master
-4. `design/11-battle-character-boss-review.md`
-5. `design/09-special-forms-master.md`（特殊形態の具体対象はこの文書が正）
-6. `design/10-initial-balance-master.md`
-7. `design/06-battle-and-progression-design.md`
-8. `design/08-balance-tuning-policy.md`
+Kids Quest学習基盤を正本とし、ManaEvo都合で簡略化しない。
 
-特に以下は旧資料より新仕様を優先する。
+- 今日の基本は5教科タスク
+- 国語・算数は各5問、通常教科は各4問、道徳は該当日2問
+- 基本5教科完了でバトルチケット3枚 + ほしのわ3個
+- 自由勉強はチケット0枚
+- 追加チャレンジ3問中2問正解でチケット1枚
+- `わからない` を残し、誤答→解説→補強→後日復習へつなぐ
+- 単元MASTERでぎんのわ、むずかしいMASTERできんのわ
+- 前日までのチケットを持っていても、当日の基本学習完了前は新規バトル不可
 
-- STAB: **×1.20**
-- 初期版: **急所なし / ダメージ乱数なし**
-- 戦闘ロール: 8種 `balanced / attacker / speed / guard / hpTank / defenseTank / slowPower / fastGlass`
-- 通常敵とボスでreferencePowerを分離
-- 初回ストーリー/エリアボスは捕獲不可
-- 進化は進化後に4基礎能力が下がらない
-- `held_item_levelup`: **固定Lv条件なし。指定アイテム装備後の次の実LvUPでReady**（design/11の旧「必要Lv」表記は修正対象）
+## セーブ・プロフィール
 
-## SOLレビューで見つかった実装前ブロッカー
+- 学習状態とゲーム状態は子どもプロフィール単位で分離する。
+- ゲーム状態にはモンスター、レベル、図鑑、チケット、マナ、進化アイテム、特殊形態所有権、ステージ進行を含む。
+- 旧 `mana-evo-save-v1` は初回利用時に現在プロフィールへ自動移行する。
+- 保護者メニューのバックアップ/復元は学習とゲームをまとめたManaEvo全体セーブとして扱う。
+- 学習報酬はreward IDで冪等化し、再起動境界でも同じ報酬を二重付与しない。
 
-詳細は `design/16-sol-pr15-full-review.md`。
+## 「わ」・捕獲
 
-### P0
+- ほしのわ: ×1.00
+- ぎんのわ: ×1.20
+- きんのわ: ×1.50
+- にじのわ: 100%
+- 非にじは成功率92%上限
+- 捕獲可能な通常戦では、敵HPが50%以下になると「わを なげる」操作を解放する。
+- 1バトル最大3投。失敗すると敵が1回行動する。
+- ボス/進化試練/特殊試練など `captureDisabled` の戦闘では投げられないことを画面に明示する。
 
-1. `catchRank` の正本文言と13系CSV生成値が不一致。現行優先順位では `design/12` の「同系列第1形態基準」を正としてCSV再生成 + validator追加が必要。
-2. `held_item_levelup` の固定Lv有無が `design/11` と `design/12` / 14系CSVで矛盾。最新 `design/12` の「固定Lvなし」へ統一が必要。
+## 通常進化
 
-### P1
+- `level`: 指定Lv以上
+- `stone`: 対応する専用シンカしれん初回クリアで石を1個取得し、進化時に1個消費
+- `held_item_levelup`: 専用シンカしれんで取得 → 装備 → その後の実レベルアップで進化Ready。固定Lv条件なし
 
-1. stone21 / held-item11 の最速入手時点を正本化しないと進化体験日数を検証できない。
-2. 通常敵の常時完全追従ソフトスケールではLv成長実感が弱くなるため、既クリア通常戦の成長実感ゲートが必要。
-3. formal move masterに高威力1択化を防ぐ非劣位技ルールが必要。
-4. healer由来の一部個体は説明文と `hpTank` 体験がズレるため、formal move masterでidentity確認が必要。
+32件のアイテム進化は `design/14e-evolution-item-acquisition-master.csv` を正とする。
 
-## 238体 詳細設計データ
+## ギガシンカ
 
-`design/13-monster-growth-master-238.md` を索引とする。
+対象12体は `design/09-special-forms-master.md` を正とする。
 
-- active: No.001〜238 = **238体**
-- 83系列
-- 18タイプ
-- 155進化 = level 123 / stone 21 / held-item+levelup 11
-- No.239はruntime対象外
-- 全238体に基礎HP / 攻撃 / 防御 / 素早さ、BST、role、catch情報、進化情報を設定
-- 全238体に Lv1 / 5 / 10 / 20 / 30 / 50 / 100 の実能力を算出
-- 全155進化で基礎4能力非減少
+- エリア1ボス初回クリア相当でギガキーを永久解放
+- 対象種族を最終進化まで育成し、専用ギガしれん勝利で種族別ギガコアを永久解放
+- ギガキー/ギガコアは非消費
+- 1バトルで特殊形態は合計1回
+- バトル終了まで全能力×1.35
+- HP割合維持
+- 初回発動で同じ図鑑枠にギガ登録を記録する
 
-機械検証結果は `design/15-sol-review-validation-report.md`。SOLによる設計判断は `design/16-sol-pr15-full-review.md` を正とする。
+正式な特殊形態画像は画像制作工程で追加する。画像未完成でも戦闘ロジックと登録は動作させる。
 
-## R1〜R5 結果
+## キョダイバースト
 
-- **R1 GO:** `powerTierV1 = source catchRarity` を初期seedとして採用。現時点で印象ベースの個別補正はしない。
-- **R2 GO:** 戦闘開始時の手持ち最大3体へ全員100% Battle XPを採用。
-- **R3 GO:** 共通 `まもる`（成功100%、次ターン連続不可）を採用。
-- **R4 FIX:** 8role変換方針は維持するが、No.041 / 050 / 098 / 209 / 210 / 235ほかをmove identityレビュー対象とする。
-- **R5 GO:** にじのわは各学年初回+1 / 全エリア後EX初回+1 / ランダムなし / 章末なし。
+対象8体は `design/09-special-forms-master.md` を正とする。
 
-## 特殊形態 — 確定済み
+- 最終進化後、専用バーストしれん勝利で種族別のしるしを永久解放
+- 3ターン。技、まもる、捕獲失敗、自主交代などプレイヤーの1行動ごとに進む
+- HP×2.0 / 攻撃×1.2
+- 主力技1枠を威力110 / 命中95%の専用バースト技へ置換する（5技にはしない）
+- HP割合維持
+- 初回発動で同じ図鑑枠にバースト登録を記録する
 
-- `スター覚醒` は不採用。
-- 特殊形態は `ギガシンカ` / `キョダイバースト`。
-- ギガ12体・バースト8体は実装前設計から復元済みで、再選定しない。
-- 具体No./名前/タイプは `design/09-special-forms-master.md` が正。
-- ギガとバーストは同一種族で重複なし。
-- でんせつ級は対象外。
+## PWA / 公開
 
-## 学習部分
-
-- Kids Quest本体は変更しない。
-- 完成済みのKids Quest学習部分をMana Evoへ再利用する。
-- 学習→チケット→探索/バトル→捕獲→育成→進化の循環を維持する。
+- 正式公開先はGitHub Pages `/mana-evo/`。
+- VercelのGit deploymentは無効化済み。
+- manifest / canonical / iOS icon / service workerをCIで検証する。
+- navigationはnetwork-first、hash付きapp assets・モンスター画像はcache-first。
+- つくよみちゃんの巨大音声runtime/modelは初回PWA installで強制取得せず、保護者が利用開始したときだけ読み込む。
 
 ## 画像
 
-- 正式キャラ画像は別工程。
-- 正式画像が完成済みのキャラは正式画像を使う。
-- 未完成キャラはplaceholderで進め、ゲームロジックを画像待ちにしない。
+- 正式画像が存在する個体は `/public/monsters/{id}.webp` を使う。
+- 未完成個体だけ準備中placeholderを使う。
+- ゲームロジックを画像完成待ちにしない。
+- 238体の正式画像制作は別工程で順次追加する。
 
-## 本番中のバランス変更
+## 変更ルール
 
-- 子ども個人に合わせ、XP/技威力/捕獲率/敵倍率を裏で自動変更しない。
-- 初期値はレビュー・自動シミュレーション・QAを通して共通設定として調整する。
-- 数%〜十数%の調整は根拠と回帰結果をPRへ残す。
-- ゲーム思想を変える変更はユーザー判断を取る。
-
-## 現在の実装状態
-
-PR #15には以下の**基盤コード**は既に存在する。
-
-- Lv能力値計算
-- combatPower
-- normal/boss referencePower分離
-- 通常敵ソフトスケーリング基盤
-- ボス初回snapshot / challenge再戦基盤
-- boss snapshot save version 5
-- balance単体テスト
-
-一方、以下はSOLレビューP0/P1解消後に実装する。
-
-- No.001〜238正式runtime master
-- 238体個別base stats / roles / catch / evolution runtime接続
-- XP正本式 / Battle XP
-- formal moves
-- boss予告大技AI
-- ギガ/バースト実発動
-- 画像registry
-- save migration
-- `?qa=monster-master`
-- 238体validator / 全バランスシミュレーション
-
-設計データがGitHubに揃っていることとruntime実装完了を混同しない。
-
-## runtime実装ロック解除条件
-
-1. `design/16-sol-pr15-full-review.md` のP0を解消
-2. P1受入条件を設計へ追加
-3. 238体 / 155進化 / catchRank / item evolution / normal growth / formal movesを再バリデーション
-4. SOL判定を `GO WITH FIX` 以上へ更新
-
-それまでは正式runtime masterへ進まない。
+- `スター覚醒` は不採用。復活させない。
+- ギガ/バースト対象種族をレビュー担当の好みで変更しない。
+- Kids Quest学習仕様をManaEvo側だけで簡略化しない。
+- ゲーム思想や報酬条件を変更する場合は、先にこの正本を更新して意図を明記する。
+- 実装変更には回帰テストを追加し、CI成功後にmainへ反映する。
