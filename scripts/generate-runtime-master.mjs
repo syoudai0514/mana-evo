@@ -57,12 +57,18 @@ const no3 = (value) => String(value).padStart(3, '0')
 
 const growth = GROWTH_FILES.flatMap(loadCsv).sort((a, b) => num(a.No) - num(b.No))
 const evolutions = EVOLUTION_FILES.flatMap(loadCsv)
-const acquisitions = loadCsv(ACQUISITION_FILE)
+const growthByNo = new Map(growth.map((row) => [String(num(row.No)), row]))
+const acquisitions = loadCsv(ACQUISITION_FILE).map((row) => ({
+  ...row,
+  fromId: growthByNo.get(String(num(row.fromNo)))?.id,
+  toId: growthByNo.get(String(num(row.toNo)))?.id
+}))
 
 if (growth.length !== 238) throw new Error(`Expected 238 monsters, got ${growth.length}`)
 if (new Set(growth.map((row) => row.id)).size !== 238) throw new Error('Monster IDs are not unique')
 if (evolutions.length !== 155) throw new Error(`Expected 155 evolutions, got ${evolutions.length}`)
 if (acquisitions.length !== 32) throw new Error(`Expected 32 item acquisitions, got ${acquisitions.length}`)
+if (acquisitions.some((row) => !row.fromId || !row.toId)) throw new Error('Acquisition row has unresolved from/to monster number')
 
 const evolutionByFrom = new Map(evolutions.map((row) => [row.fromId, row]))
 
@@ -174,10 +180,8 @@ for (const row of growth) {
 
 const evolutionItems = { stones: {}, heldItems: {} }
 for (const row of acquisitions) {
-  const method = row.method
-  const itemId = row.itemId
-  const bucket = method === 'stone' ? evolutionItems.stones : evolutionItems.heldItems
-  bucket[itemId] ||= { id: itemId, name: ITEM_NAMES[itemId] || `${itemId}のアイテム` }
+  const bucket = row.method === 'stone' ? evolutionItems.stones : evolutionItems.heldItems
+  bucket[row.itemId] ||= { id: row.itemId, name: ITEM_NAMES[row.itemId] || `${row.itemId}のアイテム` }
 }
 
 const stages = []
@@ -225,7 +229,7 @@ for (let area = 1; area <= 4; area += 1) {
     bossRank: bossRanks[area],
     enemyLevel: 10 + area * 8,
     mana: 60 + area * 30,
-    minAreaClears: Math.min(12, Math.max(5, Math.ceil(areaWild.length * 0.15))),
+    minAreaClears: Math.max(5, Math.ceil(areaWild.length * 0.5)),
     areaGateBossId: area > 1 ? areaBossIds[area - 1] : null,
     captureDisabled: true
   })
@@ -234,10 +238,13 @@ for (let area = 1; area <= 4; area += 1) {
 for (const row of acquisitions) {
   const from = species[row.fromId]
   if (!from) throw new Error(`Unknown acquisition source ${row.fromId}`)
+  const area = num(row.area, from.area)
+  const areaWildCount = (wildByArea.get(area) || []).length
+  const milestoneRatio = row.unlockMilestone === 'evo-a1' ? 0.50 : 0.35
   stages.push({
     id: `evo-${no3(row.fromNo)}-${no3(row.toNo)}`,
     kind: 'evolution-trial',
-    area: num(row.area, from.area),
+    area,
     areaName: from.areaName,
     label: `${from.name}の シンカしれん`,
     enemySpeciesId: row.fromId,
@@ -245,6 +252,7 @@ for (const row of acquisitions) {
     enemyLevel: 12 + from.area * 7,
     mana: 35 + from.area * 5,
     requiresOwnedSpeciesId: row.fromId,
+    minAreaClears: Math.max(1, Math.ceil(areaWildCount * milestoneRatio)),
     areaGateBossId: from.area > 1 ? areaBossIds[from.area - 1] : null,
     captureDisabled: true,
     evolutionReward: { kind: row.method === 'stone' ? 'stone' : 'held', itemId: row.itemId, count: num(row.grantCount, 1) }
