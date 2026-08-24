@@ -1,11 +1,12 @@
 const CACHE_PREFIX = 'manaevo-pwa-'
-const CACHE_NAME = `${CACHE_PREFIX}v5`
+const CACHE_NAME = `${CACHE_PREFIX}v6`
 const BASE_URL = new URL('./', self.location.href).href
 const APP_SHELL = [
   BASE_URL,
   new URL('manifest.webmanifest', BASE_URL).href,
   new URL('icons/icon-192.png', BASE_URL).href,
-  new URL('icons/icon-512.png', BASE_URL).href
+  new URL('icons/icon-512.png', BASE_URL).href,
+  new URL('icons/apple-touch-icon.png', BASE_URL).href
 ]
 
 self.addEventListener('install', (event) => {
