@@ -1,41 +1,80 @@
-# 未決事項 — 2026-08-23 設計承認反映版
+# 未決事項 — PR #15 runtime完了後
 
-この文書は正本設計を上書きしません。`design/` に確定済みのものは未決へ戻しません。
+更新日: 2026-08-24
+最新判定: **MERGE GO / Production release allowed**
 
-## A. 本当に未決 / マスタ割当待ち
+レビュー履歴は `design/16-sol-pr15-full-review.md` / `design/17-sol-pr15-review-amendment.md`、設計修正判定は `design/18-sol-pr15-fix-resolution.md`、runtime完了の最新判定は `design/19-sol-pr15-runtime-completion.md` を正とする。
 
-### A1. ギガシンカ対象種族の最終一覧
-ギガシンカの基本ルール・永久所有権・取得ループは確定済み。未決なのは「どの最終形を対象にするか」と各専用チャレンジ/ボスの具体マスタです。
+## 1. 設計上のP0/P1は解消済み
 
-### A2. キョダイバースト対象種族の最終一覧
-1戦1回・3ターン・巨大化/専用技/HP上昇・ギガとの同時使用不可・しるし永久所持は確定済み。未決なのは対象種族と個別取得チャレンジのマスタです。
+以下は確定済み。
 
-### A3. にじのわの章末/学年報酬への具体割当
-にじのわ=100%成功、永久所持は確定済み。章末/学年級の「どの達成で何個」の最終割当は、該当学習UIを接続する段階で決めます。
+- catchRank: 各形態自身の `catchRarity` + stage補正。
+- held_item_levelup: 固定Lvなし。指定もちもの装備中の次の実LvUPで `evolutionReady`。
+- No.142: `m142 / ヘラクレオン / burstEligible=true`。
+- 進化item32遷移: `design/14e-evolution-item-acquisition-master.csv` の専用trial初回クリア保証。
+- normal stage: current team soft scale + first-clear reference + repeat cap ×1.10。
+- 既クリア通常stage: 成長率に応じたrepeat mastery easingをHP/DEFへ適用。詳細はdesign/19。
+- Battle XP: 戦闘開始時の最大3体へ100%ずつ。捕獲成功も同額。
+- formal move schema: `moveId/name/type/power/accuracy/effect/role`。
+- healer/support identity: stat roleではなくmove effectで表現。
+- `combatRoleV2`: 内部監査メタデータ。実戦は実能力値が正。
+- 共通 `まもる`: 100% / 1行動 / 連続不可 / ボス予告大技に有効。
+- powerTierV1: source catchRarityを初期seed、catchRarityとは別field。
+- にじのわ: 各学年初回 + 全エリア後EX初回。ランダムなし。
+- スター覚醒なし。
+- ギガ12 / バースト8の対象IDは再選定しない。
 
-### A4. 最終バランス値
-XP、敵HP、技威力、各ステージ数、捕獲base chance等の最終値は実プレイで調整します。構造・式・config境界を先に固定し、レビュー担当の好みだけで最終値をロックしません。
+## 2. 確定済みデータ
 
-## B. 実装継続項目（仕様未決ではない）
+- active monster: No.001〜238 = **238体**。
+- No.239はruntimeへ入れない。
+- **83系列 / 18タイプ**。
+- **155進化 = level123 / stone21 / held_item_levelup11**。
+- 155進化で基礎4能力低下0。
+- ギガ12 / バースト8 / overlap0。
+- Lv上限100。
+- 個体値/努力値/性格などの隠し補正なし。
+- STAB 1.20。
+- 初期版はダメージ乱数・通常急所なし。
+- 捕獲はHP50%以下 / 最大3投 / ほし1.0 / ぎん1.2 / きん1.5 / にじ100% / 非にじ92%上限。
+- 今日の基本学習未完了では持越しチケットでも新規バトル不可。
+- チケットTTL 7日、期限近い順消費。敗北/明示離脱返却、勝利/捕獲成功消費。
 
-- Kids Quest全学年/全教材UIのMana Evo routing完全接続
-- ギガシンカの戦闘中実発動
-- キョダイバーストの戦闘中実発動
-- ギガ/バーストの対象・チャレンジマスタ投入
-- PWA/offline
-- TTS統一・iPhone実機E2E
-- 正式キャラクター画像・名称
+## 3. Runtime gate — 全件完了
 
-## C. 今回確定済みなので未決に戻さない
+1. 238体正式runtime master投入 — PASS
+2. 238体formal move master + validator — PASS
+3. healer/support identity effect — PASS
+4. No.181 / 182固有move identity — PASS
+5. role semantic runtime誤用排除 — PASS
+6. `まもる` + ボス予告UI E2E — PASS
+7. boss snapshot / rematch / challenge E2E — PASS
+8. normal repeat +20%成長simulation — PASS
+9. ギガ/バースト相対強度simulation — PASS
+10. 進化trial32件 stage/reward — PASS
+11. CI / production build — PASS
 
-- スター覚醒なし
-- 今日の基本5問未完了では持越しチケットでも新規バトル不可
-- 誤答→説明ボタンだけではdaily項目完了不可
-- 誤答後は解説確認→再回答。高速連打疑い時は追加確認問題も必要
-- チケット7日TTL・期限近い順消費
-- 開始時reserve、敗北/明示逃走は返却、勝利/捕獲成功は消費確定、技術中断はresume
-- ほし×1.00 / ぎん×1.20 / きん×1.50 / にじ100%、非にじ92%上限
-- daily ほし+3 / 追加3正解ごとほし+1 / MASTERぎん+1 / hard MASTERきん+1
-- 「わ」は期限なし
-- 通常進化3方式 `level / stone / held_item_level`
-- ギガキー/ギガコア/バーストのしるしは永久・非消費
+## 4. Final validation
+
+GitHub Actions CI run #175:
+
+- generated runtime: **238 species / 960 moves / 216 stages**
+- tests: **97 / 97 PASS**
+- failures: **0**
+- npm audit high: **0 vulnerabilities**
+- Vite production build: **SUCCESS**
+
+normal repeat simulationは、初回1行動のfloor戦を除く「短縮可能sample」で+20%前後の成長後に平均1turn以上短縮することを確認する。理由と最終式は `design/19-sol-pr15-runtime-completion.md` に記録済み。
+
+## 5. 現在の未決事項
+
+PR #15を止める仕様・runtime blockerは **0件**。
+
+正式キャラクター画像238体のファイル制作・配置は別制作工程であり、今回の正式monster data / battle / evolution runtimeのmerge blockerにはしない。画像ファイルが未配置の個体は識別可能な準備中fallbackを表示する。
+
+## 6. 判定
+
+**MERGE GO**
+
+PR #15はDraft解除、main merge、Vercel Production公開へ進めてよい。

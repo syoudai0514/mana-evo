@@ -1,21 +1,36 @@
 import { EVOLUTION_ITEMS, STAGES, speciesOf } from './content.js'
 
-export const CURRENT_GAME_VERSION = 4
+export const CURRENT_GAME_VERSION = 7
 export const CAPTURE_ITEM_IDS = ['star', 'silver', 'gold', 'rainbow']
 export const TICKET_TTL_DAYS = 7
+
+const LEGACY_SPECIES_MAP = Object.freeze({
+  'starter-fire-1': 'm004', 'starter-fire-2': 'm005', 'starter-fire-3': 'm006',
+  'wild-grass-1': 'm001', 'wild-grass-2': 'm002', 'wild-grass-3': 'm003',
+  'wild-water-1': 'm007', 'wild-water-2': 'm008', 'wild-water-3': 'm009',
+  'wild-electric-1': 'm025', 'wild-electric-2': 'm026', 'wild-electric-3': 'm027',
+  'wild-bug-1': 'm022', 'wild-bug-2': 'm023', 'wild-bug-3': 'm024',
+  'wild-stone-1': 'm010', 'wild-stone-2': 'm011',
+  'wild-charm-1': 'm049', 'wild-charm-2': 'm050'
+})
+
+export function canonicalSpeciesId(speciesId) {
+  return LEGACY_SPECIES_MAP[speciesId] || speciesId
+}
 
 function localDayNumber(d = new Date()) {
   const local = new Date(d.getFullYear(), d.getMonth(), d.getDate())
   return Math.floor(local.getTime() / 86400000)
 }
 
-function starterState(level = 5, xp = 0, speciesId = 'starter-fire-1') {
+function starterState(level = 5, xp = 0, speciesId = 'm004') {
   return {
     instanceId: 'starter-1',
-    speciesId,
+    speciesId: canonicalSpeciesId(speciesId),
     level: Math.max(1, Number(level) || 1),
     xp: Math.max(0, Number(xp) || 0),
     heldItemId: null,
+    evolutionReady: false,
     caughtAt: Date.now()
   }
 }
@@ -31,7 +46,7 @@ export function createGameState() {
   const starter = starterState()
   return {
     version: CURRENT_GAME_VERSION,
-    tickets: 0, // compatibility/display mirror of valid ticketGrants
+    tickets: 0,
     ticketGrants: [],
     mana: 0,
     captureItems: { star: 8, silver: 0, gold: 0, rainbow: 0 },
@@ -39,6 +54,8 @@ export function createGameState() {
     gigaKeyOwned: false,
     gigaCoreSpecies: {},
     burstMarks: {},
+    bossBalanceSnapshots: {},
+    normalStageSnapshots: {},
     battlesStarted: 0,
     battlesWon: 0,
     battlesAbandoned: 0,
@@ -87,31 +104,82 @@ function normalizeCaptureItems(saved) {
 
 function normalizeOwnershipMap(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {}
-  return Object.fromEntries(Object.entries(value).filter(([speciesId, owned]) => !!owned && !!speciesOf(speciesId)).map(([speciesId]) => [speciesId, true]))
+  return Object.fromEntries(Object.entries(value)
+    .map(([speciesId, owned]) => [canonicalSpeciesId(speciesId), owned])
+    .filter(([speciesId, owned]) => !!owned && !!speciesOf(speciesId))
+    .map(([speciesId]) => [speciesId, true]))
 }
 
 function normalizeInventory(saved) {
   const evo = saved?.evolutionItems || {}
-  const clean = (value, allowed) => value && typeof value === 'object' && !Array.isArray(value)
-    ? Object.fromEntries(Object.entries(value).map(([id, count]) => [id, positiveInt(count)]).filter(([id, count]) => count > 0 && allowed(id)))
+  const clean = (value, allowed, aliases = {}) => value && typeof value === 'object' && !Array.isArray(value)
+    ? Object.fromEntries(Object.entries(value)
+        .map(([id, count]) => [aliases[id] || id, positiveInt(count)])
+        .filter(([id, count]) => count > 0 && allowed(id)))
     : {}
   return {
-    stones: clean(evo.stones, (id) => EVOLUTION_ITEMS.stones[id]),
-    heldItems: clean(evo.heldItems, (id) => EVOLUTION_ITEMS.heldItems[id])
+    stones: clean(evo.stones, (id) => EVOLUTION_ITEMS.stones[id], { 'glow-stone': 'thunder' }),
+    heldItems: clean(evo.heldItems, (id) => EVOLUTION_ITEMS.heldItems[id], { 'bond-charm': 'emberwick' })
   }
+}
+
+function normalizeBossBalanceSnapshots(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {}
+  const result = {}
+  for (const [stageId, raw] of Object.entries(value)) {
+    const stage = STAGES.find((entry) => entry.id === stageId && entry.bossRank)
+    if (!stage || !raw || typeof raw !== 'object') continue
+    const lockedLevel = Math.max(1, Math.min(100, positiveInt(raw.lockedLevel) || 1))
+    const multipliers = raw.statMultipliers || {}
+    result[stageId] = {
+      stageId,
+      bossId: String(raw.bossId || stage.bossId || stage.enemySpeciesId),
+      bossRank: String(raw.bossRank || stage.bossRank),
+      lockedLevel,
+      referencePower: Math.max(1, Number(raw.referencePower) || 1),
+      targetPower: Math.max(1, Number(raw.targetPower) || 1),
+      statMultipliers: {
+        hp: Math.max(1, Number(multipliers.hp) || 1),
+        attack: Math.max(1, Number(multipliers.attack) || 1),
+        defense: Math.max(1, Number(multipliers.defense) || 1),
+        speed: Math.max(1, Number(multipliers.speed) || 1)
+      },
+      balanceVersion: positiveInt(raw.balanceVersion) || 1
+    }
+  }
+  return result
+}
+
+function normalizeNormalStageSnapshots(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {}
+  const result = {}
+  for (const [stageId, raw] of Object.entries(value)) {
+    const stage = STAGES.find((entry) => entry.id === stageId && !entry.bossRank)
+    const firstClearReferencePower = Number(raw?.firstClearReferencePower)
+    if (!stage || !raw || typeof raw !== 'object' || !Number.isFinite(firstClearReferencePower) || firstClearReferencePower <= 0) continue
+    result[stageId] = {
+      stageId,
+      firstClearReferencePower: Math.max(1, firstClearReferencePower),
+      balanceVersion: positiveInt(raw.balanceVersion) || 1
+    }
+  }
+  return result
 }
 
 function normalizeBox(savedBox) {
   const box = {}
   for (const [instanceId, raw] of Object.entries(savedBox || {})) {
-    if (!raw || !speciesOf(raw.speciesId)) continue
-    const heldItemId = raw.heldItemId && EVOLUTION_ITEMS.heldItems[raw.heldItemId] ? raw.heldItemId : null
+    const speciesId = canonicalSpeciesId(raw?.speciesId)
+    if (!raw || !speciesOf(speciesId)) continue
+    let heldItemId = raw.heldItemId === 'bond-charm' ? 'emberwick' : raw.heldItemId
+    heldItemId = heldItemId && EVOLUTION_ITEMS.heldItems[heldItemId] ? heldItemId : null
     box[instanceId] = {
       instanceId,
-      speciesId: raw.speciesId,
+      speciesId,
       level: Math.max(1, positiveInt(raw.level) || 1),
       xp: positiveInt(raw.xp),
       heldItemId,
+      evolutionReady: !!raw.evolutionReady,
       caughtAt: Number(raw.caughtAt) || Date.now()
     }
   }
@@ -121,7 +189,8 @@ function normalizeBox(savedBox) {
 function normalizeActiveBattle(raw, box, team) {
   if (!raw || typeof raw !== 'object') return null
   const stage = STAGES.find((entry) => entry.id === raw.stageId)
-  if (!stage || raw.enemy?.speciesId !== stage.enemySpeciesId) return null
+  const enemySpeciesId = canonicalSpeciesId(raw.enemy?.speciesId)
+  if (!stage || enemySpeciesId !== stage.enemySpeciesId) return null
   const activeId = team.includes(raw.activeInstanceId) ? raw.activeInstanceId : team[0]
   if (!activeId || !box[activeId]) return null
   const partyHp = {}
@@ -133,21 +202,32 @@ function normalizeActiveBattle(raw, box, team) {
         expiresDay: Math.floor(Number(raw.ticketSource.expiresDay) || 0)
       }
     : null
+  const teamAtStart = (Array.isArray(raw.teamAtStart) ? raw.teamAtStart : team)
+    .filter((id, index, all) => !!box[id] && all.indexOf(id) === index)
+    .slice(0, 3)
   return {
     ...structuredClone(raw),
+    enemy: { ...structuredClone(raw.enemy), speciesId: enemySpeciesId },
     activeInstanceId: activeId,
     partyHp,
+    teamAtStart,
     ticketSource,
     ticketRefunded: !!raw.ticketRefunded,
     captureAttempts: Math.max(0, Math.min(3, positiveInt(raw.captureAttempts))),
-    captureStars: Math.max(0, Math.min(4, positiveInt(raw.captureStars)))
+    captureStars: Math.max(0, Math.min(4, positiveInt(raw.captureStars))),
+    moveUses: raw.moveUses && typeof raw.moveUses === 'object' ? { ...raw.moveUses } : {},
+    lastPlayerAction: raw.lastPlayerAction || null,
+    specialUsed: !!raw.specialUsed,
+    playerSpecial: raw.playerSpecial || null,
+    bossTelegraphed: !!raw.bossTelegraphed,
+    bossCountdown: Math.max(0, positiveInt(raw.bossCountdown))
   }
 }
 
 function migrateV1(saved, today) {
   const legacyMonster = saved?.monsters?.[saved.activeMonsterId] || saved?.monsters?.['starter-001'] || {}
   const legacyStage = Math.max(1, Math.min(3, Number(legacyMonster.stage) || 1))
-  const speciesId = `starter-fire-${legacyStage}`
+  const speciesId = ['m004', 'm005', 'm006'][legacyStage - 1]
   const starter = starterState(legacyMonster.level || 5, legacyMonster.xp || 0, speciesId)
   const next = {
     ...createGameState(),
@@ -161,6 +241,16 @@ function migrateV1(saved, today) {
   }
   next.tickets = availableTicketCount(next, today)
   return next
+}
+
+function normalizeDexMap(value) {
+  if (!value || typeof value !== 'object') return {}
+  const result = {}
+  for (const [rawId, enabled] of Object.entries(value)) {
+    const id = canonicalSpeciesId(rawId)
+    if (enabled && speciesOf(id)) result[id] = true
+  }
+  return result
 }
 
 export function normalizeGameState(saved, today = localDayNumber()) {
@@ -189,6 +279,8 @@ export function normalizeGameState(saved, today = localDayNumber()) {
     gigaKeyOwned: !!saved.gigaKeyOwned || positiveInt(saved.gigaKeys) > 0,
     gigaCoreSpecies: normalizeOwnershipMap(saved.gigaCoreSpecies),
     burstMarks: normalizeOwnershipMap(saved.burstMarks),
+    bossBalanceSnapshots: normalizeBossBalanceSnapshots(saved.bossBalanceSnapshots),
+    normalStageSnapshots: normalizeNormalStageSnapshots(saved.normalStageSnapshots),
     battlesStarted: positiveInt(saved.battlesStarted),
     battlesWon: positiveInt(saved.battlesWon),
     battlesAbandoned: positiveInt(saved.battlesAbandoned),
@@ -196,7 +288,7 @@ export function normalizeGameState(saved, today = localDayNumber()) {
     box,
     team,
     activeMonsterId,
-    dex: { seen: { ...(saved.dex?.seen || {}) }, caught: { ...(saved.dex?.caught || {}) } },
+    dex: { seen: normalizeDexMap(saved.dex?.seen), caught: normalizeDexMap(saved.dex?.caught) },
     stagesCleared: Array.isArray(saved.stagesCleared) ? [...new Set(saved.stagesCleared.filter((id) => STAGES.some((s) => s.id === id)))] : []
   }
 
@@ -204,8 +296,6 @@ export function normalizeGameState(saved, today = localDayNumber()) {
     next.dex.seen[monster.speciesId] = true
     next.dex.caught[monster.speciesId] = true
   }
-  next.dex.seen = Object.fromEntries(Object.entries(next.dex.seen).filter(([id, value]) => value && speciesOf(id)))
-  next.dex.caught = Object.fromEntries(Object.entries(next.dex.caught).filter(([id, value]) => value && speciesOf(id)))
   next.activeBattle = normalizeActiveBattle(saved.activeBattle, next.box, next.team)
   next.tickets = availableTicketCount(next, today)
   return next
@@ -237,15 +327,18 @@ export function consumeTicket(game, today = localDayNumber()) {
   return { ok: true, game: next, consumed }
 }
 
-export function refundTicket(game, ticketSource, today = localDayNumber()) {
-  const next = structuredClone(normalizeGameState(game, today))
-  if (!ticketSource || Number(ticketSource.expiresDay) <= today) return { game: next, refunded: false, reason: 'TICKET_EXPIRED' }
+export function refundTicket(game, ticketSource, today = null) {
+  const effectiveToday = today == null
+    ? Math.floor(Number(ticketSource?.earnedDay) || localDayNumber())
+    : Math.floor(Number(today))
+  const next = structuredClone(normalizeGameState(game, effectiveToday))
+  if (!ticketSource || Number(ticketSource.expiresDay) <= effectiveToday) return { game: next, refunded: false, reason: 'TICKET_EXPIRED' }
   const sourceId = String(ticketSource.id || 'refund')
   const existing = next.ticketGrants.find((grant) => grant.id === sourceId && grant.earnedDay === ticketSource.earnedDay && grant.expiresDay === ticketSource.expiresDay)
   if (existing) existing.count += 1
   else next.ticketGrants.push({ id: sourceId, count: 1, earnedDay: ticketSource.earnedDay, expiresDay: ticketSource.expiresDay })
   next.ticketGrants.sort((a, b) => a.expiresDay - b.expiresDay || a.earnedDay - b.earnedDay)
-  next.tickets = availableTicketCount(next, today)
+  next.tickets = availableTicketCount(next, effectiveToday)
   return { game: next, refunded: true }
 }
 
@@ -269,6 +362,7 @@ export function equipHeldItem(game, instanceId, itemId, today = localDayNumber()
   next.evolutionItems.heldItems[itemId] -= 1
   if (next.evolutionItems.heldItems[itemId] <= 0) delete next.evolutionItems.heldItems[itemId]
   monster.heldItemId = itemId
+  monster.evolutionReady = false
   return { ok: true, game: next }
 }
 
@@ -298,22 +392,26 @@ export function grantLearningReward(game, {
 export function specialProgressionStatus(monster, game) {
   const species = monster ? speciesOf(monster.speciesId) : null
   const isFinal = !!species && !species.evolution
+  const gigaEligible = !!species?.gigaEligible
+  const burstEligible = !!species?.burstEligible
+  const hasKey = !!game?.gigaKeyOwned
+  const hasCore = !!game?.gigaCoreSpecies?.[monster?.speciesId]
+  const hasMark = !!game?.burstMarks?.[monster?.speciesId]
   return {
     giga: {
       label: 'ギガシンカ',
-      eligibleSpecies: !!species?.gigaEligible,
+      eligibleSpecies: gigaEligible,
       isFinal,
-      hasKey: !!game?.gigaKeyOwned,
-      hasCore: !!game?.gigaCoreSpecies?.[monster?.speciesId],
-      // Canonical rule is fixed: final form -> species challenge/boss -> permanent core.
-      // Species allocations/challenge masters and battle activation are still to be wired.
-      activatable: false
+      hasKey,
+      hasCore,
+      activatable: isFinal && gigaEligible && hasKey && hasCore
     },
     burst: {
       label: 'キョダイバースト',
-      hasMark: !!game?.burstMarks?.[monster?.speciesId],
-      // Canonical battle rule: once per battle, 3 turns, HP/unique-move boost, no simultaneous Giga.
-      activatable: false
+      eligibleSpecies: burstEligible,
+      isFinal,
+      hasMark,
+      activatable: isFinal && burstEligible && hasMark
     }
   }
 }
