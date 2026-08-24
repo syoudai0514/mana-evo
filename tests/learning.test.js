@@ -141,7 +141,6 @@ test('suspicious fast-wrong flow requires a separate reinforcement success befor
   let study = startDailySession(createStudyState(), 345).state
   const session = startDailySession(study, 345)
   study = session.state
-  // Trigger suspicious state with three fast misses on three requirements.
   for (const q of session.questions.slice(0, 3)) {
     const wrong = q.choices.find((choice) => choice !== q.answer)
     study = answerQuestion(study, q, wrong, { context: 'daily', today: 345, elapsedMs: 100 }).state
@@ -243,13 +242,14 @@ test('a carried ticket cannot start a new battle before today daily is complete'
   assert.equal(availableTicketCount(blocked.game, day + 1), 1)
 })
 
-test('one study-earned ticket opens exactly one fixed-level stage after daily gate', () => {
+test('one study-earned ticket opens exactly one soft-scaled stage after daily gate', () => {
   const day = 910
   const game = grantLearningReward(createGameState(), { ticketDelta: 1, today: day })
   const result = startBattle(game, '1-1', { dailyCompleted: true, today: day })
   assert.equal(result.ok, true)
   assert.equal(availableTicketCount(result.game, day), 0)
-  assert.equal(result.battle.enemy.level, 5)
+  assert.equal(result.battle.enemy.balance.mode, 'normal-soft')
+  assert.ok(result.battle.enemy.level >= 1)
   assert.equal(result.game.battlesStarted, 1)
   assert.deepEqual(result.game.activeBattle, result.battle)
 })
