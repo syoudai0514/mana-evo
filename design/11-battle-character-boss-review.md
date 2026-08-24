@@ -2,94 +2,90 @@
 
 更新日: 2026-08-24
 対象: PR #15 `chatgpt/monster-master-238`
+状態: **SOL FIX APPLIED / runtime実装可・main merge不可**
 
-この文書は、No.001〜238正式マスター投入前に、現行の `06-battle-and-progression-design.md` / `10-initial-balance-master.md` と実装コードを突き合わせて行った再レビューの確定差分です。
+この文書は `design/06-battle-and-progression-design.md` / `design/10-initial-balance-master.md` より新しい確定差分であり、PR #15では本書と `design/12-detailed-balance-design-for-sol-review.md`、`design/17-sol-pr15-review-amendment.md`、`design/18-sol-pr15-fix-resolution.md` を優先する。
 
-**この文書に明記した差分は、06/10より新しい確定事項として優先します。**
+---
 
-## 1. レビュー結論
+## 1. 戦力基準 — 通常敵とボスを分離する
 
-現行方針そのものは妥当です。
+### 通常敵
 
-- Lvではなく実能力から戦力を評価する
-- 通常敵はソフトスケーリング
-- ストーリー/エリアボスは初回だけ合わせ、その後固定
-- チャレンジ再戦だけ現在戦力へ再スケール
-- タイプ相性・進化・技選択・ギガ/バーストによる工夫を敵側で相殺しない
-
-ただし、238体を投入する前に以下を修正しないと、キャラ育成やボス体験が崩れる。
-
-## 2. P0: 通常敵とボスで `referencePower` を分離する
-
-### 問題
-
-旧式は通常敵もボスも、編成上位3体平均と所持上位5体中央値から同じ `referencePower` を作っていた。
-
-このままだと:
-
-- 新しく捕まえた低Lvキャラを育てたいのに、ボックス内の高Lvキャラのせいで通常敵が強くなる
-- 逆に Lv80 + Lv20 + Lv20 のような編成では平均でLv80の影響が薄まり、初見ボスが弱くなりすぎる
-
-### 確定仕様
-
-#### 通常敵
-
-現在の**手持ち3体だけ**を使う。
+通常敵は現在の**手持ち1〜3体だけ**を見る。
 
 ```text
-normalReferencePower = 手持ち1〜3体の平均combatPower
+currentTeamPower = 手持ち1〜3体の平均combatPower
 ```
 
-目的は、新規取得キャラを育てやすくすること。強い控えへ交代して通常敵を楽に倒せることは許容する。
+BOXの高Lv個体は通常敵を強くしない。
 
-#### ストーリー/エリアボス
-
-初見ボスのみ、弱い編成への付け替え・1体だけ極端に高Lvの両方を抑える。
+未クリアstageは:
 
 ```text
-teamWeighted   = 手持ち上位3体を 50% / 30% / 20% で加重平均
-rosterWeighted = 所持上位3体を 50% / 30% / 20% で加重平均 × 0.85
-carryFloor     = 所持最強1体 × 0.80
+normalReferencePower = currentTeamPower
+```
+
+初回クリア時に:
+
+```text
+stage.firstClearReferencePower = その戦闘開始時のnormalReferencePower
+```
+
+を保存する。
+
+既クリアstage再戦は:
+
+```text
+repeatCap = stage.firstClearReferencePower * 1.10
+normalReferencePower = min(currentTeamPower, repeatCap)
+```
+
+とする。
+
+これにより:
+
+- 弱い新規キャラで戻れば敵も弱くなり、育成を阻害しない。
+- 同じ主力が+20%以上育って戻れば敵は+10%で頭打ちになり、LvUPの成長実感が出る。
+- 初回snapshotを下限に使わない。弱い育成チームを過去戦力まで引き上げてはいけない。
+
+**受入条件**
+
+- 初回時点よりプレイヤー戦力+20%で同stage再戦 → 平均決着ターンが最低1ターン短縮。
+- 低Lv育成チームで戻る → 過去snapshotが敵の下限にならない。
+- 未クリアstageはcurrent team追従。
+- 1.10は初期値。simulation結果により1.05〜1.10の範囲だけ調整可。
+
+### ストーリー／エリアボス
+
+初見ボスだけ:
+
+```text
+teamWeighted   = 手持ち上位3体 50% / 30% / 20%
+rosterWeighted = 所持上位3体 50% / 30% / 20% * 0.85
+carryFloor     = 所持最強1体 * 0.80
 bossReferencePower = max(teamWeighted, rosterWeighted, carryFloor)
 ```
 
-ボスsnapshot作成後は従来どおり固定する。
+を使いsnapshot保存する。
 
-### 実装
+- 通常再戦: snapshot固定。
+- challenge再戦: 現在戦力へ再scale。
+- タイプ相性・ギガ・バーストの攻略メリットは敵側で相殺しない。
 
-`src/game/balance.js` の `BALANCE_VERSION=2` で反映済み。
+---
 
-## 3. P0: XP曲線と実装値を一致させる
+## 2. XP曲線とチーム育成
 
-### 問題
-
-正本では:
-
-```text
-totalXp(L) = round(6 × (L - 1)^1.9)
-```
-
-だが、現行 `engine.js` は:
+累積XP:
 
 ```text
-xpToNext(level) = 60 + level × 18
-```
-
-であり、正本と実装が一致していない。
-
-また正本の「標準約350XP/日」に対して、旧ステージXP 32〜52では基本3戦で100〜150XP程度にしかならない。
-
-### 確定仕様
-
-Lv累積XPは正本式を使用する。
-
-```text
-totalXp(L) = round(6 × (L - 1)^1.9)
-xpToNext(L) = totalXp(L + 1) - totalXp(L)
+totalXp(L) = round(6 * (L - 1)^1.9)
+xpToNext(L) = totalXp(L+1) - totalXp(L)
 Lv上限 = 100
 ```
 
-通常戦XPはdifficultyで決める。
+通常戦XP:
 
 | difficulty | XP |
 |---|---:|
@@ -109,218 +105,300 @@ Lv上限 = 100
 | S | 250 |
 | EX | 300 |
 
-基本3戦をnormal中心に遊ぶと約330XP/日となり、正本の350XP/日に近づく。追加学習でチケットを増やせば、その分だけ育成も早くなる。
+### XP配布
 
-**捕獲成功でも撃破と同じXPを与える。** 捕まえる遊びを選ぶことで育成が遅くなる設計にはしない。
+戦闘開始時の手持ち最大3体へ、勝利または捕獲成功時に**同じBattle XPを100%ずつ**付与する。
 
-旧 `stage.xp` はformal stageへの移行後は互換用に留める。
+- BOX控えは対象外。
+- 戦闘中に瀕死になっても開始時メンバーなら対象。
+- 捕獲したばかりの敵個体はその捕獲戦XPの対象外。
+- 捕獲成功でも撃破と同額XP。
+- 捕獲成功時Manaは撃破時の50%でよい。
 
-## 4. P0: 238体生成時のロールを「実装済み戦闘で意味があるもの」に限定する
+標準3戦normalで1体あたり約330XP/日を初期基準とする。
 
-### 問題
+---
 
-旧 `design/10` には `healer` / `support` があるが、初期版には回復技・状態変化・バフ/デバフの正式戦闘系がまだない。
+## 3. 238体ロールとidentity
 
-この状態でhealer/supportへBSTを割くと、見かけ上の個性だけあり実戦では弱いキャラになる。
+初期238体のstat roleは次の8種。
 
-### 確定ロール
+| role | HP | 攻撃 | 防御 | 素早さ |
+|---|---:|---:|---:|---:|
+| balanced | 27% | 27% | 24% | 22% |
+| attacker | 24% | 38% | 20% | 18% |
+| speed | 22% | 32% | 16% | 30% |
+| guard | 32% | 20% | 36% | 12% |
+| hpTank | 38% | 24% | 22% | 16% |
+| defenseTank | 28% | 22% | 38% | 12% |
+| slowPower | 30% | 38% | 24% | 8% |
+| fastGlass | 20% | 34% | 14% | 32% |
 
-初期238体では次の8種を使う。
+`combatRoleV2` は**内部の生成・監査メタデータ**であり、子ども向けUIにそのまま表示しない。実戦の強み判定・シミュレーションは実能力値を使う。
 
-| role | HP | 攻撃 | 防御 | 素早さ | 狙い |
-|---|---:|---:|---:|---:|---|
-| balanced | 27% | 27% | 24% | 22% | 標準 |
-| attacker | 24% | 38% | 20% | 18% | 高火力 |
-| speed | 22% | 32% | 16% | 30% | 高速アタッカー |
-| guard | 32% | 20% | 36% | 12% | 防御タンク |
-| hpTank | 38% | 24% | 22% | 16% | HP耐久 |
-| defenseTank | 28% | 22% | 38% | 12% | 防御耐久 |
-| slowPower | 30% | 38% | 24% | 8% | 鈍足高火力 |
-| fastGlass | 20% | 34% | 14% | 32% | 高速低耐久 |
+進化では前段階4能力をfloorとして保持し、growthBudgetだけを新role比率で配る。155進化で4能力非減少を維持する。
 
-回復・補助技を正式実装した時点で healer/support を追加検討する。
+### semantic validator
 
-### BST基準
+最低限、次を人間レビューflagとして検出する。
 
-- 第1形態: 200
-- 中間形態: 270
-- 最終形態: 340
-- 単体最終: 380
+```text
+fastGlass:   baseSpeed > baseDefense && baseDefense/BST <= 0.22
+slowPower:   baseSpeed が4能力中最低
+hpTank:      baseHP >= baseDefense
+defenseTank: baseDefense >= baseAttack
+guard:       baseDefense >= baseSpeed
+```
 
-rarity倍率:
+違反は自動FAILではなくレビューflag。ただしNo.142のような大きな不一致を無視してUI/AIへロール名を流用してはいけない。
 
-- common ×0.95
-- rare ×1.00
-- epic ×1.08
-- legend ×1.20
+**No.142 ヘラクレオン**は `fastGlass` に対し HP106 / ATK87 / DEF111 / SPD63 で大きく不一致。正式runtimeでは実能力値を正とし、fastGlass前提の説明・AI処理を禁止する。
 
-進化後は4能力すべて非減少。ロール変化による下限補正後のBSTが目標BSTの+8%を超えた系列は自動FAILとして個別調整する。
+### healer/support由来のidentity
 
-## 5. P1: 技の強さを揃えないと `combatPower` 比較が壊れる
+stat roleへhealer/supportを復活させない。一方、設定上「きずをなおす」「いのちをもどす」等が強い個体は技効果でidentityを残す。
 
-`combatPower` に技威力やタイプ相性を入れない方針は維持する。強い技を覚えたメリットを敵スケーリングで打ち消さないため。
+強いidentity watch:
 
-その代わり、同じ進化段階で技威力の上限を揃える。
+- 041 / 050 / 098 / 209 / 210 / 235
 
-### 初期技帯域
+追加watch:
 
-| 段階 | 標準的な4技構成 |
-|---|---|
-| 第1形態 | 40 / 40 / 40 / 40前後 |
-| 中間形態 | 40 / 60 / 60 / 40〜60 |
-| 最終形態 | 40〜60 / 60 / 80 / 100 |
-| 単体最終 | 60 / 80 / 80 / 100 |
-| バースト専用 | 110 |
+- 042 / 049 / 051 / 099 / 115 / 116 / 175 / 176 / 177 / 208
+- 181 / 182 は「技を覚える／つなげる」を個別moveで表現する。
 
-- STABは **×1.20** を正とする。`design/10` の×1.50表記は撤回する。
-- ダメージ乱数は初期版では入れない。
-- 通常技の急所は初期版では入れない。
-- 命中は 40/60=100%、80=95%、100=90%、バースト110=95% を初期値とする。
-- 命中判定は正式技マスター接続と同時に実装する。テストでは乱数注入可能にする。
+推奨最小回復effect:
 
-## 6. P1: 素早さ型が「先手を取るだけ」で弱くならないようにする
+```text
+effect.type = heal
+healRatio = 0.20
+usesPerBattle = 1
+```
 
-素早さは初期版では行動順が主用途で、一定以上速くても直接ダメージは増えない。
+- 100%確定。
+- 1行動消費。
+- 1戦1回。
+- 初期版は自分または現在の味方だけを対象にし、複雑な対象選択を増やさない。
 
-そのため旧speedロールの34%配分は下げ、攻撃へ戻した。正式値は上記 `speed = HP22 / 攻32 / 防16 / 速30` とする。
+---
 
-追加の回避率・連続攻撃率などは初期版へ入れない。隠れた確率要素を増やさない。
+## 4. formal move master
 
-## 7. P1: ボスAIは通常敵の「最大威力技連打」と分ける
+正式技は最低限:
 
-通常敵は初期版では、相性を含めた有効打の高い技を選ぶ現行AIでよい。
+```text
+moveId
+name
+type
+power
+accuracy
+effect
+role // stable / coverage / strong / finisher / guard / heal ...
+```
 
-ボスは専用パターンを持つ。
+を持つ。
 
-### 予告大技
+最終形の初期基本形:
 
-- 大技の1ターン前に明確な予告を表示
-- 子どもは交代・タイプ受け・攻め切る判断ができる
-- 予告後の大技は命中100%とし、避ける運ではなく対策で受ける
+```text
+stable   : power 40〜60 / accuracy 100
+coverage : power 60 / accuracy 100 / 主STABと異なる相性用途
+strong   : power 80 / accuracy 95
+finisher : power 100 / accuracy 90
+```
 
-| Rank | 大技威力 |
-|---|---:|
-| C | 100 |
-| B | 120 |
-| A | 140 |
-| S | 155 |
-| EX | 170 |
+- STAB = 1.20。
+- ダメージ乱数なし。
+- 初期版の通常急所なし。
+- 4技すべてを同タイプ・同効果にしない。
+- 各最終形は代表的な相性ケースで**最低2技に少なくとも1ケースずつ合理的な選択理由**が必要。
+- formal master生成後、非劣位技validatorを必ず通す。
 
-- C/B: 通常行動2〜3回の後に予告
-- A: 通常行動2回の後に予告
-- S/EX: 通常行動1〜2回の後に予告
-- 同じ大技を連続使用しない
+---
 
-### ボス火力受入条件
+## 5. ボスAIと共通「まもる」
 
-- 等倍・同等戦力で、通常行動による満タン即死を頻発させない
-- 大技は予告があることを前提に強くしてよい
-- 理不尽な場合は攻撃倍率を先に下げる
-- HPだけ高く勝敗が決まった後も削るだけになる場合はHP倍率を下げる
+通常敵は期待ダメージ最大を基本とし、プレイヤー入力を見てから行動を変えない。
 
-## 8. P1: 捕獲率の正式 `catchRank` 生成規則
+ボスは予告大技を持つ。
 
-formal 238投入時はrarity/進化段階から初期catchRankを作り、全マトリクスを自動出力する。
+- C/B: 通常2〜3回 → 予告 → 大技
+- A: 通常2回 → 予告 → 大技
+- S/EX: 通常1〜2回 → 予告 → 大技
+- 予告大技は命中100%。
+- 同じ大技を連続使用しない。
+- 初見で予告なし満タン即死を作らない。
 
-初期目安:
+共通 `まもる`:
 
-- common 第1形態: 1
-- rare 第1形態: 2
-- epic 第1形態: 3
-- legend: 4
-- 中間形態: 同系列第1形態 +1
-- 最終形態: 同系列第1形態 +2
-- 上限: 5
+- 成功100%。
+- 1行動消費。
+- その敵行動のダメージ／状態を防ぐ。
+- 次ターン連続使用不可。
+- ボス予告大技にも有効。
 
-ボス専用・イベント専用で捕獲不可の個体は `catchable:false` を明示し、catchRankを極端に上げることで代用しない。
+### 子ども向けUI条件
 
-## 9. P1: 捕獲成功時も育成報酬を失わせない
+予告ターンに同一画面で:
 
-捕獲成功時:
+```text
+つぎに おおわざ！
+まもるなら いま
+```
 
-- バトルXP: 撃破と同額
-- ステージクリア: 成立
-- 進化アイテム報酬: 成立
-- マナ: 撃破時の50%でよい
+を表示し、`まもる` ボタンを視覚的に強調する。攻撃／交代も選べる状態は維持する。
 
-これにより「倒す方が育成効率が良いから捕まえない」という逆インセンティブを防ぐ。
+---
 
-## 10. P1: もちもの＋LvUP進化は本当にLvUPをトリガーにする
+## 6. 捕獲とcatchRank — P0解消済み
 
-現行コードは、指定アイテムを装備して必要Lv以上ならいつでも手動進化できる。
+`catchRarity` は各形態自身の捕獲難度軸。`powerTier` と別フィールド。
 
-正式仕様は:
+正式式:
 
-1. 指定アイテム装備
-2. 必要Lv以上になるレベルアップが発生
-3. `evolutionReady` を立てる
-4. 進化演出から進化
+```text
+rarityRank(common) = 1
+rarityRank(rare)   = 2
+rarityRank(epic)   = 3
+rarityRank(legend) = 4
 
-とする。
+catchRank = min(5, rarityRank(monster.catchRarity) + (monster.stage - 1))
+```
 
-QAモードでは「次のLvまでXPあと1」の個体を用意し、LvUPトリガーを確認できるようにする。
+**同系列第1形態のrarityは使わない。**
 
-## 11. P1: ギガ／バーストとボススケーリング
+例:
 
-ギガ12体・バースト8体の確定仕様は `09-special-forms-master.md` を維持する。
+- No.010 common stage1 → 1
+- No.011 common stage2 → 2
+- No.012 rare stage3 → 4
+- No.064 common stage1 → 1
+- No.065 rare stage2 → 3
+- No.066 epic stage3 → 5
 
-- ボスsnapshot作成時の `referencePower` に未発動のギガ/バースト補正は入れない
-- つまり特殊形態を解放・選択したこと自体が攻略上の明確なメリットになる
-- 1バトルでパーティ全体1回のみ
-- 同時使用不可
+`catchable:false` / `wildCatchable:false` は捕獲不可を優先し、catchRankで代用しない。
 
-受入テストでは、通常状態 / ギガ / バーストの3ケースでボス戦ターン数を比較する。
+全238体CSVについて上式と一致することをvalidatorで確認する。
 
-## 12. P1: UIの旧固定Lv表記を廃止する
+捕獲共通:
 
-現行画面にはまだ:
+- HP50%以下。
+- 1戦最大3投。
+- ほし×1.00 / ぎん×1.20 / きん×1.50 / にじ100%。
+- 非にじ上限92%。
 
-- 「敵レベルはステージ固定だよ」
-- `stage.enemyLevel` の固定表示
+---
 
-が残っている。
+## 7. 通常進化 — P0解消済み
 
-正式UIは、戦闘開始前に現在の手持ちからプレビューした結果を使い:
+### level
 
-- 🟢 いけそう
-- 🟡 いいしょうぶ
-- 🔴 かなりつよい
+`level:N` 到達で進化Ready。
 
-を主表示する。
+### stone
 
-Lvは補助表示として「Lv.○○くらい」で表示してよい。ボスsnapshot作成済みなら固定されたLvを表示する。
+石を1個消費して即時進化。固定Lvなし。
 
-また「自由学習1問正解でチケット+1」の旧文言も廃止し、現行Kids Quest仕様の「追加チャレンジ3問中2問で+1」へ統一する。
+### held_item_levelup
 
-## 13. main merge前に追加する自動ゲート
+**固定必要Lvは存在しない。**
 
-既存ゲートに加えて以下を必須化する。
+正式仕様:
 
-1. XP正本式と `xpToNext` の一致
-2. 基本3戦normalで約330XP/日になること
-3. 捕獲成功と撃破で同XP
-4. normalReferencePowerがボックス内高Lvキャラだけでは上がらない
-5. bossReferencePowerが「Lv80 + 低Lv2体」で過度に下がらない
-6. 弱い手持ちへ付け替えても初見ボスを極端に弱体化できない
-7. 8ロールのBST分布・進化非減少・+8%上限
-8. 各進化段階の技威力帯逸脱検出
-9. ボス予告→大技の状態遷移
-10. 捕獲不可個体が明示flagで管理される
-11. もちもの進化がLvUPトリガーでのみreadyになる
-12. ギガ/バーストが1戦1回・排他になる
-13. マップUIに固定Lv前提の文言が残らない
+1. 指定もちものを装備。
+2. その状態で**次の実LvUP**が発生。
+3. `evolutionReady=true`。
+4. 進化演出から進化。
+5. 進化後ももちものは装備状態を維持。
 
-## 14. 実装順
+装備しただけでは進化しない。別のもちものへ変更した場合はreadyを解除し、再び指定もちもの装備中のLvUPが必要。
 
-1. 旧CI期待値を新仕様へ更新
-2. XP式/戦闘XP/捕獲XPを実装
-3. No.001〜238正式master生成
-4. 8ロール + BST + rarity + catchRank validator
-5. 技マスター/命中
-6. ギガ12 / バースト8
-7. boss AI予告大技
-8. UI難易度プレビュー
-9. save migration / QAモード
-10. 全シミュレーション→微調整→CI→Preview
+---
 
-FAILがある状態ではmainへmergeしない。
+## 8. 進化アイテムのunlockMilestone / earliestAcquisition — P1解消済み
+
+stone 21遷移 / held-item 11遷移は、**遷移ごとの専用「しんかの しれん」初回クリア報酬**として必要アイテムを1個保証する。
+
+これにより同じ石を複数系列が使っても、238体コンプリートに必要な個数をランダムなしで保証する。
+
+### areaEvolutionGate
+
+各遷移には次のgateを持つ。
+
+| source area | unlockMilestone |
+|---:|---|
+| 1 | `evo-a1`: エリア1主ルート50%到達 |
+| 2 | `evo-a2`: エリア1ボス撃破 + エリア2主ルート35%到達 |
+| 3 | `evo-a3`: エリア2ボス撃破 + エリア3主ルート35%到達 |
+| 4 | `evo-a4`: エリア3ボス撃破 + エリア4主ルート35%到達 |
+
+実装時の「50%/35%」は `ceil(mainRouteStageCount * ratio)` でstage数へ変換する。
+
+### transition trial unlock
+
+その遷移のtrialは:
+
+```text
+areaEvolutionGate cleared
+AND source species owned
+AND 今日の基本学習完了
+```
+
+で挑戦可能。
+
+初回クリアで、その遷移に必要なstone/held itemを**必ず1個**付与する。ランダムドロップなし。各遷移1回限り。
+
+したがって:
+
+```text
+unlockMilestone = areaEvolutionGate + sourceSpeciesOwned
+earliestAcquisition = transitionTrial first clear
+```
+
+となる。
+
+- stoneは21遷移分、必要数を保証。
+- held itemは11遷移分、必要数を保証。
+- `steelplate` のような共有itemも遷移単位で報酬を持つ。
+- 取得条件を「運」や有料通貨へ依存させない。
+
+---
+
+## 9. 特殊形態
+
+具体対象は `design/09-special-forms-master.md`。
+
+ギガ12体:
+003 / 006 / 009 / 051 / 054 / 072 / 090 / 121 / 153 / 156 / 159 / 186
+
+バースト8体:
+060 / 066 / 133 / 136 / **142 ヘラクレオン** / 165 / 171 / 174
+
+- スター覚醒なし。
+- 重複なし。
+- ギガ: 全能力×1.35、戦闘終了まで。
+- バースト: HP×2 / ATK×1.2 / 3turn / 専用技110・命中95%。
+- referencePowerは未発動特殊形態を先読みしない。
+- 1battleで特殊変身はparty合計1回。
+- 正式runtime投入前にギガ/バースト相対強度simulationを行い、一方が全状況で上位互換にならないことを確認する。
+
+---
+
+## 10. runtime実装ゲート
+
+PR #15で設計fix後、runtime実装は開始してよい。ただしmain merge前に必ず:
+
+1. 238体 / 83系列 / 18タイプ / 155進化を再validator。
+2. catchRank 238/238一致。
+3. held_item_levelup 11遷移が固定Lvなし・装備だけでは発火せずLvUPでready。
+4. 進化アイテム32遷移にunlockMilestone/earliestAcquisitionがある。
+5. normal repeat capのsimulation受入条件を満たす。
+6. team XP 100% × 開始時最大3体、捕獲成功も同額。
+7. formal movesのschema/非劣位技validator。
+8. role semantic flagを出力し、No.142を含むflagを人間レビュー。
+9. healer identity個体のmove effectを確認。
+10. `まもる` とボス予告UIをE2E確認。
+11. ギガ/バースト相対強度simulation。
+12. CI green / Vercel Preview QA。
+
+FAILが残る状態ではmainへmergeしない。
