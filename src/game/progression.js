@@ -1,6 +1,6 @@
 import { EVOLUTION_ITEMS, STAGES, speciesOf } from './content.js'
 
-export const CURRENT_GAME_VERSION = 7
+export const CURRENT_GAME_VERSION = 8
 export const CAPTURE_ITEM_IDS = ['star', 'silver', 'gold', 'rainbow']
 export const TICKET_TTL_DAYS = 7
 
@@ -54,6 +54,8 @@ export function createGameState() {
     gigaKeyOwned: false,
     gigaCoreSpecies: {},
     burstMarks: {},
+    specialDex: { giga: {}, burst: {} },
+    appliedLearningRewardIds: [],
     bossBalanceSnapshots: {},
     normalStageSnapshots: {},
     battlesStarted: 0,
@@ -108,6 +110,11 @@ function normalizeOwnershipMap(value) {
     .map(([speciesId, owned]) => [canonicalSpeciesId(speciesId), owned])
     .filter(([speciesId, owned]) => !!owned && !!speciesOf(speciesId))
     .map(([speciesId]) => [speciesId, true]))
+}
+
+function normalizeRewardIds(value) {
+  if (!Array.isArray(value)) return []
+  return [...new Set(value.map((id) => String(id || '')).filter(Boolean))].slice(-2000)
 }
 
 function normalizeInventory(saved) {
@@ -279,6 +286,11 @@ export function normalizeGameState(saved, today = localDayNumber()) {
     gigaKeyOwned: !!saved.gigaKeyOwned || positiveInt(saved.gigaKeys) > 0,
     gigaCoreSpecies: normalizeOwnershipMap(saved.gigaCoreSpecies),
     burstMarks: normalizeOwnershipMap(saved.burstMarks),
+    specialDex: {
+      giga: normalizeOwnershipMap(saved.specialDex?.giga),
+      burst: normalizeOwnershipMap(saved.specialDex?.burst)
+    },
+    appliedLearningRewardIds: normalizeRewardIds(saved.appliedLearningRewardIds),
     bossBalanceSnapshots: normalizeBossBalanceSnapshots(saved.bossBalanceSnapshots),
     normalStageSnapshots: normalizeNormalStageSnapshots(saved.normalStageSnapshots),
     battlesStarted: positiveInt(saved.battlesStarted),
@@ -367,6 +379,7 @@ export function equipHeldItem(game, instanceId, itemId, today = localDayNumber()
 }
 
 export function grantLearningReward(game, {
+  rewardId = null,
   ticketDelta = 0,
   captureItemDelta = null,
   unitMastered = false,
@@ -374,6 +387,9 @@ export function grantLearningReward(game, {
   today = localDayNumber()
 } = {}) {
   let next = structuredClone(normalizeGameState(game, today))
+  const canonicalRewardId = rewardId ? String(rewardId) : null
+  if (canonicalRewardId && next.appliedLearningRewardIds.includes(canonicalRewardId)) return next
+
   if (ticketDelta > 0) next = grantTickets(next, ticketDelta, today)
   if (ticketDelta > 0) next.mana += ticketDelta * 5
   for (const id of CAPTURE_ITEM_IDS) next.captureItems[id] += positiveInt(captureItemDelta?.[id])
@@ -384,6 +400,9 @@ export function grantLearningReward(game, {
   if (hardMastered) {
     next.mana += 80
     next.captureItems.gold += 1
+  }
+  if (canonicalRewardId) {
+    next.appliedLearningRewardIds = [...new Set([...next.appliedLearningRewardIds, canonicalRewardId])].slice(-2000)
   }
   next.tickets = availableTicketCount(next, today)
   return next
@@ -404,6 +423,7 @@ export function specialProgressionStatus(monster, game) {
       isFinal,
       hasKey,
       hasCore,
+      registered: !!game?.specialDex?.giga?.[monster?.speciesId],
       activatable: isFinal && gigaEligible && hasKey && hasCore
     },
     burst: {
@@ -411,6 +431,7 @@ export function specialProgressionStatus(monster, game) {
       eligibleSpecies: burstEligible,
       isFinal,
       hasMark,
+      registered: !!game?.specialDex?.burst?.[monster?.speciesId],
       activatable: isFinal && burstEligible && hasMark
     }
   }
