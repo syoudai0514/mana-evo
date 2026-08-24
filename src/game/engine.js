@@ -1,9 +1,13 @@
 import { CAPTURE_CONFIG, EVOLUTION_ITEMS, MOVES, SPECIES, STAGES, moveOf, speciesOf, typeEffectiveness } from './content.js'
-import { BALANCE_VERSION, battleXpForStage, buildEnemyPlan, statsFromBase } from './balance.js'
-import { consumeTicket, grantEvolutionItem, refundTicket } from './progression.js'
+import { BALANCE_VERSION, BOSS_RANKS, battleXpForStage, buildEnemyPlan, statsFromBase } from './balance.js'
+import { consumeTicket, grantEvolutionItem, refundTicket, specialProgressionStatus } from './progression.js'
 
 const clamp = (min, value, max) => Math.max(min, Math.min(max, value))
 export const MAX_CAPTURE_ATTEMPTS = 3
+export const GIGA_MULTIPLIER = 1.35
+export const BURST_HP_MULTIPLIER = 2
+export const BURST_ATTACK_MULTIPLIER = 1.2
+export const BURST_TURNS = 3
 
 export function totalXpForLevel(level) {
   const lv = clamp(1, Math.floor(Number(level) || 1), 100)
@@ -23,10 +27,11 @@ export function statsFor(speciesId, level, multipliers = null) {
 }
 
 export function makeMonster(speciesId, level = 1, instanceId = null) {
-  if (!SPECIES[speciesId]) throw new Error(`Unknown species: ${speciesId}`)
+  const species = speciesOf(speciesId)
+  if (!species) throw new Error(`Unknown species: ${speciesId}`)
   return {
-    instanceId: instanceId || `${speciesId}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-    speciesId,
+    instanceId: instanceId || `${species.id}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    speciesId: species.id,
     level,
     xp: 0,
     heldItemId: null,
@@ -90,8 +95,25 @@ export function stageById(stageId) {
   return STAGES.find((stage) => stage.id === stageId) || null
 }
 
+function ownsSpecies(game, speciesId) {
+  return !!game?.dex?.caught?.[speciesId] || Object.values(game?.box || {}).some((monster) => monster.speciesId === speciesId)
+}
+
+function areaWildClearCount(game, area) {
+  const cleared = new Set(game?.stagesCleared || [])
+  return STAGES.filter((stage) => stage.area === area && stage.kind === 'wild' && cleared.has(stage.id)).length
+}
+
 export function isStageUnlocked(game, stage) {
-  return !stage.unlockedBy || (game.stagesCleared || []).includes(stage.unlockedBy)
+  if (!stage) return false
+  const cleared = new Set(game?.stagesCleared || [])
+  if (stage.hidden) return false
+  if (stage.unlockedBy && !cleared.has(stage.unlockedBy)) return false
+  if (stage.areaGateBossId && !cleared.has(stage.areaGateBossId)) return false
+  if (stage.requiresAllAreasCleared && ![1, 2, 3, 4].every((area) => cleared.has(`a${area}-boss`))) return false
+  if (stage.requiresOwnedSpeciesId && !ownsSpecies(game, stage.requiresOwnedSpeciesId)) return false
+  if (stage.minAreaClears && areaWildClearCount(game, stage.area) < stage.minAreaClears) return false
+  return true
 }
 
 function syncActiveBattle(game, battle) {
@@ -106,6 +128,39 @@ export function currentPlayerHp(battle) {
 
 export function healthyTeamIds(game, battle) {
   return (game.team || []).filter((id) => game.box?.[id] && (battle.partyHp?.[id] || 0) > 0)
+}
+
+function playerSpecialMultipliers(battle, instanceId) {
+  const special = battle?.playerSpecial
+  if (!special || special.instanceId !== instanceId) return null
+  if (special.type === 'giga') return { hp: GIGA_MULTIPLIER, attack: GIGA_MULTIPLIER, defense: GIGA_MULTIPLIER, speed: GIGA_MULTIPLIER }
+  if (special.type === 'burst') return { hp: BURST_HP_MULTIPLIER, attack: BURST_ATTACK_MULTIPLIER, defense: 1, speed: 1 }
+  return null
+}
+
+export function currentPlayerMaxHp(game, battle, instanceId = battle?.activeInstanceId) {
+  const monster = game?.box?.[instanceId]
+  if (!monster) return 1
+  return statsFor(monster.speciesId, monster.level, playerSpecialMultipliers(battle, instanceId)).hp
+}
+
+function battleMonster(game, battle, instanceId = battle.activeInstanceId) {
+  const monster = game.box[instanceId]
+  return monster ? { ...monster, statMultipliers: playerSpecialMultipliers(battle, instanceId) } : null
+}
+
+function bossBigMove(stage, enemySpecies) {
+  const rank = BOSS_RANKS[stage?.bossRank] || BOSS_RANKS.A
+  return {
+    id: `${stage?.id || 'boss'}-big-move`,
+    moveId: `${stage?.id || 'boss'}-big-move`,
+    name: `${enemySpecies.name}の おおわざ`,
+    type: enemySpecies.types[0],
+    power: rank.bigMovePower,
+    accuracy: 100,
+    effect: { type: 'damage' },
+    role: 'boss-big'
+  }
 }
 
 export function startBattle(game, stageId, { dailyCompleted = false, dailyDay = null, today, challenge = false } = {}) {
@@ -143,6 +198,7 @@ export function startBattle(game, stageId, { dailyCompleted = false, dailyDay = 
   }))
   const battle = {
     stageId,
+    challenge: !!challenge,
     activeInstanceId: activeId,
     teamAtStart,
     partyHp,
@@ -171,7 +227,13 @@ export function startBattle(game, stageId, { dailyCompleted = false, dailyDay = 
     lastEffect: 1,
     ticketCommitted: true,
     ticketSource: ticket.consumed,
-    ticketRefunded: false
+    ticketRefunded: false,
+    moveUses: {},
+    lastPlayerAction: null,
+    specialUsed: false,
+    playerSpecial: null,
+    bossTelegraphed: false,
+    bossCountdown: stage.bossRank ? 2 : 0
   }
   nextGame.activeBattle = structuredClone(battle)
   return { ok: true, game: nextGame, battle }
@@ -188,16 +250,25 @@ export function damageAmount(attacker, defender, move) {
   return { damage: Math.max(effectiveness === 0 ? 0 : 1, Math.floor(base * stab * effectiveness)), effectiveness, stab }
 }
 
+function deterministicHit(move, battle, actor = 'player') {
+  const accuracy = clamp(1, Number(move?.accuracy) || 100, 100)
+  if (accuracy >= 100) return true
+  const seed = `${battle.stageId}:${battle.turn}:${move.id || move.moveId}:${actor}`
+  let hash = 2166136261
+  for (let i = 0; i < seed.length; i += 1) hash = Math.imul(hash ^ seed.charCodeAt(i), 16777619) >>> 0
+  return (hash % 100) < accuracy
+}
+
 function enemyMoveFor(enemy, player) {
   const species = speciesOf(enemy.speciesId)
   return species.moves
     .map((id) => moveOf(id))
-    .filter(Boolean)
+    .filter((move) => move?.effect?.type === 'damage' && move.power > 0)
     .sort((a, b) => {
       const aScore = a.power * ((a.accuracy ?? 100) / 100) * typeEffectiveness(a.type, speciesOf(player.speciesId).types)
       const bScore = b.power * ((b.accuracy ?? 100) / 100) * typeEffectiveness(b.type, speciesOf(player.speciesId).types)
       return bScore - aScore
-    })[0] || MOVES.tackle
+    })[0] || Object.values(MOVES).find((move) => move.effect?.type === 'damage')
 }
 
 function activeMonster(game, battle) {
@@ -226,22 +297,69 @@ function refundLostBattleIfNeeded(game, battle, today) {
   return { game: refund.game, battle: nextBattle }
 }
 
-function enemyAttackOnce(game, battle, log) {
+function afterBossAction(stage, battle, log, usedBigMove = false) {
+  if (!stage?.bossRank) return
+  if (usedBigMove) {
+    battle.bossTelegraphed = false
+    battle.bossCountdown = 2
+    return
+  }
+  if (battle.bossTelegraphed) return
+  battle.bossCountdown = Math.max(0, (battle.bossCountdown || 1) - 1)
+  if (battle.bossCountdown === 0) {
+    battle.bossTelegraphed = true
+    log.push('⚠️ つぎに おおわざ！ まもるなら いま！')
+  }
+}
+
+function enemyAttackOnce(game, battle, log, { blocked = false } = {}) {
   if (battle.enemy.hp <= 0) return null
-  const player = activeMonster(game, battle)
+  const player = battleMonster(game, battle)
   if (!player || currentPlayerHp(battle) <= 0) return null
+  const stage = stageById(battle.stageId)
   const enemy = { speciesId: battle.enemy.speciesId, level: battle.enemy.level, statMultipliers: battle.enemy.statMultipliers }
-  const enemyMove = enemyMoveFor(enemy, player)
+  const enemySpecies = speciesOf(enemy.speciesId)
+  const useBigMove = !!stage?.bossRank && !!battle.bossTelegraphed
+  const enemyMove = useBigMove ? bossBigMove(stage, enemySpecies) : enemyMoveFor(enemy, player)
+  if (blocked) {
+    log.push(`🛡️ まもる！ ${enemySpecies.name} の ${enemyMove.name}を ふせいだ！`)
+    afterBossAction(stage, battle, log, useBigMove)
+    return { blocked: true, move: enemyMove }
+  }
+  if (!deterministicHit(enemyMove, battle, 'enemy')) {
+    log.push(`${enemySpecies.name} の ${enemyMove.name}！ でも はずれた！`)
+    afterBossAction(stage, battle, log, useBigMove)
+    return { damage: 0, missed: true, move: enemyMove }
+  }
   const result = damageAmount(enemy, player, enemyMove)
   battle.partyHp[battle.activeInstanceId] = Math.max(0, currentPlayerHp(battle) - result.damage)
-  log.push(`${speciesOf(enemy.speciesId).name} の ${enemyMove.name}！ ${result.damage} ダメージ`)
-  return result
+  log.push(`${enemySpecies.name} の ${enemyMove.name}！ ${result.damage} ダメージ`)
+  afterBossAction(stage, battle, log, useBigMove)
+  return { ...result, move: enemyMove }
 }
 
 function grantStageEvolutionReward(game, stage, firstClear) {
   if (!firstClear || !stage?.evolutionReward) return { game, evolutionReward: null }
   const granted = grantEvolutionItem(game, stage.evolutionReward.kind, stage.evolutionReward.itemId, stage.evolutionReward.count || 1)
   return granted.ok ? { game: granted.game, evolutionReward: stage.evolutionReward } : { game, evolutionReward: null }
+}
+
+function grantStageSpecialReward(game, stage, firstClear) {
+  if (!firstClear || !stage?.specialReward) return { game, specialReward: null }
+  const next = structuredClone(game)
+  const reward = stage.specialReward
+  if (reward.type === 'giga') {
+    next.gigaKeyOwned = true
+    next.gigaCoreSpecies ||= {}
+    next.gigaCoreSpecies[reward.speciesId] = true
+  } else if (reward.type === 'burst') {
+    next.burstMarks ||= {}
+    next.burstMarks[reward.speciesId] = true
+  } else if (reward.type === 'rainbow') {
+    next.captureItems ||= { star: 0, silver: 0, gold: 0, rainbow: 0 }
+    next.captureItems.rainbow = (next.captureItems.rainbow || 0) + Math.max(1, reward.count || 1)
+  }
+  return { game: next, specialReward: reward }
 }
 
 function recordNormalFirstClearSnapshot(game, stage, battle) {
@@ -284,24 +402,72 @@ function awardWin(game, battle) {
   const firstClear = !next.stagesCleared.includes(stage.id)
   next = recordNormalFirstClearSnapshot(next, stage, battle)
   if (firstClear) next.stagesCleared.push(stage.id)
-  const granted = grantStageEvolutionReward(next, stage, firstClear)
-  next = granted.game
-  return { game: next, levelsByInstance: gained.levelsByInstance, xp, mana: stage.mana, evolutionReward: granted.evolutionReward }
+  const evolutionGrant = grantStageEvolutionReward(next, stage, firstClear)
+  next = evolutionGrant.game
+  const specialGrant = grantStageSpecialReward(next, stage, firstClear)
+  next = specialGrant.game
+  return {
+    game: next,
+    levelsByInstance: gained.levelsByInstance,
+    xp,
+    mana: stage.mana,
+    evolutionReward: evolutionGrant.evolutionReward,
+    specialReward: specialGrant.specialReward,
+    firstClear
+  }
+}
+
+function moveUseKey(instanceId, moveId) { return `${instanceId}:${moveId}` }
+
+function endBurstIfNeeded(game, battle, log) {
+  if (battle.playerSpecial?.type !== 'burst') return
+  battle.playerSpecial.turnsLeft -= 1
+  if (battle.playerSpecial.turnsLeft > 0) return
+  const instanceId = battle.playerSpecial.instanceId
+  const monster = game.box[instanceId]
+  if (monster) {
+    const baseMax = statsFor(monster.speciesId, monster.level).hp
+    const burstMax = statsFor(monster.speciesId, monster.level, { hp: BURST_HP_MULTIPLIER, attack: BURST_ATTACK_MULTIPLIER, defense: 1, speed: 1 }).hp
+    const current = Math.max(0, battle.partyHp[instanceId] || 0)
+    battle.partyHp[instanceId] = current <= 0 ? 0 : Math.max(1, Math.ceil(current * baseMax / burstMax))
+  }
+  battle.playerSpecial = null
+  log.push('キョダイバーストが おわった！')
+}
+
+export function availableBattleMoveIds(game, battle) {
+  const monster = activeMonster(game, battle)
+  const species = monster ? speciesOf(monster.speciesId) : null
+  if (!species) return []
+  const ids = [...species.moves]
+  if (battle.playerSpecial?.type === 'burst' && battle.playerSpecial.instanceId === monster.instanceId && species.burstMoveId) ids.push(species.burstMoveId)
+  return ids
 }
 
 export function useMove(game, battle, moveId) {
   if (battle.status !== 'fighting') return { ok: false, game, battle, reason: battle.status === 'needs_switch' ? 'SWITCH_REQUIRED' : 'BATTLE_FINISHED' }
-  const player = activeMonster(game, battle)
-  const playerSpecies = speciesOf(player.speciesId)
-  if (!playerSpecies.moves.includes(moveId)) return { ok: false, game, battle, reason: 'UNKNOWN_MOVE' }
-  const enemy = { speciesId: battle.enemy.speciesId, level: battle.enemy.level, statMultipliers: battle.enemy.statMultipliers }
+  const playerRaw = activeMonster(game, battle)
+  const playerSpecies = speciesOf(playerRaw.speciesId)
+  if (!availableBattleMoveIds(game, battle).includes(moveId)) return { ok: false, game, battle, reason: 'UNKNOWN_MOVE' }
   const move = moveOf(moveId)
-  const playerStats = statsFor(player.speciesId, player.level)
-  const enemyStats = statsFor(enemy.speciesId, enemy.level, enemy.statMultipliers)
+  if (!move) return { ok: false, game, battle, reason: 'UNKNOWN_MOVE' }
   const next = structuredClone(battle)
   const log = []
+  const player = battleMonster(game, next)
+  const enemy = { speciesId: next.enemy.speciesId, level: next.enemy.level, statMultipliers: next.enemy.statMultipliers }
+  const useKey = moveUseKey(player.instanceId, moveId)
+  if (move.effect?.usesPerBattle && (next.moveUses?.[useKey] || 0) >= move.effect.usesPerBattle) {
+    return { ok: false, game, battle, reason: 'MOVE_USE_LIMIT' }
+  }
+  next.moveUses ||= {}
+  next.moveUses[useKey] = (next.moveUses[useKey] || 0) + 1
+  next.lastPlayerAction = `move:${moveId}`
 
   const playerAttack = () => {
+    if (!deterministicHit(move, next, 'player')) {
+      log.push(`${playerSpecies.name} の ${move.name}！ でも はずれた！`)
+      return { damage: 0, effectiveness: 1, missed: true }
+    }
     const result = damageAmount(player, enemy, move)
     next.enemy.hp = Math.max(0, next.enemy.hp - result.damage)
     next.lastEffect = result.effectiveness
@@ -309,16 +475,28 @@ export function useMove(game, battle, moveId) {
     return result
   }
 
-  if (playerStats.speed >= enemyStats.speed) {
-    playerAttack()
+  if (move.effect?.type === 'heal') {
+    const maxHp = currentPlayerMaxHp(game, next)
+    const heal = Math.max(1, Math.floor(maxHp * (move.effect.healRatio || 0.20)))
+    const before = currentPlayerHp(next)
+    next.partyHp[next.activeInstanceId] = Math.min(maxHp, before + heal)
+    log.push(`${playerSpecies.name} の ${move.name}！ HPが ${next.partyHp[next.activeInstanceId] - before} かいふく！`)
     enemyAttackOnce(game, next, log)
   } else {
-    enemyAttackOnce(game, next, log)
-    if (currentPlayerHp(next) > 0) playerAttack()
+    const playerStats = statsFor(player.speciesId, player.level, player.statMultipliers)
+    const enemyStats = statsFor(enemy.speciesId, enemy.level, enemy.statMultipliers)
+    if (playerStats.speed >= enemyStats.speed) {
+      playerAttack()
+      enemyAttackOnce(game, next, log)
+    } else {
+      enemyAttackOnce(game, next, log)
+      if (currentPlayerHp(next) > 0) playerAttack()
+    }
   }
 
+  if (next.playerSpecial?.type === 'burst' && next.playerSpecial.instanceId === next.activeInstanceId) endBurstIfNeeded(game, next, log)
   next.turn += 1
-  next.log = [...next.log.slice(-4), ...log].slice(-6)
+  next.log = [...next.log.slice(-4), ...log].slice(-8)
 
   if (next.enemy.hp <= 0) {
     next.status = 'won'
@@ -333,6 +511,47 @@ export function useMove(game, battle, moveId) {
   return { ok: true, game: syncActiveBattle(resolved.game, resolved.battle), battle: resolved.battle }
 }
 
+export function canUseProtect(battle) {
+  return battle?.status === 'fighting' && battle.lastPlayerAction !== 'protect'
+}
+
+export function useProtect(game, battle) {
+  if (!canUseProtect(battle)) return { ok: false, game, battle, reason: 'PROTECT_CONSECUTIVE' }
+  const next = structuredClone(battle)
+  const log = ['🛡️ まもる！']
+  next.lastPlayerAction = 'protect'
+  enemyAttackOnce(game, next, log, { blocked: true })
+  if (next.playerSpecial?.type === 'burst' && next.playerSpecial.instanceId === next.activeInstanceId) endBurstIfNeeded(game, next, log)
+  next.turn += 1
+  next.log = [...next.log.slice(-4), ...log].slice(-8)
+  resolvePlayerFaint(game, next)
+  return { ok: true, game: syncActiveBattle(game, next), battle: next }
+}
+
+function activateSpecial(game, battle, type) {
+  if (battle?.status !== 'fighting') return { ok: false, game, battle, reason: 'BATTLE_FINISHED' }
+  if (battle.specialUsed || battle.playerSpecial) return { ok: false, game, battle, reason: 'SPECIAL_ALREADY_USED' }
+  const monster = activeMonster(game, battle)
+  const status = specialProgressionStatus(monster, game)
+  const allowed = type === 'giga' ? status.giga.activatable : status.burst.activatable
+  if (!allowed) return { ok: false, game, battle, reason: 'SPECIAL_LOCKED' }
+  const next = structuredClone(battle)
+  const baseMax = statsFor(monster.speciesId, monster.level).hp
+  const multipliers = type === 'giga'
+    ? { hp: GIGA_MULTIPLIER, attack: GIGA_MULTIPLIER, defense: GIGA_MULTIPLIER, speed: GIGA_MULTIPLIER }
+    : { hp: BURST_HP_MULTIPLIER, attack: BURST_ATTACK_MULTIPLIER, defense: 1, speed: 1 }
+  const specialMax = statsFor(monster.speciesId, monster.level, multipliers).hp
+  const current = Math.max(1, next.partyHp[monster.instanceId] || baseMax)
+  next.partyHp[monster.instanceId] = Math.max(1, Math.ceil(current * specialMax / baseMax))
+  next.specialUsed = true
+  next.playerSpecial = { type, instanceId: monster.instanceId, turnsLeft: type === 'burst' ? BURST_TURNS : null }
+  next.log = [...next.log.slice(-5), type === 'giga' ? `🔷 ${speciesOf(monster.speciesId).name}が ギガシンカ！` : `💥 ${speciesOf(monster.speciesId).name}が キョダイバースト！`]
+  return { ok: true, game: syncActiveBattle(game, next), battle: next }
+}
+
+export function activateGiga(game, battle) { return activateSpecial(game, battle, 'giga') }
+export function activateBurst(game, battle) { return activateSpecial(game, battle, 'burst') }
+
 export function baseCaptureChance(battle) {
   const species = speciesOf(battle.enemy.speciesId)
   const missing = 1 - battle.enemy.hp / battle.enemy.maxHp
@@ -346,13 +565,15 @@ export function captureChance(battle, itemType = 'star') {
 }
 
 export function canAttemptCapture(game, battle, itemType = 'star') {
-  return battle.status === 'fighting' && battle.enemy.hp > 0 && battle.enemy.hp / battle.enemy.maxHp <= 0.5 &&
+  const stage = stageById(battle?.stageId)
+  return !stage?.captureDisabled && battle.status === 'fighting' && battle.enemy.hp > 0 && battle.enemy.hp / battle.enemy.maxHp <= 0.5 &&
     (battle.captureAttempts || 0) < MAX_CAPTURE_ATTEMPTS && (game.captureItems?.[itemType] || 0) > 0
 }
 
 export function attemptCapture(game, battle, rolls = null, itemType = 'star') {
   if (!canAttemptCapture(game, battle, itemType)) {
-    const reason = (battle.captureAttempts || 0) >= MAX_CAPTURE_ATTEMPTS ? 'CAPTURE_LIMIT' : 'CAPTURE_NOT_READY'
+    const stage = stageById(battle?.stageId)
+    const reason = stage?.captureDisabled ? 'CAPTURE_DISABLED' : (battle.captureAttempts || 0) >= MAX_CAPTURE_ATTEMPTS ? 'CAPTURE_LIMIT' : 'CAPTURE_NOT_READY'
     return { ok: false, game, battle, reason }
   }
   let nextGame = structuredClone(game)
@@ -369,11 +590,12 @@ export function attemptCapture(game, battle, rolls = null, itemType = 'star') {
   const nextBattle = structuredClone(battle)
   nextBattle.captureAttempts = (nextBattle.captureAttempts || 0) + 1
   nextBattle.captureStars = stars
+  nextBattle.lastPlayerAction = 'capture'
   nextBattle.turn += 1
   if (stars < 4) {
     const log = [`「わ」が ${stars}こ 光った！ でも逃げられた！`]
     enemyAttackOnce(nextGame, nextBattle, log)
-    nextBattle.log = [...nextBattle.log.slice(-4), ...log].slice(-6)
+    nextBattle.log = [...nextBattle.log.slice(-4), ...log].slice(-8)
     resolvePlayerFaint(nextGame, nextBattle)
     const resolved = refundLostBattleIfNeeded(nextGame, nextBattle)
     resolved.game.activeBattle = structuredClone(resolved.battle)
@@ -397,12 +619,26 @@ export function attemptCapture(game, battle, rolls = null, itemType = 'star') {
   const firstClear = !nextGame.stagesCleared.includes(stage.id)
   nextGame = recordNormalFirstClearSnapshot(nextGame, stage, battle)
   if (firstClear) nextGame.stagesCleared.push(stage.id)
-  const granted = grantStageEvolutionReward(nextGame, stage, firstClear)
-  nextGame = granted.game
+  const evolutionGrant = grantStageEvolutionReward(nextGame, stage, firstClear)
+  nextGame = evolutionGrant.game
+  const specialGrant = grantStageSpecialReward(nextGame, stage, firstClear)
+  nextGame = specialGrant.game
   nextBattle.status = 'caught'
   nextBattle.log = [...nextBattle.log.slice(-4), `★★★★ 「わ」が ひかった！ ゲット！ XP +${xp}`]
   nextGame.activeBattle = structuredClone(nextBattle)
-  return { ok: true, caught: true, stars, chance, captured, xp, levelsByInstance: gained.levelsByInstance, evolutionReward: granted.evolutionReward, game: nextGame, battle: nextBattle }
+  return {
+    ok: true,
+    caught: true,
+    stars,
+    chance,
+    captured,
+    xp,
+    levelsByInstance: gained.levelsByInstance,
+    evolutionReward: evolutionGrant.evolutionReward,
+    specialReward: specialGrant.specialReward,
+    game: nextGame,
+    battle: nextBattle
+  }
 }
 
 export function switchBattleMonster(game, battle, instanceId) {
@@ -417,6 +653,7 @@ export function switchBattleMonster(game, battle, instanceId) {
   const nextBattle = structuredClone(battle)
   nextBattle.activeInstanceId = instanceId
   nextBattle.status = 'fighting'
+  nextBattle.lastPlayerAction = 'switch'
   const log = [`${speciesOf(game.box[instanceId].speciesId).name} に こうたい！`]
 
   if (!forced) {
@@ -424,7 +661,7 @@ export function switchBattleMonster(game, battle, instanceId) {
     nextBattle.turn += 1
     resolvePlayerFaint(nextGame, nextBattle)
   }
-  nextBattle.log = [...nextBattle.log.slice(-4), ...log].slice(-6)
+  nextBattle.log = [...nextBattle.log.slice(-4), ...log].slice(-8)
   const resolved = refundLostBattleIfNeeded(nextGame, nextBattle)
   resolved.game.activeBattle = structuredClone(resolved.battle)
   return { ok: true, game: resolved.game, battle: resolved.battle }
