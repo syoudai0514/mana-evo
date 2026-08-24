@@ -1,80 +1,124 @@
 # Mana Evo 正本設計スナップショット — 2026-08-24
 
-この `design/` は PR #5 以降の実装レビューで仕様基準を固定するための**レビュー用正本スナップショット**です。
+この `design/` は PR #15 で No.001〜238正式masterと戦闘バランスを実装するための**レビュー用正本スナップショット**です。
 
-## 優先順位
+現在の状態は **SOL REVIEW READY / runtime実装ロック中** です。
 
-1. このスナップショットに明記された、ユーザー承認済みの決定
-2. `sol_game_review_for_claude_v3.md` の最新訂正方針
-3. `sol_game_review_for_claude_v2.md`
-4. 上記と矛盾しない最新モック
-5. PR内の実装状況文書
+別SOLが `SOL-REVIEW-REQUEST-PR15-BALANCE.md` をレビューし、判定が `GO`、または指摘反映後の `GO WITH FIX` になるまで、No.001〜238正式runtime master・XP・技・ボスAI・捕獲・特殊形態の本実装へ進みません。
 
-PRの `UNRESOLVED` は設計を上書きしません。過去に確定した仕様が後続のレビュー資料で一時的に未決扱いされていても、根拠資料から復元できたものは確定仕様へ戻します。
+## レビュー開始順
 
-## PR #15 — SOLレビュー中の優先順位
+1. `SOL-REVIEW-REQUEST-PR15-BALANCE.md`
+2. `design/12-detailed-balance-design-for-sol-review.md`
+3. `design/15-sol-review-validation-report.md`
+4. `design/13-monster-growth-master-238.md`
+5. `design/13a`〜`13d` の成長CSV（合計238体）
+6. `design/14a`〜`14d` の進化比較CSV（合計155遷移）
+7. `design/09-special-forms-master.md`
+8. `design/11-battle-character-boss-review.md`
+9. `design/10-initial-balance-master.md`
+10. `design/06-battle-and-progression-design.md`
+11. `01-UNRESOLVED-DECISIONS.md`
 
-**No.001〜238 runtime実装は、別SOLの設計レビュー完了までロックします。**
+## 数値・仕様競合時の優先順位
 
-レビュー開始点はリポジトリ直下 `SOL-REVIEW-REQUEST-PR15-BALANCE.md`。
-
-実装・レビューでは以下を優先して参照します。
+レビュー前は、より新しく詳細化された以下を優先する。
 
 1. `design/12-detailed-balance-design-for-sol-review.md`
-   - Lv成長 / BST / 8ロール / XP / 技 / 通常敵 / ボス / 捕獲 / にじのわ / 特殊形態を統合した最新詳細設計
-   - ユーザー承認済みの「初回ストーリーボス捕獲不可→撃破後入手導線」「にじのわ長期達成中心」「エリア難度の基本割当」を含む
-   - R1〜R5は別SOLに意見を求めるレビュー論点
-2. `design/13-monster-growth-master-238.md` + `13a`〜`13d` CSV
-   - No.001〜238全体の設定 / role / base4能力 / BST / 進化 / Lv1/5/10/20/30/50/100能力値
-3. `design/14a-evolution-balance-area1.csv`〜`14d-evolution-balance-area4.csv`
-   - 155進化遷移の能力差・トリガー監査
-4. `design/15-sol-review-validation-report.md`
-   - 元資料照合・238体完全性・能力式・BST・進化非減少の機械検証結果
-5. `design/09-special-forms-master.md`
-   - ギガ12体 / キョダイバースト8体の具体No./名前/タイプ、取得物、効果、排他条件
-6. `design/11-battle-character-boss-review.md`
-   - 238体投入前レビューで確定したnormal/boss referencePower分離、XP方針、8ロール、技帯域、ボスAI等
-7. `design/10-initial-balance-master.md`
-   - 初期実装値と調整トリガーの旧統合正本。12/11と競合する箇所は12→11を優先
-8. `design/06-battle-and-progression-design.md`
-   - 基礎バトル/育成/敵ボス構造
-9. `design/08-balance-tuning-policy.md`
-   - バランス調整運用の補足
-10. `01-UNRESOLVED-DECISIONS.md`
-   - 本当に残っている未決・SOLレビュー待ちだけ。確定済み仕様を未決へ戻さない
+2. `design/13*` / `design/14*` の個別master
+3. `design/11-battle-character-boss-review.md`
+4. `design/09-special-forms-master.md`（特殊形態の具体対象はこの文書が正）
+5. `design/10-initial-balance-master.md`
+6. `design/06-battle-and-progression-design.md`
+7. `design/08-balance-tuning-policy.md`
 
-## 重要
+特に以下は旧資料より新仕様を優先する。
 
-- `スター覚醒` は不採用。現行仕様へ再導入しない。
+- STAB: **×1.20**
+- 初期版: **急所なし / ダメージ乱数なし**
+- 戦闘ロール: 8種 `balanced / attacker / speed / guard / hpTank / defenseTank / slowPower / fastGlass`
+- 通常敵とボスでreferencePowerを分離
+- 初回ストーリー/エリアボスは捕獲不可
+- 進化は進化後に4基礎能力が下がらない
+
+## 238体 詳細設計データ
+
+`design/13-monster-growth-master-238.md` を索引とする。
+
+- active: No.001〜238 = **238体**
+- 83系列
+- 18タイプ
+- 155進化 = level 123 / stone 21 / held-item+levelup 11
+- No.239はruntime対象外
+- 全238体に基礎HP / 攻撃 / 防御 / 素早さ、BST、role、catch情報、進化情報を設定
+- 全238体に Lv1 / 5 / 10 / 20 / 30 / 50 / 100 の実能力を算出
+- 全155進化で基礎4能力非減少
+
+機械検証結果は `design/15-sol-review-validation-report.md` を正とする。
+
+## 特殊形態 — 確定済み
+
+- `スター覚醒` は不採用。
 - 特殊形態は `ギガシンカ` / `キョダイバースト`。
 - ギガ12体・バースト8体は実装前設計から復元済みで、再選定しない。
-- Kids Quest本体は変更しない。学習部分のみMana Evoへ再利用する。
-- 正式キャラ画像は別工程。正式画像が完成済みのキャラは正式画像、未完成キャラはplaceholderで進め、ゲームロジックを画像待ちにしない。
-- 本番中に子ども個人へ合わせてXP/技威力/捕獲率/敵倍率を自動変更しない。
-- **SOL判定 `GO`、または指摘反映後の `GO WITH FIX` になるまでは、13系CSVをruntime masterへコピーしない。**
+- 具体No./名前/タイプは `design/09-special-forms-master.md` が正。
+- ギガとバーストは同一種族で重複なし。
+- でんせつ級は対象外。
 
-## SOLレビュー候補の現在値
+## 学習部分
 
-- active: No.001〜238 exactly
-- 83系列 / 18タイプ
-- 155進化 = level123 / stone21 / held-item+levelup11
-- ギガ12 / バースト8 / 重複0
-- Lv能力式: `HP=floor(baseHP*Lv/50)+Lv+10`、他3能力=`floor(base*Lv/50)+5`
-- 通常敵: 現在の手持ちだけでソフトスケーリング
-- ボス: 初回戦力snapshot固定、通常再戦は固定、チャレンジ再戦だけ再スケール
-- 初回ストーリーボス: `catchable:false`、撃破後に同種入手導線
-- にじのわ: 100%、通常章末には配らず長期達成報酬中心
+- Kids Quest本体は変更しない。
+- 完成済みのKids Quest学習部分をMana Evoへ再利用する。
+- 学習→チケット→探索/バトル→捕獲→育成→進化の循環を維持する。
 
-詳細数値は12〜15を正とする。
+## 画像
 
-## 現在の実装状態に関する注意
+- 正式キャラ画像は別工程。
+- 正式画像が完成済みのキャラは正式画像を使う。
+- 未完成キャラはplaceholderで進め、ゲームロジックを画像待ちにしない。
 
-PR #15には戦闘バランス基盤の一部コードが既に存在しますが、**今回作成したNo.001〜238の詳細成長マスターはまだruntimeへ投入していません。** 正式ID migration、QAモード、238体画像registry、技マスター、ボスAI、特殊形態実動作も未完了です。
+## 本番中のバランス変更
 
-設計文書に238体ルール・具体値があることと、238体runtime実装が完了していることを混同しないでください。
+- 子ども個人に合わせ、XP/技威力/捕獲率/敵倍率を裏で自動変更しない。
+- 初期値はレビュー・自動シミュレーション・QAを通して共通設定として調整する。
+- 数%〜十数%の調整は根拠と回帰結果をPRへ残す。
+- ゲーム思想を変える変更はユーザー判断を取る。
 
-## 元資料スコープ
+## 現在の実装状態
 
-元 `families.mjs` をflattenすると239体あり、No.239は `シラユキヒメ`。現行ManaEvoの有効範囲はNo.001〜238なので、No.239は元資料保全のみでactive masterへ入れません。
+PR #15には以下の**基盤コード**は既に存在する。
 
-元資料と今回238体CSVの照合結果は `design/15-sol-review-validation-report.md` に記録します。
+- Lv能力値計算
+- combatPower
+- normal/boss referencePower分離
+- 通常敵ソフトスケーリング基盤
+- ボス初回snapshot / challenge再戦基盤
+- boss snapshot save version 5
+- balance単体テスト
+
+一方、以下はSOLレビュー通過後に実装する。
+
+- No.001〜238正式runtime master
+- 238体個別base stats / roles / catch / evolution runtime接続
+- XP正本式 / Battle XP
+- formal moves
+- boss予告大技AI
+- ギガ/バースト実発動
+- 画像registry
+- save migration
+- `?qa=monster-master`
+- 238体validator / 全バランスシミュレーション
+
+設計データがGitHubに揃っていることとruntime実装完了を混同しない。
+
+## レビュー判断待ち
+
+現在の判断待ちは `01-UNRESOLVED-DECISIONS.md` の R1〜R5 に限定する。
+
+- R1 powerTier seed
+- R2 手持ち3体Battle XP
+- R3 ボス大技への共通 `まもる`
+- R4 healer/support由来キャラのcombatRole変換
+- R5 にじのわ供給量
+
+それ以外の確定済み仕様を未決へ戻さない。
