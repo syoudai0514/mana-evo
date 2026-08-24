@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'manaevo-pwa-'
-const CACHE_NAME = `${CACHE_PREFIX}v6`
+const CACHE_NAME = `${CACHE_PREFIX}v7`
 const BASE_URL = new URL('./', self.location.href).href
 const APP_SHELL = [
   BASE_URL,

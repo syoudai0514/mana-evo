@@ -4,11 +4,13 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-// Keep the exact PWA icon files and dimensions under CI so iOS cannot silently fall back.
+// Keep the exact PWA icon files, canonical launch URL and dimensions under CI.
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8')
 const manifest = JSON.parse(fs.readFileSync(path.join(root, 'public/manifest.webmanifest'), 'utf8'))
 const sw = fs.readFileSync(path.join(root, 'public/sw.js'), 'utf8')
+const main = fs.readFileSync(path.join(root, 'src/main.jsx'), 'utf8')
+const canonicalUrl = 'https://syoudai0514.github.io/mana-evo/'
 
 function publicAsset(relativePath) {
   return path.join(root, 'public', relativePath)
@@ -34,8 +36,12 @@ test('PWA icons have the required PNG dimensions', () => {
   assert.deepEqual(pngDimensions(publicAsset('icons/icon-512.png')), [512, 512])
 })
 
-test('manifest is pinned to the GitHub Pages subpath', () => {
-  for (const key of ['id', 'start_url', 'scope']) assert.equal(manifest[key], '/mana-evo/')
+test('manifest is pinned to the full canonical GitHub Pages app URL', () => {
+  for (const key of ['id', 'start_url', 'scope']) assert.equal(manifest[key], canonicalUrl)
+  assert.match(index, /rel="canonical" href="https:\/\/syoudai0514\.github\.io\/mana-evo\/"/)
+  assert.match(index, /property="og:url" content="https:\/\/syoudai0514\.github\.io\/mana-evo\/"/)
+  assert.match(main, /CANONICAL_PATH = '\/mana-evo\/'/)
+  assert.match(main, /location\.replace/)
 })
 
 test('service worker precache only references existing public assets', () => {
@@ -43,6 +49,6 @@ test('service worker precache only references existing public assets', () => {
     const relativePath = match[1]
     assert.ok(fs.existsSync(publicAsset(relativePath)), `service worker precache asset is missing: ${relativePath}`)
   }
-  assert.match(sw, /CACHE_NAME = `\$\{CACHE_PREFIX\}v6`/)
+  assert.match(sw, /CACHE_NAME = `\$\{CACHE_PREFIX\}v7`/)
   assert.match(sw, /icons\/apple-touch-icon\.png/)
 })
