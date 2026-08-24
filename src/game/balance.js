@@ -1,20 +1,20 @@
-export const BALANCE_VERSION = 1
+export const BALANCE_VERSION = 2
 export const MAX_MONSTER_LEVEL = 100
 
 export const NORMAL_DIFFICULTY = Object.freeze({
-  weak: { targetMultiplier: 0.82, label: 'いけそう' },
-  normal: { targetMultiplier: 0.92, label: 'いけそう' },
-  strong: { targetMultiplier: 1.02, label: 'いいしょうぶ' },
-  rare: { targetMultiplier: 1.065, label: 'いいしょうぶ' },
-  elite: { targetMultiplier: 1.12, label: 'かなりつよい' }
+  weak: { targetMultiplier: 0.82, label: 'いけそう', xp: 90 },
+  normal: { targetMultiplier: 0.92, label: 'いけそう', xp: 110 },
+  strong: { targetMultiplier: 1.02, label: 'いいしょうぶ', xp: 125 },
+  rare: { targetMultiplier: 1.065, label: 'いいしょうぶ', xp: 145 },
+  elite: { targetMultiplier: 1.12, label: 'かなりつよい', xp: 165 }
 })
 
 export const BOSS_RANKS = Object.freeze({
-  C: { targetMultiplier: 1.02, hp: 1.20, attack: 1.02, defense: 1.00 },
-  B: { targetMultiplier: 1.08, hp: 1.35, attack: 1.04, defense: 1.03 },
-  A: { targetMultiplier: 1.14, hp: 1.50, attack: 1.07, defense: 1.05 },
-  S: { targetMultiplier: 1.20, hp: 1.65, attack: 1.10, defense: 1.08 },
-  EX: { targetMultiplier: 1.28, hp: 1.80, attack: 1.12, defense: 1.10 }
+  C: { targetMultiplier: 1.02, hp: 1.20, attack: 1.02, defense: 1.00, xp: 180, bigMovePower: 100 },
+  B: { targetMultiplier: 1.08, hp: 1.35, attack: 1.04, defense: 1.03, xp: 200, bigMovePower: 120 },
+  A: { targetMultiplier: 1.14, hp: 1.50, attack: 1.07, defense: 1.05, xp: 220, bigMovePower: 140 },
+  S: { targetMultiplier: 1.20, hp: 1.65, attack: 1.10, defense: 1.08, xp: 250, bigMovePower: 155 },
+  EX: { targetMultiplier: 1.28, hp: 1.80, attack: 1.12, defense: 1.10, xp: 300, bigMovePower: 170 }
 })
 
 const clamp = (min, value, max) => Math.max(min, Math.min(max, value))
@@ -64,29 +64,54 @@ function average(values) {
   return values.reduce((sum, value) => sum + value, 0) / values.length
 }
 
-function median(values) {
-  if (!values.length) return 0
-  const sorted = [...values].sort((a, b) => a - b)
-  const middle = Math.floor(sorted.length / 2)
-  return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2
+function weightedTop(values, weights = [0.5, 0.3, 0.2]) {
+  const picked = values.slice(0, weights.length)
+  if (!picked.length) return 0
+  const activeWeights = weights.slice(0, picked.length)
+  const weightSum = activeWeights.reduce((sum, weight) => sum + weight, 0)
+  return picked.reduce((sum, value, index) => sum + value * activeWeights[index], 0) / weightSum
 }
 
-export function referencePower(game, speciesOf) {
-  const teamPowers = (game?.team || [])
+function teamPowers(game, speciesOf) {
+  return (game?.team || [])
     .map((id) => game?.box?.[id])
     .filter(Boolean)
     .map((monster) => monsterCombatPower(monster, speciesOf))
     .filter((value) => value > 0)
     .sort((a, b) => b - a)
+}
 
-  const rosterPowers = Object.values(game?.box || {})
+function rosterPowers(game, speciesOf) {
+  return Object.values(game?.box || {})
     .map((monster) => monsterCombatPower(monster, speciesOf))
     .filter((value) => value > 0)
     .sort((a, b) => b - a)
+}
 
-  const activePower = average(teamPowers.slice(0, 3))
-  const rosterCore = median(rosterPowers.slice(0, 5))
-  return Math.max(1, activePower, rosterCore * 0.9)
+// Normal encounters intentionally use the current team only so newly caught
+// monsters can still be trained without the entire box making enemies too hard.
+export function normalReferencePower(game, speciesOf) {
+  const team = teamPowers(game, speciesOf)
+  if (team.length) return Math.max(1, average(team.slice(0, 3)))
+  const roster = rosterPowers(game, speciesOf)
+  return Math.max(1, roster[0] || 1)
+}
+
+// Story bosses must not become trivial just because a Lv80 carry is paired with
+// two weak monsters, nor should swapping to a deliberately weak team lower the
+// first-encounter snapshot. We therefore include a softened roster/carry floor.
+export function bossReferencePower(game, speciesOf) {
+  const team = teamPowers(game, speciesOf)
+  const roster = rosterPowers(game, speciesOf)
+  const teamWeighted = weightedTop(team)
+  const rosterWeighted = weightedTop(roster) * 0.85
+  const carryFloor = (roster[0] || team[0] || 0) * 0.80
+  return Math.max(1, teamWeighted, rosterWeighted, carryFloor)
+}
+
+// Backward-compatible alias for code/tests that only need the normal encounter reference.
+export function referencePower(game, speciesOf) {
+  return normalReferencePower(game, speciesOf)
 }
 
 export function levelForTargetPower(species, targetPower, multipliers = null) {
@@ -133,9 +158,8 @@ export function buildEnemyPlan(game, stage, speciesOf, existingSnapshot = null, 
     }
   }
 
-  const ref = referencePower(game, speciesOf)
-
   if (stage.bossRank) {
+    const ref = bossReferencePower(game, speciesOf)
     const rank = BOSS_RANKS[stage.bossRank] || BOSS_RANKS.A
     const statMultipliers = normalizeStatMultipliers({ hp: rank.hp, attack: rank.attack, defense: rank.defense, speed: 1 })
     const targetPower = ref * rank.targetMultiplier
@@ -164,6 +188,7 @@ export function buildEnemyPlan(game, stage, speciesOf, existingSnapshot = null, 
     }
   }
 
+  const ref = normalReferencePower(game, speciesOf)
   const difficulty = NORMAL_DIFFICULTY[stage.enemyDifficulty] || NORMAL_DIFFICULTY.normal
   const targetPower = ref * difficulty.targetMultiplier
   const level = levelForTargetPower(species, targetPower)
