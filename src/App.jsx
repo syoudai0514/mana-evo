@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { availableTicketCount, createGameState, grantLearningReward, normalizeGameState } from './game/progression.js'
+import { availableTicketCount, grantLearningReward } from './game/progression.js'
+import { GAME_SAVE_EVENT, loadGameForProfile, saveGameForProfile } from './game/saveStore.js'
 import { speciesOf } from './game/content.js'
 import PlaceholderMonster from './game/PlaceholderMonster.jsx'
 import { AdventureFlow, MonsterScreen } from './game/GameScreens.jsx'
@@ -19,20 +20,6 @@ import ChapterTestScreen from './kids-quest-study/screens/ChapterTestScreen.jsx'
 import EnglishDictionaryScreen from './kids-quest-study/screens/EnglishDictionaryScreen.jsx'
 import { setTtsEnabled, setTtsPreferences, unlockTts } from './kids-quest-study/engine/tts.js'
 import { setSfxEnabled, unlockSfx, sfx } from './kids-quest-study/engine/sfx.js'
-
-const SAVE_KEY = 'mana-evo-save-v1'
-
-function loadGameSave() {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null')
-    return {
-      game: normalizeGameState(parsed?.game || createGameState()),
-      legacyStudy: parsed?.study || null
-    }
-  } catch {
-    return { game: createGameState(), legacyStudy: null }
-  }
-}
 
 function StatusBar({ game, today }) {
   return <div className="status-bar"><span>🎫 {availableTicketCount(game, today)}</span><span>💎 {game.mana}</span><span>⭐ {game.captureItems?.star || 0}</span></div>
@@ -95,14 +82,39 @@ function StudyHub({ learning, dispatch, onStartTask, go }) {
 
 export default function App() {
   const { state: learning, dispatch: learningDispatch } = useLearningGame()
-  const initial = useMemo(loadGameSave, [])
-  const [game, setGame] = useState(initial.game)
-  const legacyStudyRef = useRef(initial.legacyStudy)
-  const [view, setView] = useState(initial.game.activeBattle ? 'adventure' : 'home')
+  const initialProfileId = learning.activeProfileId || 'child-1'
+  const initialGame = useMemo(() => loadGameForProfile(initialProfileId), [])
+  const [game, setGame] = useState(initialGame)
+  const gameProfileRef = useRef(initialProfileId)
+  const [view, setView] = useState(initialGame.activeBattle ? 'adventure' : 'home')
   const [activeTask, setActiveTask] = useState(null)
   const today = dayNumber()
 
-  useEffect(()=>{ localStorage.setItem(SAVE_KEY, JSON.stringify({ study: legacyStudyRef.current, game })) },[game])
+  useEffect(() => {
+    const profileId = learning.activeProfileId || 'child-1'
+    if (gameProfileRef.current !== profileId) {
+      saveGameForProfile(gameProfileRef.current, game)
+      const next = loadGameForProfile(profileId)
+      gameProfileRef.current = profileId
+      setGame(next)
+      setActiveTask(null)
+      setView(next.activeBattle ? 'adventure' : 'home')
+      return
+    }
+    saveGameForProfile(profileId, game)
+  }, [game, learning.activeProfileId])
+
+  useEffect(() => {
+    const reloadImportedGame = () => {
+      const profileId = gameProfileRef.current
+      const next = loadGameForProfile(profileId)
+      setGame(next)
+      setActiveTask(null)
+      setView(next.activeBattle ? 'adventure' : 'home')
+    }
+    window.addEventListener(GAME_SAVE_EVENT, reloadImportedGame)
+    return () => window.removeEventListener(GAME_SAVE_EVENT, reloadImportedGame)
+  }, [])
 
   useEffect(()=>{
     setTtsEnabled(learning.settings?.tts !== false)
@@ -119,9 +131,20 @@ export default function App() {
   useEffect(()=>{
     const rewards=learning.pendingGameRewards || []
     if (!rewards.length) return
-    setGame(current=>rewards.reduce((next,reward)=>grantLearningReward(next,{ ticketDelta:reward.ticketDelta||0, captureItemDelta:reward.captureItemDelta||{}, unitMastered:!!reward.unitMastered, hardMastered:!!reward.hardMastered, today }),current))
+    const profileId = learning.activeProfileId || 'child-1'
+    let next = loadGameForProfile(profileId)
+    next = rewards.reduce((current,reward)=>grantLearningReward(current,{
+      rewardId: reward.id,
+      ticketDelta:reward.ticketDelta||0,
+      captureItemDelta:reward.captureItemDelta||{},
+      unitMastered:!!reward.unitMastered,
+      hardMastered:!!reward.hardMastered,
+      today
+    }),next)
+    saveGameForProfile(profileId, next)
+    if (gameProfileRef.current === profileId) setGame(next)
     learningDispatch({type:'ACK_GAME_REWARDS',ids:rewards.map(r=>r.id)})
-  },[learning.pendingGameRewards,learningDispatch,today])
+  },[learning.pendingGameRewards,learning.activeProfileId,learningDispatch,today])
 
   const startTask=(task)=>{setActiveTask(task);setView('activity')}
   const dailyCompleted=learning.daily?.coreDone===true

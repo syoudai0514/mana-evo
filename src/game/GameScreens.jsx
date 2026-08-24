@@ -128,6 +128,7 @@ function StageMap({ game, onStart, goStudy, goHome, dailyCompleted, today }) {
               <div className="stage-actions">
                 <span>🎫×1</span>
                 {stage.evolutionReward && <small>🎁 シンカアイテム</small>}
+                {stage.id === 'a1-boss' && <small>🔷 はじめてなら ギガキー</small>}
                 {stage.specialReward?.type === 'giga' && <small>🔷 ギガコア</small>}
                 {stage.specialReward?.type === 'burst' && <small>💥 バーストのしるし</small>}
                 <button disabled={!canStart} onClick={() => onStart(stage.id, false)}>{isCleared ? 'もういちど' : 'バトル！'}</button>
@@ -155,6 +156,8 @@ function BattleView({ game, setGame, onExitToMap, goStudy }) {
   const finished = ['won', 'lost', 'caught'].includes(battle.status)
   const forcedSwitch = battle.status === 'needs_switch'
   const special = specialProgressionStatus(active, game)
+  const captureHpReady = battle.enemy.hp > 0 && battle.enemy.hp / battle.enemy.maxHp <= 0.5
+  const captureAttemptsLeft = Math.max(0, MAX_CAPTURE_ATTEMPTS - (battle.captureAttempts || 0))
 
   const act = (moveId) => {
     const result = useMove(game, battle, moveId)
@@ -232,16 +235,18 @@ function BattleView({ game, setGame, onExitToMap, goStudy }) {
           {!battle.specialUsed && special.burst.activatable && <button className="burst-action" onClick={() => specialAct('burst')}>💥 キョダイバースト<small>3ターン・HP×2 / こうげき×1.2</small></button>}
         </div>
 
-        {!stage?.captureDisabled ? <section className="battle-tools">
+        {!stage?.captureDisabled ? <section className={`battle-tools capture-panel ${captureHpReady ? 'capture-open' : 'capture-locked'}`}>
           <div className="capture-stars" aria-label="捕獲4段階">{Array.from({ length: 4 }, (_, i) => <span key={i}>{i < battle.captureStars ? '★' : '☆'}</span>)}</div>
-          <p>HPを半分以下にして「わ」！ 1バトル最大3回：{battle.captureAttempts || 0}/{MAX_CAPTURE_ATTEMPTS}</p>
+          <h2>{captureAttemptsLeft <= 0 ? '「わ」は 3かい なげたよ' : captureHpReady ? '⭐ 「わ」を なげる！' : '🔒 「わ」を なげるには HPを はんぶんいかに！'}</h2>
+          <p>{captureAttemptsLeft <= 0 ? 'このバトルでは もう「わ」を なげられないよ。たおすか、バトルを つづけよう。' : captureHpReady ? `いま なげられるよ！ のこり ${captureAttemptsLeft}かい。つかう「わ」を えらぼう。` : `あいての HPを ${Math.floor(battle.enemy.maxHp / 2)} いかまで へらそう。いまは ${battle.enemy.hp}。`}</p>
           <div className="capture-item-grid">{CAPTURE_ITEM_IDS.map((id) => {
             const meta = CAPTURE_META[id]
             const ready = canAttemptCapture(game, battle, id)
             const chance = captureChance(battle, id)
-            return <button key={id} className={ready ? 'capture-ready' : ''} disabled={!ready} onClick={() => capture(id)}>{meta.icon} {meta.label}<small>×{game.captureItems?.[id] || 0}　{Math.round(chance * 100)}%</small></button>
+            const owned = game.captureItems?.[id] || 0
+            return <button key={id} className={ready ? 'capture-ready' : ''} disabled={!ready} onClick={() => capture(id)}><strong>{meta.icon} {meta.label}を なげる</strong><small>もってる：{owned}こ　{captureHpReady && captureAttemptsLeft > 0 && owned > 0 ? `GET ${Math.round(chance * 100)}%` : 'いまは なげられない'}</small></button>
           })}</div>
-        </section> : <section className="battle-tools"><strong>👑 このバトルでは GETできないよ</strong><p>たおして、クリアほうしゅうを ねらおう！</p></section>}
+        </section> : <section className="battle-tools"><strong>👑 このバトルでは GETできないよ</strong><p>「わ」は なげられない バトルだよ。たおして、クリアほうしゅうを ねらおう！</p></section>}
       </>}
 
       {forcedSwitch && <section className="battle-result-card"><h2>つぎの なかまを えらぼう！</h2><p>まだ元気な仲間がいるから、バトルは続けられるよ。</p></section>}
@@ -257,9 +262,10 @@ function BattleView({ game, setGame, onExitToMap, goStudy }) {
       {finished && <section className="battle-result-card">
         <h2>{battle.status === 'won' ? 'かち！ 🎉' : battle.status === 'caught' ? 'ゲット！ ★★★★' : 'まけちゃった…'}</h2>
         {battle.status === 'won' && stage?.evolutionReward && <p>🎁 初回クリアなら シンカアイテムをGET！</p>}
-        {battle.status === 'won' && stage?.specialReward?.type === 'giga' && <p>🔷 ギガキーと {enemySpecies.name}のギガコアを解放！</p>}
+        {battle.status === 'won' && stage?.id === 'a1-boss' && <p>🔷 はじめてのクリアで ギガキーが ひらいた！</p>}
+        {battle.status === 'won' && stage?.specialReward?.type === 'giga' && <p>🔷 {enemySpecies.name}のギガコアを解放！</p>}
         {battle.status === 'won' && stage?.specialReward?.type === 'burst' && <p>💥 {enemySpecies.name}のバーストのしるしを解放！</p>}
-        {battle.status === 'caught' && <p>新しい仲間はボックスに入ったよ。手持ちが2体以下なら自動でチーム入り！</p>}
+        {battle.status === 'caught' && <p>「わ」が 4つ ひかって GET！ 新しい仲間はボックスに入ったよ。手持ちが2体以下なら自動でチーム入り！</p>}
         {battle.status === 'lost' && <p>{battle.ticketRefunded ? '🎫は1まい返ってきたよ。仲間を育てて再挑戦しよう！' : '🎫は期限をすぎていたので戻らなかったよ。もう一度学んで挑戦しよう！'}</p>}
         <button className="primary" onClick={exit}>マップへ</button>
         {availableTicketCount(game, dayNumber()) < 1 && <button className="secondary" onClick={goStudy}>まなぶ！</button>}
@@ -329,8 +335,8 @@ function DetailPanel({ game, setGame, instanceId }) {
     <section className="formal-moves"><h3>わざ</h3>{species.moves.map((moveId) => { const move = moveOf(moveId); return <div key={moveId}><strong>{move.name}</strong><span>{typeLabel(move.type)}</span><small>{move.effect?.type === 'heal' ? 'HP20%かいふく・1バトル1回' : `威力${move.power} / 命中${move.accuracy} / ${move.role}`}</small></div> })}</section>
     <div className="evo-progress"><strong>通常進化</strong>{species.evolution ? <><p>次：No.{nextSpecies?.no} {nextSpecies?.name}</p><p>{canNormalEvolve(monster, game) ? '✨ 条件達成！' : describeEvolutionCondition(monster)}</p>{species.evolution.method === 'stone' && <small>所持：{EVOLUTION_ITEMS.stones[species.evolution.itemId]?.name} ×{game.evolutionItems?.stones?.[species.evolution.itemId] || 0}</small>}{species.evolution.method === 'held_item_levelup' && <><small>所持：{EVOLUTION_ITEMS.heldItems[species.evolution.heldItemId]?.name} ×{game.evolutionItems?.heldItems?.[species.evolution.heldItemId] || 0} ／ 装備：{monster.heldItemId === species.evolution.heldItemId ? '済み' : 'なし'}</small>{monster.heldItemId !== species.evolution.heldItemId && (game.evolutionItems?.heldItems?.[species.evolution.heldItemId] || 0) > 0 && <button className="secondary" onClick={equipRequiredItem}>必要なもちものを持たせる</button>}</>}<button className="primary" disabled={!canNormalEvolve(monster, game)} onClick={evolve}>進化させる！</button></> : <p>最終進化まで到達！</p>}</div>
     <div className="special-cards">
-      <article className={special.giga.eligibleSpecies ? 'eligible' : ''}><strong>🔷 ギガシンカ</strong><p>{!special.giga.isFinal ? 'まずは最終進化をめざそう！' : !special.giga.eligibleSpecies ? 'このモンスターは対象外' : special.giga.activatable ? '✅ バトルで発動できる！' : '専用ギガしれんをクリアしよう'}</p><small>対象12体。発動するとバトル中の全能力×1.35。</small></article>
-      <article className={special.burst.eligibleSpecies ? 'eligible' : ''}><strong>💥 キョダイバースト</strong><p>{!special.burst.isFinal ? 'まずは最終進化をめざそう！' : !special.burst.eligibleSpecies ? 'このモンスターは対象外' : special.burst.activatable ? '✅ バトルで発動できる！' : '専用バーストしれんをクリアしよう'}</p><small>対象8体。3ターン、HP×2・こうげき×1.2・専用技。</small></article>
+      <article className={special.giga.eligibleSpecies ? 'eligible' : ''}><strong>🔷 ギガシンカ</strong><p>{!special.giga.isFinal ? 'まずは最終進化をめざそう！' : !special.giga.eligibleSpecies ? 'このモンスターは対象外' : special.giga.activatable ? '✅ バトルで発動できる！' : !special.giga.hasKey ? 'まずエリア1ボスで ギガキーを ひらこう' : '専用ギガしれんをクリアして ギガコアをGETしよう'}</p><small>対象12体。全能力×1.35。{special.giga.registered ? '図鑑にギガのすがた登録済み。' : ''}</small></article>
+      <article className={special.burst.eligibleSpecies ? 'eligible' : ''}><strong>💥 キョダイバースト</strong><p>{!special.burst.isFinal ? 'まずは最終進化をめざそう！' : !special.burst.eligibleSpecies ? 'このモンスターは対象外' : special.burst.activatable ? '✅ バトルで発動できる！' : '専用バーストしれんをクリアして しるしをGETしよう'}</p><small>対象8体。3ターン、HP×2・こうげき×1.2・主力技が専用技に変化。{special.burst.registered ? '図鑑にバーストのすがた登録済み。' : ''}</small></article>
     </div>
   </section>
 }
@@ -356,7 +362,7 @@ function DexGrid({ game }) {
       <select value={type} onChange={(event) => setType(event.target.value)}><option value="all">ぜんタイプ</option>{TYPES.map((item) => <option key={item.id} value={item.id}>{item.icon} {item.label}</option>)}</select>
       <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="なまえ・No.で さがす" />
     </div>
-    <div className="dex-grid">{speciesList.map((species) => <div key={species.id} className={seen[species.id] ? 'seen' : 'unknown'}><small>No.{species.no}</small>{seen[species.id] ? <PlaceholderMonster speciesId={species.id} compact /> : <div className="silhouette">?</div>}<strong>{seen[species.id] ? species.name : '？？？'}</strong><span>{caught[species.id] ? '✅ GET' : seen[species.id] ? '👀 発見' : '未発見'}</span></div>)}</div>
+    <div className="dex-grid">{speciesList.map((species) => <div key={species.id} className={seen[species.id] ? 'seen' : 'unknown'}><small>No.{species.no}</small>{seen[species.id] ? <PlaceholderMonster speciesId={species.id} compact /> : <div className="silhouette">?</div>}<strong>{seen[species.id] ? species.name : '？？？'}</strong><span>{caught[species.id] ? '✅ GET' : seen[species.id] ? '👀 発見' : '未発見'}{game.specialDex?.giga?.[species.id] ? '　🔷ギガ登録' : ''}{game.specialDex?.burst?.[species.id] ? '　💥バースト登録' : ''}</span></div>)}</div>
   </>
 }
 
@@ -374,6 +380,6 @@ export function MonsterScreen({ game, setGame, goHome }) {
     <div className="monster-tabs"><button className={tab === 'team' ? 'active' : ''} onClick={() => setTab('team')}>手持ち {team.length}/3</button><button className={tab === 'box' ? 'active' : ''} onClick={() => setTab('box')}>ボックス {box.length}</button><button className={tab === 'dex' ? 'active' : ''} onClick={() => setTab('dex')}>図鑑 238</button></div>
     {tab === 'team' && <><div className="monster-list">{team.map((monster) => <MonsterRow key={monster.instanceId} monster={monster} game={game} setGame={setGame} selected={selected === monster.instanceId} setSelected={setSelected} />)}</div><DetailPanel game={game} setGame={setGame} instanceId={selected} /></>}
     {tab === 'box' && <><p className="kid-note">手持ちは3体まで。タイプのちがう仲間を組み合わせよう！</p><div className="monster-list">{box.map((monster) => <MonsterRow key={monster.instanceId} monster={monster} game={game} setGame={setGame} selected={selected === monster.instanceId} setSelected={setSelected} />)}</div><DetailPanel game={game} setGame={setGame} instanceId={selected} /></>}
-    {tab === 'dex' && <><p className="kid-note">No.001〜238の正式マスターで動いているよ。登録済みの正式画像はそのまま表示し、まだ画像ファイルがない個体だけ専用の準備中表示になるよ。</p><DexGrid game={game} /></>}
+    {tab === 'dex' && <><p className="kid-note">No.001〜238の正式マスターで動いているよ。登録済みの正式画像はそのまま表示し、まだ画像ファイルがない個体だけ専用の準備中表示になるよ。ギガ/バーストを初めて使うと同じ図鑑枠に登録マークがつくよ。</p><DexGrid game={game} /></>}
   </main>
 }

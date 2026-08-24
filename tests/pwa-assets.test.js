@@ -49,6 +49,15 @@ test('service worker precache only references existing public assets', () => {
     const relativePath = match[1]
     assert.ok(fs.existsSync(publicAsset(relativePath)), `service worker precache asset is missing: ${relativePath}`)
   }
-  assert.match(sw, /CACHE_NAME = `\$\{CACHE_PREFIX\}v7`/)
+  assert.match(sw, /CACHE_NAME = `\$\{CACHE_PREFIX\}v8`/)
   assert.match(sw, /icons\/apple-touch-icon\.png/)
+})
+
+test('service worker warms only entry assets and uses cache-first for immutable app media', () => {
+  assert.match(sw, /async function warmEntryAssets/)
+  assert.match(sw, /url\.pathname\.startsWith\(`\$\{BASE_PATH\}assets\/`\)/)
+  assert.match(sw, /relative\.startsWith\('assets\/'\)/)
+  assert.match(sw, /relative\.startsWith\('monsters\/'\)/)
+  assert.match(sw, /const cached = await cache\.match\(request\)/)
+  assert.doesNotMatch(sw, /APP_SHELL[\s\S]*piper_plus_wasm_bg/)
 })

@@ -1,3 +1,5 @@
+import { exportGameEnvelope, importGameEnvelope } from '../../game/saveStore.js'
+
 const KEY = 'mana-evo:kids-quest-learning:v2'
 
 export function loadState() {
@@ -6,10 +8,21 @@ export function loadState() {
 export function saveState(state) { try { localStorage.setItem(KEY, JSON.stringify(state)) } catch {} }
 export function clearState() { try { localStorage.removeItem(KEY) } catch {} }
 export const EXPORT_MARKER = 'mana-evo-learning-save'
-export function serializeForExport(state) { return JSON.stringify({ marker: EXPORT_MARKER, formatVersion: 2, exportedAt: new Date().toISOString(), state }, null, 2) }
+export function serializeForExport(state) {
+  return JSON.stringify({
+    marker: EXPORT_MARKER,
+    formatVersion: 3,
+    exportedAt: new Date().toISOString(),
+    state,
+    gameEnvelope: exportGameEnvelope(state?.activeProfileId || 'child-1')
+  }, null, 2)
+}
 export function parseImport(text) {
   const obj = JSON.parse(text)
-  if (obj?.marker === EXPORT_MARKER && obj.state && typeof obj.state === 'object') return obj.state
+  if (obj?.marker === EXPORT_MARKER && obj.state && typeof obj.state === 'object') {
+    if (obj.gameEnvelope) importGameEnvelope(obj.gameEnvelope, obj.state.activeProfileId || 'child-1')
+    return obj.state
+  }
   if (obj && typeof obj === 'object' && (obj.version || obj.skills || obj.gradeMax != null)) return obj
   throw new Error('ひきつぎデータの形式が ちがいます')
 }

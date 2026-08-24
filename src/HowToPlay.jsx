@@ -1,9 +1,16 @@
 import React from 'react'
 import PlaceholderMonster from './game/PlaceholderMonster.jsx'
-import { speciesOf } from './game/content.js'
+import { EVOLUTION_ITEMS, STAGES, speciesOf } from './game/content.js'
 import { canNormalEvolve, levelsUntilEvolution } from './game/engine.js'
 import { availableTicketCount, specialProgressionStatus } from './game/progression.js'
 import './how-to-play.css'
+
+function evolutionTrialFor(species) {
+  const evo = species?.evolution
+  if (!evo || !['stone', 'held_item_levelup'].includes(evo.method)) return null
+  const itemId = evo.method === 'stone' ? evo.itemId : evo.heldItemId
+  return STAGES.find((stage) => stage.kind === 'evolution-trial' && stage.requiresOwnedSpeciesId === species.id && stage.evolutionReward?.itemId === itemId) || null
+}
 
 function NextEvolutionCard({ game }) {
   const monster = game.box?.[game.activeMonsterId]
@@ -12,9 +19,10 @@ function NextEvolutionCard({ game }) {
   const evo = species?.evolution
   const ready = canNormalEvolve(monster, game)
   const left = levelsUntilEvolution(monster)
+  const trial = evolutionTrialFor(species)
 
   let title = 'さいごの すがたまで シンカしているよ！'
-  let detail = 'つぎは もっと そだてたり、ほかの なかまを シンカさせてみよう！'
+  let detail = 'ほかの なかまも そだてたり、とくべつな しれんに ちょうせんしよう！'
 
   if (evo?.method === 'level') {
     title = ready ? 'いま シンカできるよ！' : `あと ${left} レベル！`
@@ -24,28 +32,34 @@ function NextEvolutionCard({ game }) {
   }
 
   if (evo?.method === 'stone') {
+    const item = EVOLUTION_ITEMS.stones[evo.itemId]
     const count = game.evolutionItems?.stones?.[evo.itemId] || 0
-    title = count > 0 ? 'ひかりのいしを もっているよ！' : 'ひかりのいしを さがそう！'
+    title = count > 0 ? `${item?.name || 'シンカのいし'}を もっているよ！` : `${item?.name || 'シンカのいし'}を さがそう！`
     detail = count > 0
       ? '「モンスター」を ひらいて、「シンカさせる！」を おそう！ いしは 1こ つかうよ。'
-      : '「1-5 ひかりいわば」を クリアすると、ひかりのいしが 1こ もらえるよ！'
+      : trial
+        ? `マップの「${trial.label}」を クリアすると 1こ もらえるよ！`
+        : 'マップの シンカしれんで ひつような アイテムを てにいれよう！'
   }
 
-  if (evo?.method === 'held_item_level') {
+  if (evo?.method === 'held_item_levelup') {
+    const item = EVOLUTION_ITEMS.heldItems[evo.heldItemId]
     const equipped = monster.heldItemId === evo.heldItemId
     const owned = (game.evolutionItems?.heldItems?.[evo.heldItemId] || 0) > 0
     if (ready) {
       title = 'いま シンカできるよ！'
-      detail = 'きずなのチャームを もっているよ。「シンカさせる！」を おそう！'
+      detail = `${item?.name || 'ひつような もちもの'}を もって レベルアップできたよ。「シンカさせる！」を おそう！`
     } else if (!equipped && owned) {
-      title = 'きずなのチャームを もたせよう！'
-      detail = '「モンスター」を ひらいて、チャームを もたせよう。そのあと レベル10いじょうを めざそう！'
+      title = `${item?.name || 'もちもの'}を もたせよう！`
+      detail = '「モンスター」を ひらいて もちものを もたせ、そのあと 1かい レベルアップすると シンカの じゅんびが できるよ。'
     } else if (!equipped) {
-      title = 'きずなのチャームを さがそう！'
-      detail = '「1-6 きずなのよみち」を クリアすると、きずなのチャームが 1こ もらえるよ！'
+      title = `${item?.name || 'もちもの'}を さがそう！`
+      detail = trial
+        ? `マップの「${trial.label}」を クリアすると 1こ もらえるよ！`
+        : 'マップの シンカしれんで ひつような もちものを てにいれよう！'
     } else {
-      title = `あと ${Math.max(0, evo.level - monster.level)} レベル！`
-      detail = 'きずなのチャームは もっているよ。レベル10いじょうまで そだてよう！'
+      title = 'つぎの レベルアップを めざそう！'
+      detail = `${item?.name || 'もちもの'}は もっているよ。バトルで 1かい レベルアップすると シンカの じゅんびが できるよ。`
     }
   }
 
@@ -74,6 +88,7 @@ function Step({ number, icon, title, children }) {
 export default function HowToPlay({ game, today, goHome, goAdventure, goMonsters, goStudy }) {
   const tickets = availableTicketCount(game, today)
   const active = game.box?.[game.activeMonsterId]
+  const activeSpecies = active ? speciesOf(active.speciesId) : null
   const special = active ? specialProgressionStatus(active, game) : null
 
   return (
@@ -84,7 +99,7 @@ export default function HowToPlay({ game, today, goHome, goAdventure, goMonsters
         <div>
           <p className="howto-mini">マナエボ</p>
           <h1>あそびかた</h1>
-          <p>まなぶ → ぼうけん → ゲット → そだてる → シンカ！</p>
+          <p>まなぶ → ぼうけん → 「わ」を なげる → ゲット → そだてる → シンカ！</p>
         </div>
         <div className="howto-ticket">🎫<strong>{tickets}</strong><span>まい</span></div>
       </section>
@@ -95,11 +110,12 @@ export default function HowToPlay({ game, today, goHome, goAdventure, goMonsters
         <div className="howto-section-title"><span>⭐</span><div><p>まずは ここから！</p><h2>あそぶ じゅんばん</h2></div></div>
         <div className="howto-steps">
           <Step number="1" icon="📚" title="きょうの 5きょうか！">すきな じゅんばんで 5きょうか。こくご・さんすうは 5もん、ほかは 4もんくらい。ぜんぶ おわると、バトルチケットが 3まいと、ほしのわが 3こ もらえるよ！</Step>
-          <Step number="2" icon="🗺️" title="マップへ いこう！">バトルを はじめると、チケットを 1まい つかうよ。</Step>
-          <Step number="3" icon="⚔️" title="バトルしよう！">あいての たいりょくを はんぶんまで へらすと、「わ」で ゲットに ちょうせんできるよ！</Step>
-          <Step number="4" icon="⭐" title="なかまを ゲット！">「わ」は 1かいの バトルで 3かいまで。4つ ひかると ゲットだよ！</Step>
-          <Step number="5" icon="🎯" title="もっと バトルしたい！">ついかチャレンジは 3もん。2もん できたら、バトルチケットが 1まい もらえるよ！</Step>
-          <Step number="6" icon="✨" title="そだてて シンカ！">バトルで けいけんを ためて レベルアップ！ シンカの じょうけんが そろったら シンカできるよ。</Step>
+          <Step number="2" icon="🗺️" title="マップへ いこう！">バトルを はじめると、チケットを 1まい つかうよ。ボスや しれんは GETできないことも あるよ。</Step>
+          <Step number="3" icon="⚔️" title="HPを はんぶんまで へらそう！">GETできる あいては、HPが はんぶんいかに なると「わを なげる！」が つかえるよ。</Step>
+          <Step number="4" icon="⭐" title="「わ」を なげよう！">ほし・ぎん・きん・にじ から つかう「わ」を えらんで タップ！ 1バトルで 3かいまで なげられるよ。</Step>
+          <Step number="5" icon="✨" title="4つ ひかったら GET！">「わ」が 4つ ひかると GET！ しっぱいすると あいてが 1かい こうげきしてくるよ。</Step>
+          <Step number="6" icon="🎯" title="もっと バトルしたい！">ついかチャレンジは 3もん。2もん できたら、バトルチケットが 1まい もらえるよ！</Step>
+          <Step number="7" icon="🌱" title="そだてて シンカ！">バトルで けいけんを ためて レベルアップ！ シンカの じょうけんが そろったら「モンスター」から シンカできるよ。</Step>
         </div>
         <div className="howto-actions">
           <button className="primary" onClick={goStudy}>📚 まなぶ！</button>
@@ -112,26 +128,26 @@ export default function HowToPlay({ game, today, goHome, goAdventure, goMonsters
 
         <article className="howto-evo-card">
           <div className="howto-evo-badge">1</div>
-          <div><h3>レベルで シンカ</h3><p>モンスターごとに、シンカできる レベルが ちがうよ。「モンスター」を みると、あと なんレベルか わかるよ！</p></div>
+          <div><h3>レベルで シンカ</h3><p>モンスターごとに シンカする レベルが ちがうよ。「モンスター」を みると あと なんレベルか わかるよ！</p></div>
         </article>
 
         <article className="howto-evo-card special-item">
           <div className="howto-evo-badge">2</div>
           <div>
-            <h3>💎 ひかりのいしで シンカ</h3>
-            <p><b>「1-5 ひかりいわば」</b>を クリアすると、<b>ひかりのいしが 1こ</b> もらえるよ！</p>
-            <div className="howto-route"><span>1-5を クリア</span><b>→</b><span>ひかりのいし</span><b>→</b><span>シンカ！</span></div>
-            <small>シンカすると いしを 1こ つかうよ。</small>
+            <h3>💎 シンカの いしで シンカ</h3>
+            <p>シンカの いしが ひつような なかまは、その なかまを GETすると マップに <b>せんようの「シンカしれん」</b>が でるよ。はじめて クリアすると ひつような いしが 1こ もらえるよ！</p>
+            <div className="howto-route"><span>なかまを GET</span><b>→</b><span>シンカしれん</span><b>→</b><span>いしを GET</span><b>→</b><span>シンカ！</span></div>
+            <small>いしは シンカすると 1こ つかうよ。</small>
           </div>
         </article>
 
         <article className="howto-evo-card special-item">
           <div className="howto-evo-badge">3</div>
           <div>
-            <h3>🎀 きずなのチャームで シンカ</h3>
-            <p><b>「1-6 きずなのよみち」</b>を クリアすると、<b>きずなのチャームが 1こ</b> もらえるよ！</p>
-            <div className="howto-route"><span>1-6を クリア</span><b>→</b><span>チャームを もつ</span><b>→</b><span>レベル10</span><b>→</b><span>シンカ！</span></div>
-            <small>チャームは シンカしても そのまま もっているよ。</small>
+            <h3>🎀 もちもので シンカ</h3>
+            <p>せんようの シンカしれんで もちものを GET → 「モンスター」で もたせる → そのあと <b>1かい レベルアップ</b>すると シンカの じゅんびが できるよ。</p>
+            <div className="howto-route"><span>もちもの GET</span><b>→</b><span>もたせる</span><b>→</b><span>レベルアップ</span><b>→</b><span>シンカ！</span></div>
+            <small>もちものは シンカしても そのまま もっているよ。</small>
           </div>
         </article>
 
@@ -146,21 +162,24 @@ export default function HowToPlay({ game, today, goHome, goAdventure, goMonsters
           <article><strong>⭐ ほしのわ</strong><p>きょうの 5きょうかを ぜんぶ クリアすると 3こ もらえるよ！</p></article>
           <article><strong>⚪ ぎんのわ</strong><p>ひとつの まなびを しっかり マスターすると 1こ もらえるよ！</p></article>
           <article><strong>🟡 きんのわ</strong><p>「むずかしい」を しっかり マスターすると 1こ もらえるよ！</p></article>
+          <article><strong>🌈 にじのわ</strong><p>ぜんエリアの さいごの EXしれんを クリアすると もらえる、とくべつな 100% GETの「わ」だよ！</p></article>
         </div>
       </section>
 
-      <section className="howto-section howto-coming-soon">
+      <section className="howto-section">
         <div className="howto-section-title"><span>🔷</span><div><p>もっと つよく！</p><h2>ギガシンカ と キョダイバースト</h2></div></div>
         <article>
           <h3>🔷 ギガシンカ</h3>
-          <p>{special?.giga.isFinal ? 'さいごの すがたまで シンカしているね！' : 'まずは さいごの すがたまで シンカしよう！'}</p>
-          <p>ギガキーと ギガコアの データは あるよ。だけど、もらえる ばしょと バトルで つかうところは まだ じゅんびちゅう！</p>
+          <p>エリア1の ボスを たおすと ギガキーが ひらくよ。ギガたいしょうの なかまを さいごの すがたまで そだてる → せんようの ギガしれんを クリア → その なかまの ギガコアを GET！</p>
+          <p>{special?.giga.eligibleSpecies ? `${activeSpecies?.name}：キー ${special.giga.hasKey ? '✅' : '⬜'} / コア ${special.giga.hasCore ? '✅' : '⬜'}${special.giga.registered ? ' / すがた登録 ✅' : ''}` : 'ギガシンカできる なかまは 12たい いるよ。'}</p>
+          <small>1バトルで 1かい。バトルがおわるまで ぜんのうりょく ×1.35。</small>
         </article>
         <article>
           <h3>💥 キョダイバースト</h3>
-          <p>「しるし」を つかう データは あるよ。だけど、「しるし」を もらう ばしょと バトルで つかうところは まだ じゅんびちゅう！</p>
+          <p>バーストたいしょうの なかまを さいごの すがたまで そだてる → せんようの バーストしれんを クリア → 「バーストのしるし」を GET！</p>
+          <p>{special?.burst.eligibleSpecies ? `${activeSpecies?.name}：しるし ${special.burst.hasMark ? '✅' : '⬜'}${special.burst.registered ? ' / すがた登録 ✅' : ''}` : 'キョダイバーストできる なかまは 8たい いるよ。'}</p>
+          <small>3ターン。HP×2 / こうげき×1.2。主力わざが バーストせんようわざに かわるよ。</small>
         </article>
-        <div className="howto-soon-label">🚧 いまは まだ つかえないよ</div>
       </section>
 
       <button className="secondary howto-home-button" onClick={goHome}>🏠 ホームへ もどる</button>
