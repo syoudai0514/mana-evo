@@ -199,6 +199,7 @@ export function startBattle(game, stageId, { dailyCompleted = false, dailyDay = 
   const battle = {
     stageId,
     challenge: !!challenge,
+    rngSeed: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`,
     activeInstanceId: activeId,
     teamAtStart,
     partyHp,
@@ -253,7 +254,7 @@ export function damageAmount(attacker, defender, move) {
 function deterministicHit(move, battle, actor = 'player') {
   const accuracy = clamp(1, Number(move?.accuracy) || 100, 100)
   if (accuracy >= 100) return true
-  const seed = `${battle.stageId}:${battle.turn}:${move.id || move.moveId}:${actor}`
+  const seed = `${battle.rngSeed || 'legacy'}:${battle.stageId}:${battle.turn}:${move.id || move.moveId}:${actor}`
   let hash = 2166136261
   for (let i = 0; i < seed.length; i += 1) hash = Math.imul(hash ^ seed.charCodeAt(i), 16777619) >>> 0
   return (hash % 100) < accuracy
@@ -348,8 +349,9 @@ function grantStageSpecialReward(game, stage, firstClear) {
   if (!firstClear || !stage?.specialReward) return { game, specialReward: null }
   const next = structuredClone(game)
   const reward = stage.specialReward
-  if (reward.type === 'giga') {
+  if (reward.type === 'giga-key') {
     next.gigaKeyOwned = true
+  } else if (reward.type === 'giga') {
     next.gigaCoreSpecies ||= {}
     next.gigaCoreSpecies[reward.speciesId] = true
   } else if (reward.type === 'burst') {
@@ -440,7 +442,10 @@ export function availableBattleMoveIds(game, battle) {
   const species = monster ? speciesOf(monster.speciesId) : null
   if (!species) return []
   const ids = [...species.moves]
-  if (battle.playerSpecial?.type === 'burst' && battle.playerSpecial.instanceId === monster.instanceId && species.burstMoveId) ids.push(species.burstMoveId)
+  if (battle.playerSpecial?.type === 'burst' && battle.playerSpecial.instanceId === monster.instanceId && species.burstMoveId) {
+    const replaceIndex = ids.findIndex((id) => ['finisher', 'identity'].includes(moveOf(id)?.role))
+    ids[replaceIndex >= 0 ? replaceIndex : Math.max(0, ids.length - 1)] = species.burstMoveId
+  }
   return ids
 }
 
@@ -546,7 +551,11 @@ function activateSpecial(game, battle, type) {
   next.specialUsed = true
   next.playerSpecial = { type, instanceId: monster.instanceId, turnsLeft: type === 'burst' ? BURST_TURNS : null }
   next.log = [...next.log.slice(-5), type === 'giga' ? `🔷 ${speciesOf(monster.speciesId).name}が ギガシンカ！` : `💥 ${speciesOf(monster.speciesId).name}が キョダイバースト！`]
-  return { ok: true, game: syncActiveBattle(game, next), battle: next }
+  const nextGame = syncActiveBattle(game, next)
+  nextGame.specialDex ||= { giga: {}, burst: {} }
+  nextGame.specialDex[type] ||= {}
+  nextGame.specialDex[type][monster.speciesId] = true
+  return { ok: true, game: nextGame, battle: next }
 }
 
 export function activateGiga(game, battle) { return activateSpecial(game, battle, 'giga') }
@@ -593,8 +602,9 @@ export function attemptCapture(game, battle, rolls = null, itemType = 'star') {
   nextBattle.lastPlayerAction = 'capture'
   nextBattle.turn += 1
   if (stars < 4) {
-    const log = [`「わ」が ${stars}こ 光った！ でも逃げられた！`]
+    const log = [`「わ」を なげた！ ${stars}こ 光った！ でも逃げられた！`]
     enemyAttackOnce(nextGame, nextBattle, log)
+    if (nextBattle.playerSpecial?.type === 'burst') endBurstIfNeeded(nextGame, nextBattle, log)
     nextBattle.log = [...nextBattle.log.slice(-4), ...log].slice(-8)
     resolvePlayerFaint(nextGame, nextBattle)
     const resolved = refundLostBattleIfNeeded(nextGame, nextBattle)
@@ -624,7 +634,7 @@ export function attemptCapture(game, battle, rolls = null, itemType = 'star') {
   const specialGrant = grantStageSpecialReward(nextGame, stage, firstClear)
   nextGame = specialGrant.game
   nextBattle.status = 'caught'
-  nextBattle.log = [...nextBattle.log.slice(-4), `★★★★ 「わ」が ひかった！ ゲット！ XP +${xp}`]
+  nextBattle.log = [...nextBattle.log.slice(-4), `★★★★ 「わ」を なげた！ 4つ ひかって ゲット！ XP +${xp}`]
   nextGame.activeBattle = structuredClone(nextBattle)
   return {
     ok: true,
@@ -658,6 +668,7 @@ export function switchBattleMonster(game, battle, instanceId) {
 
   if (!forced) {
     enemyAttackOnce(nextGame, nextBattle, log)
+    if (nextBattle.playerSpecial?.type === 'burst') endBurstIfNeeded(nextGame, nextBattle, log)
     nextBattle.turn += 1
     resolvePlayerFaint(nextGame, nextBattle)
   }
