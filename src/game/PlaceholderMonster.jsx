@@ -13,13 +13,21 @@ function legacySpriteStyle(frame, size) {
   }
 }
 
+function resolvePublicAsset(url) {
+  if (!url) return null
+  if (/^(https?:|data:|blob:)/.test(url)) return url
+  const base = import.meta.env.BASE_URL || '/'
+  const normalizedBase = base.endsWith('/') ? base : `${base}/`
+  return `${normalizedBase}${String(url).replace(/^\/+/, '')}`
+}
+
 export default function PlaceholderMonster({ speciesId, stage = null, excited = false, compact = false }) {
   const species = speciesOf(speciesId)
   const resolvedStage = stage || species?.stage || 1
   const size = compact ? 50 : 124
   const legacyFrame = monsterSpriteFrame(speciesId)
   const [imageFailed, setImageFailed] = useState(false)
-  const officialUrl = species?.officialImageUrl || null
+  const officialUrl = resolvePublicAsset(species?.officialImageUrl)
 
   useEffect(() => { setImageFailed(false) }, [officialUrl])
 
