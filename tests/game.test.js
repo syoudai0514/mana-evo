@@ -13,11 +13,14 @@ import {
   currentPlayerHp,
   evolutionConditionMet,
   evolveInstance,
+  gainXp,
   makeMonster,
   setTeam,
   startBattle,
   switchBattleMonster,
-  useMove
+  totalXpForLevel,
+  useMove,
+  xpToNext
 } from '../src/game/engine.js'
 import {
   TICKET_TTL_DAYS,
@@ -43,6 +46,14 @@ test('type chart exposes super effective, resisted and immune outcomes', () => {
   assert.equal(typeEffectiveness('fire', ['water']), 0.5)
   assert.equal(typeEffectiveness('electric', ['ground']), 0)
   assert.equal(typeEffectiveness('ice', ['dragon']), 2)
+})
+
+test('reviewed XP curve uses cumulative 6*(level-1)^1.9 and caps at level 100', () => {
+  assert.equal(totalXpForLevel(1), 0)
+  assert.equal(totalXpForLevel(2), 6)
+  assert.equal(xpToNext(1), 6)
+  assert.equal(xpToNext(100), 0)
+  assert.ok(xpToNext(30) > xpToNext(10))
 })
 
 test('ticket grants last seven days and expire at the start of day 7', () => {
@@ -75,14 +86,16 @@ test('yesterday daily completion cannot open a new battle after day rollover', (
   assert.equal(availableTicketCount(blocked.game, day + 1), 1)
 })
 
-test('starting a fixed stage persists activeBattle and does not scale enemy', () => {
+test('starting a normal stage persists activeBattle and soft-scales to the current team', () => {
   const day = 1200
   let game = addTickets(createGameState(), 1, day)
   game.box[game.activeMonsterId].level = 50
   const result = start(game, '1-1', day)
   assert.equal(result.ok, true)
   assert.equal(availableTicketCount(result.game, day), 0)
-  assert.equal(result.battle.enemy.level, 5)
+  assert.equal(result.battle.enemy.balance.mode, 'normal-soft')
+  assert.ok(result.battle.enemy.level > 5, 'a Lv50 team should not use the legacy fixed Lv5 enemy')
+  assert.deepEqual(result.battle.teamAtStart, [game.activeMonsterId])
   assert.deepEqual(result.game.activeBattle, result.battle)
 })
 
@@ -93,6 +106,7 @@ test('reload normalization preserves an active battle so no second ticket is con
   assert.equal(availableTicketCount(reloaded, day + 1), 0)
   assert.equal(reloaded.activeBattle?.stageId, '1-1')
   assert.equal(reloaded.activeBattle?.turn, started.battle.turn)
+  assert.deepEqual(reloaded.activeBattle?.teamAtStart, started.battle.teamAtStart)
   assert.equal(reloaded.activeBattle?.ticketSource?.expiresDay, started.battle.ticketSource.expiresDay)
 })
 
@@ -134,6 +148,25 @@ test('win keeps the ticket consumed', () => {
   for (let i = 0; i < 20 && state.battle.status === 'fighting'; i++) state = useMove(state.game, state.battle, 'flameRush')
   assert.equal(state.battle.status, 'won')
   assert.equal(availableTicketCount(state.game, day), 0)
+})
+
+test('win gives the same full battle XP to every monster that was in the team at battle start', () => {
+  const day = 1650
+  let game = createGameState()
+  const mate = makeMonster('wild-water-1', 5, 'w1')
+  game.box.w1 = mate
+  game = setTeam(game, [game.activeMonsterId, 'w1']).game
+  const before = Object.fromEntries(game.team.map((id) => [id, { level: game.box[id].level, xp: game.box[id].xp }]))
+  const started = start(addTickets(game, 1, day), '1-1', day)
+  const almostWon = structuredClone(started.battle)
+  almostWon.enemy.hp = 1
+  const result = useMove(started.game, almostWon, 'flameRush')
+  assert.equal(result.battle.status, 'won')
+  assert.equal(result.rewards.xp, 110)
+  for (const id of started.battle.teamAtStart) {
+    assert.ok(result.game.box[id].level > before[id].level || result.game.box[id].xp > before[id].xp)
+    assert.ok(id in result.rewards.levelsByInstance)
+  }
 })
 
 test('switch away and back preserves per-monster HP instead of full-healing', () => {
@@ -224,6 +257,27 @@ test('rainbow ring captures even with worst RNG and keeps battle ticket consumed
   assert.equal(availableTicketCount(result.game, day), 0)
 })
 
+test('capture success gives battle-start teammates full XP but not the newly captured enemy', () => {
+  const day = 2250
+  let game = createGameState()
+  const mate = makeMonster('wild-water-1', 5, 'w1')
+  game.box.w1 = mate
+  game = setTeam(game, [game.activeMonsterId, 'w1']).game
+  game.captureItems.rainbow = 1
+  const before = Object.fromEntries(game.team.map((id) => [id, { level: game.box[id].level, xp: game.box[id].xp }]))
+  const started = start(addTickets(game, 1, day), '1-1', day)
+  const weakened = structuredClone(started.battle)
+  weakened.enemy.hp = 1
+  const result = attemptCapture(started.game, weakened, [1, 1, 1, 1], 'rainbow')
+  assert.equal(result.caught, true)
+  assert.equal(result.xp, 110)
+  for (const id of started.battle.teamAtStart) {
+    assert.ok(result.game.box[id].level > before[id].level || result.game.box[id].xp > before[id].xp)
+  }
+  assert.equal(result.captured.xp, 0)
+  assert.equal(result.captured.evolutionReady, false)
+})
+
 test('four successful checks capture, consume selected ring and register dex', () => {
   const day = 2300
   const started = start(addTickets(createGameState(), 1, day), '1-1', day)
@@ -237,22 +291,32 @@ test('four successful checks capture, consume selected ring and register dex', (
   assert.equal(result.game.captureItems.star, ringsBefore - 1)
   assert.equal(result.game.dex.caught['wild-grass-1'], true)
   assert.ok(Object.values(result.game.box).some((monster) => monster.speciesId === 'wild-grass-1'))
+  assert.ok(result.game.normalStageSnapshots['1-1']?.firstClearReferencePower > 0)
 })
 
-test('capture success on a reward stage grants the configured evolution item', () => {
+test('capture success on a reward stage grants the configured evolution item only on first clear', () => {
   const day = 2350
   let game = createGameState()
   game.stagesCleared = ['1-1', '1-2', '1-3', '1-4']
-  game.captureItems.rainbow = 1
-  const started = start(addTickets(game, 1, day), '1-5', day)
-  const weakened = structuredClone(started.battle)
+  game.captureItems.rainbow = 2
+  let started = start(addTickets(game, 1, day), '1-5', day)
+  let weakened = structuredClone(started.battle)
   weakened.enemy.hp = 1
-  const result = attemptCapture(started.game, weakened, [1, 1, 1, 1], 'rainbow')
-  assert.equal(result.ok, true)
-  assert.equal(result.caught, true)
-  assert.equal(result.evolutionReward?.itemId, 'glow-stone')
-  assert.equal(result.game.evolutionItems.stones['glow-stone'], 1)
-  assert.ok(result.game.stagesCleared.includes('1-5'))
+  const first = attemptCapture(started.game, weakened, [1, 1, 1, 1], 'rainbow')
+  assert.equal(first.ok, true)
+  assert.equal(first.caught, true)
+  assert.equal(first.evolutionReward?.itemId, 'glow-stone')
+  assert.equal(first.game.evolutionItems.stones['glow-stone'], 1)
+  assert.ok(first.game.stagesCleared.includes('1-5'))
+
+  const cleared = clearFinishedBattle(first.game, { today: day })
+  started = start(addTickets(cleared.game, 1, day), '1-5', day)
+  weakened = structuredClone(started.battle)
+  weakened.enemy.hp = 1
+  const repeat = attemptCapture(started.game, weakened, [1, 1, 1, 1], 'rainbow')
+  assert.equal(repeat.caught, true)
+  assert.equal(repeat.evolutionReward, null)
+  assert.equal(repeat.game.evolutionItems.stones['glow-stone'], 1)
 })
 
 test('capture inventory has four types, failed capture consumes turn, and one battle allows max three attempts', () => {
@@ -289,18 +353,21 @@ test('team setter enforces a hard maximum of three monsters', () => {
   assert.equal(result.game.team.length, 3)
 })
 
-test('real species master includes level, stone, and held-item+level evolution methods', () => {
+test('real species master includes level, stone, and held-item+actual-levelup evolution methods', () => {
   const methods = new Set(Object.values(SPECIES).map((species) => species.evolution?.method).filter(Boolean))
   assert.ok(methods.has('level'))
   assert.ok(methods.has('stone'))
-  assert.ok(methods.has('held_item_level'))
+  assert.ok(methods.has('held_item_levelup'))
+  assert.equal(methods.has('held_item_level'), false)
 })
 
-test('generic evolution conditions support level, stone and held-item+level without hardcoding species logic', () => {
+test('generic evolution conditions require evolutionReady for held-item levelup', () => {
   const monster = makeMonster('wild-grass-1', 10, 'g1')
   assert.equal(evolutionConditionMet(monster, { evolution: { to: 'x', method: 'level', level: 10 } }, {}), true)
   assert.equal(evolutionConditionMet(monster, { evolution: { to: 'x', method: 'stone', itemId: 'moon' } }, { evolutionItems: { stones: { moon: 1 } } }), true)
-  assert.equal(evolutionConditionMet({ ...monster, heldItemId: 'seed' }, { evolution: { to: 'x', method: 'held_item_level', heldItemId: 'seed', level: 10 } }, {}), true)
+  const heldSpecies = { evolution: { to: 'x', method: 'held_item_levelup', heldItemId: 'seed' } }
+  assert.equal(evolutionConditionMet({ ...monster, heldItemId: 'seed', evolutionReady: false }, heldSpecies, {}), false)
+  assert.equal(evolutionConditionMet({ ...monster, heldItemId: 'seed', evolutionReady: true }, heldSpecies, {}), true)
 })
 
 test('normal level evolution preserves the same monster instance', () => {
@@ -329,7 +396,7 @@ test('stone evolution works E2E and consumes exactly one stone', () => {
   assert.equal(evolved.game.evolutionItems.stones['glow-stone'], undefined)
 })
 
-test('held-item+level evolution works E2E and equipped item remains after evolution', () => {
+test('held-item evolution needs an actual level-up after equipping and keeps the item after evolution', () => {
   let game = createGameState()
   const monster = makeMonster('wild-charm-1', 10, 'charm-1')
   game.box[monster.instanceId] = monster
@@ -337,11 +404,19 @@ test('held-item+level evolution works E2E and equipped item remains after evolut
   game.activeMonsterId = monster.instanceId
   game = grantEvolutionItem(game, 'held', 'bond-charm', 1, 2600).game
   game = equipHeldItem(game, 'charm-1', 'bond-charm', 2600).game
+  assert.equal(canNormalEvolve(game.box['charm-1'], game), false, 'equipping alone must not evolve')
+
+  const gained = gainXp(game.box['charm-1'], xpToNext(game.box['charm-1'].level))
+  assert.equal(gained.levels.length, 1)
+  assert.equal(gained.monster.evolutionReady, true)
+  game.box['charm-1'] = gained.monster
   assert.equal(canNormalEvolve(game.box['charm-1'], game), true)
+
   const evolved = evolveInstance(game, 'charm-1')
   assert.equal(evolved.ok, true)
   assert.equal(evolved.game.box['charm-1'].speciesId, 'wild-charm-2')
   assert.equal(evolved.game.box['charm-1'].heldItemId, 'bond-charm')
+  assert.equal(evolved.game.box['charm-1'].evolutionReady, false)
 })
 
 test('legacy v1 save migrates without stale Star Awakening and with seven-day ticket inventory', () => {
@@ -357,7 +432,7 @@ test('legacy v1 save migrates without stale Star Awakening and with seven-day ti
     monsters: { 'starter-001': { monsterId: 'starter-001', level: 12, xp: 17, stage: 2, starAwakened: true } }
   }
   const migrated = normalizeGameState(legacy, day)
-  assert.equal(migrated.version, 4)
+  assert.equal(migrated.version, 6)
   assert.equal(availableTicketCount(migrated, day), 7)
   assert.equal(availableTicketCount(migrated, day + 6), 7)
   assert.equal(availableTicketCount(migrated, day + 7), 0)
@@ -368,6 +443,7 @@ test('legacy v1 save migrates without stale Star Awakening and with seven-day ti
   assert.equal('gigaCores' in migrated, false)
   assert.deepEqual(migrated.gigaCoreSpecies, {})
   assert.deepEqual(migrated.burstMarks, {})
+  assert.deepEqual(migrated.normalStageSnapshots, {})
 })
 
 test('unknown or removed species in save are discarded instead of crashing later', () => {
