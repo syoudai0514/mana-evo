@@ -5,7 +5,7 @@ import fs from 'node:fs'
 const source = fs.readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8')
 
 test('bottom adventure navigation always opens the adventure map', () => {
-  assert.match(source, /onClick=\{\(\)=>setView\('adventure'\)\}>🗺️<\span>ぼうけん<\/span>/)
+  assert.match(source, /<button[^>]*onClick=\{\(\)=>setView\('adventure'\)\}[^>]*>🗺️<span>ぼうけん<\/span>/)
   assert.doesNotMatch(source, /setView\(dailyCompleted\?'adventure':'study'\)/)
 })
 
