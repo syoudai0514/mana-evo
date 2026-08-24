@@ -4,6 +4,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+// Keep the exact PWA icon files and dimensions under CI so iOS cannot silently fall back.
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8')
 const manifest = JSON.parse(fs.readFileSync(path.join(root, 'public/manifest.webmanifest'), 'utf8'))
@@ -13,10 +14,24 @@ function publicAsset(relativePath) {
   return path.join(root, 'public', relativePath)
 }
 
-test('iOS touch icon references an existing PNG', () => {
-  const match = index.match(/rel="apple-touch-icon"[^>]*href="%BASE_URL%([^\"]+)"/)
-  assert.ok(match, 'apple-touch-icon link is required')
-  assert.ok(fs.existsSync(publicAsset(match[1])), `missing apple touch icon: ${match[1]}`)
+function pngDimensions(file) {
+  const png = fs.readFileSync(file)
+  assert.equal(png.toString('hex', 0, 8), '89504e470d0a1a0a', `${file} must be PNG`)
+  return [png.readUInt32BE(16), png.readUInt32BE(20)]
+}
+
+test('iOS touch icon references the dedicated attached-artwork PNG', () => {
+  const match = index.match(/rel="apple-touch-icon"[^>]*sizes="180x180"[^>]*href="%BASE_URL%([^\"]+)"/)
+  assert.ok(match, '180x180 apple-touch-icon link is required')
+  assert.equal(match[1], 'icons/apple-touch-icon.png')
+  const file = publicAsset(match[1])
+  assert.ok(fs.existsSync(file), `missing apple touch icon: ${match[1]}`)
+  assert.deepEqual(pngDimensions(file), [180, 180])
+})
+
+test('PWA icons have the required PNG dimensions', () => {
+  assert.deepEqual(pngDimensions(publicAsset('icons/icon-192.png')), [192, 192])
+  assert.deepEqual(pngDimensions(publicAsset('icons/icon-512.png')), [512, 512])
 })
 
 test('manifest is pinned to the GitHub Pages subpath', () => {
@@ -28,4 +43,6 @@ test('service worker precache only references existing public assets', () => {
     const relativePath = match[1]
     assert.ok(fs.existsSync(publicAsset(relativePath)), `service worker precache asset is missing: ${relativePath}`)
   }
+  assert.match(sw, /CACHE_NAME = `\$\{CACHE_PREFIX\}v6`/)
+  assert.match(sw, /icons\/apple-touch-icon\.png/)
 })
