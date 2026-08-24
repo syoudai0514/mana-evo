@@ -29,10 +29,37 @@ jobs:
         run: npm install
       - name: Test
         run: npm test
-      - name: Build
+      - name: Build for GitHub Pages
         run: npm run build
         env:
           VITE_BASE_PATH: /mana-evo/
+      - name: Validate PWA artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f dist/index.html
+          test -f dist/manifest.webmanifest
+          test -f dist/sw.js
+          test -f dist/icons/icon-192.png
+          test -f dist/icons/icon-512.png
+          test -f dist/icons/apple-touch-icon.png
+          grep -q '/mana-evo/manifest.webmanifest' dist/index.html
+          grep -q '/mana-evo/icons/icon-192.png' dist/index.html
+          grep -q '/mana-evo/icons/apple-touch-icon.png' dist/index.html
+          node - <<'NODE'
+          const fs = require('fs')
+          const manifest = JSON.parse(fs.readFileSync('dist/manifest.webmanifest', 'utf8'))
+          for (const key of ['id', 'start_url', 'scope']) {
+            if (manifest[key] !== '/mana-evo/') throw new Error(`${key} must be /mana-evo/`)
+          }
+          for (const [file, size] of [['dist/icons/icon-192.png', 192], ['dist/icons/icon-512.png', 512]]) {
+            const png = fs.readFileSync(file)
+            if (png.toString('hex', 0, 8) !== '89504e470d0a1a0a') throw new Error(`${file} is not PNG`)
+            if (png.readUInt32BE(16) !== size || png.readUInt32BE(20) !== size) {
+              throw new Error(`${file} must be ${size}x${size}`)
+            }
+          }
+          NODE
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Upload Pages artifact
