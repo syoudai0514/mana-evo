@@ -1,12 +1,19 @@
 import { CAPTURE_CONFIG, EVOLUTION_ITEMS, MOVES, SPECIES, STAGES, moveOf, speciesOf, typeEffectiveness } from './content.js'
-import { buildEnemyPlan, statsFromBase } from './balance.js'
+import { BALANCE_VERSION, battleXpForStage, buildEnemyPlan, statsFromBase } from './balance.js'
 import { consumeTicket, grantEvolutionItem, refundTicket } from './progression.js'
 
 const clamp = (min, value, max) => Math.max(min, Math.min(max, value))
 export const MAX_CAPTURE_ATTEMPTS = 3
 
+export function totalXpForLevel(level) {
+  const lv = clamp(1, Math.floor(Number(level) || 1), 100)
+  return Math.round(6 * Math.pow(lv - 1, 1.9))
+}
+
 export function xpToNext(level) {
-  return 60 + level * 18
+  const lv = clamp(1, Math.floor(Number(level) || 1), 100)
+  if (lv >= 100) return 0
+  return totalXpForLevel(lv + 1) - totalXpForLevel(lv)
 }
 
 export function statsFor(speciesId, level, multipliers = null) {
@@ -23,17 +30,24 @@ export function makeMonster(speciesId, level = 1, instanceId = null) {
     level,
     xp: 0,
     heldItemId: null,
+    evolutionReady: false,
     caughtAt: Date.now()
   }
 }
 
+function isHeldItemLevelupEvolution(evo) {
+  return evo?.method === 'held_item_levelup'
+}
+
 export function gainXp(monster, amount) {
-  const next = { ...monster, xp: (monster.xp || 0) + Math.max(0, amount) }
+  const next = { ...monster, xp: (monster.xp || 0) + Math.max(0, amount), evolutionReady: !!monster.evolutionReady }
   const levels = []
-  while (next.xp >= xpToNext(next.level) && next.level < 100) {
+  while (next.level < 100 && next.xp >= xpToNext(next.level)) {
     next.xp -= xpToNext(next.level)
     next.level += 1
     levels.push(next.level)
+    const evo = speciesOf(next.speciesId)?.evolution
+    if (isHeldItemLevelupEvolution(evo) && next.heldItemId === evo.heldItemId) next.evolutionReady = true
   }
   return { monster: next, levels }
 }
@@ -43,7 +57,7 @@ export function evolutionConditionMet(monster, species = speciesOf(monster?.spec
   if (!monster || !evo?.to) return false
   if (evo.method === 'level') return monster.level >= (evo.level || 1)
   if (evo.method === 'stone') return (game?.evolutionItems?.stones?.[evo.itemId] || 0) > 0
-  if (evo.method === 'held_item_level') return monster.heldItemId === evo.heldItemId && monster.level >= (evo.level || 1)
+  if (isHeldItemLevelupEvolution(evo)) return monster.heldItemId === evo.heldItemId && monster.evolutionReady === true
   return false
 }
 
@@ -53,7 +67,7 @@ export function canNormalEvolve(monster, game = null) {
 
 export function levelsUntilEvolution(monster) {
   const evo = speciesOf(monster?.speciesId)?.evolution
-  if (!evo?.to || !['level', 'held_item_level'].includes(evo.method)) return null
+  if (!evo?.to || evo.method !== 'level') return null
   return Math.max(0, (evo.level || 1) - monster.level)
 }
 
@@ -62,14 +76,14 @@ export function describeEvolutionCondition(monster) {
   if (!evo) return '通常進化：最終形'
   if (evo.method === 'level') return `Lv.${evo.level}で進化`
   if (evo.method === 'stone') return `${EVOLUTION_ITEMS.stones[evo.itemId]?.name || evo.itemId || '進化アイテム'}で進化`
-  if (evo.method === 'held_item_level') return `${EVOLUTION_ITEMS.heldItems[evo.heldItemId]?.name || evo.heldItemId || '特定アイテム'}を持って Lv.${evo.level}以上でレベルアップ`
+  if (isHeldItemLevelupEvolution(evo)) return `${EVOLUTION_ITEMS.heldItems[evo.heldItemId]?.name || evo.heldItemId || '特定アイテム'}をもって レベルアップすると進化`
   return '進化条件は未設定'
 }
 
 export function normalEvolve(monster, game = null) {
   if (!canNormalEvolve(monster, game)) return { ok: false, monster, reason: 'NOT_READY' }
   const species = speciesOf(monster.speciesId)
-  return { ok: true, monster: { ...monster, speciesId: species.evolution.to } }
+  return { ok: true, monster: { ...monster, speciesId: species.evolution.to, evolutionReady: false } }
 }
 
 export function stageById(stageId) {
@@ -104,7 +118,7 @@ export function startBattle(game, stageId, { dailyCompleted = false, dailyDay = 
   if (!ticket.ok) return { ok: false, game: ticket.game, reason: 'NO_TICKET' }
   const activeId = ticket.game.activeMonsterId || ticket.game.team?.[0]
   const active = ticket.game.box?.[activeId]
-  if (!active) return { ok: false, game: game, reason: 'NO_ACTIVE_MONSTER' }
+  if (!active) return { ok: false, game, reason: 'NO_ACTIVE_MONSTER' }
 
   const existingSnapshot = ticket.game.bossBalanceSnapshots?.[stage.id] || null
   const balancePlan = buildEnemyPlan(ticket.game, stage, speciesOf, existingSnapshot, { challenge })
@@ -113,6 +127,7 @@ export function startBattle(game, stageId, { dailyCompleted = false, dailyDay = 
 
   const nextGame = structuredClone(ticket.game)
   nextGame.bossBalanceSnapshots ||= {}
+  nextGame.normalStageSnapshots ||= {}
   if (balancePlan?.snapshot && !challenge && !existingSnapshot) {
     nextGame.bossBalanceSnapshots[stage.id] = structuredClone(balancePlan.snapshot)
   }
@@ -121,13 +136,15 @@ export function startBattle(game, stageId, { dailyCompleted = false, dailyDay = 
   nextGame.dex.seen[stage.enemySpeciesId] = true
 
   const enemyStats = statsFor(stage.enemySpeciesId, enemyLevel, enemyMultipliers)
-  const partyHp = Object.fromEntries((nextGame.team || []).filter((id) => nextGame.box[id]).map((id) => {
+  const teamAtStart = (nextGame.team || []).filter((id) => nextGame.box[id]).slice(0, 3)
+  const partyHp = Object.fromEntries(teamAtStart.map((id) => {
     const monster = nextGame.box[id]
     return [id, statsFor(monster.speciesId, monster.level).hp]
   }))
   const battle = {
     stageId,
     activeInstanceId: activeId,
+    teamAtStart,
     partyHp,
     enemy: {
       speciesId: stage.enemySpeciesId,
@@ -138,6 +155,8 @@ export function startBattle(game, stageId, { dailyCompleted = false, dailyDay = 
       balance: balancePlan ? {
         mode: balancePlan.mode,
         referencePower: balancePlan.referencePower,
+        currentReferencePower: balancePlan.currentReferencePower,
+        repeatCap: balancePlan.repeatCap,
         targetPower: balancePlan.targetPower,
         actualPower: balancePlan.actualPower,
         difficultyLabel: balancePlan.difficultyLabel,
@@ -175,8 +194,8 @@ function enemyMoveFor(enemy, player) {
     .map((id) => moveOf(id))
     .filter(Boolean)
     .sort((a, b) => {
-      const aScore = a.power * typeEffectiveness(a.type, speciesOf(player.speciesId).types)
-      const bScore = b.power * typeEffectiveness(b.type, speciesOf(player.speciesId).types)
+      const aScore = a.power * ((a.accuracy ?? 100) / 100) * typeEffectiveness(a.type, speciesOf(player.speciesId).types)
+      const bScore = b.power * ((b.accuracy ?? 100) / 100) * typeEffectiveness(b.type, speciesOf(player.speciesId).types)
       return bScore - aScore
     })[0] || MOVES.tackle
 }
@@ -219,25 +238,55 @@ function enemyAttackOnce(game, battle, log) {
   return result
 }
 
-function grantStageEvolutionReward(game, stage) {
-  if (!stage?.evolutionReward) return { game, evolutionReward: null }
+function grantStageEvolutionReward(game, stage, firstClear) {
+  if (!firstClear || !stage?.evolutionReward) return { game, evolutionReward: null }
   const granted = grantEvolutionItem(game, stage.evolutionReward.kind, stage.evolutionReward.itemId, stage.evolutionReward.count || 1)
   return granted.ok ? { game: granted.game, evolutionReward: stage.evolutionReward } : { game, evolutionReward: null }
+}
+
+function recordNormalFirstClearSnapshot(game, stage, battle) {
+  if (!stage || stage.bossRank) return game
+  const next = structuredClone(game)
+  next.normalStageSnapshots ||= {}
+  if (next.normalStageSnapshots[stage.id]) return next
+  const firstClearReferencePower = Number(battle?.enemy?.balance?.referencePower)
+  if (!Number.isFinite(firstClearReferencePower) || firstClearReferencePower <= 0) return next
+  next.normalStageSnapshots[stage.id] = {
+    stageId: stage.id,
+    firstClearReferencePower,
+    balanceVersion: BALANCE_VERSION
+  }
+  return next
+}
+
+function awardTeamBattleXp(game, battle, xp) {
+  const next = structuredClone(game)
+  const levelsByInstance = {}
+  for (const instanceId of (battle.teamAtStart || []).slice(0, 3)) {
+    const current = next.box?.[instanceId]
+    if (!current) continue
+    const gained = gainXp(current, xp)
+    next.box[instanceId] = gained.monster
+    levelsByInstance[instanceId] = gained.levels
+  }
+  return { game: next, levelsByInstance }
 }
 
 function awardWin(game, battle) {
   let next = structuredClone(game)
   const stage = stageById(battle.stageId)
-  const current = next.box[battle.activeInstanceId]
-  const gained = gainXp(current, stage.xp)
-  next.box[battle.activeInstanceId] = gained.monster
+  const xp = battleXpForStage(stage)
+  const gained = awardTeamBattleXp(next, battle, xp)
+  next = gained.game
   next.mana = (next.mana || 0) + stage.mana
   next.battlesWon = (next.battlesWon || 0) + 1
   next.stagesCleared ||= []
-  if (!next.stagesCleared.includes(stage.id)) next.stagesCleared.push(stage.id)
-  const granted = grantStageEvolutionReward(next, stage)
+  const firstClear = !next.stagesCleared.includes(stage.id)
+  next = recordNormalFirstClearSnapshot(next, stage, battle)
+  if (firstClear) next.stagesCleared.push(stage.id)
+  const granted = grantStageEvolutionReward(next, stage, firstClear)
   next = granted.game
-  return { game: next, levels: gained.levels, xp: stage.xp, mana: stage.mana, evolutionReward: granted.evolutionReward }
+  return { game: next, levelsByInstance: gained.levelsByInstance, xp, mana: stage.mana, evolutionReward: granted.evolutionReward }
 }
 
 export function useMove(game, battle, moveId) {
@@ -331,6 +380,11 @@ export function attemptCapture(game, battle, rolls = null, itemType = 'star') {
     return { ok: true, caught: false, stars, chance, game: resolved.game, battle: resolved.battle }
   }
 
+  const stage = stageById(battle.stageId)
+  const xp = battleXpForStage(stage)
+  const gained = awardTeamBattleXp(nextGame, battle, xp)
+  nextGame = gained.game
+
   const captured = makeMonster(battle.enemy.speciesId, battle.enemy.level)
   nextGame.box[captured.instanceId] = captured
   nextGame.dex ||= { seen: {}, caught: {} }
@@ -338,16 +392,17 @@ export function attemptCapture(game, battle, rolls = null, itemType = 'star') {
   nextGame.dex.seen[battle.enemy.speciesId] = true
   if ((nextGame.team || []).length < 3) nextGame.team.push(captured.instanceId)
   nextGame.monstersCaught = (nextGame.monstersCaught || 0) + 1
-  const stage = stageById(battle.stageId)
   nextGame.mana = (nextGame.mana || 0) + Math.floor(stage.mana / 2)
   nextGame.stagesCleared ||= []
-  if (!nextGame.stagesCleared.includes(stage.id)) nextGame.stagesCleared.push(stage.id)
-  const granted = grantStageEvolutionReward(nextGame, stage)
+  const firstClear = !nextGame.stagesCleared.includes(stage.id)
+  nextGame = recordNormalFirstClearSnapshot(nextGame, stage, battle)
+  if (firstClear) nextGame.stagesCleared.push(stage.id)
+  const granted = grantStageEvolutionReward(nextGame, stage, firstClear)
   nextGame = granted.game
   nextBattle.status = 'caught'
-  nextBattle.log = [...nextBattle.log.slice(-4), '★★★★ 「わ」が ひかった！ ゲット！']
+  nextBattle.log = [...nextBattle.log.slice(-4), `★★★★ 「わ」が ひかった！ ゲット！ XP +${xp}`]
   nextGame.activeBattle = structuredClone(nextBattle)
-  return { ok: true, caught: true, stars, chance, captured, evolutionReward: granted.evolutionReward, game: nextGame, battle: nextBattle }
+  return { ok: true, caught: true, stars, chance, captured, xp, levelsByInstance: gained.levelsByInstance, evolutionReward: granted.evolutionReward, game: nextGame, battle: nextBattle }
 }
 
 export function switchBattleMonster(game, battle, instanceId) {
