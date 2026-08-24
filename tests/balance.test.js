@@ -4,8 +4,10 @@ import assert from 'node:assert/strict'
 import { speciesOf } from '../src/game/content.js'
 import {
   BALANCE_VERSION,
+  bossReferencePower,
   buildEnemyPlan,
   combatPowerFromStats,
+  normalReferencePower,
   referencePower,
   statsFromBase
 } from '../src/game/balance.js'
@@ -37,18 +39,45 @@ test('combat power rises when durability or offense rises', () => {
   assert.ok(striker > normal)
 })
 
-test('reference power uses team and roster core instead of one selected monster only', () => {
+test('normal reference uses current team so strong boxed monsters do not block training', () => {
   const game = gameWith([
-    monster('a', 'starter-fire-1', 80),
+    monster('a', 'starter-fire-1', 20),
     monster('b', 'wild-grass-1', 20),
     monster('c', 'wild-water-1', 20),
-    monster('d', 'wild-electric-1', 20),
-    monster('e', 'wild-bug-1', 20)
+    monster('boxed', 'starter-fire-3', 80)
   ], ['a', 'b', 'c'])
-  const reference = referencePower(game, speciesOf)
-  const solo = referencePower(gameWith([monster('a', 'starter-fire-1', 80)], ['a']), speciesOf)
-  assert.ok(reference < solo)
-  assert.ok(reference > 1)
+  const normalRef = normalReferencePower(game, speciesOf)
+  const withoutBoxed = normalReferencePower(gameWith([
+    monster('a', 'starter-fire-1', 20),
+    monster('b', 'wild-grass-1', 20),
+    monster('c', 'wild-water-1', 20)
+  ], ['a', 'b', 'c']), speciesOf)
+  assert.equal(normalRef, withoutBoxed)
+  assert.equal(referencePower(game, speciesOf), normalRef)
+})
+
+test('boss reference keeps a carry floor for Lv80 plus two weak teammates', () => {
+  const mixed = gameWith([
+    monster('a', 'starter-fire-3', 80),
+    monster('b', 'wild-grass-1', 20),
+    monster('c', 'wild-water-1', 20)
+  ], ['a', 'b', 'c'])
+  const strongestOnly = gameWith([monster('a', 'starter-fire-3', 80)], ['a'])
+  const bossRef = bossReferencePower(mixed, speciesOf)
+  const soloRef = bossReferencePower(strongestOnly, speciesOf)
+  assert.ok(bossRef >= soloRef * 0.79, 'mixed team must keep at least the 80% carry floor')
+})
+
+test('boss reference resists deliberately weak team when strong monsters are owned', () => {
+  const game = gameWith([
+    monster('weak1', 'wild-bug-1', 10),
+    monster('weak2', 'wild-grass-1', 10),
+    monster('weak3', 'wild-water-1', 10),
+    monster('strong1', 'starter-fire-3', 70),
+    monster('strong2', 'wild-electric-3', 65),
+    monster('strong3', 'wild-grass-3', 60)
+  ], ['weak1', 'weak2', 'weak3'])
+  assert.ok(bossReferencePower(game, speciesOf) > normalReferencePower(game, speciesOf))
 })
 
 test('story boss locks first encounter plan and normal rematch does not chase player growth', () => {
