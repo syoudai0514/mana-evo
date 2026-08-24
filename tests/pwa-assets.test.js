@@ -4,6 +4,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+// Keep the exact PWA icon files and dimensions under CI so iOS cannot silently fall back.
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8')
 const manifest = JSON.parse(fs.readFileSync(path.join(root, 'public/manifest.webmanifest'), 'utf8'))
