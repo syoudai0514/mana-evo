@@ -140,7 +140,7 @@ export default function App() {
     {view==='parent' && <ParentGate onBack={()=>setView('home')}/>} 
     {view==='adventure' && <AdventureFlow game={game} setGame={setGame} dailyCompleted={dailyCompleted} dailyDay={learning.daily?.date} today={today} goHome={()=>setView('home')} goStudy={()=>setView('study')}/>} 
     {view==='monsters' && <MonsterScreen game={game} setGame={setGame} goHome={()=>setView('home')}/>} 
-    {view==='howto' && <HowToPlay game={game} today={today} goHome={()=>setView('home')} goAdventure={()=>setView(dailyCompleted?'adventure':'study')} goMonsters={()=>setView('monsters')} goStudy={()=>setView('study')}/>} 
-    {!['activity','free','review','trial','dictionary','parent','study'].includes(view) && !navigationLocked && <nav><button className={view==='home'?'active':''} onClick={()=>setView('home')}>🏠<span>ホーム</span></button><button className={view==='adventure'?'active':''} onClick={()=>setView(dailyCompleted?'adventure':'study')}>🗺️<span>ぼうけん</span></button><button className={view==='monsters'?'active':''} onClick={()=>setView('monsters')}>🐾<span>モンスター</span></button><button onClick={()=>setView('study')}>📚<span>まなぶ</span></button></nav>}
+    {view==='howto' && <HowToPlay game={game} today={today} goHome={()=>setView('home')} goAdventure={()=>setView('adventure')} goMonsters={()=>setView('monsters')} goStudy={()=>setView('study')}/>} 
+    {!['activity','free','review','trial','dictionary','parent','study'].includes(view) && !navigationLocked && <nav><button className={view==='home'?'active':''} onClick={()=>setView('home')}>🏠<span>ホーム</span></button><button className={view==='adventure'?'active':''} onClick={()=>setView('adventure')}>🗺️<span>ぼうけん</span></button><button className={view==='monsters'?'active':''} onClick={()=>setView('monsters')}>🐾<span>モンスター</span></button><button onClick={()=>setView('study')}>📚<span>まなぶ</span></button></nav>}
   </div>
 }
