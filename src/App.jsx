@@ -138,7 +138,7 @@ export default function App() {
     {view==='trial' && <ChapterTestScreen onBack={()=>setView('study')}/>} 
     {view==='dictionary' && <EnglishDictionaryScreen onBack={()=>setView('study')} onStartTask={startTask}/>} 
     {view==='parent' && <ParentGate onBack={()=>setView('home')}/>} 
-    {view==='adventure' && <AdventureFlow game={game} setGame={setGame} dailyCompleted={dailyCompleted} dailyDay={learning.daily?.date} today={today} goHome={()=>setView('home')} goStudy={()=>setView('study')}/>} 
+    {view==='adventure' && <AdventureFlow game={game} setGame={setGame} dailyCompleted={dailyCompleted} dailyDay={today} today={today} goHome={()=>setView('home')} goStudy={()=>setView('study')}/>} 
     {view==='monsters' && <MonsterScreen game={game} setGame={setGame} goHome={()=>setView('home')}/>} 
     {view==='howto' && <HowToPlay game={game} today={today} goHome={()=>setView('home')} goAdventure={()=>setView('adventure')} goMonsters={()=>setView('monsters')} goStudy={()=>setView('study')}/>} 
     {!['activity','free','review','trial','dictionary','parent'].includes(view) && !navigationLocked && <nav><button className={view==='home'?'active':''} onClick={()=>setView('home')}>🏠<span>ホーム</span></button><button className={view==='adventure'?'active':''} onClick={()=>setView('adventure')}>🗺️<span>ぼうけん</span></button><button className={view==='monsters'?'active':''} onClick={()=>setView('monsters')}>🐾<span>モンスター</span></button><button className={view==='study'?'active':''} onClick={()=>setView('study')}>📚<span>まなぶ</span></button></nav>}
