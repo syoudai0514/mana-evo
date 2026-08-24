@@ -1,0 +1,2 @@
+No.001-010 formal image v1 assets are stored as individual WebP files in this directory.
+Source: 0822 area1 review sheet. Temporary formal release for in-game visual QA.
