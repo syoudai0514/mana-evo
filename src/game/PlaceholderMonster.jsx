@@ -1,116 +1,64 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { speciesOf, typeLabel } from './content.js'
 import { monsterSpriteFrame } from './monsterSprite.js'
+
+function legacySpriteStyle(frame, size) {
+  return {
+    width: size,
+    height: size,
+    backgroundImage: `url(${frame.src})`,
+    backgroundSize: `${frame.cols * size}px ${frame.rows * size}px`,
+    backgroundPosition: `${-frame.col * size}px ${-frame.row * size}px`,
+    backgroundRepeat: 'no-repeat'
+  }
+}
 
 export default function PlaceholderMonster({ speciesId, stage = null, excited = false, compact = false }) {
   const species = speciesOf(speciesId)
   const resolvedStage = stage || species?.stage || 1
-  const frame = monsterSpriteFrame(speciesId)
-  const size = compact ? 46 : 118
-  const canvasRef = useRef(null)
-  const [spriteFailed, setSpriteFailed] = useState(false)
+  const size = compact ? 50 : 124
+  const legacyFrame = monsterSpriteFrame(speciesId)
+  const [imageFailed, setImageFailed] = useState(false)
+  const officialUrl = species?.officialImageUrl || null
 
-  useEffect(() => {
-    setSpriteFailed(false)
-    if (!frame || !canvasRef.current) return undefined
+  useEffect(() => { setImageFailed(false) }, [officialUrl])
 
-    let cancelled = false
-    const image = new Image()
-    image.decoding = 'async'
-
-    image.onload = () => {
-      if (cancelled || !canvasRef.current) return
-
-      const canvas = canvasRef.current
-      const dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 3))
-      const pixelSize = Math.round(size * dpr)
-      canvas.width = pixelSize
-      canvas.height = pixelSize
-
-      const ctx = canvas.getContext('2d')
-      if (!ctx) {
-        setSpriteFailed(true)
-        return
-      }
-
-      const cellWidth = image.naturalWidth / frame.cols
-      const cellHeight = image.naturalHeight / frame.rows
-      const sourceX = frame.col * cellWidth
-      const sourceY = frame.row * cellHeight
-
-      ctx.clearRect(0, 0, pixelSize, pixelSize)
-      ctx.imageSmoothingEnabled = true
-      ctx.imageSmoothingQuality = 'high'
-      ctx.drawImage(
-        image,
-        sourceX,
-        sourceY,
-        cellWidth,
-        cellHeight,
-        0,
-        0,
-        pixelSize,
-        pixelSize
-      )
+  const fallbackStyle = useMemo(() => {
+    const no = Number(species?.no || 0)
+    const hue = (no * 47 + resolvedStage * 23) % 360
+    return {
+      '--monster-hue': hue,
+      width: size,
+      height: size,
+      minWidth: size,
+      flexBasis: size
     }
+  }, [species?.no, resolvedStage, size])
 
-    image.onerror = () => {
-      if (!cancelled) setSpriteFailed(true)
-    }
-
-    image.src = frame.src
-
-    return () => {
-      cancelled = true
-      image.onload = null
-      image.onerror = null
-    }
-  }, [frame?.src, frame?.col, frame?.row, frame?.cols, frame?.rows, size])
-
-  if (frame && !spriteFailed) {
+  if (officialUrl && !imageFailed) {
     return (
-      <div
-        className={`placeholder-monster monster-art stage-${resolvedStage} ${excited ? 'excited' : ''} ${compact ? 'compact' : ''}`}
-        aria-label={species?.name || 'モンスター'}
-        role="img"
-        style={{
-          position: 'relative',
-          width: size,
-          height: size,
-          minWidth: size,
-          flexBasis: size,
-          overflow: 'hidden',
-          border: 0,
-          borderRadius: 0,
-          boxShadow: 'none',
-          background: 'transparent'
-        }}
-      >
-        <canvas
-          ref={canvasRef}
-          aria-hidden="true"
-          style={{
-            display: 'block',
-            width: size,
-            height: size,
-            maxWidth: 'none',
-            maxHeight: 'none',
-            userSelect: 'none',
-            pointerEvents: 'none'
-          }}
-        />
+      <div className={`placeholder-monster monster-art official-art stage-${resolvedStage} ${excited ? 'excited' : ''} ${compact ? 'compact' : ''}`} style={{ width: size, height: size, minWidth: size, flexBasis: size }} role="img" aria-label={species?.name || 'モンスター'}>
+        <img src={officialUrl} alt={species?.name || 'モンスター'} onError={() => setImageFailed(true)} loading="lazy" decoding="async" />
       </div>
     )
   }
 
-  const types = species?.types || ['normal']
+  if (!species?.no && legacyFrame) {
+    return <div className={`placeholder-monster monster-art legacy-art ${compact ? 'compact' : ''}`} style={legacySpriteStyle(legacyFrame, size)} role="img" aria-label={species?.name || 'モンスター'} />
+  }
+
+  const type = species?.types?.[0] || 'normal'
+  const typeText = typeLabel(type)
+  const initial = (species?.name || 'マ').slice(0, 1)
   return (
-    <div className={`placeholder-monster stage-${resolvedStage} ${excited ? 'excited' : ''} ${compact ? 'compact' : ''}`} aria-label="仮キャラクター">
-      <div className="monster-ear left" />
-      <div className="monster-ear right" />
-      <div className="monster-face"><span>●</span><span>●</span><span className="mouth">⌣</span></div>
-      <div className="monster-gem">◆</div>
-      <small>{types.map(typeLabel).join(' / ')}・仮画像</small>
+    <div className={`placeholder-monster generated-monster stage-${resolvedStage} ${excited ? 'excited' : ''} ${compact ? 'compact' : ''}`} style={fallbackStyle} role="img" aria-label={`${species?.name || 'モンスター'} 画像準備中`}>
+      <div className="generated-aura" />
+      <div className="generated-body">
+        <span className="generated-stage">{'◆'.repeat(Math.max(1, Math.min(3, resolvedStage)))}</span>
+        <b>{initial}</b>
+        <span className="generated-eyes">•　•</span>
+      </div>
+      {!compact && <small>No.{species?.no || '---'}　{typeText}<br />画像準備中</small>}
     </div>
   )
 }
