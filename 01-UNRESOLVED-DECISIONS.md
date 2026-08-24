@@ -1,175 +1,85 @@
-# 未決事項 — 2026-08-24 SOL全力レビュー反映版
+# 未決事項 — PR #15 SOL修正後
 
-この文書は `design/16-sol-pr15-full-review.md` のレビュー結果を反映する。既に確定済みの正本仕様は未決へ戻さない。
+更新日: 2026-08-24
+最新判定: **GO WITH FIX / runtime実装アンロック / Draft継続 / main merge不可**
 
-現在の状態は **SOL REVIEWED / NO-GO / runtime実装ロック継続**。
-P0/P1修正と再バリデーション後に `GO WITH FIX` へ更新するまで、No.001〜238正式runtime master・XP・formal moves・ボスAI・捕獲・特殊形態の本実装へ進まない。
+レビュー履歴は `design/16-sol-pr15-full-review.md` / `design/17-sol-pr15-review-amendment.md`、修正後の最新判定は `design/18-sol-pr15-fix-resolution.md` を正とする。
 
-## A. R1〜R5 レビュー結果
+## 1. 設計上のP0/P1は解消済み
 
-### R1. `powerTierV1` の初期seed — 決定
+以下はもう未決ではない。
 
-**採用:** `powerTierV1 = source catchRarity` を初期seedとして開始する。
-
-- `catchRarity` と `powerTier` は別フィールドのまま維持。
-- 現時点で印象ベースの個別補正はしない。
-- No.018 / 021（低め）と No.235〜237（高め）はsimulation監視対象。
-- 明確な勝率/決着ターン異常が出た場合だけ `powerTier` を独立調整する。
-
-### R2. Battle XPのチーム配布 — 決定
-
-**採用:** 戦闘開始時の手持ち最大3体へ、勝利/捕獲時の同一Battle XPを100%ずつ付与する。
-
-- BOX控えは対象外。
-- 戦闘開始時メンバーは戦闘中に瀕死になっても対象。
-- 捕獲したばかりの敵個体は対象外。
-- 途中加入扱いを作らない。
-
-### R3. ボス予告大技への共通 `まもる` — 決定
-
-**採用。**
-
-- 成功100%。
-- 攻撃と同じ1行動を消費。
-- その敵行動のダメージ/状態を防ぐ。
-- 次ターン連続使用不可。
-- ボスの予告大技にも有効。
-
-### R4. healer/support由来ロール — 要修正
-
-8 combatRoleへの変換方針自体は維持する。初期版へhealer/supportロールを安易に戻さない。
-
-ただし説明文と戦闘体験の強い不整合を次で確認した。
-
-- No.041
-- No.050
-- No.098
-- No.209
-- No.210
-- No.235
-
-identity watch:
-
-- No.042 / 049 / 051 / 099 / 115 / 116 / 175 / 176 / 177 / 208
-- No.181 / 182 は「技を覚える/つなげる」設定をformal move masterで表現できるか確認
-
-base statsは現時点で変更せず、formal move masterレビューの必須対象とする。
-
-### R5. `にじのわ` の供給量 — 決定
-
-**採用:** 
-
-- 各学年の初回クリア: +1
-- 全エリア後のEX級初回達成: +1
-- ランダムドロップなし
-- 章末ごとの定期配布なし
-
-小1〜小6の6学年なら計7個。学年定義に年長等を追加する場合は総供給数を再計算する。
-
-## B. SOLレビューで新たに見つかった実装前ブロッカー
-
-### B1. P0 — catchRank生成規則の正本/CSV不一致
-
-`design/11` / `design/12` は「同系列第1形態のrank + stage補正」。13系CSVは「各形態自身のcatchRarity rank + stage補正」で生成されている。
-
-例:
-
-- No.010→011→012: CSV最終rank4 / 正本文言ならrank3
-- No.064→065→066: CSV rank1→3→5 / 正本文言なら1→2→3
-
-**runtimeへ入れる前に、現行優先順位どおりdesign/12を正として13系CSVを再生成し、validatorを追加する。**
-
-### B2. P0 — held_item_levelup の必要Lv有無が正本間で矛盾
-
-`design/11` は必要Lvあり、最新 `design/12` / 14系CSVは固定Lvなし。
-
-**最新design/12を正とし、固定Lvなしへ統一する。** 対象11遷移は `design/16-sol-pr15-full-review.md` を参照。
-
-### B3. P1 — 進化アイテムの最速入手時点が未定義
-
-stone21 / held-item11は固定trigger Lvがないため、アイテム入手時点で進化体験日数が決まる。
-
-進化アイテムに `unlockMilestone` / `earliestAcquisition` を持たせ、最短取得時でも想定進化速度を壊さないことを検証する。
-
-### B4. P1 — 通常敵の追従でLv成長実感が消える
-
-現在手持ち基準のソフトスケールは新規キャラ育成には良いが、常時100%追従では過去通常敵をLv成長で楽にする体験が弱い。
-
-**受入条件:** 既クリア通常敵に対してプレイヤー戦力が初回より+20%程度伸びた場合、平均決着ターンが最低1ターン短くなる仕組みを設計・simulationする。
-
-### B5. P1 — 技の高威力1択化
-
-40/60/80/100、命中100/100/95/90では、同タイプ・同効果なら100技の期待威力が最大。
-
-formal move masterで、各4技のうち最低2つが代表的な相性/用途のどこかで非劣位になることを受入条件にする。
-
-### B6. P2 — 設計参照ファイル名のズレ
-
-`design/12` の「4分割成長CSV」「design/14-evolution-balance-master-155.csv」表記を、実在する成長7CSV / 進化4CSVへ同期する。
-
-## C. バランス確認結果
-
-### XP
-
-通常3戦normal中心=約330XP/日で大枠妥当。
-
-- Lv17 ≒ 3.5日
-- Lv19 ≒ 4.4日
-- Lv33 ≒ 13.2日
-- Lv38 ≒ 17.3日
-- Lv43 ≒ 22.1日
-- Lv48 ≒ 27.3日
-- Lv55 ≒ 35.6日
-
-追加学習で早まる設計とも整合する。
-
-### 238体数値
-
-- base4/BST/Lv能力式の致命的異常: 0
-- 155進化の4基礎能力低下: 0
-- 監視: No.018 / 021、No.115→116、No.117→118、No.143→144、No.235〜237
-
-### 捕獲
-
-rank5・HP50%で3投する場合の概算成功率:
-
-- ほし 約65.7%
-- ぎん 約73.8%
-- きん 約83.4%
-
-大枠は妥当。catchRank生成規則だけ先に修正する。
-
-## D. 確定済みなので未決に戻さない
-
-- 現行active monsterは **No.001〜238の238体**。No.239はruntimeに入れない。
-- 83系列 / 18タイプ / 155進化。
-- Lv上限100。
-- 個体値/努力値/性格などの隠し補正なし。同種・同Lvなら同能力。
-- Lv能力は4種族基礎値から算出。
-- 進化後は同Lvのまま新しい基礎値へ切替。155進化すべてで基礎4能力非減少。
-- 初期戦闘ロールは balanced / attacker / speed / guard / hpTank / defenseTank / slowPower / fastGlass の8種。
-- STABは **×1.20**。初期版は急所・ダメージ乱数なし。
-- ボスは初回挑戦開始時に戦力snapshotを固定。通常再戦は固定、challenge再戦のみ現在戦力へ再スケール。
-- ボス戦力は弱い編成への付替えだけで大幅に弱体化しないよう、手持ち加重平均・所持上位・最強個体floorを使用する。
-- タイプ相性は敵自動調整へ入れず、攻略メリットとして残す。
-- 初回ストーリー/エリアボスは捕獲不可。撃破後に同種の入手機会を開く。
-- 捕獲はHP50%以下、1戦最大3投、ほし×1.00 / ぎん×1.20 / きん×1.50 / にじ100%、非にじ92%上限。
+- catchRank: 各形態自身の `catchRarity` + stage補正。
+- held_item_levelup: 固定Lvなし。指定もちもの装備中の次の実LvUPで `evolutionReady`。
+- No.142: `m142 / ヘラクレオン / burstEligible=true`。
+- 進化item32遷移: `design/14e-evolution-item-acquisition-master.csv` の専用trial初回クリア保証。
+- normal stage: current team soft scale + first-clear reference + repeat cap ×1.10。
+- Battle XP: 戦闘開始時の最大3体へ100%ずつ。捕獲成功も同額。
+- formal move minimum schema: `moveId/name/type/power/accuracy/effect/role`。
+- healer/support identity: stat roleではなくmove effectで表現。
+- `combatRoleV2`: 内部監査メタデータ。実戦は実能力値が正。
+- 共通 `まもる`: 100% / 1行動 / 連続不可 / ボス予告大技に有効。
+- powerTierV1: source catchRarityを初期seed、catchRarityとは別field。
+- にじのわ: 各学年初回 + 全エリア後EX初回。ランダムなし。
 - スター覚醒なし。
-- 特殊形態はギガシンカ / キョダイバースト。
-- ギガ12体・バースト8体の具体対象は `design/09-special-forms-master.md` で確定済み。再選定しない。
-- ギガとバーストは同一種族で重複なし。でんせつ級対象外。
-- ギガキー/ギガコア/バーストのしるしは永久・非消費。
-- ギガ=全ステータス×1.35、バースト=HP×2.0 / 攻撃×1.2 / 3ターン / 専用技110・命中95%。
-- 本番中に子ども個人へ合わせてXP/技威力/捕獲率/敵倍率を裏で自動変更しない。
-- 今日の基本5問未完了では持越しチケットでも新規バトル不可。
-- 誤答後は解説確認→再回答。説明ボタンだけでdaily完了にしない。
-- チケット7日TTL・期限近い順消費。開始時reserve、敗北/明示逃走は返却、勝利/捕獲成功は消費確定、技術中断はresume。
+- ギガ12 / バースト8の対象IDは再選定しない。
 
-## E. runtime実装ロック解除条件
+## 2. 確定済みデータ
 
-1. B1 / B2を設計・CSVへ反映
-2. B3〜B5の受入条件を設計へ追加
-3. 238体 / 155進化 / catchRank / item evolution / normal growth / formal movesを再バリデーション
-4. `design/16-sol-pr15-full-review.md` を再判定し `GO WITH FIX` 以上に更新
+- active monster: No.001〜238 = **238体**。
+- No.239はruntimeへ入れない。
+- **83系列 / 18タイプ**。
+- **155進化 = level123 / stone21 / held_item_levelup11**。
+- 155進化で基礎4能力低下0。
+- ギガ12 / バースト8 / overlap0。
+- Lv上限100。
+- 個体値/努力値/性格などの隠し補正なし。
+- STAB 1.20。
+- 初期版はダメージ乱数・通常急所なし。
+- 捕獲はHP50%以下 / 最大3投 / ほし1.0 / ぎん1.2 / きん1.5 / にじ100% / 非にじ92%上限。
+- 今日の基本学習未完了では持越しチケットでも新規バトル不可。
+- チケットTTL 7日、期限近い順消費。敗北/明示逃走返却、勝利/捕獲成功消費。
 
-それまでは正式runtime master投入を開始しない。
+## 3. 残っているのは「仕様未決」ではなくruntime実装gate
+
+main merge前に実装・simulationが必要:
+
+1. 238体正式runtime master投入。
+2. 238体formal move master + 非劣位技validator。
+3. healer/support identity watch個体の回復等effect実装。
+4. No.181 / 182固有move identity。
+5. role semantic flag全件レビュー。No.142をfastGlass前提で扱わない。
+6. `まもる` とボス予告UIのE2E。
+7. boss snapshot / rematch / challengeの実コンテンツE2E。
+8. normal repeat capの+20%成長simulation。
+9. ギガ/バースト相対強度simulation。
+10. 進化trial32件の実stage/reward実装。
+11. 最終CI green / Vercel Preview QA。
+
+これらは実装途中で数値simulationにより微調整してよいが、**正本仕様を勝手に別仕様へ変更しない**。仕様変更が必要になった場合は、理由・simulation結果・影響範囲を記録してから設計書も同時更新する。
+
+## 4. 現在の検証状態
+
+GitHub Actions CI run #154:
+
+- 92 tests / **92 pass / 0 fail**。
+- build success。
+- npm audit high: 0 vulnerabilities。
+
+PR15 validator:
+
+- 238体 / 83系列 / 18タイプ PASS。
+- catchRank 238/238 PASS。
+- 155進化 method count PASS。
+- held11固定Lvなし PASS。
+- item進化32/32 acquisition master PASS。
+- No.142 ID/name/burst PASS。
+- role semantic flag検出 PASS。
+
+Vercel Previewは head `9ebb256e` で READY。Productionは変更していない。
+
+## 5. 次の判定
+
+設計レビューの `NO-GO` は解除済み。
+
+次は上記runtime gateを全部満たした時点で **MERGE GO / NO-GO** を判定する。それまではPR #15をDraftのまま維持する。
