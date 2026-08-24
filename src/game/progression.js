@@ -274,6 +274,7 @@ export function normalizeGameState(saved, today = localDayNumber()) {
   if (!team.length) team = [Object.keys(box)[0]]
   const activeMonsterId = team.includes(saved.activeMonsterId) ? saved.activeMonsterId : team[0]
   const ticketGrants = normalizeTicketGrants(saved, today)
+  const stagesCleared = Array.isArray(saved.stagesCleared) ? [...new Set(saved.stagesCleared.filter((id) => STAGES.some((s) => s.id === id)))] : []
 
   const next = {
     ...base,
@@ -283,7 +284,7 @@ export function normalizeGameState(saved, today = localDayNumber()) {
     mana: positiveInt(saved.mana),
     captureItems: normalizeCaptureItems(saved),
     evolutionItems: normalizeInventory(saved),
-    gigaKeyOwned: !!saved.gigaKeyOwned || positiveInt(saved.gigaKeys) > 0,
+    gigaKeyOwned: !!saved.gigaKeyOwned || positiveInt(saved.gigaKeys) > 0 || stagesCleared.includes('a1-boss'),
     gigaCoreSpecies: normalizeOwnershipMap(saved.gigaCoreSpecies),
     burstMarks: normalizeOwnershipMap(saved.burstMarks),
     specialDex: {
@@ -301,7 +302,7 @@ export function normalizeGameState(saved, today = localDayNumber()) {
     team,
     activeMonsterId,
     dex: { seen: normalizeDexMap(saved.dex?.seen), caught: normalizeDexMap(saved.dex?.caught) },
-    stagesCleared: Array.isArray(saved.stagesCleared) ? [...new Set(saved.stagesCleared.filter((id) => STAGES.some((s) => s.id === id)))] : []
+    stagesCleared
   }
 
   for (const monster of Object.values(next.box)) {
@@ -413,7 +414,7 @@ export function specialProgressionStatus(monster, game) {
   const isFinal = !!species && !species.evolution
   const gigaEligible = !!species?.gigaEligible
   const burstEligible = !!species?.burstEligible
-  const hasKey = !!game?.gigaKeyOwned
+  const hasKey = !!game?.gigaKeyOwned || (game?.stagesCleared || []).includes('a1-boss')
   const hasCore = !!game?.gigaCoreSpecies?.[monster?.speciesId]
   const hasMark = !!game?.burstMarks?.[monster?.speciesId]
   return {
