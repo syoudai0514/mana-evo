@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test'
 import { createGameState, addTickets } from '../src/game/progression.js'
+import { STAGES } from '../src/game/content.js'
+import { isStageUnlocked, startBattle } from '../src/game/engine.js'
 import { dayNumber } from '../src/kids-quest-study/engine/srs.js'
 import { todayKey } from '../src/kids-quest-study/engine/storage.js'
 
@@ -24,11 +26,8 @@ function learningSave() {
   }
 }
 
-test('iPhone WebKit always exposes the ring action and enables it at half HP', async ({ page }) => {
-  const today = dayNumber()
-  const game = addTickets(createGameState(), 3, today)
+async function installSave(page, game) {
   const learning = learningSave()
-
   await page.addInitScript(({ learning, game }) => {
     localStorage.setItem('mana-evo:kids-quest-learning:v2', JSON.stringify(learning))
     localStorage.setItem('mana-evo-save-v2', JSON.stringify({
@@ -36,6 +35,28 @@ test('iPhone WebKit always exposes the ring action and enables it at half HP', a
       gameByProfile: { 'child-1': game }
     }))
   }, { learning, game })
+}
+
+function battleGameAtHalfHp() {
+  const today = dayNumber()
+  const game = addTickets(createGameState(), 3, today)
+  const stage = STAGES.find((entry) => entry.kind === 'wild' && !entry.captureDisabled && isStageUnlocked(game, entry))
+  if (!stage) throw new Error('No unlocked capturable wild stage for WebKit E2E')
+  const started = startBattle(game, stage.id, {
+    dailyCompleted: true,
+    dailyDay: today,
+    today
+  })
+  if (!started.ok || !started.game.activeBattle) throw new Error(`Could not start WebKit E2E battle: ${started.reason || 'unknown'}`)
+  const battle = started.game.activeBattle
+  battle.enemy.hp = Math.max(1, Math.floor(battle.enemy.maxHp / 2))
+  return started.game
+}
+
+test('iPhone WebKit always exposes the ring action before half HP', async ({ page }) => {
+  const today = dayNumber()
+  const game = addTickets(createGameState(), 3, today)
+  await installSave(page, game)
 
   await page.goto('/')
   await expect(page.getByRole('button', { name: 'マップへ！' })).toBeVisible()
@@ -49,14 +70,11 @@ test('iPhone WebKit always exposes the ring action and enables it at half HP', a
   const starRing = page.getByRole('button', { name: /ほしのわを なげる/ })
   await expect(starRing).toBeVisible()
   await expect(starRing).toBeDisabled()
+})
 
-  await page.evaluate(() => {
-    const envelope = JSON.parse(localStorage.getItem('mana-evo-save-v2'))
-    const current = envelope.gameByProfile['child-1']
-    current.activeBattle.enemy.hp = Math.floor(current.activeBattle.enemy.maxHp / 2)
-    localStorage.setItem('mana-evo-save-v2', JSON.stringify(envelope))
-  })
-  await page.reload()
+test('iPhone WebKit restores a half-HP battle and can throw a ring', async ({ page }) => {
+  await installSave(page, battleGameAtHalfHp())
+  await page.goto('/')
 
   await expect(page.getByText('「わ」を なげる！')).toBeVisible()
   const readyRing = page.getByRole('button', { name: /ほしのわを なげる/ })
