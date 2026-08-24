@@ -340,7 +340,7 @@ test('legacy v1 save migrates to formal IDs without stale Star Awakening fields'
   }
   const migrated = normalizeGameState(legacy, day)
   assert.equal(migrated.version, CURRENT_GAME_VERSION)
-  assert.equal(CURRENT_GAME_VERSION, 7)
+  assert.equal(CURRENT_GAME_VERSION, 8)
   assert.equal(availableTicketCount(migrated, day), 7)
   assert.equal(availableTicketCount(migrated, day + 7), 0)
   assert.equal(migrated.box[migrated.activeMonsterId].speciesId, 'm005')
