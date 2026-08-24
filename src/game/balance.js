@@ -1,6 +1,6 @@
 export const BALANCE_VERSION = 3
 export const MAX_MONSTER_LEVEL = 100
-export const NORMAL_REPEAT_CAP = 1.10
+export const NORMAL_REPEAT_CAP = 1.05
 
 export const NORMAL_DIFFICULTY = Object.freeze({
   weak: { targetMultiplier: 0.82, label: 'いけそう', xp: 90 },
