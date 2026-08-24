@@ -1,4 +1,5 @@
 import { CAPTURE_CONFIG, EVOLUTION_ITEMS, MOVES, SPECIES, STAGES, moveOf, speciesOf, typeEffectiveness } from './content.js'
+import { buildEnemyPlan, statsFromBase } from './balance.js'
 import { consumeTicket, grantEvolutionItem, refundTicket } from './progression.js'
 
 const clamp = (min, value, max) => Math.max(min, Math.min(max, value))
@@ -8,16 +9,10 @@ export function xpToNext(level) {
   return 60 + level * 18
 }
 
-export function statsFor(speciesId, level) {
+export function statsFor(speciesId, level, multipliers = null) {
   const species = speciesOf(speciesId)
   if (!species) throw new Error(`Unknown species: ${speciesId}`)
-  const scale = Math.max(0, level - 1)
-  return {
-    hp: species.base.hp + scale * 3,
-    attack: species.base.attack + scale * 2,
-    defense: species.base.defense + Math.floor(scale * 1.6),
-    speed: species.base.speed + Math.floor(scale * 1.5)
-  }
+  return statsFromBase(species.base, level, multipliers)
 }
 
 export function makeMonster(speciesId, level = 1, instanceId = null) {
@@ -99,7 +94,7 @@ export function healthyTeamIds(game, battle) {
   return (game.team || []).filter((id) => game.box?.[id] && (battle.partyHp?.[id] || 0) > 0)
 }
 
-export function startBattle(game, stageId, { dailyCompleted = false, dailyDay = null, today } = {}) {
+export function startBattle(game, stageId, { dailyCompleted = false, dailyDay = null, today, challenge = false } = {}) {
   if (game.activeBattle) return { ok: false, game, battle: game.activeBattle, reason: 'BATTLE_ALREADY_ACTIVE' }
   const stage = stageById(stageId)
   if (!stage) return { ok: false, game, reason: 'UNKNOWN_STAGE' }
@@ -111,12 +106,21 @@ export function startBattle(game, stageId, { dailyCompleted = false, dailyDay = 
   const active = ticket.game.box?.[activeId]
   if (!active) return { ok: false, game: game, reason: 'NO_ACTIVE_MONSTER' }
 
+  const existingSnapshot = ticket.game.bossBalanceSnapshots?.[stage.id] || null
+  const balancePlan = buildEnemyPlan(ticket.game, stage, speciesOf, existingSnapshot, { challenge })
+  const enemyLevel = balancePlan?.level || stage.enemyLevel || 1
+  const enemyMultipliers = balancePlan?.statMultipliers || null
+
   const nextGame = structuredClone(ticket.game)
+  nextGame.bossBalanceSnapshots ||= {}
+  if (balancePlan?.snapshot && !challenge && !existingSnapshot) {
+    nextGame.bossBalanceSnapshots[stage.id] = structuredClone(balancePlan.snapshot)
+  }
   nextGame.battlesStarted = (nextGame.battlesStarted || 0) + 1
   nextGame.dex ||= { seen: {}, caught: {} }
   nextGame.dex.seen[stage.enemySpeciesId] = true
 
-  const enemyStats = statsFor(stage.enemySpeciesId, stage.enemyLevel)
+  const enemyStats = statsFor(stage.enemySpeciesId, enemyLevel, enemyMultipliers)
   const partyHp = Object.fromEntries((nextGame.team || []).filter((id) => nextGame.box[id]).map((id) => {
     const monster = nextGame.box[id]
     return [id, statsFor(monster.speciesId, monster.level).hp]
@@ -127,9 +131,18 @@ export function startBattle(game, stageId, { dailyCompleted = false, dailyDay = 
     partyHp,
     enemy: {
       speciesId: stage.enemySpeciesId,
-      level: stage.enemyLevel,
+      level: enemyLevel,
       hp: enemyStats.hp,
-      maxHp: enemyStats.hp
+      maxHp: enemyStats.hp,
+      statMultipliers: enemyMultipliers,
+      balance: balancePlan ? {
+        mode: balancePlan.mode,
+        referencePower: balancePlan.referencePower,
+        targetPower: balancePlan.targetPower,
+        actualPower: balancePlan.actualPower,
+        difficultyLabel: balancePlan.difficultyLabel,
+        bossRank: balancePlan.bossRank
+      } : null
     },
     turn: 1,
     log: [`${speciesOf(stage.enemySpeciesId).name} が あらわれた！`],
@@ -146,8 +159,8 @@ export function startBattle(game, stageId, { dailyCompleted = false, dailyDay = 
 }
 
 export function damageAmount(attacker, defender, move) {
-  const aStats = statsFor(attacker.speciesId, attacker.level)
-  const dStats = statsFor(defender.speciesId, defender.level)
+  const aStats = statsFor(attacker.speciesId, attacker.level, attacker.statMultipliers)
+  const dStats = statsFor(defender.speciesId, defender.level, defender.statMultipliers)
   const attackerSpecies = speciesOf(attacker.speciesId)
   const defenderSpecies = speciesOf(defender.speciesId)
   const stab = attackerSpecies.types.includes(move.type) ? 1.2 : 1
@@ -198,7 +211,7 @@ function enemyAttackOnce(game, battle, log) {
   if (battle.enemy.hp <= 0) return null
   const player = activeMonster(game, battle)
   if (!player || currentPlayerHp(battle) <= 0) return null
-  const enemy = { speciesId: battle.enemy.speciesId, level: battle.enemy.level }
+  const enemy = { speciesId: battle.enemy.speciesId, level: battle.enemy.level, statMultipliers: battle.enemy.statMultipliers }
   const enemyMove = enemyMoveFor(enemy, player)
   const result = damageAmount(enemy, player, enemyMove)
   battle.partyHp[battle.activeInstanceId] = Math.max(0, currentPlayerHp(battle) - result.damage)
@@ -232,10 +245,10 @@ export function useMove(game, battle, moveId) {
   const player = activeMonster(game, battle)
   const playerSpecies = speciesOf(player.speciesId)
   if (!playerSpecies.moves.includes(moveId)) return { ok: false, game, battle, reason: 'UNKNOWN_MOVE' }
-  const enemy = { speciesId: battle.enemy.speciesId, level: battle.enemy.level }
+  const enemy = { speciesId: battle.enemy.speciesId, level: battle.enemy.level, statMultipliers: battle.enemy.statMultipliers }
   const move = moveOf(moveId)
   const playerStats = statsFor(player.speciesId, player.level)
-  const enemyStats = statsFor(enemy.speciesId, enemy.level)
+  const enemyStats = statsFor(enemy.speciesId, enemy.level, enemy.statMultipliers)
   const next = structuredClone(battle)
   const log = []
 
@@ -351,8 +364,6 @@ export function switchBattleMonster(game, battle, instanceId) {
   nextBattle.status = 'fighting'
   const log = [`${speciesOf(game.box[instanceId].speciesId).name} に こうたい！`]
 
-  // Voluntary switching consumes the turn. A forced switch after fainting does not take
-  // another enemy attack, so a child never gets hit twice for one knockout.
   if (!forced) {
     enemyAttackOnce(nextGame, nextBattle, log)
     nextBattle.turn += 1
@@ -402,7 +413,6 @@ export function evolveInstance(game, instanceId) {
     next.evolutionItems.stones[itemId] = Math.max(0, (next.evolutionItems.stones[itemId] || 0) - 1)
     if (next.evolutionItems.stones[itemId] <= 0) delete next.evolutionItems.stones[itemId]
   }
-  // held-item evolution keeps the equipped item after evolution; stones are consumed above.
   next.box[instanceId] = result.monster
   next.dex ||= { seen: {}, caught: {} }
   next.dex.seen[result.monster.speciesId] = true
