@@ -1,5 +1,6 @@
-export const BALANCE_VERSION = 2
+export const BALANCE_VERSION = 3
 export const MAX_MONSTER_LEVEL = 100
+export const NORMAL_REPEAT_CAP = 1.10
 
 export const NORMAL_DIFFICULTY = Object.freeze({
   weak: { targetMultiplier: 0.82, label: 'いけそう', xp: 90 },
@@ -114,6 +115,11 @@ export function referencePower(game, speciesOf) {
   return normalReferencePower(game, speciesOf)
 }
 
+export function battleXpForStage(stage) {
+  if (stage?.bossRank) return (BOSS_RANKS[stage.bossRank] || BOSS_RANKS.A).xp
+  return (NORMAL_DIFFICULTY[stage?.enemyDifficulty] || NORMAL_DIFFICULTY.normal).xp
+}
+
 export function levelForTargetPower(species, targetPower, multipliers = null) {
   if (!species?.base) return 1
   const target = Math.max(1, Number(targetPower) || 1)
@@ -133,15 +139,19 @@ export function difficultyLabelFromRatio(ratio) {
   return 'かなりつよい'
 }
 
-function validSnapshot(snapshot, stage) {
+function validBossSnapshot(snapshot, stage) {
   return !!snapshot && snapshot.stageId === stage?.id && Number(snapshot.lockedLevel) >= 1 && Number(snapshot.lockedLevel) <= MAX_MONSTER_LEVEL
+}
+
+function validNormalSnapshot(snapshot, stage) {
+  return !!snapshot && snapshot.stageId === stage?.id && Number(snapshot.firstClearReferencePower) > 0
 }
 
 export function buildEnemyPlan(game, stage, speciesOf, existingSnapshot = null, { challenge = false } = {}) {
   const species = stage ? speciesOf(stage.enemySpeciesId) : null
   if (!stage || !species) return null
 
-  if (stage.bossRank && !challenge && validSnapshot(existingSnapshot, stage)) {
+  if (stage.bossRank && !challenge && validBossSnapshot(existingSnapshot, stage)) {
     const statMultipliers = normalizeStatMultipliers(existingSnapshot.statMultipliers)
     const stats = statsFromBase(species.base, existingSnapshot.lockedLevel, statMultipliers)
     const actualPower = combatPowerFromStats(stats)
@@ -188,16 +198,28 @@ export function buildEnemyPlan(game, stage, speciesOf, existingSnapshot = null, 
     }
   }
 
-  const ref = normalReferencePower(game, speciesOf)
+  const currentRef = normalReferencePower(game, speciesOf)
+  const stored = game?.normalStageSnapshots?.[stage.id]
+  let ref = currentRef
+  let repeatCap = null
+  let mode = 'normal-soft'
+  if (validNormalSnapshot(stored, stage)) {
+    repeatCap = stored.firstClearReferencePower * NORMAL_REPEAT_CAP
+    ref = Math.min(currentRef, repeatCap)
+    mode = currentRef > repeatCap ? 'normal-repeat-cap' : 'normal-repeat-soft'
+  }
+
   const difficulty = NORMAL_DIFFICULTY[stage.enemyDifficulty] || NORMAL_DIFFICULTY.normal
   const targetPower = ref * difficulty.targetMultiplier
   const level = levelForTargetPower(species, targetPower)
   const actualPower = combatPowerFromStats(statsFromBase(species.base, level))
   return {
-    mode: 'normal-soft',
+    mode,
     level,
     statMultipliers: normalizeStatMultipliers(),
     referencePower: ref,
+    currentReferencePower: currentRef,
+    repeatCap,
     targetPower,
     actualPower,
     difficultyLabel: difficultyLabelFromRatio(actualPower / ref),
