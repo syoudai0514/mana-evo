@@ -2,35 +2,36 @@
 
 この `design/` は PR #15 で No.001〜238正式masterと戦闘バランスを実装するための**レビュー用正本スナップショット**です。
 
-現在の状態は **SOL REVIEW READY / runtime実装ロック中** です。
+現在の状態は **SOL REVIEWED / NO-GO / runtime実装ロック継続** です。
 
-別SOLが `SOL-REVIEW-REQUEST-PR15-BALANCE.md` をレビューし、判定が `GO`、または指摘反映後の `GO WITH FIX` になるまで、No.001〜238正式runtime master・XP・技・ボスAI・捕獲・特殊形態の本実装へ進みません。
+SOL全力レビュー結果は `design/16-sol-pr15-full-review.md`。P0/P1修正・再バリデーション後に判定を `GO WITH FIX` 以上へ更新するまで、No.001〜238正式runtime master・XP・技・ボスAI・捕獲・特殊形態の本実装へ進みません。
 
-## レビュー開始順
+## レビュー実施順
 
-1. `SOL-REVIEW-REQUEST-PR15-BALANCE.md`
-2. `design/12-detailed-balance-design-for-sol-review.md`
-3. `design/15-sol-review-validation-report.md`
-4. `design/13-monster-growth-master-238.md`
-5. `design/13a`〜`13d` の成長CSV（合計238体）
-6. `design/14a`〜`14d` の進化比較CSV（合計155遷移）
-7. `design/09-special-forms-master.md`
-8. `design/11-battle-character-boss-review.md`
-9. `design/10-initial-balance-master.md`
-10. `design/06-battle-and-progression-design.md`
-11. `01-UNRESOLVED-DECISIONS.md`
+`SOL-REVIEW-REQUEST-PR15-BALANCE.md` の指定どおり、以下を順番に確認済み。
+
+1. `design/12-detailed-balance-design-for-sol-review.md`
+2. `design/15-sol-review-validation-report.md`
+3. `design/13-monster-growth-master-238.md`
+4. `design/13a`〜`13d` の成長CSV（実体7ファイル、合計238体）
+5. `design/14a`〜`14d` の進化比較CSV（合計155遷移）
+6. `design/09-special-forms-master.md`
+7. `design/11-battle-character-boss-review.md`
+
+レビュー結果・P0/P1/P2・R1〜R5回答は `design/16-sol-pr15-full-review.md` を参照。
 
 ## 数値・仕様競合時の優先順位
 
-レビュー前は、より新しく詳細化された以下を優先する。
+SOLレビュー後は以下を優先する。
 
-1. `design/12-detailed-balance-design-for-sol-review.md`
-2. `design/13*` / `design/14*` の個別master
-3. `design/11-battle-character-boss-review.md`
-4. `design/09-special-forms-master.md`（特殊形態の具体対象はこの文書が正）
-5. `design/10-initial-balance-master.md`
-6. `design/06-battle-and-progression-design.md`
-7. `design/08-balance-tuning-policy.md`
+1. `design/16-sol-pr15-full-review.md` — 今回レビューで確定した判断と実装前ブロッカー
+2. `design/12-detailed-balance-design-for-sol-review.md`
+3. `design/13*` / `design/14*` の個別master
+4. `design/11-battle-character-boss-review.md`
+5. `design/09-special-forms-master.md`（特殊形態の具体対象はこの文書が正）
+6. `design/10-initial-balance-master.md`
+7. `design/06-battle-and-progression-design.md`
+8. `design/08-balance-tuning-policy.md`
 
 特に以下は旧資料より新仕様を優先する。
 
@@ -40,6 +41,23 @@
 - 通常敵とボスでreferencePowerを分離
 - 初回ストーリー/エリアボスは捕獲不可
 - 進化は進化後に4基礎能力が下がらない
+- `held_item_levelup`: **固定Lv条件なし。指定アイテム装備後の次の実LvUPでReady**（design/11の旧「必要Lv」表記は修正対象）
+
+## SOLレビューで見つかった実装前ブロッカー
+
+詳細は `design/16-sol-pr15-full-review.md`。
+
+### P0
+
+1. `catchRank` の正本文言と13系CSV生成値が不一致。現行優先順位では `design/12` の「同系列第1形態基準」を正としてCSV再生成 + validator追加が必要。
+2. `held_item_levelup` の固定Lv有無が `design/11` と `design/12` / 14系CSVで矛盾。最新 `design/12` の「固定Lvなし」へ統一が必要。
+
+### P1
+
+1. stone21 / held-item11 の最速入手時点を正本化しないと進化体験日数を検証できない。
+2. 通常敵の常時完全追従ソフトスケールではLv成長実感が弱くなるため、既クリア通常戦の成長実感ゲートが必要。
+3. formal move masterに高威力1択化を防ぐ非劣位技ルールが必要。
+4. healer由来の一部個体は説明文と `hpTank` 体験がズレるため、formal move masterでidentity確認が必要。
 
 ## 238体 詳細設計データ
 
@@ -54,7 +72,15 @@
 - 全238体に Lv1 / 5 / 10 / 20 / 30 / 50 / 100 の実能力を算出
 - 全155進化で基礎4能力非減少
 
-機械検証結果は `design/15-sol-review-validation-report.md` を正とする。
+機械検証結果は `design/15-sol-review-validation-report.md`。SOLによる設計判断は `design/16-sol-pr15-full-review.md` を正とする。
+
+## R1〜R5 結果
+
+- **R1 GO:** `powerTierV1 = source catchRarity` を初期seedとして採用。現時点で印象ベースの個別補正はしない。
+- **R2 GO:** 戦闘開始時の手持ち最大3体へ全員100% Battle XPを採用。
+- **R3 GO:** 共通 `まもる`（成功100%、次ターン連続不可）を採用。
+- **R4 FIX:** 8role変換方針は維持するが、No.041 / 050 / 098 / 209 / 210 / 235ほかをmove identityレビュー対象とする。
+- **R5 GO:** にじのわは各学年初回+1 / 全エリア後EX初回+1 / ランダムなし / 章末なし。
 
 ## 特殊形態 — 確定済み
 
@@ -96,7 +122,7 @@ PR #15には以下の**基盤コード**は既に存在する。
 - boss snapshot save version 5
 - balance単体テスト
 
-一方、以下はSOLレビュー通過後に実装する。
+一方、以下はSOLレビューP0/P1解消後に実装する。
 
 - No.001〜238正式runtime master
 - 238体個別base stats / roles / catch / evolution runtime接続
@@ -111,14 +137,11 @@ PR #15には以下の**基盤コード**は既に存在する。
 
 設計データがGitHubに揃っていることとruntime実装完了を混同しない。
 
-## レビュー判断待ち
+## runtime実装ロック解除条件
 
-現在の判断待ちは `01-UNRESOLVED-DECISIONS.md` の R1〜R5 に限定する。
+1. `design/16-sol-pr15-full-review.md` のP0を解消
+2. P1受入条件を設計へ追加
+3. 238体 / 155進化 / catchRank / item evolution / normal growth / formal movesを再バリデーション
+4. SOL判定を `GO WITH FIX` 以上へ更新
 
-- R1 powerTier seed
-- R2 手持ち3体Battle XP
-- R3 ボス大技への共通 `まもる`
-- R4 healer/support由来キャラのcombatRole変換
-- R5 にじのわ供給量
-
-それ以外の確定済み仕様を未決へ戻さない。
+それまでは正式runtime masterへ進まない。
