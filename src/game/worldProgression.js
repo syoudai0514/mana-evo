@@ -67,9 +67,23 @@ function numberOf(species) {
   return Number.isFinite(parsed) ? parsed : 0
 }
 
-function metaForStage(stage) {
-  if (['event', 'ex'].includes(stage?.kind) || Number(stage?.area) > 4) return WORLD_AREA_META[4]
-  return WORLD_AREA_META.find((meta) => meta.area === Number(stage?.area)) || WORLD_AREA_META[0]
+function adventureAreaForStage(stage, species) {
+  if (['event', 'ex'].includes(stage?.kind) || Number(stage?.area) > 4) return 5
+  const sourceArea = Math.max(1, Number(stage?.area) || 1)
+  const formStage = Math.max(1, Number(species?.stage) || 1)
+  const isFinalEvolution = formStage > 1 && !species?.evolution
+  // 当初方針: エリア1/2の通常野生は進化前中心。
+  // A1系列の第2形態はA3奥地、A2系列の第2形態はA4奥地へ送る。
+  if (stage?.kind === 'wild' && formStage >= 2 && !isFinalEvolution) {
+    if (sourceArea === 1) return 3
+    if (sourceArea === 2) return 4
+  }
+  return sourceArea
+}
+
+function metaForStage(stage, species) {
+  const adventureArea = adventureAreaForStage(stage, species)
+  return WORLD_AREA_META.find((meta) => meta.area === adventureArea) || WORLD_AREA_META[0]
 }
 
 function zoneForStage(meta, stage, species) {
@@ -84,7 +98,7 @@ function zoneForStage(meta, stage, species) {
 
 export function enrichStage(stage, species) {
   if (!stage || stage.legacy) return stage
-  const meta = metaForStage(stage)
+  const meta = metaForStage(stage, species)
   const zone = zoneForStage(meta, stage, species)
   const formStage = Math.max(1, Number(species?.stage) || 1)
   const isFinalEvolution = formStage > 1 && !species?.evolution
@@ -92,6 +106,7 @@ export function enrichStage(stage, species) {
   const isFirstEvolvedForm = isEvolvedWild && !isFinalEvolution
   const next = {
     ...stage,
+    sourceArea: stage.area,
     adventureArea: meta.area,
     adventureAreaName: meta.name,
     zoneId: zone.id,
@@ -103,6 +118,9 @@ export function enrichStage(stage, species) {
     firstAcquireByEvolution: isFirstEvolvedForm,
     advancedEvolutionWild: isFirstEvolvedForm
   }
+
+  // 冒険エリアの解放条件は、制作上のareaではなく実際の配置先で決める。
+  if (stage.kind === 'wild' && meta.area !== Number(stage.area) && meta.area > 1 && meta.area <= 4) next.areaGateBossId = `a${meta.area - 1}-boss`
 
   // 第2形態の初回入手は自力進化。進化後に dex.caught が立つので奥地野生が解禁される。
   if (isFirstEvolvedForm) next.requiresOwnedSpeciesId = species.id
@@ -117,4 +135,35 @@ export function enrichStage(stage, species) {
   // ストーリー進行を大量収集チェックから切り離す。
   if (stage.kind === 'boss' && meta.area <= 4) next.minAreaClears = 5
   return next
+}
+
+
+function encounterHash(stageId, day) {
+  let hash = 2166136261
+  const text = `${day}:${stageId}`
+  for (let i = 0; i < text.length; i += 1) {
+    hash ^= text.charCodeAt(i)
+    hash = Math.imul(hash, 16777619)
+  }
+  return hash >>> 0
+}
+
+export function pickDailyEncounterStages(stages, {
+  day = 0,
+  limit = 5,
+  isUnlocked = () => true,
+  isCaught = () => false,
+  isCleared = () => false
+} = {}) {
+  return [...(stages || [])]
+    .sort((a, b) => {
+      const unlocked = Number(!isUnlocked(a)) - Number(!isUnlocked(b))
+      if (unlocked) return unlocked
+      const uncaught = Number(isCaught(a)) - Number(isCaught(b))
+      if (uncaught) return uncaught
+      const uncleared = Number(isCleared(a)) - Number(isCleared(b))
+      if (uncleared) return uncleared
+      return encounterHash(a.id, day) - encounterHash(b.id, day)
+    })
+    .slice(0, Math.max(1, Number(limit) || 5))
 }
