@@ -45,13 +45,48 @@ function Home({ learning, game, go, today }) {
   const currentArea = AREA_META.find((meta) => meta.area === currentAreaNo)
   const currentZone = currentArea?.zones?.find((zone) => zone.id === game.adventureLocation?.zoneId) || currentArea?.zones?.[0]
 
-  return <main className="screen home-screen">
-    <section className="hero-card"><div><p className="eyebrow">きょうの まなび</p><h1>{dailyCompleted ? 'クリア！' : `あと ${leftTasks} きょうか！`}</h1><div className="progress-dots">{Array.from({length:totalTasks},(_,i)=><span key={i} className={i<doneTasks?'done':''}/>)}</div><p className="kid-note">{gradeOf(learning.grade).short} ・ 1きょうか 2〜5もん</p><button className="primary" onClick={()=>go('study')}>{dailyCompleted?'もっと まなぶ':'まなぶ！'}</button></div>{monster && <PlaceholderMonster speciesId={monster.speciesId} excited={dailyCompleted}/>}</section>
-    <section className="world-status-card"><div><p className="eyebrow">📍 いまの ぼうけん</p><h2>エリア{currentAreaNo}　{currentArea?.name}</h2><p><b>{currentZone?.icon} {currentZone?.name}</b>　{currentArea?.levelLabel}。つよくなったら、まえのエリアへ もどって せいちょうも ためせるよ。</p></div><div className="evolution-goal"><strong>{nextEvolution ? (evolutionLeft === 0 ? '✨ シンカできるよ！' : evolutionLeft != null ? `あと ${evolutionLeft}Lvで ${nextEvolution.name}` : `つぎは ${nextEvolution.name}`) : '👑 さいしゅうの すがた！'}</strong><span>{nextEvolution ? 'はじめての シンカが、つぎの野生出会いも ひらく！' : 'ギガ・バーストや EXを めざそう！'}</span></div></section>
-    <section className={`adventure-card ${!canAdventure?'locked':''}`}><div><p className="eyebrow">ぼうけん</p>{!dailyCompleted ? <><h2>まず きょうの まなび！</h2><p>5つの きょうかが おわると バトルへ いけるよ。マップは いつでも みられるよ。</p></> : <><h2>{ticketCount>0?`あと ${ticketCount} かい ぼうけん！`:'チケットが ないよ'}</h2><p>{ticketCount>0?'マップで敵を見つけて、バトル・ゲット・シンカ！':'ついかチャレンジ 3もん中2もんで 🎫+1！'}</p></>}</div><button className={canAdventure?'battle':'secondary'} onClick={()=>go('adventure')}>{canAdventure?'マップへ！':'マップをみる'}</button></section>
-    <section className="grid-two"><button className="menu-card" onClick={()=>go('study')}><strong>📚 学習メニュー</strong><span>じゅぎょう・とっくん・しれん</span></button><button className="menu-card" onClick={()=>go('monsters')}><strong>🐾 モンスター</strong><span>{species?.name||'相棒'} Lv.{monster?.level||1}</span></button></section>
-    <button className="parent-home-card" onClick={()=>go('parent')}><span>🔒</span><div><strong>おうちのひと</strong><small>学年・先取り・むずかしさ・つくよみちゃん設定</small></div><b>›</b></button>
-    <button className="howto-home-card" onClick={()=>go('howto')}><strong>❓ あそびかた</strong><span>シンカと アイテムの もらいかた →</span></button>
+  return <main className="screen home-screen mock-home">
+    <section className="manaevo-brand-hero">
+      <div className="brand-lockup"><span className="brand-crystal">◆</span><div><h1><b>マナ</b><em>エボ</em></h1><p>まなびが、<strong>進化</strong>になる。</p></div></div>
+      {monster && <div className="brand-partner"><PlaceholderMonster speciesId={monster.speciesId} excited={dailyCompleted}/><span>{species?.name} Lv.{monster.level}</span></div>}
+    </section>
+
+    <section className="mock-panel home-flow-panel">
+      <div className="mock-panel-title"><span>✦</span><h2>きょうの ながれ</h2><small>{dailyCompleted ? 'まなびクリア！' : 'まずは まなぼう！'}</small></div>
+      <div className="home-flow-strip">
+        {[
+          ['1','📖','まなぶ'],['2','🎫','チケットGET'],['3','🗺️','ぼうけん'],['4','⚔️','バトル'],['5','⭕','つかまえる'],['6','✨','そだてる・シンカ']
+        ].map(([no,icon,label], index) => <React.Fragment key={no}><div className={'home-flow-step step-' + no}><b>{no}</b><span>{icon}</span><small>{label}</small></div>{index < 5 && <i>›</i>}</React.Fragment>)}
+      </div>
+    </section>
+
+    <section className="mock-panel home-status-panel">
+      <div className="mock-panel-title"><span>🛡️</span><h2>いまの じょうきょう</h2></div>
+      <div className="home-status-grid">
+        <div><span>きょうのチケット</span><strong>🎫 {ticketCount}<small>まい</small></strong></div>
+        <div><span>マナ</span><strong>💎 {game.mana}</strong></div>
+        <div className="location-cell"><span>いまのぼうけん</span><strong>エリア{currentAreaNo}・{currentZone?.name}</strong><small>{currentArea?.levelLabel}</small></div>
+        <button className="partner-cell" onClick={() => go('monsters')}>{monster && <PlaceholderMonster speciesId={monster.speciesId} compact/>}<span>{species?.name || '相棒'}<small>Lv.{monster?.level || 1}</small></span></button>
+      </div>
+    </section>
+
+    <section className="mock-panel home-learning-panel">
+      <div className="home-learning-copy"><p className="eyebrow">きょうの まなび</p><h2>{dailyCompleted ? '🎉 ミッション クリア！' : 'あと ' + leftTasks + ' きょうか！'}</h2><div className="progress-dots">{Array.from({length:totalTasks},(_,i)=><span key={i} className={i<doneTasks?'done':''}/>)}</div><p>{gradeOf(learning.grade).short} ・ 1きょうか 2〜5もん</p></div>
+      <div className="home-primary-actions"><button className="primary" onClick={() => go('study')}>{dailyCompleted ? '📖 もっと まなぶ' : '📖 まなぶ！'}</button><button className={canAdventure ? 'battle' : 'secondary'} aria-label="マップへ！" onClick={()=>go('adventure')}>🗺️ {canAdventure ? 'ぼうけんへ！' : 'マップをみる'}</button></div>
+    </section>
+
+    <section className="mock-panel home-guide-panel">
+      <div className="mock-panel-title gold"><span>📖</span><h2>ゲームせつめい</h2></div>
+      <div className="home-guide-list">
+        <p><b>📚</b><span>べんきょうすると <strong className="green">チケット</strong>が もらえる</span></p>
+        <p><b>🎫</b><span>チケットで <strong className="orange">ぼうけん</strong>に いける</span></p>
+        <p><b>⭕</b><span>モンスターを <strong className="purple">つかまえて</strong> <strong className="teal">そだてる</strong></span></p>
+        <p><b>✨</b><span>じぶんで <strong className="blue">シンカ</strong>すると あたらしい ばしょが ひらく</span></p>
+      </div>
+      <div className="evolution-mini-goal"><strong>{nextEvolution ? (evolutionLeft === 0 ? '✨ いま シンカできる！' : evolutionLeft != null ? 'あと ' + evolutionLeft + 'Lvで ' + nextEvolution.name : 'つぎは ' + nextEvolution.name) : '👑 さいしゅうの すがた！'}</strong><span>{nextEvolution ? 'GETしただけで おわりじゃない。そだてて じぶんで シンカ！' : 'ギガシンカ・キョダイバースト・EXを めざそう！'}</span></div>
+    </section>
+
+    <div className="home-small-links"><button className="howto-home-card" onClick={() => go('howto')}><strong>❓ あそびかた</strong><span>ルールと しんかアイテム →</span></button><button className="parent-home-card" onClick={() => go('parent')}><span>🔒</span><div><strong>おうちのひと</strong><small>学年・先取り・むずかしさ・つくよみちゃん設定</small></div><b>›</b></button></div>
   </main>
 }
 
@@ -163,7 +198,7 @@ export default function App() {
   const focusView=['activity','free','review','trial','dictionary','parent'].includes(view)
 
   return <div className={`app-shell${focusView?' app-shell--focus':''}`}>
-    {!focusView && <header><div className="logo"><b>Mana</b><strong>Evo</strong><small>マナエボ</small></div><StatusBar game={game} today={today}/></header>}
+    {!focusView && <header><div className="logo"><span className="logo-gem">◆</span><b>マナ</b><strong>エボ</strong><small>まなびが、進化になる。</small></div><StatusBar game={game} today={today}/></header>}
     {view==='home' && <Home learning={learning} game={game} go={setView} today={today}/>} 
     {view==='study' && <StudyHub learning={learning} dispatch={learningDispatch} onStartTask={startTask} go={setView}/>} 
     {view==='activity' && activeTask && <ActivityPlayer task={activeTask} onDone={()=>{setActiveTask(null);setView('study')}}/>}
@@ -175,6 +210,6 @@ export default function App() {
     {view==='adventure' && <AdventureFlow game={game} setGame={setGame} dailyCompleted={dailyCompleted} dailyDay={today} today={today} goHome={()=>setView('home')} goStudy={()=>setView('study')}/>} 
     {view==='monsters' && <MonsterScreen game={game} setGame={setGame} goHome={()=>setView('home')}/>} 
     {view==='howto' && <HowToPlay game={game} today={today} goHome={()=>setView('home')} goAdventure={()=>setView('adventure')} goMonsters={()=>setView('monsters')} goStudy={()=>setView('study')}/>} 
-    {!['activity','free','review','trial','dictionary','parent'].includes(view) && !navigationLocked && <nav><button className={view==='home'?'active':''} onClick={()=>setView('home')}>🏠<span>ホーム</span></button><button className={view==='adventure'?'active':''} onClick={()=>setView('adventure')}>🗺️<span>ぼうけん</span></button><button className={view==='monsters'?'active':''} onClick={()=>setView('monsters')}>🐾<span>モンスター</span></button><button className={view==='study'?'active':''} onClick={()=>setView('study')}>📚<span>まなぶ</span></button></nav>}
+    {!['activity','free','review','trial','dictionary','parent'].includes(view) && !navigationLocked && <nav className="game-bottom-nav"><button className={view==='home'?'active':''} onClick={()=>setView('home')}>🏰<span>ホーム</span></button><button className={view==='study'?'active':''} onClick={()=>setView('study')}>📖<span>まなぶ</span></button><button className={view==='adventure'?'active':''} onClick={()=>setView('adventure')}>🗺️<span>ぼうけん</span></button><button className={view==='monsters'?'active':''} onClick={()=>setView('monsters')}>🐾<span>モンスター</span></button><button className={view==='howto'?'active':''} onClick={()=>setView('howto')}>📜<span>あそびかた</span></button></nav>}
   </div>
 }
