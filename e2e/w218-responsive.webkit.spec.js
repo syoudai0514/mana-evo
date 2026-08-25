@@ -20,8 +20,8 @@ function learningSave(coreDone = true) {
       coreDone,
       coreIndex: coreDone ? 5 : 0,
       coreTasks: coreDone ? [] : [
-        { uid: 'w218-core-1', domainId: 'japanese', questionCount: 3 },
-        { uid: 'w218-core-2', domainId: 'math', questionCount: 3 }
+        { uid: 'w218-core-1', domainId: 'yomu', questionCount: 3 },
+        { uid: 'w218-core-2', domainId: 'suuji', questionCount: 3 }
       ],
       tasksClearedToday: coreDone ? 5 : 0,
       correctToday: 0,
