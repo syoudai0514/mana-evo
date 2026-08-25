@@ -94,6 +94,19 @@ async function previousRevisionResponse(cache, request) {
   return null
 }
 
+async function pruneMonsterCache(cache, request, keepKey) {
+  const requestUrl = new URL(request.url)
+  const keepUrl = typeof keepKey === 'string' ? keepKey : keepKey.url
+  const keys = await cache.keys()
+  await Promise.all(keys
+    .filter((key) => {
+      const keyUrl = new URL(key.url)
+      if (keyUrl.pathname !== requestUrl.pathname || key.url === keepUrl) return false
+      return key.url === request.url || keyUrl.searchParams.has('__manaevo_rev')
+    })
+    .map((key) => cache.delete(key)))
+}
+
 async function handleMonsterAsset(request, url) {
   const cache = await caches.open(CACHE_NAME)
   const relativePath = `/${url.pathname.slice(BASE_PATH.length)}`
@@ -103,10 +116,16 @@ async function handleMonsterAsset(request, url) {
   if (revision) {
     const cacheKey = revisionCacheKey(request, revision)
     const cached = await cache.match(cacheKey)
-    if (cached) return cached
+    if (cached) {
+      await pruneMonsterCache(cache, request, cacheKey)
+      return cached
+    }
     try {
       const response = await fetch(request, { cache: 'no-store' })
-      if (response.ok) await cache.put(cacheKey, response.clone())
+      if (response.ok) {
+        await cache.put(cacheKey, response.clone())
+        await pruneMonsterCache(cache, request, cacheKey)
+      }
       return response
     } catch {
       return (await previousRevisionResponse(cache, request)) || (await cache.match(request)) || Response.error()
