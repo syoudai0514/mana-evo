@@ -22,6 +22,8 @@ ManaEvo を、原本 `mana-evo-terra-FINAL-CORRECTED` から現在までの試�
 9. 直近チャットや直近Work Itemだけを根拠に、承認済み計画を上書きしない。
 10. 設計・資料・promptの完成と、実装・生成・実機/実画像レビューの完了を混同しない。
 11. 現在のWork Itemが実際のAcceptance / review gateを満たす前に、次のWork Itemへ進んだことにしない。
+12. Work Item番号、Worker完了報告、PR作成、CI PASSのいずれも、それ単独では「Acceptanceを満たした」証拠にしない。
+13. 必須成果物が画像・バイナリ・実機確認・デプロイ等を含む場合、実行担当がその能力を持つことを着手前に確認する。能力がない担当による設計資料やgeneration packetは、実成果物の代替として完了扱いしない。
 
 ## 司令塔 / Reviewer の復元プロトコル（恒久）
 
@@ -31,9 +33,13 @@ ManaEvo を、原本 `mana-evo-terra-FINAL-CORRECTED` から現在までの試�
 2. `design/rebuild/DECISION-LOG.md`
 3. `design/current/00-START-HERE.md`
 4. 現在対象となっているPhaseの計画文書
-5. 現在対象となっているWork Itemの成果物 / review / handoff / branch状態
-6. 必要に応じて、そのPhaseへ至った直前のCommander Review / Final Review
-7. その後に最新のユーザー発言を評価する
+5. 現在のbase branch HEADと、そのPhaseに関係するopen / merged PR・branchの実状態
+6. 現在対象となっているWork Itemの成果物 / review / handoff / branch状態
+7. Acceptanceが要求する**実成果物の種類**と、その実在・レビュー証拠（例: 実画像、実装、生成物、実機確認、デプロイ結果）
+8. 必要に応じて、そのPhaseへ至った直前のCommander Review / Final Review
+9. その後に最新のユーザー発言を評価する
+
+現在Work Item自体が不明な場合は、最新会話から推測しない。現在PhaseのWork Item定義と、base branch、open PR、recent merged PR、各branchの成果物を照合して、**Acceptanceを満たした最後のgateと、まだ満たしていない最初のgate**を特定する。
 
 この文書には「現在W-xxx」「現在何体完了」など、進行により変化する状態を正本として書かない。現在地は毎回、現在のPhase計画とWork Item成果物から復元する。これにより、引き継ぎ資料の更新漏れで古い現在地を信じる事故を防ぐ。
 
@@ -46,10 +52,13 @@ ManaEvo を、原本 `mana-evo-terra-FINAL-CORRECTED` から現在までの試�
 - W-101以降で何をCURRENTとして固定したか
 - 現在のPhaseが何を目的としているか
 - 現在のWork Itemの本当のAcceptance / gateは何か
+- そのAcceptanceが要求する実成果物は何か
+- 実成果物が本当に存在するか、それとも設計・prompt・review資料だけか
+- 実行担当に必要な能力（例: image generation / GitHub write / build / browser / deployment）があるか
 - 何が既決事項で、何が未決事項か
 - 最新ユーザー発言が既存計画を本当に変更するものか
 
-説明できない場合は、推測で作戦を出さず、上記資料から文脈を復元する。
+説明できない場合は、推測で作戦を出さず、上記資料とGitHub実状態から文脈を復元する。
 
 ## ユーザー発言の分類ルール
 
@@ -74,15 +83,19 @@ ManaEvo を、原本 `mana-evo-terra-FINAL-CORRECTED` から現在までの試�
 ### 司令塔 / Reviewer
 - 原本・履歴・現行設計・実装を横断して正本を判定する。
 - 再建全体の意図・既決事項・現在のPhase/gateを復元してから判断する。
+- base branch / PR / branch / 実成果物を確認し、報告文だけで進捗判定しない。
 - ユーザー発言を質問 / 懸念 / 提案 / 明示決定に分類する。
 - 現在のPhase計画に沿って作業単位を切る。
-- 各Workerへscope、Acceptance、所有範囲を明確に渡す。
-- PRをレビューし、正本適合・回帰・UXを確認する。
+- 各Workerへscope、Acceptance、所有範囲、必須成果物、必要実行能力を明確に渡す。
+- 必要能力を持たないWorkerへ、その能力が必須のWork Itemを「完了まで」任せない。別の実行担当へ切るか、明示的に分業する。
+- PRをレビューし、正本適合・回帰・UX・実成果物の存在を確認する。
 - 仕様変更が本当に必要な場合だけユーザー判断へ上げる。
 
 ### Worker / SOL 作業チャット
 - 指定された work item のみ実施する。
 - 自分で仕様を拡張しない。
+- 着手時に必須成果物と必要能力を確認し、必要能力がない場合は早期に `BLOCKED CAPABILITY` として報告する。
+- 能力不足を設計資料・generation packet・仮成果物で置き換えてAcceptance達成と主張しない。
 - 原本と current canonical の矛盾を見つけたら実装せず報告する。
 - 変更内容・テスト・未解決点を handoff に残す。
 
@@ -119,9 +132,12 @@ ManaEvo を、原本 `mana-evo-terra-FINAL-CORRECTED` から現在までの試�
 現在地は次から復元する。
 
 1. 現在PhaseのWork Item計画文書
-2. 対象Work Itemのbranch / PR /成果物
-3. そのWork ItemのAcceptance / review gate
-4. 必要なら直前のCommander Review / Final Review
+2. 現在のbase branch HEADと関連PR / branch状態
+3. 対象Work Itemの実成果物
+4. そのWork ItemのAcceptance / review gateと実際の証拠
+5. 必要なら直前のCommander Review / Final Review
+
+**現在地は「最大のWork Item番号」や「最新の完了報告」ではなく、Acceptanceを満たした最後のgateで決める。**
 
 同じ進捗状態を複数の恒久資料へコピーしない。
 
@@ -146,6 +162,9 @@ Worker分岐時は `design/rebuild/HANDOFF-TEMPLATE.md` の形式で引き継ぐ
 - 既存UIを残したまま新UIを上に足す
 - 過去レビュー文書をCURRENT正本として扱う
 - CI PASSを仕様妥当性の証明にする
+- Work Item番号 / PR作成 / Worker完了報告だけでAcceptance達成と判断する
+- 必須の実画像・実装・実機確認・デプロイ結果がないのに、設計資料で代替して完了扱いする
+- 必要能力を持たない実行担当へ作業を任せたまま、能力不足を後工程へ持ち越す
 - 仕様不明を推測で埋める
 - ユーザーの確認質問・懸念をそのまま新仕様へ変換する
 - 直近の会話だけを理由に承認済みPhase計画を再設計する
