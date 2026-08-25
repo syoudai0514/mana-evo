@@ -144,7 +144,7 @@ export function StageMap({ game, onStart, onExplore, goStudy, goHome, dailyCompl
     <div className="screen-title-row"><div><p className="eyebrow">ぼうけんマップ</p><h1>{currentAreaName}</h1>{area <= 4 && <p className="area-level-band">📍 いまのエリア　{AREA_META.find((item) => item.area === area)?.levelLabel}</p>}</div><strong>🎫 {ticketCount}</strong></div>
     <p className="kid-note">{dailyCompleted ? 'きょうの まなびクリア！ エリアと ゾーンで てきの強さが ちがうよ。そだてた強さを ためしてみよう！' : 'チケットを持っていても、きょうの まなびを終えてからバトルへ。'}</p>
 
-    {exploration && <section className="world-overview-card exploration-card" aria-label="シンカアイテムたんさく">
+    {exploration && <section className="no-ticket exploration-card" aria-label="シンカアイテムたんさく">
       <div className="world-overview-heading"><div><p className="eyebrow">たんさくポイント</p><h2>🧭 {exploration.points}pt</h2></div><span>1かい {exploration.cost}pt</span></div>
       <p className="kid-note">まなびで ためたポイントで たんさく！ ふつうは そざい、たまに シンカアイテムが みつかるよ。</p>
       <section className="daily-ticket-summary" aria-label="たんさくのじょうたい"><div><span>🧭</span><small>いま</small><strong>{exploration.points}pt</strong></div><i/><div><span>✨</span><small>シンカアイテムなし</small><strong>{exploration.misses}/5</strong></div></section>

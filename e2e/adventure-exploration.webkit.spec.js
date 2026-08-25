@@ -36,11 +36,6 @@ async function installSave(page, game) {
   }, { learning, game })
 }
 
-async function tapInViewport(locator) {
-  await locator.evaluate((element) => element.scrollIntoView({ block: 'center', inline: 'nearest' }))
-  await locator.click()
-}
-
 function explorationGame() {
   const game = createGameState()
   game.explorePoint = 35
@@ -63,7 +58,7 @@ test('iPhone WebKit can spend exploration points and complete the regional pity 
 
   const run = exploration.getByRole('button', { name: '5ptで たんさく！' })
   await expect(run).toBeEnabled()
-  await tapInViewport(run)
+  await run.click()
 
   await expect(exploration.getByRole('status')).toHaveText('🧺 ふつうの そざいを みつけた！')
   await expect(exploration.getByText('30pt', { exact: true }).first()).toBeVisible()
@@ -77,8 +72,8 @@ test('iPhone WebKit can spend exploration points and complete the regional pity 
   await expect(exploration.getByRole('button', { name: EVOLUTION_ITEM_CATALOG[foreign].name, exact: true })).toHaveCount(0)
 
   const selected = eligible[0]
-  await tapInViewport(exploration.getByRole('button', { name: EVOLUTION_ITEM_CATALOG[selected].name, exact: true }))
-  await tapInViewport(exploration.getByRole('button', { name: 'えらんで たんさく！' }))
+  await exploration.getByRole('button', { name: EVOLUTION_ITEM_CATALOG[selected].name, exact: true }).click()
+  await exploration.getByRole('button', { name: 'えらんで たんさく！' }).click()
 
   await expect(exploration.getByRole('status')).toHaveText(`✨ ${EVOLUTION_ITEM_CATALOG[selected].name}を みつけた！`)
   await expect(exploration.getByText('25pt', { exact: true }).first()).toBeVisible()
