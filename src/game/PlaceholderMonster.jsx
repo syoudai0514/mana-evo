@@ -26,13 +26,16 @@ export default function PlaceholderMonster({ speciesId, stage = null, excited = 
   const resolvedStage = stage || species?.stage || 1
   const size = compact ? 50 : 124
   const legacyFrame = monsterSpriteFrame(speciesId)
-  const [imageFailed, setImageFailed] = useState(false)
   const officialUrl = resolvePublicAsset(species?.officialImageUrl)
+  const no = Number(species?.no || 0)
+  const provisionalSvgUrl = no >= 11 && no <= 20 ? resolvePublicAsset(`/monsters/${speciesId}.svg`) : null
+  const imageSources = [officialUrl, provisionalSvgUrl].filter(Boolean)
+  const [imageSourceIndex, setImageSourceIndex] = useState(0)
+  const imageUrl = imageSources[imageSourceIndex] || null
 
-  useEffect(() => { setImageFailed(false) }, [officialUrl])
+  useEffect(() => { setImageSourceIndex(0) }, [officialUrl, provisionalSvgUrl])
 
   const fallbackStyle = useMemo(() => {
-    const no = Number(species?.no || 0)
     const hue = (no * 47 + resolvedStage * 23) % 360
     return {
       '--monster-hue': hue,
@@ -41,12 +44,12 @@ export default function PlaceholderMonster({ speciesId, stage = null, excited = 
       minWidth: size,
       flexBasis: size
     }
-  }, [species?.no, resolvedStage, size])
+  }, [no, resolvedStage, size])
 
-  if (officialUrl && !imageFailed) {
+  if (imageUrl) {
     return (
       <div className={`placeholder-monster monster-art official-art stage-${resolvedStage} ${excited ? 'excited' : ''} ${compact ? 'compact' : ''}`} style={{ width: size, height: size, minWidth: size, flexBasis: size }} role="img" aria-label={species?.name || 'モンスター'}>
-        <img src={officialUrl} alt={species?.name || 'モンスター'} onError={() => setImageFailed(true)} loading="lazy" decoding="async" />
+        <img src={imageUrl} alt={species?.name || 'モンスター'} onError={() => setImageSourceIndex((index) => index + 1)} loading="lazy" decoding="async" />
       </div>
     )
   }
