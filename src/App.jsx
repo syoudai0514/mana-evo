@@ -43,7 +43,6 @@ function Home({ learning, game, go, today }) {
   const ticketCount = availableTicketCount(game, today)
   const monster = game.box[game.activeMonsterId]
   const species = monster ? speciesOf(monster.speciesId) : null
-  const canAdventure = dailyCompleted && ticketCount > 0
   const nextEvolution = species?.evolution ? speciesOf(species.evolution.to) : null
   const evolutionLeft = monster ? levelsUntilEvolution(monster) : null
   const clearedStages = new Set(game.stagesCleared || [])
@@ -60,42 +59,25 @@ function Home({ learning, game, go, today }) {
       {monster && <div className="brand-partner"><PlaceholderMonster speciesId={monster.speciesId} excited={dailyCompleted}/><span>{species?.name} Lv.{monster.level}</span></div>}
     </section>
 
-    <section className="mock-panel home-flow-panel">
-      <div className="mock-panel-title"><span>✦</span><h2>きょうの ながれ</h2><small>{dailyCompleted ? 'まなびクリア！' : 'まずは まなぼう！'}</small></div>
-      <div className="home-flow-strip">
-        {[
-          ['1','📖','まなぶ'],['2','🎫','チケットGET'],['3','🗺️','ぼうけん'],['4','⚔️','バトル'],['5','⭕','つかまえる'],['6','✨','そだてる・シンカ']
-        ].map(([no,icon,label], index) => <React.Fragment key={no}><div className={'home-flow-step step-' + no}><b>{no}</b><span>{icon}</span><small>{label}</small></div>{index < 5 && <i>›</i>}</React.Fragment>)}
+    <section className="mock-panel home-learning-panel">
+      <div className="home-learning-copy"><p className="eyebrow">きょうの まなび</p><h2>{dailyCompleted ? '🎉 ミッション クリア！' : 'あと ' + leftTasks + ' きょうか！'}</h2><div className="progress-dots">{Array.from({length:totalTasks},(_,i)=><span key={i} className={i<doneTasks?'done':''}/>)}</div><p>{gradeOf(learning.grade).short} ・ {doneTasks}/{totalTasks} きょうか</p></div>
+      <div className="home-primary-actions">
+        {dailyCompleted
+          ? <button className="battle" onClick={()=>go('adventure')}>🗺️ ぼうけんへ！</button>
+          : <button className="primary" onClick={()=>go('study')}>📖 まなぶ！</button>}
       </div>
     </section>
 
     <section className="mock-panel home-status-panel">
-      <div className="mock-panel-title"><span>🛡️</span><h2>いまの じょうきょう</h2></div>
+      <div className="mock-panel-title"><span>🧭</span><h2>いまの じょうきょう</h2></div>
       <div className="home-status-grid">
-        <div><span>きょうのチケット</span><strong>🎫 {ticketCount}<small>まい</small></strong></div>
-        <div><span>マナ</span><strong>💎 {game.mana}</strong></div>
+        <div><span>つかえるチケット</span><strong>🎫 {ticketCount}<small>まい</small></strong></div>
         <div className="location-cell"><span>いまのぼうけん</span><strong>エリア{currentAreaNo}・{currentZone?.name}</strong><small>{currentArea?.levelLabel}</small></div>
-        <button className="partner-cell" onClick={() => go('monsters')}>{monster && <PlaceholderMonster speciesId={monster.speciesId} compact/>}<span>{species?.name || '相棒'}<small>Lv.{monster?.level || 1}</small></span></button>
       </div>
+      {nextEvolution && <div className="evolution-mini-goal"><strong>{evolutionLeft === 0 ? '✨ つぎのシンカ：いま ' + nextEvolution.name + ' にシンカできる！' : evolutionLeft != null ? '✨ つぎのシンカ：あと ' + evolutionLeft + 'Lvで ' + nextEvolution.name : '✨ つぎのシンカ：' + nextEvolution.name}</strong></div>}
     </section>
 
-    <section className="mock-panel home-learning-panel">
-      <div className="home-learning-copy"><p className="eyebrow">きょうの まなび</p><h2>{dailyCompleted ? '🎉 ミッション クリア！' : 'あと ' + leftTasks + ' きょうか！'}</h2><div className="progress-dots">{Array.from({length:totalTasks},(_,i)=><span key={i} className={i<doneTasks?'done':''}/>)}</div><p>{gradeOf(learning.grade).short} ・ 1きょうか 2〜5もん</p></div>
-      <div className="home-primary-actions"><button className="primary" onClick={() => go('study')}>{dailyCompleted ? '📖 もっと まなぶ' : '📖 まなぶ！'}</button><button className={canAdventure ? 'battle' : 'secondary'} aria-label="マップへ！" onClick={()=>go('adventure')}>🗺️ {canAdventure ? 'ぼうけんへ！' : 'マップをみる'}</button></div>
-    </section>
-
-    <section className="mock-panel home-guide-panel">
-      <div className="mock-panel-title gold"><span>📖</span><h2>ゲームせつめい</h2></div>
-      <div className="home-guide-list">
-        <p><b>📚</b><span>べんきょうすると <strong className="green">チケット</strong>が もらえる</span></p>
-        <p><b>🎫</b><span>チケットで <strong className="orange">ぼうけん</strong>に いける</span></p>
-        <p><b>⭕</b><span>モンスターを <strong className="purple">つかまえて</strong> <strong className="teal">そだてる</strong></span></p>
-        <p><b>✨</b><span>じぶんで <strong className="blue">シンカ</strong>すると あたらしい ばしょが ひらく</span></p>
-      </div>
-      <div className="evolution-mini-goal"><strong>{nextEvolution ? (evolutionLeft === 0 ? '✨ いま シンカできる！' : evolutionLeft != null ? 'あと ' + evolutionLeft + 'Lvで ' + nextEvolution.name : 'つぎは ' + nextEvolution.name) : '👑 さいしゅうの すがた！'}</strong><span>{nextEvolution ? 'GETしただけで おわりじゃない。そだてて じぶんで シンカ！' : 'ギガシンカ・キョダイバースト・EXを めざそう！'}</span></div>
-    </section>
-
-    <div className="home-small-links"><button className="howto-home-card" onClick={() => go('howto')}><strong>❓ あそびかた</strong><span>ルールと しんかアイテム →</span></button><button className="parent-home-card" onClick={() => go('parent')}><span>🔒</span><div><strong>おうちのひと</strong><small>学年・先取り・むずかしさ・つくよみちゃん設定</small></div><b>›</b></button></div>
+    <div className="home-small-links"><button className="howto-home-card" onClick={() => go('howto')}><strong>❓ あそびかた</strong><span>ルールを みる →</span></button><button className="parent-home-card" onClick={() => go('parent')}><span>🔒</span><div><strong>おうちのひと</strong><small>おとなの せってい</small></div><b>›</b></button></div>
   </main>
 }
 
@@ -115,23 +97,26 @@ function StudyHub({ learning, dispatch, onStartTask, go }) {
 
   return <main className="screen study-hub">
     <button className="back" onClick={()=>go('home')}>← ホーム</button>
-    <section className="study-hero"><div><p className="eyebrow">Kids Quest 学習エンジン</p><h1>📚 {gradeOf(learning.grade).name}の まなび</h1><p>単元の順番・復習・ヒントは、学習記録から自動で変わるよ。</p></div><div className="study-master"><strong>{mastery}%</strong><span>しれんの じゅんび</span></div></section>
+    <section className="study-hero"><div><p className="eyebrow">きょうの まなび</p><h1>📚 {gradeOf(learning.grade).name}の まなび</h1><p>きみの きろくに あわせて、つぎの もんだいが かわるよ。</p></div><div className="study-master"><strong>{mastery}%</strong><span>しれんの じゅんび</span></div></section>
 
     <section className="study-grade-locked"><span>🎓</span><div><strong>{gradeOf(learning.grade).name}</strong><small>がくねんと むずかしさは おうちのひとが きめるよ</small></div><span className="lock-mark">🔒</span></section>
 
-    {!daily.coreDone ? <section className="study-section"><h2>🚀 きょうの ミッション</h2><p className="kid-note">あと {remaining.length}きょうか。すきな じゅんばんで えらべるよ。</p><div className="study-task-grid">{remaining.map((task,index)=>{const dom=DOMAIN_BY_ID[task.domainId];return <button key={task.uid} className="study-task" onClick={()=>startCore(task,index)}><span>{dom?.emoji}</span><strong>{domainName(dom,learning.grade)}</strong><small>{task.questionCount}もん</small>{index===0&&<b>つぎ</b>}</button>})}</div></section> : <section className="study-section complete"><h2>🎉 きょうの ミッション クリア！</h2><p>バトルをあそべるよ。もっと学びたいときは自由勉強、おかわり、追加チャレンジへ。</p></section>}
+    {!daily.coreDone ? <section className="study-section"><h2>🚀 きょうの ミッション</h2><p className="kid-note">あと {remaining.length}きょうか。すきな じゅんばんで えらべるよ。</p><div className="study-task-grid">{remaining.map((task,index)=>{const dom=DOMAIN_BY_ID[task.domainId];return <button key={task.uid} className="study-task" onClick={()=>startCore(task,index)}><span>{dom?.emoji}</span><strong>{domainName(dom,learning.grade)}</strong><small>{task.questionCount}もん</small>{index===0&&<b>つぎ</b>}</button>})}</div></section> : <section className="study-section complete"><h2>🎉 きょうの ミッション クリア！</h2><p>バトルをあそべるよ。もっと まなびたいときは、ついかチャレンジや ほかの まなびへ。</p></section>}
 
-    <section className="study-menu-grid">
-      <button onClick={()=>go('free')}><span>📖</span><strong>じゆうべんきょう</strong><small>好きな教科・チケットなし</small></button>
-      <button onClick={()=>go('review')}><span>🎯</span><strong>とっくん</strong><small>きょう復習 {reviewCount}こ</small></button>
-      <button onClick={()=>go('trial')}><span>🌟</span><strong>ほしのしれん</strong><small>{trial.unlocked?'ちょうせんできる！':`あと ${trial.missing.length}たんげん`}</small></button>
-      <button onClick={()=>go('dictionary')}><span>🔤</span><strong>えいごずかん</strong><small>単語・発音・4問練習</small></button>
-    </section>
+    {daily.coreDone && <section className="study-section"><h2>🎫 もっとバトルしたい</h2><p className="kid-note">1もん クリアするたび 🎫チケット+1 と 🧭たんさくポイント+1。ついかの せいかいが 3こ たまるたび ⭐ほしのわ+1！</p><button className="primary huge" onClick={()=>onStartTask(buildExtraTask(daily.extraIndex,learning.grade))}>⚡ ついかチャレンジ（3もん）</button></section>}
+    {daily.coreDone && daily.okawariIndex<OKAWARI_MAX && <section className="study-section"><h2>🍭 おかわり</h2><button className="secondary huge" onClick={()=>onStartTask(buildOkawariTask(daily.okawariIndex,learning.grade))}>もう1タスク べんきょうする（あと {OKAWARI_MAX-daily.okawariIndex}）</button></section>}
+
+    <details className="study-secondary-modes">
+      <summary>ほかの まなび</summary>
+      <div className="study-menu-grid">
+        <button onClick={()=>go('free')}><span>📖</span><strong>じゆうべんきょう</strong><small>好きな教科・チケットなし</small></button>
+        <button onClick={()=>go('review')}><span>🎯</span><strong>とっくん</strong><small>きょう復習 {reviewCount}こ</small></button>
+        <button onClick={()=>go('trial')}><span>🌟</span><strong>ほしのしれん</strong><small>{trial.unlocked?'ちょうせんできる！':`あと ${trial.missing.length}たんげん`}</small></button>
+        <button onClick={()=>go('dictionary')}><span>🔤</span><strong>えいごずかん</strong><small>単語・発音・4問練習</small></button>
+      </div>
+    </details>
 
     {learning.gradeMax > learning.grade && <section className="study-section grade-opened"><h2>🎉 つぎの がくねんが ひらいたよ！</h2><p>つぎへ すすむときは、おうちのひとに きいてね。</p></section>}
-
-    {daily.coreDone && <section className="study-section"><h2>🎫 もっとバトルしたい</h2><p className="kid-note">自由勉強ではチケットは増えないよ。チケットはこの3問チャレンジで。</p><button className="primary huge" onClick={()=>onStartTask(buildExtraTask(daily.extraIndex,learning.grade))}>⚡ ついかチャレンジ（3もん中2もん → 🎫+1）</button></section>}
-    {daily.coreDone && daily.okawariIndex<OKAWARI_MAX && <section className="study-section"><h2>🍭 おかわり</h2><button className="secondary huge" onClick={()=>onStartTask(buildOkawariTask(daily.okawariIndex,learning.grade))}>もう1タスク べんきょうする（あと {OKAWARI_MAX-daily.okawariIndex}）</button></section>}
   </main>
 }
 
