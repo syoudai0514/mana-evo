@@ -6,8 +6,9 @@
 - PROPOSED: 候補
 - CONFIRMED: 根拠確認済み
 - USER-DECISION: ユーザー判断待ち/判断済み
-- REVERT-TO-BASELINE: 原本へ戻す
+- REVERT-TO-BASELINE: 後続の承認根拠がなく原本をCURRENTへ採用
 - SUPERSEDED: 後続判断で置換
+- TUNING-DEFAULT: 構造は確定、数値は現行値を暫定採用しplaytestで調整可
 
 ## Template
 
@@ -45,3 +46,95 @@
 - Reason: 完成速度と仕様一貫性を両立するため。
 - Affected areas: 全体。
 - Tests required: 現行回帰 + canonical acceptance。
+
+## D-003 active monster scope
+- Status: SUPERSEDED / CONFIRMED_CHANGE
+- Baseline: 84系列 / 239体。No.239=`シラユキヒメ`。
+- Later design/runtime: 83系列 / No.001〜238。
+- Evidence of approval: `USER-DECISION-EVIDENCE.md` UDE-001（2026-08-24 user explicit）。
+- Decision: active game/master/dex/image-required scopeはNo.001〜238 / 83系列。No.239はbaseline/referenceに保全しゲームへ出さない。
+- Affected areas: monster master / dex / art / runtime / tests。
+- Tests required: active 238、No.239 absent、baseline 239 retained。
+
+## D-004 捕獲方式と「わ」
+- Status: SUPERSEDED / CONFIRMED_CHANGE
+- Baseline: 勝利後CAPTURE、HP非依存、最大3投、ぎん×1.5、きん×2.0。
+- Evidence of approval: UDE-002（2026-08-24 user explicit）。
+- Decision: 戦闘中、敵HP50%以下で捕獲可能。ほし1.0 / ぎん1.2 / きん1.5 / にじ100%、非にじ最終上限92%、1戦最大3投。
+- Note: 原本の4つの星が順に点灯して輪が完成する演出は、後続で廃止承認がないため維持。
+- Tests required: eligibility / multipliers / cap / 3 throws / temporal 4-stage animation。
+
+## D-005 Kids Quest学習の権威
+- Status: CONFIRMED
+- Baseline: `12-KIDS-QUEST-LEARNING-IMPORT-SPEC.md` はKids Quest最新mainを学習source of truthとし、ManaEvo独自再実装を禁止。
+- Runtime: `src/kids-quest-study` がactive、`src/study` はlegacy/regression系。
+- Decision: 学年・科目・問題・SRS・習熟・試練・先取り等の学習ロジックはKids Quest固定sourceを維持。ManaEvoはゲーム報酬bridgeのみ持つ。
+- Tests required: Kids Quest source SHA / learning regression / active routing。
+
+## D-006 学習→ticket / ring報酬
+- Status: CONFIRMED + REVERT-TO-BASELINE（一部）
+- Baseline: core all clear ticket+3。追加問題1問クリアごとticket+1、上限なし。ticket 7日/FEFO。
+- Later explicit decision: PR #5の「今回ユーザーが確定した仕様」により ring economy は daily完了star+3 / 追加学習3正解ごとstar+1 / unit MASTER silver+1 / hard MASTER gold+1 へ変更。
+- Runtime drift: extra 3問中2問でtask全体ticket+1、追加学習star+1欠落。
+- Decision: Kids Questのextra task形状（3問）は維持するが、ManaEvo reward bridgeは原本どおり追加問題1問クリアごとticket+1・上限なしへ戻す。ringは後続明示決定を採用し、追加3正解ごとのstar+1も実装する。
+- Tests required: core+3 / per-extra-question ticket / no cap / ring grants / 7-day FEFO。
+
+## D-007 ticket battle lifecycle
+- Status: SUPERSEDED / CONFIRMED_CHANGE
+- Baseline: battle開始では非消費、勝利確定時に1枚消費、敗北/逃走は非消費で同一encounter保持。
+- Later explicit decision: PR #5 user-confirmed ticket reservation lifecycle。
+- Decision: battle開始時に1枚reserve。勝利/捕獲成功で消費確定。敗北/明示離脱は同じ期限lotを返却。crash/reloadはactiveBattle再開で二重消費しない。
+- Tests required: reserve/refund/commit/idempotency/original-expiry。
+
+## D-008 進化アイテム取得
+- Status: REVERT-TO-BASELINE
+- Baseline: 学習→探索ポイント。5ptで探索1回、通常素材80% / 進化アイテム20%、地域別5連続不発後の6回目開始時にその地域の進化アイテムを1個選択保証。1日上限なし。地域ボス初回撃破でも地域アイテム1個。
+- Later design/runtime: 32専用進化trial初回保証へ置換。
+- Evidence of approval: exact置換を承認したユーザー証拠をPhase 1.5で回収できず。
+- Decision: CURRENTは原本探索方式。専用trialを進化アイテム唯一の取得源として扱わない。trialを残す場合は別目的として正本承認が必要。
+- Tests required: points / 5pt spend / 20% / per-area pity / 6th choice / persistence / boss bonus。
+
+## D-009 地域ボス挑戦条件
+- Status: REVERT-TO-BASELINE
+- Baseline: 地域別 `progressPoints >= 12 && uniqueSkillCount >= 2`。core task初回+1、mastery milestone+2、chapter test初回+3。新地域は0pt/空集合から開始。ボス撃破で次地域解放。
+- Later design/runtime: boss unlockを探索clear数5へ置換。
+- Evidence of approval: 5-clearへの明示承認をPhase 1.5で回収できず。
+- Decision: 入口/中盤/奥地の後続route構造とは共存させるが、boss challenge gateは原本の学習進行12pt+2skillをCURRENTとする。探索clear数5をその代替条件にはしない。
+- Tests required: per-area reset/persist / points / 2 unique skills / boss→next area。
+
+## D-010 重複捕獲
+- Status: REVERT-TO-BASELINE
+- Baseline: 初回捕獲は自動加入。2匹目以降は `なかまにする`（別instance）/ `おうえんにかえる`（そだちのかけら+1）の2択。かけら3個で任意の手持ち1体へ育成XP+30。
+- Runtime: duplicateでも常に新instanceをBOXへ追加。
+- Evidence of approval: baseline分岐を削除するユーザー承認をPhase 1.5で回収できず。
+- Decision: duplicate choice + growth shardをCURRENTへ復元する。
+- Tests required: first auto-join / duplicate choice / shard inventory / 3→XP30 / no duplicate rewards。
+
+## D-011 ワールド・自力進化
+- Status: CONFIRMED_CHANGE + TUNING-DEFAULT
+- Baseline: Area1〜4、最終形通常wild不可等の原則。
+- Later explicit direction: UDE-005「自分で育てて進化させる体験」を強化するworld/zone方向。
+- Decision: `area`（原データ分類）と冒険配置レイヤを分離。入口/中盤/奥地。第2形態の初回入手は自力進化、自力進化後のみ後半wild解禁。`evolutionDiscoveries`で自力進化を別記録。最終形は通常wild捕獲不可。過去areaへ戻り育成差を実感できる。
+- Tuning default: 現行 zone Lv帯（A1 5–22 / A2 18–38 / A3 32–58 / A4 50–80 / EX 70–100）やzone clear数はplaytest用暫定値。プロダクト正本ではなくbalance tuningとして調整可。
+- Tests required: discovery gate / final wild ban / location persist / level clamp / return-to-old-area advantage。
+
+## D-012 ボス再戦
+- Status: CONFIRMED_CHANGE
+- Evidence of approval: UDE-003。
+- Decision: story/area bossは育成後の通常再戦で相対的に楽になる。初回snapshotを通常再戦で固定し、challenge再戦のみ再scale可。balance version更新でsnapshotを再評価する場合、新snapshotを1回保存し以後再固定する。
+- Runtime drift: invalid old-version snapshotから新planを計算してもreplacement snapshotを保存しない不具合あり。
+- Tests required: first snapshot / normal lock / challenge rescale / version replacement then lock。
+
+## D-013 UI再建原則
+- Status: CONFIRMED（原則） / canonical draft要補正
+- Evidence: baseline画面思想 + UDE-006 + PR #39 audit。
+- Decision: 旧UIへ新UIを積み増さない。通常画面は子どもの主判断を1つに絞り、詳細はprogressive disclosure。Adventureでworld route+Area tabs、常設search/filter、大量stage一覧を同時表示しない。CSSの権威をload-order/`!important`にしない。
+- Correction before promotion: Captureは子ども向け5段階/おすすめ表示を主、正確な%は詳細補助とする（baseline 08）。Homeは学習未完了ならStudy、完了後はAdventureを基本primaryとし、Evolutionは該当flow内でfull-screen rewardとして扱う。PR #39 draftをそのまま無条件CURRENTへ昇格しない。
+- Tests required: 390px first viewport / one dominant CTA / child-flow E2E / no duplicate navigation surfaces。
+
+## D-014 モンスター説明・画像正本
+- Status: CONFIRMED
+- Baseline: `scripts/monster-visual-briefs.json` にfamilyごとの motif / concept / personalityArc / palette / graphicCore と各stageのdescription / expressionAndPose / silhouetteが存在。No.001〜238のsourceデータは原本比較で一致。
+- Decision: キャラ説明は新規創作から始めずbaseline visual briefsを救出・正式化する。active 238についてfamily continuityを維持し、既存生成画像は候補として全件監査、合格を正式化、NGのみ再生成する。
+- Art rules: 5〜8歳向け、2〜4頭身中心、全身、透明/白背景、小表示で識別、同系列は顔/配色/象徴部位の最低2要素を継承、既存IP模倣禁止。
+- Tests/acceptance: 238 identity mapping / family continuity / asset manifest / formal-vs-placeholder contract。
