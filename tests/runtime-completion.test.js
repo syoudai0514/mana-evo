@@ -12,10 +12,7 @@ import {
   abandonBattle,
   activateBurst,
   activateGiga,
-  canAttemptCapture,
-  clearFinishedBattle,
   damageAmount,
-  isStageUnlocked,
   makeMonster,
   setTeam,
   startBattle,
@@ -23,6 +20,8 @@ import {
   useProtect
 } from '../src/game/engine.js'
 import { addTickets, createGameState } from '../src/game/progression.js'
+import { performGameExploration } from '../src/game/sharedRuntime.js'
+import { applyAreaBossProgressEvent } from '../src/game/worldProgression.js'
 
 const HEAL_IDS = ['m041','m042','m049','m050','m051','m098','m099','m115','m116','m175','m176','m177','m208','m209','m210','m235']
 const GIGA_IDS = ['m003','m006','m009','m051','m054','m072','m090','m121','m153','m156','m159','m186']
@@ -41,10 +40,16 @@ function preparedGame(speciesId = 'm004', level = 40, day = 7000) {
 
 function unlockAreaBoss(game, area) {
   const boss = STAGES.find((stage) => stage.id === `a${area}-boss`)
-  const wild = STAGES.filter((stage) => (stage.adventureArea || stage.area) === area && stage.kind === 'wild')
-  game.stagesCleared = [...new Set([...(game.stagesCleared || []), ...wild.slice(0, boss.minAreaClears).map((stage) => stage.id)])]
   if (area > 1) for (let a = 1; a < area; a += 1) game.stagesCleared.push(`a${a}-boss`)
-  return boss
+  const route = STAGES
+    .filter((stage) => stage.kind === 'wild')
+    .filter((stage) => Number(stage.adventureArea || stage.area) === area)
+    .filter((stage) => stage.zoneId === boss.zoneGatePreviousId)
+    .slice(0, 2)
+  game.stagesCleared = [...new Set([...(game.stagesCleared || []), ...route.map((stage) => stage.id)])]
+  game = applyAreaBossProgressEvent(game, { id: `test:${area}:a`, area, points: 6, skillId: `skill-${area}-a` }).game
+  game = applyAreaBossProgressEvent(game, { id: `test:${area}:b`, area, points: 6, skillId: `skill-${area}-b` }).game
+  return { game, boss }
 }
 
 test('generated runtime is exactly the canonical No.001-238 master', () => {
@@ -102,11 +107,12 @@ test('combatRoleV2 is audit metadata only and never drives battle/UI decisions',
   assert.ok(SPECIES.m142.base.defense > SPECIES.m142.base.speed)
 })
 
-test('all 32 deterministic evolution trials and all special challenges are runtime stages', () => {
+test('dedicated evolution trials are retired while canonical special challenges remain exposed', () => {
   const trials = RUNTIME_STAGES.filter((stage) => stage.kind === 'evolution-trial')
-  assert.equal(trials.length, 32)
-  assert.equal(new Set(trials.map((stage) => `${stage.evolutionReward.kind}:${stage.evolutionReward.itemId}:${stage.enemySpeciesId}`)).size, 32)
-  assert.ok(trials.every((stage) => stage.captureDisabled && stage.requiresOwnedSpeciesId && stage.minAreaClears > 0))
+  assert.equal(trials.length, 0)
+  assert.equal(RUNTIME_META.itemTrialCount, 0)
+  assert.equal(RUNTIME_STAGES.some((stage) => stage.minAreaClears !== undefined), false)
+  assert.equal(RUNTIME_STAGES.some((stage) => stage.evolutionReward !== undefined), false)
   const giga = RUNTIME_STAGES.filter((stage) => stage.kind === 'giga-challenge')
   const burst = RUNTIME_STAGES.filter((stage) => stage.kind === 'burst-challenge')
   assert.deepEqual(giga.map((stage) => stage.specialReward.speciesId).sort(), [...GIGA_IDS].sort())
@@ -115,36 +121,24 @@ test('all 32 deterministic evolution trials and all special challenges are runti
   assert.equal(RUNTIME_STAGES.filter((stage) => stage.kind === 'ex').length, 1)
 })
 
-test('evolution trial grants its item only on the first clear', () => {
-  const day = 7100
-  let game = preparedGame('m026', 80, day)
-  const trial = STAGES.find((stage) => stage.id === 'evo-026-027')
-  const areaWild = STAGES.filter((stage) => (stage.adventureArea || stage.area) === 1 && stage.kind === 'wild')
-  game.stagesCleared = areaWild.slice(0, trial.minAreaClears).map((stage) => stage.id)
-  assert.equal(isStageUnlocked(game, trial), true)
-  let started = startBattle(game, trial.id, { dailyCompleted: true, today: day })
-  assert.equal(started.ok, true)
-  assert.equal(canAttemptCapture(started.game, started.battle, 'star'), false)
-  let battle = structuredClone(started.battle)
-  battle.enemy.hp = 1
-  let won = useMove(started.game, battle, 'm026-stable')
-  assert.equal(won.battle.status, 'won')
-  assert.equal(won.game.evolutionItems.stones.thunder, 1)
-  assert.equal(won.rewards.evolutionReward.itemId, 'thunder')
-  const cleared = clearFinishedBattle(won.game, { today: day })
-  started = startBattle(addTickets(cleared.game, 1, day), trial.id, { dailyCompleted: true, today: day })
-  battle = structuredClone(started.battle)
-  battle.enemy.hp = 1
-  won = useMove(started.game, battle, 'm026-stable')
-  assert.equal(won.battle.status, 'won')
-  assert.equal(won.rewards.evolutionReward, null)
-  assert.equal(won.game.evolutionItems.stones.thunder, 1)
+test('evolution items are acquired through the canonical 5-point exploration path', () => {
+  let game = createGameState()
+  game.explorePoint = 5
+  const explored = performGameExploration(game, { areaId: 1, rng: () => 0, operationId: 'runtime-completion:explore' })
+  assert.equal(explored.ok, true)
+  assert.equal(explored.game.explorePoint, 0)
+  assert.equal(explored.result.kind, 'evolution_item')
+  assert.ok(explored.result.itemId)
+  const inventory = { ...explored.game.evolutionItems.stones, ...explored.game.evolutionItems.heldItems }
+  assert.equal(inventory[explored.result.itemId], 1)
 })
 
 test('boss warning plus protect blocks the telegraphed big move and cannot be repeated', () => {
   const day = 7200
   let game = preparedGame('m004', 45, day)
-  const boss = unlockAreaBoss(game, 1)
+  const unlocked = unlockAreaBoss(game, 1)
+  game = unlocked.game
+  const boss = unlocked.boss
   const started = startBattle(game, boss.id, { dailyCompleted: true, today: day })
   assert.equal(started.ok, true)
   const warned = structuredClone(started.battle)
@@ -164,7 +158,9 @@ test('boss warning plus protect blocks the telegraphed big move and cannot be re
 test('boss first encounter snapshot locks normal rematch while challenge rescales', () => {
   const day = 7300
   let game = preparedGame('m004', 35, day)
-  const boss = unlockAreaBoss(game, 1)
+  const unlocked = unlockAreaBoss(game, 1)
+  game = unlocked.game
+  const boss = unlocked.boss
   const first = startBattle(game, boss.id, { dailyCompleted: true, today: day })
   assert.equal(first.ok, true)
   const firstLevel = first.battle.enemy.level
@@ -241,9 +237,6 @@ test('repeat-cap simulation gives a meaningful shorter fight after roughly +20% 
     const afterDamage = Math.max(1, damageAmount(grownGame.box[grownGame.activeMonsterId], afterEnemy, move).damage)
     const beforeTurns = Math.ceil(beforeHp / beforeDamage)
     const afterTurns = Math.ceil(afterHp / afterDamage)
-    // A battle already ending in one action cannot become one turn shorter.
-    // Keep the acceptance criterion strict on every sample where a shorter
-    // fight is mathematically possible, instead of diluting it with floor hits.
     if (beforeTurns <= 1) continue
     eligible += 1
     totalBefore += beforeTurns

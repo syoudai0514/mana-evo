@@ -1,7 +1,8 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { SPECIES, STAGES, speciesOf } from '../src/game/content.js'
-import { adventureZoneProgress, evolveInstance, isAdventureZoneUnlocked, isStageUnlocked, makeMonster } from '../src/game/engine.js'
+import { adventureZoneProgress, applyXpToInstance, isAdventureZoneUnlocked, isStageUnlocked, makeMonster, xpToNext } from '../src/game/engine.js'
+import { getEvolutionTransition } from '../src/game/evolutionDomain.js'
 import { createGameState, normalizeGameState } from '../src/game/progression.js'
 
 test('stage1 level evolutions are never ready immediately at their wild-zone max level', () => {
@@ -51,14 +52,19 @@ test('evolved wild unlock requires explicit self-evolution discovery, not dex ow
   assert.equal(isStageUnlocked(game, stage), true)
 })
 
-test('evolveInstance records self-evolution discovery and save migration keeps current location', () => {
+test('actual level-up records self-evolution discovery and save migration keeps current location', () => {
   let game = createGameState()
   const instanceId = game.activeMonsterId
-  game.box[instanceId] = makeMonster('m001', SPECIES.m001.evolution.level, instanceId)
+  const transition = getEvolutionTransition('m001')
+  game.box[instanceId] = makeMonster('m001', transition.level - 1, instanceId)
   game.dex.caught.m001 = true
-  const evolved = evolveInstance(game, instanceId)
+  const evolved = applyXpToInstance(game, {
+    instanceId,
+    amount: xpToNext(game.box[instanceId].level),
+    operationId: 'progression-review:self-evolution'
+  })
   assert.equal(evolved.ok, true)
-  assert.equal(evolved.game.evolutionDiscoveries[evolved.to], true)
+  assert.equal(evolved.game.evolutionDiscoveries[transition.toSpeciesId], true)
   evolved.game.adventureLocation = { area: 1, zoneId: 'forest' }
   const normalized = normalizeGameState(evolved.game, 9999)
   assert.deepEqual(normalized.adventureLocation, { area: 1, zoneId: 'forest' })

@@ -1,9 +1,9 @@
 import {
   RUNTIME_EVOLUTION_ITEMS,
-  RUNTIME_META,
+  RUNTIME_META as GENERATED_RUNTIME_META,
   RUNTIME_MOVES,
   RUNTIME_SPECIES,
-  RUNTIME_STAGES
+  RUNTIME_STAGES as GENERATED_RUNTIME_STAGES
 } from './runtimeMaster.generated.js'
 import { WORLD_AREA_META, enrichStage, pickDailyEncounterStages } from './worldProgression.js'
 
@@ -111,9 +111,26 @@ export const EVOLUTION_ITEMS = Object.freeze({
   stones: { ...RUNTIME_EVOLUTION_ITEMS.stones, 'glow-stone': { id: 'glow-stone', name: 'ひかりのいし（旧）' } },
   heldItems: { ...RUNTIME_EVOLUTION_ITEMS.heldItems, 'bond-charm': { id: 'bond-charm', name: 'きずなのチャーム（旧）' } }
 })
+
+// W-210 canonical exposure boundary. The generated artifact still contains historical
+// acquisition metadata for traceability, but shared runtime consumers can never see
+// transition-trial stages or minAreaClears. This makes the legacy data structurally
+// non-authoritative even when the generator is re-run.
+export const RUNTIME_STAGES = Object.freeze(GENERATED_RUNTIME_STAGES
+  .filter((stage) => stage.kind !== 'evolution-trial')
+  .map((stage) => {
+    const { minAreaClears: _legacyMinAreaClears, evolutionReward: _legacyEvolutionReward, ...canonical } = stage
+    return Object.freeze(canonical)
+  }))
+export const RUNTIME_META = Object.freeze({
+  ...GENERATED_RUNTIME_META,
+  stageCount: RUNTIME_STAGES.length,
+  itemTrialCount: 0
+})
+
 const BASE_STAGES = [...RUNTIME_STAGES, ...LEGACY_STAGES]
 export const STAGES = BASE_STAGES.map((stage) => stage.legacy ? stage : enrichStage(stage, SPECIES[stage.enemySpeciesId]))
-export { RUNTIME_META, RUNTIME_STAGES, pickDailyEncounterStages }
+export { pickDailyEncounterStages }
 
 export const AREA_META = WORLD_AREA_META.filter((meta) => meta.area <= 4).map((meta) => ({ ...meta }))
 export const EX_AREA_META = { ...WORLD_AREA_META.find((meta) => meta.area === 5) }
@@ -123,5 +140,5 @@ export function moveOf(id) { return MOVES[id] || null }
 export function typeLabel(id) { return `${TYPE_META[id]?.icon || ''} ${TYPE_META[id]?.label || id}`.trim() }
 export function speciesNo(id) { return speciesOf(id)?.no || '---' }
 export function stageKindLabel(kind) {
-  return ({ wild: 'たんさく', boss: 'ボス', 'evolution-trial': 'シンカしれん', 'giga-challenge': 'ギガしれん', 'burst-challenge': 'バーストしれん', event: 'イベント', ex: 'EX' })[kind] || kind
+  return ({ wild: 'たんさく', boss: 'ボス', 'giga-challenge': 'ギガしれん', 'burst-challenge': 'バーストしれん', event: 'イベント', ex: 'EX' })[kind] || kind
 }

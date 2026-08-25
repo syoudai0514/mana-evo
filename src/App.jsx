@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { availableTicketCount, grantLearningReward } from './game/progression.js'
+import { availableTicketCount } from './game/progression.js'
+import { applyLearningQueues } from './game/sharedRuntime.js'
 import { GAME_SAVE_EVENT, loadGameForProfile, saveGameForProfile } from './game/saveStore.js'
 import { AREA_META, speciesOf } from './game/content.js'
 import { levelsUntilEvolution } from './game/engine.js'
@@ -184,21 +185,16 @@ export default function App() {
 
   useEffect(()=>{
     const rewards=learning.pendingGameRewards || []
-    if (!rewards.length) return
+    const signals=learning.pendingProgressionSignals || []
+    if (!rewards.length && !signals.length) return
     const profileId = learning.activeProfileId || 'child-1'
-    let next = loadGameForProfile(profileId)
-    next = rewards.reduce((current,reward)=>grantLearningReward(current,{
-      rewardId: reward.id,
-      ticketDelta:reward.ticketDelta||0,
-      captureItemDelta:reward.captureItemDelta||{},
-      unitMastered:!!reward.unitMastered,
-      hardMastered:!!reward.hardMastered,
-      today
-    }),next)
-    saveGameForProfile(profileId, next)
-    if (gameProfileRef.current === profileId) setGame(next)
-    learningDispatch({type:'ACK_GAME_REWARDS',ids:rewards.map(r=>r.id)})
-  },[learning.pendingGameRewards,learning.activeProfileId,learningDispatch,today])
+    const current = loadGameForProfile(profileId)
+    const applied = applyLearningQueues(current, { rewards, signals, today })
+    saveGameForProfile(profileId, applied.game)
+    if (gameProfileRef.current === profileId) setGame(applied.game)
+    if (rewards.length) learningDispatch({type:'ACK_GAME_REWARDS',ids:rewards.map((reward)=>reward.id)})
+    if (signals.length) learningDispatch({type:'ACK_PROGRESSION_SIGNALS',ids:signals.map((signal)=>signal.id)})
+  },[learning.pendingGameRewards,learning.pendingProgressionSignals,learning.activeProfileId,learningDispatch,today])
 
   const startTask=(task)=>{setActiveTask(task);setView('activity')}
   const dailyCompleted=learning.daily?.coreDone===true
