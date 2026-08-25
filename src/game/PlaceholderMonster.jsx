@@ -28,12 +28,12 @@ export default function PlaceholderMonster({ speciesId, stage = null, excited = 
   const legacyFrame = monsterSpriteFrame(speciesId)
   const officialUrl = resolvePublicAsset(species?.officialImageUrl)
   const no = Number(species?.no || 0)
-  const provisionalSvgUrl = no >= 11 && no <= 20 ? resolvePublicAsset(`/monsters/${speciesId}.svg`) : null
-  const imageSources = [officialUrl, provisionalSvgUrl].filter(Boolean)
+  const formalSvgUrl = no >= 1 && no <= 20 ? resolvePublicAsset(`/monsters/${speciesId}.svg`) : null
+  const imageSources = [formalSvgUrl, officialUrl].filter(Boolean)
   const [imageSourceIndex, setImageSourceIndex] = useState(0)
   const imageUrl = imageSources[imageSourceIndex] || null
 
-  useEffect(() => { setImageSourceIndex(0) }, [officialUrl, provisionalSvgUrl])
+  useEffect(() => { setImageSourceIndex(0) }, [officialUrl, formalSvgUrl])
 
   const fallbackStyle = useMemo(() => {
     const hue = (no * 47 + resolvedStage * 23) % 360
