@@ -2,9 +2,13 @@ import { createGameState, normalizeGameState } from './progression.js'
 
 export const GAME_SAVE_KEY = 'mana-evo-save-v2'
 export const LEGACY_GAME_SAVE_KEY = 'mana-evo-save-v1'
+export const GAME_SAVE_FORMAT_VERSION = 2
 export const GAME_SAVE_EVENT = 'manaevo:game-save-imported'
 
-const profileIdOf = (value) => String(value || 'child-1')
+function profileIdOf(value, fallback = 'child-1') {
+  const id = value == null ? '' : String(value).trim()
+  return id || fallback
+}
 
 function readJson(key) {
   try {
@@ -27,21 +31,30 @@ function writeEnvelope(envelope, { emit = false } = {}) {
   return envelope
 }
 
+export function isSupportedGameEnvelope(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return false
+  if (raw.formatVersion === GAME_SAVE_FORMAT_VERSION) {
+    return !!raw.gameByProfile && typeof raw.gameByProfile === 'object' && !Array.isArray(raw.gameByProfile)
+  }
+  return !!raw.game && typeof raw.game === 'object' && !Array.isArray(raw.game)
+}
+
 export function normalizeGameEnvelope(raw, fallbackProfileId = 'child-1') {
   const fallback = profileIdOf(fallbackProfileId)
   const source = raw && typeof raw === 'object' ? raw : {}
-  if (source.formatVersion === 2 && source.gameByProfile && typeof source.gameByProfile === 'object' && !Array.isArray(source.gameByProfile)) {
-    return {
-      formatVersion: 2,
-      gameByProfile: Object.fromEntries(
-        Object.entries(source.gameByProfile).map(([id, game]) => [profileIdOf(id), normalizeGameState(game)])
-      )
+  if (source.formatVersion === GAME_SAVE_FORMAT_VERSION && source.gameByProfile && typeof source.gameByProfile === 'object' && !Array.isArray(source.gameByProfile)) {
+    const gameByProfile = {}
+    for (const [rawId, game] of Object.entries(source.gameByProfile)) {
+      const id = profileIdOf(rawId, null)
+      if (!id) continue
+      gameByProfile[id] = normalizeGameState(game)
     }
+    return { formatVersion: GAME_SAVE_FORMAT_VERSION, gameByProfile }
   }
 
   const legacyGame = source.game && typeof source.game === 'object' ? source.game : null
   return {
-    formatVersion: 2,
+    formatVersion: GAME_SAVE_FORMAT_VERSION,
     gameByProfile: legacyGame ? { [fallback]: normalizeGameState(legacyGame) } : {}
   }
 }
@@ -75,6 +88,7 @@ export function exportGameEnvelope(fallbackProfileId = 'child-1') {
 }
 
 export function importGameEnvelope(raw, fallbackProfileId = 'child-1') {
+  if (!isSupportedGameEnvelope(raw)) throw new Error('unsupported ManaEvo game save format')
   const envelope = normalizeGameEnvelope(raw, fallbackProfileId)
   return writeEnvelope(envelope, { emit: true })
 }

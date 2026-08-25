@@ -9,6 +9,7 @@ import { serializeForExport, parseImport } from '../engine/storage.js'
 import { GRADES, MAX_GRADE, gradeOf } from '../data/grades.js'
 import { AppHeader, Starfield } from '../components/common.jsx'
 import { trialUnlocked, unitLabel } from '../engine/learningUnits.js'
+import { importKidsQuestProgress } from '../../platform/kidsQuestImport.js'
 
 function Stat({ label, value, sub }) {
   return <div className="card" style={{ flex:'1 1 135px', textAlign:'center' }}><div style={{fontSize:30,fontWeight:900}}>{value}</div><div className="muted" style={{fontWeight:800}}>{label}</div>{sub && <div className="muted" style={{fontSize:11}}>{sub}</div>}</div>
@@ -74,6 +75,20 @@ export default function ParentScreen({ onBack }) {
     catch { setMessage('⚠️ 学習データの形式を確認してください') }
   }
 
+  const importKidsQuestData = () => {
+    const result = importKidsQuestProgress(state)
+    if (result.status === 'imported') {
+      dispatch({ type:'IMPORT_STATE', data: result.state })
+      setMessage('✅ Kids Questの学習進捗を読み込みました')
+    } else if (result.status === 'already-imported') {
+      setMessage('✅ このKids Questデータは読み込み済みです')
+    } else if (result.status === 'not-found') {
+      setMessage('Kids Questの保存データがこの端末に見つかりません')
+    } else {
+      setMessage('⚠️ 対応しているKids Quest学習データではありません')
+    }
+  }
+
   return <div className="screen fade-in parent-screen"><Starfield /><AppHeader onBack={onBack} title="👨‍👩‍👧 保護者メニュー" right={<span>🔒</span>}/>
     <div className="scroll-y parent-scroll"><div className="parent-content">
       <section className="parent-control-note">
@@ -123,7 +138,7 @@ export default function ParentScreen({ onBack }) {
 
       <section><h3>💗 どうとく</h3><div className="card"><label className="row" style={{justifyContent:'space-between',gap:10}}><div><strong>高学年で「生き物の死」も扱う</strong><div className="muted" style={{fontSize:12}}>保護者がONにした場合だけ出題候補に入ります。</div></div><input type="checkbox" checked={state.settings.showLifeEndTopics} onChange={e=>setSetting('showLifeEndTopics',e.target.checked)}/></label></div></section>
 
-      <section id="parent-backup"><h3>📦 学習データひきつぎ</h3><div className="card" style={{display:'grid',gap:8}}><button className="btn btn--ghost" onClick={exportData}>📋 学習データをコピー</button><textarea value={importText} onChange={e=>setImportText(e.target.value)} placeholder="バックアップコードを貼り付け" style={{minHeight:90,borderRadius:12,padding:10}}/><button className="btn btn--ghost" disabled={!importText.trim()} onClick={importData}>⬇️ 読み込む</button>{message && <div className="muted">{message}</div>}</div></section>
+      <section id="parent-backup"><h3>📦 学習データひきつぎ</h3><div className="card" style={{display:'grid',gap:8}}><button className="btn btn--ghost" onClick={exportData}>📋 学習データをコピー</button><textarea value={importText} onChange={e=>setImportText(e.target.value)} placeholder="バックアップコードを貼り付け" style={{minHeight:90,borderRadius:12,padding:10}}/><button className="btn btn--ghost" disabled={!importText.trim()} onClick={importData}>⬇️ 読み込む</button><div className="muted" style={{fontSize:12,lineHeight:1.6}}>同じ端末のKids Questに対応する学習進捗がある場合だけ、読み取り専用でManaEvoへコピーできます。Kids Quest側の保存やモンスター・バトル状態は変更しません。</div><button className="btn btn--ghost" onClick={importKidsQuestData}>↪ Kids Questの学習進捗を読み込む</button>{message && <div className="muted">{message}</div>}</div></section>
     </div></div>
   </div>
 }
