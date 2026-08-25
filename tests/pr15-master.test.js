@@ -58,7 +58,6 @@ function readDesignCsv(name) {
 
 const growth = growthFiles.flatMap(readDesignCsv)
 const evolutions = evolutionFiles.flatMap(readDesignCsv)
-const acquisitions = readDesignCsv('14e-evolution-item-acquisition-master.csv')
 
 const rarityRank = { common: 1, rare: 2, epic: 3, legend: 4 }
 const bool = (value) => String(value).toLowerCase() === 'true'
@@ -131,23 +130,15 @@ test('all held-item evolutions have no fixed level and explicitly trigger on the
   }
 })
 
-test('all 32 item evolutions have a deterministic transition-trial acquisition row', () => {
+test('all 32 item evolutions retain canonical item parameters without making transition trials authoritative', () => {
   const itemEvolutions = evolutions.filter((row) => row.method !== 'level')
   assert.equal(itemEvolutions.length, 32)
-  assert.equal(acquisitions.length, 32)
-  const master = new Map(acquisitions.map((row) => [transitionKey(row), row]))
   for (const evo of itemEvolutions) {
-    const acquisition = master.get(transitionKey(evo))
-    assert.ok(acquisition, transitionKey(evo))
-    assert.equal(acquisition.method, evo.method)
-    assert.equal(acquisition.itemId, evo.param)
-    assert.equal(Number(acquisition.area), Number(evo.area))
-    assert.equal(acquisition.unlockMilestone, `evo-a${Number(evo.area)}`)
-    assert.equal(acquisition.unlockRule, 'area-gate+source-owned+daily-complete')
-    assert.equal(acquisition.earliestAcquisition, 'transition-trial-first-clear')
-    assert.equal(Number(acquisition.grantCount), 1)
+    assert.ok(evo.param, transitionKey(evo))
+    assert.ok(['stone', 'held_item_levelup'].includes(evo.method), transitionKey(evo))
+    assert.ok(Number(evo.area) >= 1 && Number(evo.area) <= 4, transitionKey(evo))
   }
-  assert.equal(new Set(acquisitions.map(transitionKey)).size, 32)
+  assert.equal(new Set(itemEvolutions.map(transitionKey)).size, 32)
 })
 
 test('role semantic validator flags No.142 instead of treating fastGlass metadata as runtime truth', () => {

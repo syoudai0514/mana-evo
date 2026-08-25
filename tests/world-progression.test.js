@@ -2,7 +2,8 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { AREA_META, SPECIES, STAGES, speciesOf } from '../src/game/content.js'
 import { buildEnemyPlan } from '../src/game/balance.js'
-import { evolveInstance, isStageUnlocked } from '../src/game/engine.js'
+import { applyXpToInstance, isStageUnlocked, xpToNext } from '../src/game/engine.js'
+import { getEvolutionTransition } from '../src/game/evolutionDomain.js'
 import { createGameState } from '../src/game/progression.js'
 
 test('world areas expose explicit progression bands and zones', () => {
@@ -12,18 +13,19 @@ test('world areas expose explicit progression bands and zones', () => {
   assert.ok(AREA_META.every((a) => a.zones.length === 3))
 })
 
-test('second-form wild encounter is locked until that form has been obtained by evolution', () => {
+test('second-form wild encounter is locked until that form has been obtained by own evolution', () => {
   const stage = STAGES.find((s) => s.kind === 'wild' && s.area === 1 && speciesOf(s.enemySpeciesId)?.stage === 2 && speciesOf(s.enemySpeciesId)?.evolution)
   assert.ok(stage, 'area1 should contain a non-final second form')
   assert.equal(stage.firstAcquireByEvolution, true)
   assert.equal(stage.requiresEvolutionDiscoverySpeciesId, stage.enemySpeciesId)
 
-  const predecessor = Object.values(SPECIES).find((s) => s.evolution?.to === stage.enemySpeciesId && s.evolution?.method === 'level')
-  assert.ok(predecessor, 'needs a level-evolution predecessor for the test')
+  const predecessor = Object.values(SPECIES).find((s) => getEvolutionTransition(s.id)?.toSpeciesId === stage.enemySpeciesId)
+  const transition = predecessor ? getEvolutionTransition(predecessor.id) : null
+  assert.ok(predecessor && transition?.method === 'level', 'needs a level-evolution predecessor for the test')
   const game = createGameState()
   game.box = {
     evo: {
-      instanceId: 'evo', speciesId: predecessor.id, level: predecessor.evolution.level,
+      instanceId: 'evo', speciesId: predecessor.id, level: transition.level - 1,
       xp: 0, heldItemId: null, evolutionReady: false, caughtAt: Date.now()
     }
   }
@@ -37,9 +39,13 @@ test('second-form wild encounter is locked until that form has been obtained by 
   }
   assert.equal(isStageUnlocked(game, stage), false)
 
-  const evolved = evolveInstance(game, 'evo')
+  const evolved = applyXpToInstance(game, {
+    instanceId: 'evo',
+    amount: xpToNext(game.box.evo.level),
+    operationId: 'world-progression:self-evolution'
+  })
   assert.equal(evolved.ok, true)
-  assert.equal(evolved.to, stage.enemySpeciesId)
+  assert.equal(evolved.game.box.evo.speciesId, stage.enemySpeciesId)
   assert.equal(evolved.game.dex.caught[stage.enemySpeciesId], true)
   assert.equal(evolved.game.evolutionDiscoveries[stage.enemySpeciesId], true)
   assert.equal(isStageUnlocked(evolved.game, stage), true)

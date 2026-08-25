@@ -5,15 +5,14 @@ import { CAPTURE_CONFIG, SPECIES, TYPES, typeEffectiveness } from '../src/game/c
 import {
   MAX_CAPTURE_ATTEMPTS,
   abandonBattle,
+  applyXpToInstance,
   attemptCapture,
   canAttemptCapture,
   canNormalEvolve,
   captureChance,
   clearFinishedBattle,
   currentPlayerHp,
-  evolutionConditionMet,
   evolveInstance,
-  gainXp,
   makeMonster,
   setTeam,
   startBattle,
@@ -22,6 +21,7 @@ import {
   useMove,
   xpToNext
 } from '../src/game/engine.js'
+import { getEvolutionTransition } from '../src/game/evolutionDomain.js'
 import {
   CURRENT_GAME_VERSION,
   TICKET_TTL_DAYS,
@@ -274,26 +274,35 @@ test('formal species master includes level, stone, and held-item actual-levelup 
   assert.equal(methods.has('held_item_level'), false)
 })
 
-test('generic held-item condition requires evolutionReady', () => {
-  const monster = makeMonster('m001', 10, 'g1')
-  assert.equal(evolutionConditionMet(monster, { evolution: { to: 'x', method: 'level', level: 10 } }, {}), true)
-  assert.equal(evolutionConditionMet(monster, { evolution: { to: 'x', method: 'stone', itemId: 'moon' } }, { evolutionItems: { stones: { moon: 1 } } }), true)
-  const heldSpecies = { evolution: { to: 'x', method: 'held_item_levelup', heldItemId: 'seed' } }
-  assert.equal(evolutionConditionMet({ ...monster, heldItemId: 'seed', evolutionReady: false }, heldSpecies, {}), false)
-  assert.equal(evolutionConditionMet({ ...monster, heldItemId: 'seed', evolutionReady: true }, heldSpecies, {}), true)
+test('level and held-item evolutions are not exposed as manual-ready actions', () => {
+  const game = createGameState()
+  const levelTransition = getEvolutionTransition(game.box[game.activeMonsterId].speciesId)
+  game.box[game.activeMonsterId].level = levelTransition.level
+  assert.equal(canNormalEvolve(game.box[game.activeMonsterId], game), false)
+
+  const held = makeMonster('m058', 20, 'held-check')
+  held.heldItemId = 'emberwick'
+  game.box[held.instanceId] = held
+  assert.equal(canNormalEvolve(game.box[held.instanceId], game), false)
 })
 
-test('formal level evolution preserves monster instance and follows canonical level', () => {
+test('formal level evolution fires from an actual level-up and preserves monster instance', () => {
   const game = createGameState()
   const id = game.activeMonsterId
-  assert.equal(game.box[id].speciesId, 'm004')
-  game.box[id].level = SPECIES.m004.evolution.level
-  assert.equal(canNormalEvolve(game.box[id], game), true)
-  const result = evolveInstance(game, id)
+  const transition = getEvolutionTransition(game.box[id].speciesId)
+  assert.equal(transition.method, 'level')
+  game.box[id].level = transition.level - 1
+  game.box[id].xp = 0
+  const result = applyXpToInstance(game, {
+    instanceId: id,
+    amount: xpToNext(game.box[id].level),
+    operationId: 'test-level-evolution'
+  })
   assert.equal(result.ok, true)
   assert.equal(result.game.box[id].instanceId, id)
-  assert.equal(result.game.box[id].speciesId, 'm005')
-  assert.equal(result.game.dex.caught.m005, true)
+  assert.equal(result.game.box[id].speciesId, transition.toSpeciesId)
+  assert.equal(result.game.dex.caught[transition.toSpeciesId], true)
+  assert.equal(result.game.evolutionDiscoveries[transition.toSpeciesId], true)
 })
 
 test('formal stone evolution works E2E and consumes exactly one stone', () => {
@@ -310,7 +319,7 @@ test('formal stone evolution works E2E and consumes exactly one stone', () => {
   assert.equal(evolved.game.evolutionItems.stones.thunder, undefined)
 })
 
-test('formal held-item evolution needs an actual level-up after equipping and keeps item after evolution', () => {
+test('formal held-item evolution fires on the next actual level-up and keeps item', () => {
   let game = createGameState()
   const monster = makeMonster('m058', 20, 'held-1')
   game.box[monster.instanceId] = monster
@@ -319,13 +328,13 @@ test('formal held-item evolution needs an actual level-up after equipping and ke
   game = grantEvolutionItem(game, 'held', 'emberwick', 1, 2600).game
   game = equipHeldItem(game, 'held-1', 'emberwick', 2600).game
   assert.equal(canNormalEvolve(game.box['held-1'], game), false)
-  const gained = gainXp(game.box['held-1'], xpToNext(game.box['held-1'].level))
-  assert.equal(gained.levels.length, 1)
-  assert.equal(gained.monster.evolutionReady, true)
-  game.box['held-1'] = gained.monster
-  assert.equal(canNormalEvolve(game.box['held-1'], game), true)
-  const evolved = evolveInstance(game, 'held-1')
+  const evolved = applyXpToInstance(game, {
+    instanceId: 'held-1',
+    amount: xpToNext(game.box['held-1'].level),
+    operationId: 'test-held-evolution'
+  })
   assert.equal(evolved.ok, true)
+  assert.equal(evolved.levels.length, 1)
   assert.equal(evolved.game.box['held-1'].speciesId, 'm059')
   assert.equal(evolved.game.box['held-1'].heldItemId, 'emberwick')
   assert.equal(evolved.game.box['held-1'].evolutionReady, false)
@@ -345,7 +354,7 @@ test('legacy v1 save migrates to formal IDs without stale Star Awakening fields'
   }
   const migrated = normalizeGameState(legacy, day)
   assert.equal(migrated.version, CURRENT_GAME_VERSION)
-  assert.equal(CURRENT_GAME_VERSION, 9)
+  assert.equal(CURRENT_GAME_VERSION, 10)
   assert.equal(availableTicketCount(migrated, day), 7)
   assert.equal(availableTicketCount(migrated, day + 7), 0)
   assert.equal(migrated.box[migrated.activeMonsterId].speciesId, 'm005')
