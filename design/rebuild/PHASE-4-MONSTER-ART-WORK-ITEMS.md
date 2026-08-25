@@ -1,6 +1,6 @@
 # ManaEvo Rebuild — Phase 4 Monster Art Production
 
-Status: **ACTIVE — ART STREAM**
+Status: **ACTIVE — ART STREAM / ATTRIBUTE-FIRST PLAN**
 
 Base branch: `rebuild/canonical-governance`
 
@@ -19,6 +19,7 @@ Read in order:
 8. `design/rebuild/asset-audit/W-213-MONSTER-ASSET-AUDIT.md`
 9. `design/rebuild/asset-production/W-217-MONSTER-ART-PRODUCTION-QUEUE.json`
 10. `design/rebuild/asset-production/W-217-OPERATOR-GUIDE.md`
+11. `design/rebuild/asset-reference/0822/HISTORICAL-REFERENCE-INDEX.md`
 
 Active scope is exactly `m001-m238` / 83 families. `m239` remains excluded.
 
@@ -26,6 +27,21 @@ Current approval state before Phase 4:
 - FORMAL: 0
 - CANDIDATE: 20 (`m001-m020`)
 - PLACEHOLDER: 218 (`m021-m238`)
+
+## Historical visual reference policy
+
+The user supplied `0822まとめ.zip` during Phase 4 planning. It contains 34 historical ManaEvo design/review boards, including type-grouped proposal sheets, area/whole-set review sheets, and late-number individual proposal boards around No.206-239.
+
+This is valuable **visual reference**, but is not CURRENT authority or approval evidence.
+
+Every art worker must use this sequence:
+1. CURRENT species/family identity and description first.
+2. Existing CURRENT candidate asset second, when one exists.
+3. Historical 0822 visual proposal/reference third.
+4. Preserve useful historical silhouette/palette/evolution direction when compatible with CURRENT.
+5. Regenerate only when prior art conflicts with CURRENT, fails family/type differentiation, originality, child readability, crop/background/size rules, or technical requirements.
+
+Historical names/counts/No.239 must never override CURRENT.
 
 ## Non-negotiable art rules
 
@@ -41,150 +57,186 @@ Current approval state before Phase 4:
 - File existence is not approval. CANDIDATE must never be silently promoted to FORMAL.
 - Formal approval requires explicit CURRENT approval evidence and manifest update.
 
-## Dependency plan
+## Core production decision — ATTRIBUTE FIRST
 
-Do **not** mass-generate all 238 before visual calibration.
+Phase 4 production is **not** divided by contiguous No ranges.
 
-Phase 4A first locks one representative missing-art family and the ingestion/review pipeline. After the style lock, Phase 4B runs the 12 W-217 family batches in parallel.
+Primary production/review unit is the monster's CURRENT `type` / attribute.
+
+Reason:
+- If the same type is split across unrelated workers/batches, independent workers can converge on the same elemental aura, color formula, horn/wing/ear template, body plan, or silhouette without seeing each other.
+- A single type owner can compare every family of that attribute at once and deliberately diversify motif, anatomy, palette, silhouette, effects, personality and final-form presence.
+
+Rules:
+- One attribute = one owning Work Item / art-direction owner.
+- All families of that attribute are visible to that owner together.
+- Family is never split.
+- If an attribute is large, its owner may work in internal waves, but it stays one ownership/work item and one anti-duplication matrix.
+- No two independent workers may separately establish visual language for the same attribute.
+- Before production, W-302 mechanically verifies that each active family is type-consistent. Any mixed-type family is BLOCKED for commander review instead of being silently split.
 
 ---
 
-## W-301 — Style calibration family
+## W-301 — Global style calibration / visual constitution
 
 Type: visual calibration / human-review gate
 
-Calibration family: **F008 = m022 チクリン / m023 ハリバチ / m024 クイーンザ**
-Reason: this is a complete 3-stage family with no existing per-ID candidate, so it can establish the production look without overwriting existing m001-m020 candidates.
+Purpose: lock **global rendering language**, not one monster anatomy.
 
 Required work:
-1. Resolve the exact three CURRENT description rows by speciesId and use them verbatim as constraints.
-2. Produce a single side-by-side family calibration board using native image generation.
-3. Preserve the family motif `針と女王蜂` and the personality progression.
-4. Stage progression must read clearly:
-   - m022: small proud needle, young/simple silhouette
-   - m023: visibly grown swarm-flying protector, recognizable continuity
-   - m024: imposing queen/guardian silhouette without becoming grotesque
-5. No names/text inside the art.
-6. Do not mark any asset FORMAL in this work item.
-7. Record the accepted visual-direction rules only after commander/user visual approval.
-
-Output after approval:
-- `design/rebuild/asset-production/PHASE-4-STYLE-LOCK.md`
+1. Review CURRENT art contract, existing m001-m020 candidates, and the 0822 historical reference pack.
+2. Calibrate using multiple attributes, not one type only. Minimum representative families:
+   - F001 m001-m003 — grass, existing candidate/reference
+   - F002 m004-m006 — fire, existing candidate/reference
+   - F003 m007-m009 — water, existing candidate/reference
+   - F008 m022-m024 — bug, missing CURRENT per-ID asset and useful production test
+3. Define global rules for:
+   - rendering/detail density
+   - head/body proportion range
+   - eye/face treatment range
+   - material/light treatment
+   - outline/edge treatment
+   - background/transparency
+   - amount of elemental VFX allowed
+   - stage1/middle/final escalation
+   - how dark/scary designs stay child-safe without becoming cute clones
+4. Do **not** lock one shared anatomy, ear, horn, eye, wing or limb template.
+5. Record the approved global direction in `design/rebuild/asset-production/PHASE-4-STYLE-LOCK.md` only after commander/user approval.
+6. No FORMAL promotions.
 
 Acceptance:
-- all 3 stages visibly belong to one family
-- not a recolor-only evolution
-- small-size silhouette/readability is strong
-- original character design, no specific-IP imitation
-- visual direction is reusable across different motifs without forcing one anatomy/template
+- representative families still look intentionally different
+- family continuity reads clearly within each family
+- grass/fire/water/bug do not look like recolored versions of one base creature
+- style can extend to all 18 types without forcing one silhouette
 
 ---
 
-## W-302 — Candidate ingestion / QA automation
+## W-302 — Historical-reference ingestion + attribute queue + candidate QA automation
 
 Branch: `rebuild/w-302-monster-art-ingestion`
-Type: tooling only; no art generation and no FORMAL approval
+Type: tooling/reference preparation only; no FORMAL approval
 
 Primary ownership:
-- monster-art ingestion/validation scripts
+- read-only historical-reference ingest/index
+- generated attribute-first production queue
+- candidate ingestion/validation scripts
 - art-production review ledgers/templates
 - tests for those scripts
 
 Required work:
-1. Add a deterministic operator command that accepts candidate image files keyed by `mNNN`.
-2. Validate active ID m001-m238, reject m239/unknown IDs.
-3. Validate image format/dimensions and enforce target WebP under 1 MB for repository candidate ingestion.
-4. Write candidates only to `public/monsters/mNNN.webp` (or a clearly isolated review-candidate staging path if replacing an existing candidate would destroy comparison evidence).
-5. Preserve prior candidate provenance/checksum before replacement.
-6. Generate a machine-readable review ledger containing speciesId, familyNo, stage, source candidate checksum, review status, and notes.
-7. Do not change `monster-asset-manifest.json` state to FORMAL.
-8. Provide a separate explicit command for later FORMAL promotion that refuses to run without approval evidence; do not execute that promotion in W-302.
-9. Add tests for ID/path validation, size rejection, m239 rejection, provenance preservation, and no accidental FORMAL promotion.
+1. Ingest the user-supplied `0822まとめ.zip` as **historical visual reference only** under a clearly separated reference path. Preserve source provenance. Do not present it as CURRENT asset art.
+2. Generate manageable review contact sheets/indexes so later type owners can inspect prior proposals without requiring the original chat attachment.
+3. Generate a machine-readable **attribute-first queue** directly from CURRENT description shards for active m001-m238.
+4. Validate exactly 18 CURRENT types and 83 active families; validate each family is assigned exactly once and is not split across type owners.
+5. For each type, generate:
+   - all familyNos
+   - all speciesIds
+   - existing CURRENT candidate paths
+   - historical-reference availability/index
+   - CURRENT motif/familyConcept pointers
+   - review state
+6. Add deterministic candidate ingestion keyed by `mNNN`.
+7. Validate active ID m001-m238, reject m239/unknown IDs.
+8. Enforce target WebP under 1 MB for repository candidate ingestion.
+9. Preserve old/new candidate provenance/checksum before replacement.
+10. Generate a machine-readable review ledger containing speciesId, familyNo, stage, type, checksum, review status, notes and historical-reference pointer.
+11. Do not change `monster-asset-manifest.json` to FORMAL.
+12. Provide a separate explicit later promotion command that refuses to run without approval evidence; do not execute it in W-302.
+13. Tests cover ID/path/type/family validation, m239 rejection, provenance preservation and no accidental FORMAL promotion.
 
 Acceptance:
+- later type workers need only GitHub; they do not need the original chat ZIP
 - candidate ingestion is repeatable and review-safe
-- existing candidate comparison evidence cannot be silently overwritten
+- type queue covers m001-m238 exactly once
+- same type is not split among independent art owners
 - no game/runtime rule changes
-- full tests/build remain green
 
 ---
 
-## Phase 4B batch production — starts after W-301 style lock
+## Phase 4B — 18 attribute-owned art batches
 
-Each batch follows W-217 exactly and keeps every family whole.
+Starts after W-301 style lock and W-302 attribute queue are complete.
 
-### W-303 — B01
-Families F001-F007, m001-m021. Review existing m001-m020 candidates against CURRENT; regenerate only failures. Produce missing m021 in F007 continuity. Keep old/new comparison evidence.
+Each Work Item owns **all CURRENT families of that type**. Exact membership is generated by W-302; do not hard-code No ranges from historical boards.
 
-### W-304 — B02
-Families F008-F014, m022-m042. Includes the W-301 calibration family; approved calibration output is reused, not independently redesigned.
+### W-303 — grass
+### W-304 — fire
+### W-305 — water
+### W-306 — electric
+### W-307 — normal
+### W-308 — flying
+### W-309 — bug
+### W-310 — ground
+### W-311 — rock
+### W-312 — steel
+### W-313 — poison
+### W-314 — fight
+### W-315 — fairy
+### W-316 — psychic
+### W-317 — ice
+### W-318 — ghost
+### W-319 — dark
+### W-320 — dragon
 
-### W-305 — B03
-Families F015-F021, m043-m063.
+Common W-303..W-320 rules:
+1. Read the W-302 attribute queue and take the complete attribute ownership set.
+2. Build an **attribute anti-duplication matrix before generation/review**. For every family record:
+   - motif
+   - base anatomy/body plan
+   - signature feature
+   - dominant palette
+   - silhouette category
+   - elemental VFX language
+   - personality/expression
+   - final-stage visual role
+3. Review all existing/historical proposals for the attribute side-by-side before generating replacements.
+4. Existing candidate/reference is a starting point, not disposable work.
+5. Keep useful prior visual identity when compatible with CURRENT.
+6. Generate/regenerate by family, never disconnected individual stages.
+7. Ensure unrelated families of the same type are more than recolors or aura swaps.
+8. Within a family preserve at least two continuity signals while making stage growth meaningful.
+9. Keep prior candidate when comparison is needed; preserve old/new evidence.
+10. Output remains CANDIDATE. No FORMAL promotion.
+11. Record per-species PASS / REGENERATE / BLOCKED and per-family continuity notes.
+12. Do not edit gameplay/runtime/domain rules.
 
-### W-306 — B04
-Families F022-F028, m064-m084.
-
-### W-307 — B05
-Families F029-F035, m085-m105.
-
-### W-308 — B06
-Families F036-F042, m106-m124.
-
-### W-309 — B07
-Families F043-F049, m125-m144.
-
-### W-310 — B08
-Families F050-F056, m145-m165.
-
-### W-311 — B09
-Families F057-F063, m166-m186.
-
-### W-312 — B10
-Families F064-F070, m187-m207.
-
-### W-313 — B11
-Families F071-F077, m208-m228.
-
-### W-314 — B12
-Families F078-F083, m229-m238.
-
-Common batch rules W-303..W-314:
-- Resolve each queued species row from CURRENT normalized descriptions.
-- Generate/review by **family**, never as disconnected individual monsters.
-- Preserve exact stable ID/name/family/stage/type constraints.
-- Keep prior candidate when comparison is required; do not destroy evidence.
-- Candidate output is not FORMAL approval.
-- Record per-species PASS / REGENERATE / BLOCKED and family-continuity notes.
-- Do not edit gameplay/runtime/domain rules.
+Attribute-owner acceptance:
+- every CURRENT family/species of that type handled exactly once
+- no same-type family pair reuses the same defining silhouette/template
+- palettes/VFX are not a single formula repeated across the type
+- historical designs were considered and disposition recorded: KEEP / REFINE / REGENERATE
+- small-size readability and family progression pass
 
 ---
 
-## W-315 — Cross-batch visual QA
+## W-321 — Cross-attribute visual QA
 
-Starts only after W-303..W-314 candidate production is complete.
+Starts only after W-303..W-320 candidate production is complete.
 
 Required checks across all 238:
 - ID/name mapping exact
 - 83 family continuity review
 - stage progression
-- duplicate silhouette/template detection across unrelated families
-- type-distribution visual distinctness
+- duplicate silhouette/template detection across **all types**
+- same-type diversity and cross-type distinctness
+- palette/VFX overuse
 - small-size readability
 - crop/background/text compliance
 - originality review
 - file size/path integrity
+- 0822 historical-reference disposition accounted for
 
 Output:
 - complete 238-species QA ledger
 - only PASS candidates can enter formal-approval review
-- failures return to the owning batch; do not paper over them
+- failures return to the owning **attribute** batch; do not paper over them
 
 ---
 
-## W-316 — FORMAL approval / manifest / release
+## W-322 — FORMAL approval / manifest / release
 
-Starts only after explicit CURRENT approval evidence exists for the reviewed candidates.
+Starts only after explicit CURRENT approval evidence exists for reviewed candidates.
 
 Required work:
 1. Update `design/current/monster-asset-manifest.json` per approved species with `FORMAL`, `formalAsset`, and approval evidence.
