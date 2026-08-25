@@ -59,12 +59,13 @@ test('child learning hub cannot change grade, ahead-grade unlock or hard mode', 
   assert.match(studyHub, /おうちのひとが きめるよ/)
 })
 
-test('parent controls are discoverable from home and protected by a four digit PIN gate', () => {
+test('parent entry is discoverable from Home without leaking adult settings detail and remains PIN protected', () => {
   const app = read('src/App.jsx')
   const gate = read('src/parent/ParentGate.jsx')
   const parent = read('src/kids-quest-study/screens/ParentScreen.jsx')
   assert.match(app, /parent-home-card/)
-  assert.match(app, /学年・先取り・むずかしさ・つくよみちゃん設定/)
+  assert.match(app, /おとなの せってい/)
+  assert.doesNotMatch(app, /学年・先取り・むずかしさ・つくよみちゃん設定/)
   assert.match(gate, /mana-evo-parent-pin-v1/)
   assert.match(gate, /\^\\d\{4\}\$/)
   assert.match(gate, /おとなの かくにん/)

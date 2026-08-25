@@ -59,8 +59,8 @@ test('iPhone WebKit always exposes the ring action before half HP', async ({ pag
   await installSave(page, game)
 
   await page.goto('/')
-  await expect(page.getByRole('button', { name: 'マップへ！' })).toBeVisible()
-  await page.getByRole('button', { name: 'マップへ！' }).click()
+  await expect(page.getByRole('button', { name: 'ぼうけんへ！' })).toBeVisible()
+  await page.getByRole('button', { name: 'ぼうけんへ！' }).click()
 
   const battleButtons = page.getByRole('button', { name: 'バトル！' })
   await expect(battleButtons.first()).toBeEnabled()
