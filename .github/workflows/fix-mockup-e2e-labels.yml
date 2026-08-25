@@ -1,0 +1,36 @@
+name: Fix mockup E2E labels
+
+on:
+  push:
+    branches:
+      - sol/mockup-ui-v3
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: sol/mockup-ui-v3
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Patch accessible action names
+        run: node scripts/fix-mockup-e2e-labels.mjs
+      - name: Smoke tests
+        run: |
+          npm ci
+          npm test
+          npm run build
+      - name: Commit implementation only
+        run: |
+          rm -f scripts/fix-mockup-e2e-labels.mjs .github/workflows/fix-mockup-e2e-labels.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "fix: preserve mockup action accessibility contracts" || exit 0
+          git push origin HEAD:sol/mockup-ui-v3
