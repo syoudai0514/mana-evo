@@ -2,380 +2,678 @@
 
 更新日: 2026-08-25  
 担当: Worker 3 / SOL③  
-対象runtime: `main` 2026-08-25 時点  
+対象PR: #37  
 監査branch: `rebuild/battle-capture-evolution-audit`  
-状態: **AUDIT ONLY / src・tests・既存正本は変更しない**
+状態: **PHASE 1.5 RE-AUDIT / AUDIT ONLY**  
+変更制約: **このMarkdown以外の `src/**` / `tests/**` / current design は変更しない**
+
+---
 
 ## 0. 結論
 
-この監査で、現在動いているruntimeを正本とは扱っていない。また FINAL-CORRECTED を機械的に現在仕様へ戻す判断もしていない。
+Phase 1の前回監査を、Phase 1.5 governance、司令塔による exact FINAL-CORRECTED 確認結果、回収済みユーザー明示判断、current design、runtime の順で再判定した。
 
-最重要の制約は、W-001 / PR #35 時点で `mana-evo-terra-FINAL-CORRECTED(3).zip` の実体がGitHub上から取得できず、`design/baseline/FINAL-CORRECTED/` には原本sourceが **0件** しか保存されていないこと。したがって A=FINAL-CORRECTED は、後続設計書が「FINAL-CORRECTEDから復元した」「旧原本はこうだった」と明記している箇所だけを **A-indirect** として扱う。原本未確認の項目を `SAME` に推定してはいけない。
+今回の最重要修正は次の4点。
 
-一方で、後続設計・merged PR・runtime・testsの間には強い整合がある項目が多い。特に捕獲タイミング、わ倍率、Team XP、held-item進化、通常再戦、特殊形態対象は後続のレビュー履歴が追える。
+1. **捕獲仕様は `CONFIRMED_CHANGE`。**  
+   FINAL-CORRECTED は勝利後 `CAPTURE`、HP非依存、ぎん×1.5、きん×2.0、最大3投。後続ユーザー明示判断により、現在は戦闘中HP50%以下、ほし×1.0 / ぎん×1.2 / きん×1.5 / にじ100%、非にじ92%cap、1戦3投へ変更済み。
+2. **進化アイテムの「32専用trial初回保証」は `CONFIRMED_CHANGE` ではなく `UNRESOLVED`。**  
+   exact baseline は「探索ポイント5ptで探索 / 進化アイテム20% / 地域別5連続不発後6回目に選択保証」。currentの32専用trialへの置換は実装・レビュー済みだが、その**置換そのものをユーザーが明示承認した証拠は確認できない**。
+3. **前回の2件の implementation drift は維持。**  
+   `balanceVersion` 更新後のboss snapshot再固定不全、捕獲4段階演出の時間的sequence不足はいずれも再現可能な current-intent/runtime 不一致。
+4. **ギガ/バーストの核となる数値は baseline と current が一致。**  
+   ギガ12体、バースト8体、ギガ全能力×1.35、バースト HP×2 / ATK×1.2 / 3turn、バースト技 power110 / accuracy95 は `SAME`。
 
-現時点で修正候補として確実に切り出すべき implementation drift は次の2件。
+### exact baselineの扱い
 
-1. **ボスsnapshotのbalanceVersion更新後再固定が壊れている。** `buildEnemyPlan()` は旧version snapshotを無効扱いにして新snapshotを計算するが、`startBattle()` は `existingSnapshot` が存在すると新snapshotを保存しない。そのためbalance version更新後は通常再戦のたびに再scaleし続け、「再評価した新snapshotへ固定」にならない。
-2. **捕獲4段階演出が設計より弱い。** 設計は「わ + ★★★★」の4段階アニメーションを要求するが、runtime/UIは捕獲判定で星数を一括決定し、画面では `★/☆` 状態を表示する。段階的な時間演出を保証する実装・test契約は確認できない。
+司令塔 `PHASE-1-COMMANDER-REVIEW.md` は exact archive 32ファイルを直接展開・確認済みであり、このWorkerへの再監査指示でも下記baseline事実が direct-confirmed として渡されている。
 
-これ以外にも、原本欠落またはcurrent design内の世代差により `UNRESOLVED` とした項目がある。これらは実装を正として確定してはいけない。
+一方、このWorker実行環境では archive bytes 自体はretrievableではなく、PR #35にもまだpayloadが保存されていない。そのため本監査では、**司令塔/ユーザーが exact archive 直接確認済みと明示した事項だけを A-direct-confirmed として昇格**し、それ以外のbaseline内容を推測で補完しない。
+
+この扱いにより、前回の「AはすべてA-indirect」という制約は解除するが、未確認項目を `SAME` に推定することもしない。
 
 ---
 
-## 1. 監査ルール
+## 1. governance / 証拠順位
 
-### 1.1 指定された再建governance
-
-以下を `rebuild/canonical-governance` から先に確認した。
+最初に `rebuild/canonical-governance` の以下を確認した。
 
 - `REBUILD-START-HERE.md`
+- `design/rebuild/USER-DECISION-EVIDENCE.md`
+- `design/rebuild/PHASE-1-COMMANDER-REVIEW.md`
 - `design/rebuild/DECISION-LOG.md`
-- `design/rebuild/WORK-QUEUE.md`
-- `design/rebuild/HANDOFF-TEMPLATE.md`
 
-適用した優先順位:
+適用順位:
 
-1. ユーザーの明示判断
-2. FINAL-CORRECTED baseline
-3. その後に承認された変更
-4. current design / current canonical
+1. ユーザー明示決定
+2. exact FINAL-CORRECTED baseline
+3. 原本以降の承認済み変更
+4. current canonical/design
 5. data master
 6. runtime
-7. tests / review記録
+7. tests / review / CI
 
-runtime / tests が一致していることだけでは仕様確定根拠にしない。
+実装済み・PR merge済み・CI PASSだけでは「承認済み仕様」と判定しない。
 
-### 1.2 判定ラベル
+### 判定ラベル
 
 | ラベル | 意味 |
 |---|---|
-| `SAME` | Aと後続仕様が同じと追跡でき、D/Eも整合する。Aが直接読めない場合は本文でA-indirectと明記する。 |
-| `CONFIRMED_CHANGE` | 旧仕様・旧設計から変わったが、後続の設計・レビュー・merged PR等に変更根拠がある。 |
-| `IMPLEMENTATION_DRIFT` | current intentに対してruntimeまたはtest契約がずれている。 |
-| `UNRESOLVED` | Aが取れない、Bが競合する、またはCの承認根拠が不足して一意に決められない。 |
-
-### 1.3 A〜E
-
-- **A FINAL-CORRECTED**: exact archiveは未救出。PR #35 / `design/baseline/FINAL-CORRECTED/README.md` で BLOCKED。
-- **B current design**: 主に `design/01`, `06`, `09`, `10`, `11`, `12`, `17`, `19`, `20`。同一論点では後発の明示的上書きを優先。
-- **C Git/PR/Issue**: 主に merged PR #15, #19, #22, #26, #27, #28, #29, #31, #32。関連Issue検索では独立した承認Issueは確認できなかった。
-- **D runtime**: `src/game/engine.js`, `balance.js`, `progression.js`, `content.js`, `worldProgression.js`, `GameScreens.jsx`。
-- **E tests**: `tests/game.test.js`, `balance.test.js`, `pr15-master.test.js`, `review-hardening.test.js`, `progression-review-fixes.test.js` 等。テストコードを証拠として読んだ。監査作業では既存testを変更していない。
+| `SAME` | baselineとcurrentの内容が同じと確認できる |
+| `CONFIRMED_CHANGE` | baselineから変わったが、後続ユーザー承認が確認できる |
+| `IMPLEMENTATION_DRIFT` | current intent / user decision とruntimeがずれている |
+| `UNRESOLVED` | baseline差分または後続承認のどちらかが不足し、一意に正本化できない |
 
 ---
 
-## 2. current design内の優先順位衝突
+## 2. exact FINAL-CORRECTED — 今回の直接確認済みbaseline
 
-current `design/` 自体が一枚岩ではない。以下は「古いファイルが残っている = 未決」とは扱わず、後発文書の明示的上書き関係を追った。
+重点原本:
 
-| 論点 | 古い記述 | 後発記述 | 監査判断 |
+- `08-gameplay-state-spec.md`
+- `07-wild-encounter-and-capture-design.md`
+- `06-battle-and-progression-design.md`
+- `scripts/battle.mjs`
+- `scripts/capture.mjs`
+- `scripts/forms.mjs`
+- `scripts/items.mjs`
+- `scripts/rewards.mjs`
+
+A-direct-confirmed:
+
+### 捕獲
+
+```text
+ENCOUNTERED → BATTLING → WON → CAPTURE → RESOLVED
+```
+
+- 勝利後CAPTURE方式
+- HP非依存
+- 最大3投
+- ぎんのわ ×1.5
+- きんのわ ×2.0
+
+### 特殊形態
+
+- ギガ対象 12
+- キョダイバースト対象 8
+- ギガ: 全能力 ×1.35
+- バースト: HP ×2 / ATK ×1.2 / 3turn
+- バースト技: power 110 / accuracy 95
+
+### 進化アイテム取得
+
+```text
+探索ポイント 5pt
+→ 探索
+→ 進化アイテム 20%
+→ 地域ごとに5連続不発なら
+→ 6回目は地域内の対象進化アイテムを選択保証
+```
+
+このbaseline acquisitionは、currentの「32遷移ごとの専用evolutionTrial初回クリア保証」と明確に異なる。
+
+---
+
+## 3. 回収済みユーザー明示判断
+
+`USER-DECISION-EVIDENCE.md` のうち本監査へ直接効くもの:
+
+### UDE-002 — 戦闘中捕獲と「わ」性能
+
+2026-08-24 user explicit:
+
+- 敵HP50%以下から捕獲可能
+- ほし ×1.00
+- ぎん ×1.20
+- きん ×1.50
+- にじ 100%
+- 非にじ最終成功率上限 92%
+- 1バトル最大3投
+
+→ baseline捕獲方式との競合は **ユーザー明示判断が優先**。
+
+### UDE-003 — ボス再戦は育成で楽になる
+
+- story / area boss は、育成後の通常再戦でプレイヤーが有利になれること
+- プレイヤーLvへ完全追従して成長を相殺しないこと
+
+→ boss snapshot / rematchのcurrent intent判定に使用する。
+
+### UDE-005 — 自分で育てて進化させる方向
+
+- `design/20-world-map-evolution-progression.md` 系の「自分で育てて進化させる体験」強化は方向性として承認済み
+- **ただし個々の細目まで無条件承認した証拠ではない**
+
+### 未回収として明記されている事項
+
+`USER-DECISION-EVIDENCE.md` は次を明示的に未回収としている。
+
+- baseline探索ポイント方式 → current専用進化trial
+- duplicate capture の `なかまにする / おうえんにかえる`
+- `育ちのかけら`
+
+このため、PR本文・design・runtimeが一致していてもユーザー承認へ昇格させない。
+
+---
+
+## 4. バトル再監査
+
+| 項目 | Baseline | Current intent / runtime | 再判定 |
 |---|---|---|---|
-| 通常敵の戦力基準 | `design/06`: teamとrosterを混ぜるreference | `design/11/12`: 通常敵は現在team 1〜3体のみ、BOX無視 | 後発をcurrent intentとする |
-| STAB / 乱数 / 急所 | `design/10`: STAB 1.5、damage 0.90〜1.00、通常急所あり | `design/11/12` と `01-UNRESOLVED-DECISIONS.md`: STAB 1.20、damage乱数なし、通常急所なし | 後発をcurrent intentとする |
-| held-item進化 | `design/01`: item + 必要Lv | `design/11/12/17`: 固定Lvなし、装備後の次の実LvUP | 後発をcurrent intentとする |
-| ボスsnapshotのversion更新 | `design/06`: 将来balanceVersionが変わっても既存snapshot尊重 | `design/20`（ユーザー承認済み）: balance version更新時は再評価可能 | `design/20`を優先 |
-| 第2形態wild解放 | `design/20 §9`: `requiresOwnedSpeciesId` | 同文書の後発 §12: `evolutionDiscoveries` を正とする | §12を優先。runtime/testも§12 |
-| 進化不可 | `design/01`: 原則進化、非進化は明示boss/divine例外 | `design/20`（ユーザー承認済み）: 元来の単段階種は例外としてwild GET可能 | 後発を優先 |
+| ticket消費状態遷移 | exact direct詳細は今回指示で未提示 | `startBattle()`でFEFO ticketを消費/予約、`activeBattle`へsource保持。勝利/捕獲成功は確定、敗北/明示離脱は元期限で返却、reloadはactiveBattle復帰 | `UNRESOLVED`。current契約は強いがbaseline差分とユーザー個別承認をこのWorkerでは確定できない |
+| battle開始 | exact direct詳細は今回指示で未提示 | 今日の基本学習完了 + stage解放 + ticket + activeBattleなし | `UNRESOLVED`。学習/ticket Workerのexact再監査と合わせて正本化すべき |
+| 敗北 | exact direct詳細は今回指示で未提示 | 控え生存なら強制交代、全滅でloss | `UNRESOLVED` |
+| 敗北/離脱ticket返却 | baseline差分 direct未確定 | current runtimeはexactly-once返却 + 元期限維持 | `UNRESOLVED`。runtimeを承認証拠にしない |
+| 再戦 | baseline direct詳細は今回指示で未提示 | 通常stageはsoft scale/repeat cap、story bossはsnapshot固定、challengeのみrescale | bossの「育成後に楽」はUDE-003で `CONFIRMED_CHANGE` 相当。通常stage細目は別途 provenance 要 |
+| HP/ATK/DEF/SPD | 前回復元値とcurrentは一致するが、今回A-direct明示対象外 | `statsFromBase()`の4能力式、隠しIV/EVなし | `UNRESOLVED`（exact同一性を推定しない） |
+| XP | 前回復元値とcurrentは一致するが、今回A-direct明示対象外 | `totalXp(L)=round(6*(L-1)^1.9)`, Lv100 | `UNRESOLVED`（baseline direct再引用待ち） |
+| 技 | baseline direct詳細は今回指示で未提示 | 4技 + 共通`まもる`、formal move master | `UNRESOLVED`。共通`まもる`は後続追加だが個別ユーザー承認の証拠とbaseline差分を分離して扱う |
+| タイプ | FINAL-CORRECTEDが18タイプ体系であることは後続復元と整合 | currentも18タイプ | 現行18タイプ維持。exact file-level同一性はbaseline preservation後に最終 `SAME` 固定 |
+| 同速 | direct baseline不明 | currentはplayer先手 | `UNRESOLVED` |
 
----
+### runtime確認: boss snapshot
 
-## 3. バトル監査
-
-| 項目 | A FINAL-CORRECTED | B current design | C 承認/変更根拠 | D runtime | E tests | 判定 |
-|---|---|---|---|---|---|---|
-| バトル開始条件 | exact不明 | 今日の基本学習完了、stage解放、ticket、active battleなし | PR #19/#22/#26で学習完了gate・battle開始不具合を修正 | `startBattle()` が `DAILY_NOT_COMPLETED / NO_TICKET / LOCKED_STAGE / BATTLE_ALREADY_ACTIVE` を実装 | `game.test.js` が日跨ぎ学習完了を拒否 | **UNRESOLVED**。B〜Eは一致するがAを確認できない |
-| 手持ち | exact不明 | 最大3体、active 1体、交代あり | PR #15/#31/#32が3体battleを前提 | `setTeam()` 最大3、`teamAtStart` 最大3 | 最大3体・HP保持・強制交代をtest | **UNRESOLVED**。current契約は強いがA不明 |
-| 敵編成 | exact不明 | stageごとに敵1体を基本とする実装設計 | PR #15 runtime 216 stages | `battle.enemy` は単一species | battle testsは単体enemy前提 | **UNRESOLVED**。敵party制を否定する原本根拠なし |
-| HP / 攻撃 / 防御 / 素早さ | A-indirect: `design/10` が実装前設計から復元した式として管理 | 4能力、同種同Lvは同能力、隠しIV/EV等なし | PR #15レビュー・master化 | `statsFromBase()` が同式 | `balance.test.js` がLv5/50/100を検証 | **SAME**（A-indirect。exact archiveで再確認要） |
-| 4技 | exact不明 | 1体4技。共通`まもる`は別action | PR #15で238体×4通常技 + burst8技を確定 | species `moves[4]`; burst時も4枠置換 | PR15 master / review-hardeningで4枠を固定 | **UNRESOLVED**。currentは確定だがA不明 |
-| 共通「まもる」 | baseline根拠未回収 | 100%、1行動、連続不可、ボス大技にも有効 | `design/17`で採用、PR #15 MERGE GO | `useProtect()` | PR15 runtime gateでPASS | **CONFIRMED_CHANGE**。後続レビューで採用された追加仕様 |
-| タイプ相性 | exact不明 | 18タイプ、0 / 0.5 / 1 / 2、技選択前表示 | PR #15 formal master | `typeEffectiveness()` | fire/grass, fire/water, electric/ground等をtest | **UNRESOLVED**。currentは一致、A直接証拠なし |
-| STAB・乱数・急所 | A exact不明。旧`design/10`は STAB1.5 / 0.90〜1.00乱数 / 急所1/16 | 後発 `design/11/12`: STAB1.20 / damage乱数なし / 通常急所なし | `design/11`が06/10より新しい確定差分。PR #15 merge | `damageAmount()` STAB1.2、damage乱数/critなし | current testsは周辺契約を固定 | **CONFIRMED_CHANGE**。少なくともcurrent design世代間の変更根拠あり |
-| XP曲線 / Lv上限 | A-indirect: `design/10`が復元値として `6*(Lv-1)^1.9` | 同式、Lv100 | PR #15 | `totalXpForLevel`, `xpToNext`, Lv100 cap | `game.test.js` | **SAME**（A-indirect） |
-| Battle XP配布 | baseline不明 | 開始時team最大3体へ勝利/捕獲成功で100%ずつ。捕獲個体は対象外 | `design/11/12/17`、PR #15で明示的に確定 | `awardTeamBattleXp()` | win/captureのtestあり | **CONFIRMED_CHANGE**。後続確定事項として強い |
-| 敗北 | baseline不明 | 全員戦闘不能でloss。健在控えがいれば強制交代 | PR #15 runtime gate | `resolvePlayerFaint()` | loss/needs_switch test | **UNRESOLVED**。B〜E一致、A不明 |
-| 敗北/明示離脱ticket | baseline不明 | 敗北/離脱は元期限で返却、勝利/捕獲は消費確定 | PR #15 / `design/19` MERGE GO | `refundLostBattleIfNeeded()`, `abandonBattle()` | exactly once / original expiry test | **CONFIRMED_CHANGE**。後続release gateで明示確定 |
-| 通常再戦 | A exact不明。後続レビュー前は固定/完全追従の案が混在 | current team soft scale、初回reference、repeat cap×1.10、成長時HP/DEF easing | `design/11/17/19`, PR #15 | `buildEnemyPlan()` | `balance.test.js` | **CONFIRMED_CHANGE**。PR #15でsimulationまで通した後続仕様 |
-| ボス再戦 | exact不明 | 初回snapshot、通常再戦固定、challenge再戦rescale。`design/20`はbalanceVersion更新時再評価可 | PR #15 + PR #27〜29、`design/20`はユーザー承認済み | 通常version一致時はlocked、challengeはrescale | `balance.test.js` | **IMPLEMENTATION_DRIFT**。version更新後だけ新snapshotが保存されず毎回再scaleする不具合あり（詳細§8） |
-| 同速 | exact不明 | 同速はplayer先手 | `design/12` | `playerStats.speed >= enemyStats.speed` | 専用testは未確認 | **UNRESOLVED**。A/Cが弱い |
-
----
-
-## 4. 捕獲監査
-
-| 項目 | A FINAL-CORRECTED | B current design | C 承認/変更根拠 | D runtime | E tests | 判定 |
-|---|---|---|---|---|---|---|
-| 捕獲タイミング | **A-indirect明示**: `design/10` が FINAL-CORRECTED旧案を「勝利後捕獲」と記録 | HP50%以下から戦闘中に投げる | 後日承認仕様として`design/10`自身が優先。PR #26/#31/#32 | `canAttemptCapture()` HP≤50% | HP50%以下までblock test | **CONFIRMED_CHANGE** |
-| 「わ」4種 | A-indirect: 旧原本に銀/金倍率記録あり | ほし / ぎん / きん / にじ | PR #15/#26、UI PR #31/#32 | `CAPTURE_CONFIG` 4種 | 4種の性能test | **CONFIRMED_CHANGE**。少なくとも倍率は旧原本から変更 |
-| わ倍率 | **A-indirect**: ぎん1.5 / きん2.0 | ほし1.0 / ぎん1.2 / きん1.5 / にじ100%、非にじ上限92% | `design/10/11/12`, PR #15 | `CAPTURE_CONFIG` | `game.test.js` | **CONFIRMED_CHANGE** |
-| 捕獲率の基礎式 | exact不明 | `catchRarity` とstageから `catchRank` を確定。base chanceの具体式はcurrent designで十分に正本化されていない | catchRankは`design/17` P0解消・PR #15 | `0.34 + missing*0.62 - catchRank*0.07`, clamp 0.12〜0.90、その後わ倍率 | catchRank masterは全238体test。base式そのものの定数testは弱い | **UNRESOLVED**。catchRankは確定、base chance定数はcode由来が強すぎる |
-| 最大3投 | A exact不明 | 1battle最大3投 | PR #15/#26/#31 | `MAX_CAPTURE_ATTEMPTS=3` | 4投目拒否test | **CONFIRMED_CHANGE**。戦闘中捕獲への後続変更と一体で固定 |
-| 捕獲失敗時 | Aの勝利後捕獲案とは構造的に異なる | 1turn消費し敵が行動 | 後続承認仕様、PR #26でburst turn消費も補強 | `attemptCapture()` failure → enemy action | failed capture test | **CONFIRMED_CHANGE** |
-| 捕獲演出 | exact不明 | `design/01`: 「わ + ★★★★」4段階アニメーション | UI PRは4段階表示を維持と説明 | engineは4 roll結果を一括決定、UIは`★/☆`を状態表示。時間的4段階animation契約は確認できない | animation sequencingを固定するtestなし | **IMPLEMENTATION_DRIFT** |
-| 捕獲成功後XP | baseline不明 | battle開始teamへ撃破と同額、捕獲個体はその戦闘XPなし | `design/11/12`, PR #15 | `awardTeamBattleXp()`後にcaptured生成 | rainbow capture test | **CONFIRMED_CHANGE** |
-| 捕獲成功後Mana | baseline不明 | 撃破時の50% | `design/11/12` | `floor(stage.mana/2)` | 専用定数testは弱い | **CONFIRMED_CHANGE** |
-| 捕獲個体の所属 | exact不明 | 設計上BOX/手持ち管理はあるが「手持ち3未満なら自動加入」までの明示正本は確認できず | 強い承認根拠未発見 | 捕獲時BOX追加、team<3なら自動追加 | 捕獲testはspecies登録を確認 | **UNRESOLVED**。自動加入はcode-onlyに近い |
-| 捕獲でstage clear / 初回報酬 | baseline不明 | 捕獲成功も戦闘成功として扱う後続設計 | PR #15で捕獲成功XP、PR #26以降のtrial/special reward | caught時も`stagesCleared`、evo/special first-clear rewardを処理 | snapshot等をtest | **CONFIRMED_CHANGE** |
-
----
-
-## 5. 育成・通常進化監査
-
-| 項目 | A FINAL-CORRECTED | B current design | C 承認/変更根拠 | D runtime | E tests | 判定 |
-|---|---|---|---|---|---|---|
-| 通常進化方式 | exact原本未回収 | `level / stone / held_item_levelup` の3方式 | PR #15で155遷移=123/21/11を確定 | `evolutionConditionMet()` | `pr15-master.test.js`, `game.test.js` | **UNRESOLVED**。currentは強固だがA直接確認不能 |
-| level進化 | exact不明 | 指定Lv到達でReady | PR #15 | runtime masterの`evolution.level` | E2E test | **UNRESOLVED**（方式はcurrent確定、A不明） |
-| 進化Lvのワールド補正 | 原本/旧CSVはワールドLv帯導入前 | `design/20 §12`: 第1形はwild zone max+4以上、後段は前進化+10以上。originalLevelを保持 | **ユーザー承認済み** `design/20`、merged PR #29 | generated runtimeで実効Lvを利用 | `progression-review-fixes.test.js` | **CONFIRMED_CHANGE** |
-| stone進化 | exact不明 | item 1個消費、固定Lvなし | PR #15 | `evolveInstance()`で1個消費 | E2E test | **UNRESOLVED**。current一致だがA直接不明 |
-| held-item進化条件 | `design/01`旧記述は「item + 必要Lv」 | 後発: 固定必要Lvなし。装備中の**次の実LvUP**でReady | `design/17` P0、PR #15 GO/MERGE | `gainXp()`で`evolutionReady=true` | 実LvUP必須test | **CONFIRMED_CHANGE** |
-| held item消費 | exact不明 | 進化後も装備維持 | PR #15 | `normalEvolve()`は保持 | E2E test | **UNRESOLVED**。current一致、A不明 |
-| 進化アイテム取得 | 原本exact不明。初期runtimeには固定stage案が存在 | stone21 + held11の32遷移ごとに専用trial、初回クリアで必要item 1個保証。random/課金なし | `design/11/12/17/18`, PR #15 | stage first-clear reward | `pr15-master.test.js`で32/32 | **CONFIRMED_CHANGE** |
-| trial挑戦条件 | exact不明 | area gate + source owned + 今日の基本学習完了 | PR #15 | stage unlock + battle start daily gate | acquisition master test | **CONFIRMED_CHANGE** |
-| 進化後処理 | exact不明 | instance/Lv/XP維持、species切替、図鑑登録。自力進化記録で上級wild解放 | `design/20`ユーザー承認済み、PR #29 | `evolveInstance()` | progression review test | **CONFIRMED_CHANGE**（特に`evolutionDiscoveries`） |
-| 進化不可個体 | `design/01`の一般原則は「原則進化、明示boss/divineのみ例外」 | `design/20`は元来の単段階種を例外としてwild GET可能。各family最終形は当然その先なし | `design/20`状態=ユーザー承認済み、PR #27〜29 | `species.evolution`なしを最終/単段階として扱う | 155遷移/83系列をmaster test | **CONFIRMED_CHANGE**。ただし「どの単段階種を例外にするか」のbaseline照合はW-005で再確認要 |
-| 最終進化形の通常捕獲 | 原本exact不明 | 通常wildに出さず、育成到達のごほうび。boss/試練で姿を見るのは可 | `design/20`ユーザー承認済み、PR #27〜29 | final wildはhidden/captureDisabledになるworld rule | progression tests | **CONFIRMED_CHANGE** |
-
----
-
-## 6. ギガシンカ監査
-
-### 6.1 対象12体
-
-`design/09` は対象割当を FINAL-CORRECTED の `scripts/forms.mjs` 等から復元したと明記している。exact archiveは未救出だが、これはA-indirectとして最も強い復元証拠。
-
-| No. | ID | 名前 |
-|---:|---|---|
-| 003 | m003 | ジュランガ |
-| 006 | m006 | グレンドウ |
-| 009 | m009 | ワダツラ |
-| 051 | m051 | マシュランテ |
-| 054 | m054 | メンタリオン |
-| 072 | m072 | ライテイガ |
-| 090 | m090 | センガンジ |
-| 121 | m121 | ヒョウガルド |
-| 153 | m153 | キュウビガミ |
-| 156 | m156 | ガードヴァルツ |
-| 159 | m159 | イワガミラ |
-| 186 | m186 | ニジリュウガ |
-
-**判定: `SAME`（A-indirect）**。PR #15で「再選定しない」、master testで12体・burstとのoverlap 0を固定。
-
-### 6.2 条件・取得・効果
-
-| 項目 | B/C | D/E | 判定 |
-|---|---|---|---|
-| 最終形のみ | `design/09`, PR #15 | `specialProgressionStatus().isFinal` | `SAME`相当だがA exact未確認のため **UNRESOLVED** |
-| 共通ギガキー | 永久。`design/09`は「story early」、PR #26でArea1 boss clearへ具体化 | save migration含めArea1 bossで`gigaKeyOwned`; testあり | **CONFIRMED_CHANGE**（取得地点の具体化） |
-| 種族別ギガコア | 最終進化後の専用challenge初回勝利で永久解放 | `gigaCoreSpecies[speciesId]` | **UNRESOLVED**。currentは一致、A exact取得条件未回収 |
-| 発動回数 | party全体で特殊形態1回/battle | `specialUsed` | **UNRESOLVED**。current一致、A exact不明 |
-| 効果 | 全4能力×1.35、battle終了まで、HP割合維持 | `GIGA_MULTIPLIER=1.35`, HP ratio preserve | **UNRESOLVED**。current一致、A exact数値未回収 |
-| 図鑑 | 初回発動を同一species slotへ登録 | `specialDex.giga` | **CONFIRMED_CHANGE**。PR #26で明示補強 |
-
----
-
-## 7. キョダイバースト監査
-
-### 7.1 対象8体
-
-| No. | ID | 名前 |
-|---:|---|---|
-| 060 | m060 | アカリガルド |
-| 066 | m066 | ゲンコツヅラ |
-| 133 | m133 | カイテイリオ |
-| 136 | m136 | センジュガ |
-| 142 | m142 | ヘラクレオン |
-| 165 | m165 | テラガイア |
-| 171 | m171 | フドウザン |
-| 174 | m174 | テンショウガ |
-
-`design/09`は対象ID割当をFINAL-CORRECTEDから復元したと記録し、PR #15も8体を再選定しない方針。**ID割当は `SAME`（A-indirect）**。
-
-No.142だけは旧特殊形態文書名 `カブトレクス` と238体master `ヘラクレオン` が衝突し、`design/17`でID維持・正式名ヘラクレオンへ統一した。**名称は `CONFIRMED_CHANGE`**。
-
-### 7.2 条件・効果
-
-| 項目 | B/C | D/E | 判定 |
-|---|---|---|---|
-| 最終形 + 種族別mark | 専用challenge初回勝利で永久mark | `burstMarks` + final check | **UNRESOLVED**。current一致、A exact取得条件不明 |
-| 3turn | `design/09`, PR #26 | `BURST_TURNS=3` | **UNRESOLVED**。A exact数値未回収 |
-| HP×2 / 攻撃×1.2 | `design/09` | runtime定数、UI表示 | **UNRESOLVED**。current一致、A exact数値未回収 |
-| 専用技 | 最強枠をpower110/acc95のburst技へ置換。5つ目にしない | `availableBattleMoveIds()`が4枠置換 | review-hardening test | **CONFIRMED_CHANGE**。PR #26で5枠化を明示的に避けた |
-| turn消費 | 攻撃だけでなく捕獲失敗・自主交代でも消費 | PR #26 | runtime + tests | **CONFIRMED_CHANGE** |
-| Gigaとの併用 | 1battleでparty全体1特殊形態のみ | `specialUsed` | **UNRESOLVED**。current一致、A exact不明 |
-| 図鑑 | 初回発動を同一species slotへ登録 | PR #26 | `specialDex.burst` + test | **CONFIRMED_CHANGE** |
-
----
-
-## 8. IMPLEMENTATION_DRIFT 詳細
-
-### DRIFT-1: balanceVersion更新後のboss snapshotが再固定されない
-
-**期待仕様**
-
-- 通常のboss初回挑戦でsnapshotを保存。
-- 通常再戦はそのsnapshot固定。
-- challenge再戦だけ現在戦力へrescale。
-- `design/20`（ユーザー承認済み）はbalance version更新時にsnapshotを再評価可能とする。
-
-**runtime**
-
-`balance.js` の `validBossSnapshot()` は `snapshot.balanceVersion === BALANCE_VERSION` を要求する。旧versionなら新しいboss planとsnapshotを生成する。ここまでは期待通り。
-
-しかし `engine.js/startBattle()` は概略次の条件で保存する。
+`startBattle()` は現在:
 
 ```js
-const existingSnapshot = game.bossBalanceSnapshots?.[stage.id] || null
-const balancePlan = buildEnemyPlan(... existingSnapshot ...)
+const existingSnapshot = ticket.game.bossBalanceSnapshots?.[stage.id] || null
+const balancePlan = buildEnemyPlan(..., existingSnapshot, { challenge })
 
 if (balancePlan?.snapshot && !challenge && !existingSnapshot) {
-  nextGame.bossBalanceSnapshots[stage.id] = balancePlan.snapshot
+  nextGame.bossBalanceSnapshots[stage.id] = structuredClone(balancePlan.snapshot)
 }
 ```
 
-旧version snapshotも `existingSnapshot` 自体はtruthyなので、新しく計算したsnapshotが保存されない。結果、balanceVersion更新後の通常再戦では毎回その時点の戦力から再scaleされ得る。
+`buildEnemyPlan()` 側は古い `balanceVersion` のsnapshotをinvalidとして新plan/new snapshotを生成できる。しかし `existingSnapshot` 自体はtruthyなため、**新snapshotが保存されない**。
 
-**test gap**
-
-`balance.test.js` は同一versionのsnapshot lockとchallenge rescaleは検証するが、`balanceVersion`が古い既存snapshotを渡した後に「新snapshotがsaveへ置換され、その後固定される」E2Eを検証していない。
-
-**分類: `IMPLEMENTATION_DRIFT`**
-
-再建実装フェーズでは、invalid existing snapshotの場合も新snapshotへ1回置換し、その後の通常再戦を固定する契約testが必要。
-
-### DRIFT-2: 捕獲4段階アニメーション契約が不足
-
-`design/01` は捕獲演出を「わ + ★★★★」の4段階アニメーションとしている。
-
-current runtimeは:
-
-- `attemptCapture()` が最大4 rollを一度に評価して `captureStars` を決定。
-- `GameScreens.jsx` が4個の `★/☆` を現在状態として表示。
-- CSSにcapture starの段階的sequenceを保証する定義は確認できない。
-- testsは「4段階表示」「投げるUI」までで、時間的に1→2→3→4と見せる演出を契約していない。
-
-これは確率ロジックの不整合ではなくUX演出のimplementation drift。
-
-**分類: `IMPLEMENTATION_DRIFT`**
+→ 詳細は §10 DRIFT-1。
 
 ---
 
-## 9. スター覚醒等の混入監査
+## 5. 捕獲再監査
 
-current canonicalの判断は明確。
+### 5.1 state / timing
 
-- `design/01`: 「不採用: スター覚醒 / スター覚醒用スターのかけら」
-- `design/09`: Star Awakeningを採用しない
-- `01-UNRESOLVED-DECISIONS.md`: 「スター覚醒なし」
-- PR #15: 「スター覚醒なし」
-- PR #27: 「スター覚醒（導入しない）」
-- `tests/game.test.js`: legacy saveに `starShards` / `starAwakened` があってもcurrent saveへ残さないことを検証
+Baseline:
 
-つまり、**途中runtime/旧saveにはStar Awakening系fieldが混入した履歴が実在するが、current仕様では明示的に除去済み**。
+```text
+ENCOUNTERED
+→ BATTLING
+→ WON
+→ CAPTURE
+→ RESOLVED
+```
 
-A exact archiveが未回収なので「FINAL-CORRECTEDにも絶対なかった」とまではこの監査では断定しない。ただしcurrentへ復活させる根拠はゼロで、むしろ除外根拠が複数ある。
+Current:
 
-**分類: `CONFIRMED_CHANGE`（historical contamination removal）**
+- `battle.status === fighting`
+- enemy HP > 0
+- HP ratio <= 0.5
+- 最大3投
+- 失敗時は敵turn
+- 成功時にbattleを `caught` 終了
 
-再建時に `starShards`, `starAwakened`, `gigaStones` 等のlegacy fieldを仕様として復活させない。
+**判定: `CONFIRMED_CHANGE`**
+
+後続ユーザー明示判断 UDE-002 がbaselineより優先する。
+
+### 5.2 「わ」倍率
+
+| わ | Baseline | Current | 判定 |
+|---|---:|---:|---|
+| ほし | baseline標準 | ×1.00 | current維持 |
+| ぎん | ×1.50 | ×1.20 | `CONFIRMED_CHANGE` |
+| きん | ×2.00 | ×1.50 | `CONFIRMED_CHANGE` |
+| にじ | baseline direct値は今回指示で未提示 | 100% | UDE-002によりcurrentは `CONFIRMED_CHANGE` として採用 |
+| 非にじcap | baseline direct値は今回指示で未提示 | 92% | UDE-002によりcurrentは `CONFIRMED_CHANGE` として採用 |
+
+### 5.3 最大投数
+
+- baseline: 最大3投
+- current: 最大3投
+
+**数値自体は `SAME`**。
+
+ただし「勝利後CAPTUREで3投」から「戦闘中HP50%以下で3投」へstate machineが変わっているため、捕獲全体は `CONFIRMED_CHANGE`。
+
+### 5.4 current capture formula
+
+runtime:
+
+```text
+base = clamp(0.12,
+  0.34 + missingHpRatio * 0.62 - catchRank * 0.07,
+  0.90)
+final = clamp(0.01, base * ringMultiplier, 0.92)
+```
+
+にじは1.0保証。
+
+この**base formulaの具体定数**はユーザー明示変更証拠を確認できないため、コードを正本化しない。
+
+**判定: `UNRESOLVED`**
+
+### 5.5 duplicate capture
+
+current runtime `attemptCapture()` は、同一speciesを既に所有していても:
+
+- 新しいinstanceを `box` へ追加
+- `dex.caught[speciesId]=true`
+- teamが3未満なら自動加入
+
+までを一律実行する。
+
+一方、再建証拠台帳には `なかまにする / おうえんにかえる` と `育ちのかけら` が未回収事項として残る。
+
+**判定: `UNRESOLVED`**
+
+runtimeの「常に別instanceとして仲間化」を正本へ昇格しない。反対に、未承認の `おうえんにかえる / 育ちのかけら` も勝手に復活させない。
+
+### 5.6 捕獲4段階演出
+
+current intent:
+
+- `design/01` は「わ + ★★★★」の4段階演出を要求
+- Phase 1 Commander Review もexact baseline再確認後に本件をdrift候補として維持
+
+runtime:
+
+```js
+for (const roll of samples.slice(0, 4)) {
+  if (roll <= perStarChance) stars += 1
+  else break
+}
+nextBattle.captureStars = stars
+```
+
+4判定を一括で終え、UIは最終 `captureStars` を `★/☆` として表示する。1→2→3→4の時間的sequenceを保証するstate/event/testがない。
+
+**判定: `IMPLEMENTATION_DRIFT`**
+
+確率仕様ではなくUX契約の不足。
 
 ---
 
-## 10. 分類サマリ
+## 6. 通常進化再監査
+
+### current runtimeの3方式
+
+```text
+level
+stone
+held_item_levelup
+```
+
+- `level`: 指定Lv到達
+- `stone`: stone所持、進化時1個消費
+- `held_item_levelup`: 指定item装備中の「次の実LvUP」でready
+- held itemは進化後も保持
+- 進化後もinstance/Lv/XPを維持しspeciesを切替
+
+### 判定
+
+3方式そのものについて、今回のA-direct-confirmed項目にはexact条件全文が含まれない。
+
+したがって:
+
+- 3方式の存在: current契約として確認済み
+- baselineとの完全一致: **`UNRESOLVED`**
+- `held_item_levelup` の「固定Lvなし + 次の実LvUP」: current reviewで強く固定されているが、baseline差分をユーザー承認済み変更と断定しない
+
+実装済みだからという理由で `CONFIRMED_CHANGE` へ上げない。
+
+---
+
+## 7. 進化アイテム取得 — 重要再分類
+
+### 7.1 exact baseline
+
+FINAL-CORRECTED:
+
+```text
+探索ポイント 5ptを使う
+→ 探索
+→ 進化アイテム 20%
+→ 地域別に不発回数を持つ
+→ 5連続不発後、6回目は対象アイテムを選択保証
+```
+
+### 7.2 current
+
+`design/14e-evolution-item-acquisition-master.csv` / `design/18` / PR #15:
+
+- stone 21遷移
+- held_item_levelup 11遷移
+- 計32遷移
+- transitionごとに専用 `evolutionTrial`
+- 初回クリアで必要item 1個保証
+- area gate + source species owned + 今日の基本学習完了
+- random/課金なし
+
+runtimeもstage first-clear rewardとして実装済み。
+
+### 7.3 承認証拠追跡
+
+確認したもの:
+
+- `USER-DECISION-EVIDENCE.md`
+- `PHASE-1-COMMANDER-REVIEW.md`
+- PR #15本文 / review履歴
+- `design/17`, `design/18`, `design/19`
+- 後続world/evolution承認 UDE-005 の範囲
+- 過去会話の明示判断再検索
+
+結果:
+
+- 「自分で育てて進化させる」方向は承認済み
+- PR #15で32trialは設計・実装・merge済み
+- **しかし「探索ポイント5pt + 20% + 6回目保証を廃止し、32専用trial初回保証へ置き換える」ことをユーザーが明示承認した証拠は確認できない**
+- `USER-DECISION-EVIDENCE.md` 自身もこのdeltaを未回収としている
+
+### 再判定
+
+**`UNRESOLVED`**
+
+前回監査の `CONFIRMED_CHANGE` は誤りとして訂正する。
+
+これは「current trialを即削除してbaselineへ戻す」という意味ではない。正しい次工程は、司令塔がユーザー判断または追加承認証拠を取り、探索方式 / trial方式 / 統合案のどれをcurrent canonicalにするか決めること。
+
+---
+
+## 8. ギガシンカ再監査
+
+### 8.1 対象12
+
+003 / 006 / 009 / 051 / 054 / 072 / 090 / 121 / 153 / 156 / 159 / 186
+
+- baseline exact: 12
+- current: 12
+
+**判定: `SAME`**
+
+### 8.2 効果
+
+- baseline exact: 全能力 ×1.35
+- current runtime: `GIGA_MULTIPLIER = 1.35` を HP/ATK/DEF/SPD 全てへ適用
+- battle終了まで継続
+- HP割合維持
+
+核となる倍率:
+
+**判定: `SAME`**
+
+### 8.3 取得条件
+
+current:
+
+- 最終形
+- ギガキー永久・非消費
+- 種族別ギガコア永久・非消費
+- 最終進化 → 専用challenge/boss → 勝利 → core解放
+- Area1 bossで共通ギガキー取得へ具体化
+
+過去ユーザー判断では、この「最終進化 + 専用challenge/boss + 永久非消費」のspecial-form方向は明示的に受け入れられている。
+
+ただし今回A-direct-confirmed項目にはbaseline取得条件全文がないため、baselineとの「変更/同一」までは断定しない。
+
+**current canonical status: CONFIRMED**  
+**baseline delta classification: `UNRESOLVED`**
+
+---
+
+## 9. キョダイバースト再監査
+
+### 9.1 対象8
+
+060 / 066 / 133 / 136 / 142 / 165 / 171 / 174
+
+- baseline exact: 8
+- current: 8
+
+**判定: `SAME`**
+
+No.142の表示名はcurrent 238体masterの `ヘラクレオン` へ後続統一済み。対象ID `m142` は維持。
+
+### 9.2 効果
+
+| 項目 | Baseline exact | Current runtime | 判定 |
+|---|---:|---:|---|
+| HP | ×2.0 | ×2.0 | `SAME` |
+| ATK | ×1.2 | ×1.2 | `SAME` |
+| 持続 | 3turn | 3turn | `SAME` |
+| 専用技 power | 110 | 110 | `SAME` |
+| 専用技 accuracy | 95 | 95 | `SAME` |
+
+currentは4技枠のfinisher/identity枠をburst技へ置換し、5つ目の技にはしない。
+
+この「4枠置換」は後続実装詳細なので、baseline exact同一性は別論点。
+
+### 9.3 取得条件
+
+current:
+
+- 最終形
+- 種族別 `burstMarks`
+- 最終進化 → 専用challenge/boss → 勝利 → mark永久解放
+- Giga/Burstはparty全体で1戦1特殊形態
+
+これも後続ユーザー判断でspecial-form取得方向自体は承認済み。
+
+**current canonical status: CONFIRMED**  
+**baseline delta classification: `UNRESOLVED`**
+
+---
+
+## 10. IMPLEMENTATION_DRIFT
+
+### DRIFT-1 — balanceVersion変更後boss snapshot再固定不全
+
+#### current intent
+
+- story/area bossは初回snapshotを基準に通常再戦固定
+- 育成後はプレイヤーが有利になる（UDE-003）
+- challenge再戦だけcurrent powerへrescale
+- `design/20` ではbalanceVersion更新時に旧snapshotを再評価可能
+- 再評価した場合も、その新snapshotへ**一度再固定**される必要がある
+
+#### runtime
+
+`balance.js` は旧version snapshotをinvalidと判定し、新snapshotを作る。
+
+しかし `engine.js/startBattle()` は:
+
+```js
+if (balancePlan?.snapshot && !challenge && !existingSnapshot) {
+  nextGame.bossBalanceSnapshots[stage.id] = structuredClone(balancePlan.snapshot)
+}
+```
+
+のため、invalidな旧snapshotが存在すると `existingSnapshot` がtruthyのままになり、新snapshotを保存しない。
+
+#### 結果
+
+balanceVersion更新後の通常再戦が、毎回その時点のplayer powerで再計算され得る。これは「育成で楽になる」を相殺しうる。
+
+**判定: `IMPLEMENTATION_DRIFT` — 維持**
+
+必要な後続test:
+
+1. old-version snapshotを持つsaveを用意
+2. 通常boss開始
+3. new snapshotへ置換保存
+4. playerを育成
+5. 2回目通常再戦でもnew snapshot固定
+6. challengeだけrescale
+
+### DRIFT-2 — 捕獲4段階演出のtemporal contract不足
+
+#### exact/current intent
+
+Phase 1 Commander Reviewはexact baseline再確認後も本件をdrift候補として維持。current `design/01` も4段階「わ + ★★★★」演出を要求する。
+
+#### runtime
+
+- 4 rollを1関数呼び出し内で同期評価
+- `captureStars` に最終個数だけ保存
+- UIは最終 `★/☆` を表示
+- 1→2→3→4の進行state/event/timer契約がない
+- testも時間sequenceを固定しない
+
+**判定: `IMPLEMENTATION_DRIFT` — 維持**
+
+確率計算は触らず、表示イベントを段階化する後続実装が必要。
+
+---
+
+## 11. スター覚醒再監査
+
+current design/runtimeは明確に「スター覚醒なし」。
+
+- `design/01`: 不採用
+- `design/09`: 使わない
+- `design/18`: スター覚醒なし
+- PR #15: スター覚醒なし
+- legacy saveの `starShards` / `starAwakened` はcurrentへ残さない
+- 過去ユーザー判断でもManaEvo formal featureとしてスター覚醒を採用しない方向が確認済み
+
+今回のA-direct-confirmed一覧には「FINAL-CORRECTEDにスター覚醒が存在した/しなかった」の明示確認は含まれないため、baseline差分として `SAME` / `CHANGE` を捏造しない。
+
+**current canonical status: NO STAR AWAKENING — CONFIRMED**  
+**baseline delta classification: `UNRESOLVED`**
+
+重要: `UNRESOLVED` は「スター覚醒を復活させる」という意味ではない。current user decisionが優先されるため、再建実装で `starShards`, `starAwakened`, `gigaStones` を正式仕様へ戻してはいけない。
+
+---
+
+## 12. boss snapshot再監査
+
+boss snapshotのbaseline起源そのものは、今回A-direct-confirmed項目からは最終断定しない。
+
+しかしcurrent canonical intentについてはUDE-003が十分強い。
+
+- 初見は成立させる
+- 通常再戦で育成成果を相殺しない
+- 育てれば楽になる
+
+したがって、snapshot実装のprovenanceがbaseline由来かlater design由来かにかかわらず、**現在のruntimeがこのユーザー決定を破るならimplementation drift** と判定できる。
+
+DRIFT-1はこの理由で確定維持する。
+
+---
+
+## 13. 再分類サマリ
 
 ### `SAME`
 
-- 4能力の基本Lv式 / Lv100（A-indirect）
-- XP曲線（A-indirect）
-- ギガ対象12 ID（A-indirect）
-- バースト対象8 ID（A-indirect。No.142名称のみ後続変更）
+- 捕獲最大3投という数値
+- ギガ対象12
+- バースト対象8
+- ギガ全能力×1.35
+- バースト HP×2
+- バースト ATK×1.2
+- バースト 3turn
+- バースト技 power110 / accuracy95
 
 ### `CONFIRMED_CHANGE`
 
-- STAB1.20・damage乱数なし・通常急所なしへの後発統一
-- 共通`まもる`
-- Team XP 100%
-- 敗北/離脱ticket返却
-- 通常再戦soft scale + repeat cap + mastery easing
-- 戦闘中HP50%以下捕獲
-- 4種のわの現倍率・92%cap
-- 最大3投、失敗で敵turn
-- 捕獲成功XP/Mana/first-clear処理
-- held-item「固定Lvなし + 次の実LvUP」
-- 実効進化Lvのworld補正
-- 32遷移の専用進化trial初回保証
-- `evolutionDiscoveries`
-- 単段階種例外・最終形通常wild不可
-- Giga keyのArea1 boss具体化
-- Burst技4枠置換 / failed capture・自主交代のturn消費
-- special form同一図鑑slot登録
-- No.142正式名ヘラクレオン
-- Star Awakening legacy混入の除去
+- 勝利後CAPTURE → 戦闘中HP50%以下捕獲
+- HP非依存 → HPを捕獲条件/確率へ使用
+- ぎん ×1.5 → ×1.2
+- きん ×2.0 → ×1.5
+- にじ100%
+- 非にじ92%cap
+- 捕獲失敗で敵turn
+- story/area bossを育成後の通常再戦で楽にできるcurrent intent
 
 ### `IMPLEMENTATION_DRIFT`
 
-1. balanceVersion更新後のboss snapshot再固定不全
-2. 捕獲4段階animation契約不足
+1. balanceVersion更新後boss snapshot再固定不全
+2. 捕獲4段階animationのtemporal contract不足
 
 ### `UNRESOLVED`
 
-A exact archive未救出のため、以下はcurrent B〜Eが一致していても原本同一性を断定しない。
-
-- battle開始条件
-- team 3 / enemy 1の原本由来
-- 4技・18typeの原本由来
-- 同速player先手
-- precise base capture chance定数
-- 捕獲時team空き枠への自動加入
-- 通常進化3方式そのものの原本同一性
-- stone/held itemの消費・保持の原本同一性
-- Giga/Burstのexact取得条件・倍率・turn数・party exclusivityの原本同一性（currentは内部整合）
-
----
-
-## 11. 次工程へ渡す決定要求
-
-この監査だけで仕様変更は決めない。次工程では以下の順で処理する。
-
-1. **W-001でexact FINAL-CORRECTED archiveを救出**し、本監査のA=`UNRESOLVED`を再判定する。
-2. DRIFT-1 boss snapshotは current user-approved design とruntimeの明確な不一致なので、再建実装work itemへ修正候補として送る。
-3. DRIFT-2 capture animationは確率仕様を触らず、UX実装/契約testの不足として切り出す。
-4. base capture chanceの数式定数は、コードを正本化せず、原本または承認ログが取れなければ `BLOCKED DECISION` とする。
-5. Star Awakeningはcurrentへ戻さない。exact baseline救出で記載が見つかった場合も、後続の明示的不採用判断との時系列差分として扱う。
+- ticket消費/返却stateのbaseline差分と個別承認
+- battle開始条件のbaseline差分
+- 敗北/通常再戦細目
+- stats / XP / 4技 / 同速等のexact baseline同一性
+- current base capture chanceの具体定数
+- duplicate capture（常に別instance化 vs `なかまにする / おうえんにかえる`）
+- `育ちのかけら`
+- 通常進化3方式のbaseline完全一致
+- stone / held-itemのexact baseline条件差分
+- **探索ポイント方式 → 32専用進化trial初回保証**
+- Giga/Burst取得条件のbaseline delta（currentルール自体はユーザー承認済み）
+- Star Awakeningのbaseline delta（currentは不採用CONFIRMED）
 
 ---
 
-## 12. 主要証拠一覧
+## 14. 前回監査からの訂正点
 
-### Governance / baseline rescue
+| 前回 | 今回 | 理由 |
+|---|---|---|
+| Aは全面的にA-indirect | direct-confirmed事項をA-directへ昇格 | Commanderがexact 32 filesを展開確認済み、Phase 1.5で明示事実が供給された |
+| capture timing/multiplier変更の承認根拠がPR中心 | UDE-002 user explicitを最優先 | 明示ユーザー判断を回収済み |
+| 32専用evolutionTrial = `CONFIRMED_CHANGE` | **`UNRESOLVED`** | baselineと明確に異なるが、その置換のユーザー明示承認が見つからない |
+| Giga/Burst数値はA-indirect | **`SAME`** | exact baselineで12/8と主要数値を確認済み |
+| boss driftは後続design中心 | UDE-003 user decisionでも直接支持 | 「育成で楽になる」が明示決定 |
+| capture animation drift | **維持** | exact再確認後のCommander Reviewでもretain |
+
+---
+
+## 15. 次工程へ渡す判断要求
+
+1. **進化アイテム取得方式を司令塔判断へ上げる。**  
+   baseline探索方式とcurrent trial方式を、実装済みという理由だけで決めない。
+2. **duplicate captureをcanonicalizeする。**  
+   currentの常時仲間化を正にするか、`なかまにする / おうえんにかえる / 育ちのかけら` を採用するか、承認証拠またはユーザー判断が必要。
+3. **DRIFT-1をLogic Alignment work itemへ。**  
+   invalid old boss snapshotをnew snapshotへ一度置換保存する。
+4. **DRIFT-2をUX/Logic Acceptanceへ。**  
+   capture resultを4段階時間sequenceとして実装・testする。
+5. Star Awakeningは復活させない。
+
+---
+
+## 16. 主要証拠
+
+### Governance
 
 - `REBUILD-START-HERE.md` @ `rebuild/canonical-governance`
+- `design/rebuild/USER-DECISION-EVIDENCE.md`
+- `design/rebuild/PHASE-1-COMMANDER-REVIEW.md`
 - `design/rebuild/DECISION-LOG.md`
-- `design/rebuild/WORK-QUEUE.md`
-- `design/rebuild/HANDOFF-TEMPLATE.md`
-- `design/baseline/FINAL-CORRECTED/README.md` @ `rebuild/w-001-final-corrected-baseline`
-- PR #35 `W-001: rescue FINAL-CORRECTED as immutable baseline` — exact archive unavailable / source 0件
+
+### Baseline重点原本
+
+- `08-gameplay-state-spec.md`
+- `07-wild-encounter-and-capture-design.md`
+- `06-battle-and-progression-design.md`
+- `scripts/battle.mjs`
+- `scripts/capture.mjs`
+- `scripts/forms.mjs`
+- `scripts/items.mjs`
+- `scripts/rewards.mjs`
 
 ### Current design
 
 - `design/01-catch-and-evolution-design.md`
 - `design/06-battle-and-progression-design.md`
 - `design/09-special-forms-master.md`
-- `design/10-initial-balance-master.md`
 - `design/11-battle-character-boss-review.md`
 - `design/12-detailed-balance-design-for-sol-review.md`
+- `design/14e-evolution-item-acquisition-master.csv`
 - `design/17-sol-pr15-review-amendment.md`
+- `design/18-sol-pr15-fix-resolution.md`
 - `design/19-sol-pr15-runtime-completion.md`
-- `design/20-world-map-evolution-progression.md` — 状態「正本仕様（ユーザー承認済み）」
-- `01-UNRESOLVED-DECISIONS.md`
+- `design/20-world-map-evolution-progression.md`
 
-### Git / PR
+### PR / history
 
-- PR #15: 238体正式master、battle/evolution runtime MERGE GO
-- PR #19/#22: 学習完了後のbattle gate / 日付不具合回帰
-- PR #26: capture / special forms hardening
-- PR #27/#28/#29: world progression / self evolution / effective evolution levels
-- PR #31/#32: approved UI mockup反映。ただしゲームロジックは維持
+- PR #15 — 238 master / battle / evolution runtime; 32 evolution trials implemented
+- PR #26 — capture/special-form hardening
+- PR #27/#28/#29 — world/self-evolution progression
+- PR #31/#32 — UI; game logic itself was stated as preserved
 
 ### Runtime
 
@@ -385,21 +683,14 @@ A exact archive未救出のため、以下はcurrent B〜Eが一致していて�
 - `src/game/content.js`
 - `src/game/GameScreens.jsx`
 
-### Tests
-
-- `tests/game.test.js`
-- `tests/balance.test.js`
-- `tests/pr15-master.test.js`
-- `tests/review-hardening.test.js`
-- `tests/progression-review-fixes.test.js`
-
 ---
 
-## 13. Worker handoff
+## 17. Worker handoff
 
-- 完了: A/B/C/D/Eのbattle-capture-evolution差分監査
-- 変更したもの: この監査Markdownのみ
-- 変更していないもの: `src/**`, `tests/**`, current `design/**` canonical files
-- BLOCKED INPUT: exact FINAL-CORRECTED archive
-- 実装修正は未実施
-- 次担当は `IMPLEMENTATION_DRIFT` 2件と `UNRESOLVED` 群を、baseline rescue完了後に再判定すること
+- 成果物更新: `design/rebuild/audit/battle-capture-evolution-audit.md` のみ
+- `src/**`: 変更なし
+- `tests/**`: 変更なし
+- 新規PR: 作成なし
+- 既存PR: #37を継続更新
+- exact再監査で確定した重要訂正: **専用進化trialは `UNRESOLVED`**
+- 維持drift: **boss snapshot再固定不全 / 捕獲4段階sequence不足**
