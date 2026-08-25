@@ -10,16 +10,17 @@ Engineering rebuild is complete. This phase owns the remaining formal monster-ar
 
 Read in order:
 1. `REBUILD-START-HERE.md`
-2. `design/current/00-START-HERE.md`
-3. `design/current/09-MONSTER-MASTER-ART-SPEC.md`
-4. `design/current/monster-asset-manifest.json`
-5. `design/current/monsters/descriptions-001-080.json`
-6. `design/current/monsters/descriptions-081-160.json`
-7. `design/current/monsters/descriptions-161-238.json`
-8. `design/rebuild/asset-audit/W-213-MONSTER-ASSET-AUDIT.md`
-9. `design/rebuild/asset-production/W-217-MONSTER-ART-PRODUCTION-QUEUE.json`
-10. `design/rebuild/asset-production/W-217-OPERATOR-GUIDE.md`
-11. `design/rebuild/asset-reference/0822/HISTORICAL-REFERENCE-INDEX.md`
+2. `design/rebuild/COMMANDER-HANDOFF.md`
+3. `design/current/00-START-HERE.md`
+4. `design/current/09-MONSTER-MASTER-ART-SPEC.md`
+5. `design/current/monster-asset-manifest.json`
+6. `design/current/monsters/descriptions-001-080.json`
+7. `design/current/monsters/descriptions-081-160.json`
+8. `design/current/monsters/descriptions-161-238.json`
+9. `design/rebuild/asset-audit/W-213-MONSTER-ASSET-AUDIT.md`
+10. `design/rebuild/asset-production/W-217-MONSTER-ART-PRODUCTION-QUEUE.json`
+11. `design/rebuild/asset-production/W-217-OPERATOR-GUIDE.md`
+12. `design/rebuild/asset-reference/0822/HISTORICAL-REFERENCE-INDEX.md`
 
 Active scope is exactly `m001-m238` / 83 families. `m239` remains excluded.
 
@@ -27,6 +28,24 @@ Current approval state before Phase 4:
 - FORMAL: 0
 - CANDIDATE: 20 (`m001-m020`)
 - PLACEHOLDER: 218 (`m021-m238`)
+
+## Commander gate — do not operate Phase 4 from the latest chat fragment
+
+Phase 4 is a continuation of the full rebuild, not an independent image-generation project.
+
+Before changing this plan or issuing the next attribute instruction, the commander must:
+
+1. recover the rebuild context from `design/rebuild/COMMANDER-HANDOFF.md`;
+2. classify the latest user statement as question / concern / suggestion / explicit decision;
+3. identify what is already fixed by CURRENT, STYLE-LOCK, W-302 tooling, and this attribute-first plan;
+4. distinguish a documentation/design deliverable from actual image generation and visual-review completion;
+5. confirm the current attribute Work Item has satisfied its actual production/review gate before advancing to the next attribute.
+
+A user question such as "is file placement/runtime reflection already decided?" must be answered from the existing pipeline; it is not automatically a request to redesign that pipeline.
+
+A concern such as "will quality drift across many generation batches?" must first be evaluated against the controls already present here (STYLE-LOCK, one-attribute ownership, anti-duplication matrix, family generation, review ledger, W-321 cross-attribute QA). Strengthen only a real execution gap; do not silently discard the approved architecture.
+
+---
 
 ## Historical visual reference policy
 
@@ -200,6 +219,8 @@ Common W-303..W-320 rules:
 10. Output remains CANDIDATE. No FORMAL promotion.
 11. Record per-species PASS / REGENERATE / BLOCKED and per-family continuity notes.
 12. Do not edit gameplay/runtime/domain rules.
+13. Do not mark an attribute Work Item complete merely because prompts, generation packets, review boards, or ledgers exist. If actual image production/review is part of the Work Item gate, that visual gate must actually occur.
+14. Do not advance to the next attribute solely to work around an execution environment that cannot generate or review the required images; report the capability gap to the commander instead.
 
 Attribute-owner acceptance:
 - every CURRENT family/species of that type handled exactly once
@@ -207,6 +228,7 @@ Attribute-owner acceptance:
 - palettes/VFX are not a single formula repeated across the type
 - historical designs were considered and disposition recorded: KEEP / REFINE / REGENERATE
 - small-size readability and family progression pass
+- where image production is required, generated visual output has actually been reviewed rather than inferred from design documents
 
 ---
 
