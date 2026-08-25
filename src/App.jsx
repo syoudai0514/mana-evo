@@ -5,6 +5,8 @@ import { AREA_META, speciesOf } from './game/content.js'
 import { levelsUntilEvolution } from './game/engine.js'
 import PlaceholderMonster from './game/PlaceholderMonster.jsx'
 import { AdventureFlow, MonsterScreen } from './game/GameScreens.jsx'
+import AppNavigation from './navigation/AppNavigation.jsx'
+import { isFocusedAppView, shouldShowTopLevelNavigation } from './navigation/viewOwnership.js'
 import HowToPlay from './HowToPlay.jsx'
 import ParentGate from './parent/ParentGate.jsx'
 
@@ -200,8 +202,8 @@ export default function App() {
 
   const startTask=(task)=>{setActiveTask(task);setView('activity')}
   const dailyCompleted=learning.daily?.coreDone===true
-  const navigationLocked=!!game.activeBattle
-  const focusView=['activity','free','review','trial','dictionary','parent'].includes(view)
+  const focusView=isFocusedAppView(view)
+  const showTopLevelNavigation=shouldShowTopLevelNavigation(view,{activeBattle:!!game.activeBattle})
 
   return <div className={`app-shell${focusView?' app-shell--focus':''}`}>
     {!focusView && <header className="game-header"><div className="logo"><span className="logo-gem">◆</span><b>マナ</b><strong>エボ</strong><small>まなびが、進化になる。</small></div><StatusBar game={game} today={today}/></header>}
@@ -216,6 +218,6 @@ export default function App() {
     {view==='adventure' && <AdventureFlow game={game} setGame={setGame} dailyCompleted={dailyCompleted} dailyDay={today} today={today} goHome={()=>setView('home')} goStudy={()=>setView('study')}/>} 
     {view==='monsters' && <MonsterScreen game={game} setGame={setGame} goHome={()=>setView('home')}/>} 
     {view==='howto' && <HowToPlay game={game} today={today} goHome={()=>setView('home')} goAdventure={()=>setView('adventure')} goMonsters={()=>setView('monsters')} goStudy={()=>setView('study')}/>} 
-    {!['activity','free','review','trial','dictionary','parent'].includes(view) && !navigationLocked && <nav className="game-bottom-nav"><button className={view==='home'?'active':''} onClick={()=>setView('home')}>🏰<span>ホーム</span></button><button className={view==='study'?'active':''} onClick={()=>setView('study')}>📖<span>まなぶ</span></button><button className={view==='adventure'?'active':''} onClick={()=>setView('adventure')}>🗺️<span>ぼうけん</span></button><button className={view==='monsters'?'active':''} onClick={()=>setView('monsters')}>🐾<span>モンスター</span></button><button className={view==='howto'?'active':''} onClick={()=>setView('howto')}>📜<span>あそびかた</span></button></nav>}
+    {showTopLevelNavigation && <AppNavigation view={view} onNavigate={setView} />}
   </div>
 }
