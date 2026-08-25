@@ -1,753 +1,619 @@
-# Monster / World / Progression specification drift audit
+# Monster / World / Progression specification drift audit — Phase 1.5 re-audit
 
 - Worker: SOL④ / Worker 4
 - Date: 2026-08-25
 - Repository: `syoudai0514/mana-evo`
+- PR: #38
 - Audit branch: `rebuild/w4-monster-world-progression-audit`
 - Governance base: `rebuild/canonical-governance`
-- Scope: モンスター図鑑・進化系列・ワールド・ゲーム進行の BASELINE / CURRENT DESIGN / RUNTIME / Git history 差分監査
-- Non-goal: この文書では 238 / 239、ワールド構造、学年報酬等の仕様決定・runtime修正を行わない。
+- Scope: monster master / world / wild encounter / progression / dex / BOX / team / duplicate capture provenance audit
+- Non-goal: runtime・master・testsの変更、未承認仕様の創作
 
-## 0. Governance / audit rule
+## 0. Governance and evidence rule
 
-`REBUILD-START-HERE.md`、`design/rebuild/DECISION-LOG.md`、`WORK-QUEUE.md`、`HANDOFF-TEMPLATE.md` を先に確認した。
+最初に以下を確認した。
+
+- `REBUILD-START-HERE.md`
+- `design/rebuild/USER-DECISION-EVIDENCE.md`
+- `design/rebuild/PHASE-1-COMMANDER-REVIEW.md`
+- `design/rebuild/DECISION-LOG.md`
 
 再建時の優先順位は次の通り。
 
-1. ユーザーが明示的に決めた仕様
-2. `mana-evo-terra-FINAL-CORRECTED` 原本
-3. 後続で承認された変更
-4. 現行 design
+1. ユーザーの明示決定
+2. FINAL-CORRECTED baseline
+3. 原本以降の承認済み変更
+4. current canonical design
 5. data master
 6. runtime
-7. review / CI
+7. 過去レビュー / CI
 
-したがって、現行mainやCIが動いていることだけでは「正しい仕様」の証拠にしない。
+したがって、`design/20` に「ユーザー承認済み」と書いてあること、PRがmerge済みであること、runtime/testがPASSしていることだけでは、全細目を `CONFIRMED_CHANGE` としない。
 
-### BASELINE source availability limitation
+### 0.1 exact baselineの扱い
 
-W-001 branch `rebuild/w-001-final-corrected-baseline` の `design/baseline/FINAL-CORRECTED/README.md` を確認したところ、指定原本 `mana-evo-terra-FINAL-CORRECTED(3).zip` の実体はまだ取得できておらず、原本source payload保存数は **0**、完全性は **BLOCKED** である。
+司令塔 `PHASE-1-COMMANDER-REVIEW.md` は、exact `mana-evo-terra-FINAL-CORRECTED(3).zip` を正常展開し、原本32ファイルを確認済みと記録している。その司令塔によるexact確認結果を本監査の最上位baseline evidenceとして使用する。
 
-このため本監査の BASELINE は二段階で扱う。
+一方、このWorkerセッションからは添付ZIP bytesを直接取得できず、PR #35にもまだexact payloadは保存されていない。そのため、本監査は**司令塔がexact原本で確認済みと明記した事実以上を、直接byte確認したかのようには書かない**。
 
-- **A: exact baseline bytes** — 現在未取得。W-001完了後に再照合必須。
-- **B: recovered baseline evidence** — PR #15 の検証文書・diffが、当時参照できていた `mana-evo-terra-FINAL-CORRECTED` の `scripts/families.mjs` 等を機械比較した記録。
+証拠レベル:
 
-Bは重要な証拠だが、Aの代替とはしない。
+- **E0**: `USER-DECISION-EVIDENCE.md` に回収済みのユーザー明示判断
+- **E1**: `PHASE-1-COMMANDER-REVIEW.md` のexact archive確認結果
+- **E2**: PR #15等の原 `families.mjs` 機械比較記録
+- **E3**: 後続design / PR #27 / PR #29 / runtime / tests
 
-## 1. Executive findings
+## 1. Re-audit executive findings
 
-1. PR #15 の復元検証記録は、原 `scripts/families.mjs` を flatten すると **84系列 / 239体**、No.239 は **シラユキヒメ** と明記している。
-2. 現行 design / generator / tests / runtime は **No.001〜238 / 83系列** を強制し、No.239 を除外している。
-3. Git上で追える最初の明示的な238化は、2026-08-24 16:18 JST の commit `9837c36536b032ede4246492d0f79afc231cc5a4` (`design: add 238-monster growth review index`)。ここで「No.239 シラユキヒメは元資料保全のみで、現行238体masterには含めません」と記載された。
-4. しかし同commit/PRの説明は「現行238体を対象にする」という結果を述べるだけで、**なぜ239から238へ変更する必要があったか**の理由は記録されていない。PR #15 conversationにも No.239 除外を承認するユーザーコメントは見つからなかった。
-5. No.001〜238については、PR #15 の source validation が原 `families.mjs` と **名前 / area / type / rank / role / stage / 設定 / 進化条件の不一致0件** と記録している。したがって238体の中身自体は、少なくとも当時参照できた原本から高い再現性で復元されている。
-6. 2026-08-25 の PR #27 / #29 で、ワールドは Area1〜4 + EX、各エリア入口/中盤/奥地、第2形態の初回自力進化、進化後の奥地野生解放、zone Lv帯、進化Lvのworld補正等へ大きく変更された。これらは現行designに「ユーザー承認済み」と書かれているが、GitHub PR conversation上に独立した承認コメントはないため、再建governance上は exact approval evidence の回収が必要。
-7. Kids Quest学習runtimeには年長〜小6の学年・先取り解放がある。一方、進級時の「学年報酬キャラ」付与や、学年進級でManaEvoワールドを直接解放するruntimeは確認できない。
-8. 図鑑=種族、BOX=捕獲個体、手持ち最大3体、`seen/caught`、進化系列表示という構造は、旧design snapshotと現runtimeが一致している。
+1. **239→238は `UNRESOLVED` ではない。`CONFIRMED_CHANGE`。** E1でbaselineは84系列 / 239体、No.239=`シラユキヒメ`。E0/UDE-001で2026-08-24に「現行有効master=No.001〜238、No.239は元資料に残すがゲームから除外」と明示決定済み。
+2. **84→83も同じ明示変更の直接帰結として `CONFIRMED_CHANGE`。** active範囲No.001〜238は83系列で、除外されたNo.239を含むbaseline全体は84系列だった。
+3. No.239は削除ではなく、**source/referenceには保存し、active runtime masterから除外**が正しい。
+4. 2026-08-25のUDE-005により、**「自分で育てて進化させる」ワールド/進化方向は承認済み**。特に「第2形態の初回入手を自力進化にする」「自力進化後に第2形態wildを解禁する」「最終形を通常wildのごほうびにしない」「自力進化の発見記録を持つ」という中心方針は後続承認範囲に入る。
+5. ただし、**zoneの具体Lv数値、bossの5探索clear、grade→world、学年報酬キャラ、duplicate captureの処理まで自動的に承認済みにはしない**。
+6. `area` は原本由来の制作master属性として保持する。後続の冒険配置レイヤはcurrent実装上 `adventureArea` であり、依頼文の `adventureRegion` は同概念を指すものとして監査する。field名の新規変更は行わない。
+7. duplicate captureはcurrent runtimeでは同speciesでも新instanceをBOXへ追加するだけで、原本候補として記録されている「なかまにする / おうえんにかえる」「育ちのかけら」の分岐がない。後続ユーザー承認も回収されていないため `UNRESOLVED` のまま、強い implementation-drift candidate とする。
 
 ---
 
-## 2. Audit items
+## 2. Item-by-item reclassification
 
-### 2.1 原本239体 / 84系列 → 現行238体 / 83系列
+### 2.1 239体 → 238体
 
-**BASELINE**
+**BASELINE — E1/E2**
 
-Recovered baseline evidence: `design/15-sol-review-validation-report.md` は、復元元を `mana-evo-design-v10-terra-ready` / `mana-evo-terra-FINAL-CORRECTED` の `scripts/families.mjs` 等とし、`families.mjs` flatten結果を **84系列 / 239体** と記録する。
+- exact FINAL-CORRECTED: **84系列 / 239体**。
+- No.239は `シラユキヒメ`。
+- PR #15復元記録でも原 `families.mjs` flatten = 84系列 / 239体。
 
-Exact archive bytesはW-001未完了のため未再検証。
+**LATER USER DECISION — E0**
 
-**CURRENT DESIGN**
+UDE-001:
 
-- `design/13-monster-growth-master-238.md`: No.001〜238、83系列。
-- `design/00-README.md`: No.001〜238 / 83系列を現行runtimeとして記載。
-- `design/15-sol-review-validation-report.md`: No.239を「資料保全のみでruntime候補から除外」と記載。
+- 2026-08-24 16:23:33 JST
+- 現行有効masterは **No.001〜238**。
+- No.239 `シラユキヒメ` は元資料に残すがゲームから除外。
 
-**RUNTIME**
+**CURRENT**
 
-- `scripts/generate-runtime-master.mjs` が `growth.length !== 238` をthrowし、238体を強制。
-- `tests/pr15-master.test.js` が 238体 / 83系列 / No.239不在を固定assert。
-- PR #15 final runtime completionも238 speciesを前提。
-
-**EVIDENCE**
-
-- First explicit tracked exclusion: commit `9837c36536b032ede4246492d0f79afc231cc5a4`, 2026-08-24 16:18 JST。
-- 同commit: `No.239 シラユキヒメは元資料保全のみで、現行238体masterには含めません。`
-- PR #15 merge commit: `6ae781bf041a5c3f6685846a753f7aac7c76e09f`, 2026-08-24。
-- PR #15 bodyは「No.239 runtime混入0」を合格条件としている。
-- PR #15 merged conversation内に `239` の変更理由・承認コメントは見つからない。
-- GitHub issue検索でも239変更理由を示すissueは見つからない。
-- 記録されている「理由」は「現行ManaEvoの有効範囲はNo.001〜238」という自己参照的説明であり、239→238変更の根拠ではない。
+- growth master / generator / tests / runtimeは238を固定。
 
 **CLASSIFICATION**
 
-`UNRESOLVED`
+`CONFIRMED_CHANGE`
 
-**RECOMMENDATION**
+**CANONICAL IMPLICATION**
 
-- 238/239をこの監査で決めない。
-- W-001でexact `FINAL-CORRECTED` を救出後、`scripts/families.mjs` と関連dex資料を再計数する。
-- その後、239除外を明示承認した会話/decisionの証拠が回収できなければ、ユーザー決定事項として238/239を改めて解決する。
-- 解決まで現行runtimeの238を「暫定実装状態」として扱い、canonical決定とは扱わない。
+238体をactive masterとする。239を戻す判断は不要。baseline archive/referenceには239を保持する。
 
-### 2.2 No.239 シラユキヒメ
+### 2.2 84系列 → 83系列
 
-**BASELINE**
+**BASELINE — E1/E2**
 
-Recovered evidenceでは No.239 `シラユキヒメ` が原 `families.mjs` に存在した。
+- exact baseline: 84系列。
+- No.001〜238 active data: 83系列。
 
-**CURRENT DESIGN**
+**E0**
 
-`design/13` / `design/15` は名前のみ資料保全し、active masterから除外。
-
-**RUNTIME**
-
-generator / testsとも `m239` を許容しない。画像・stage・dex registryにもactive entryなし。
-
-**EVIDENCE**
-
-PR #15で除外されたことは追跡できるが、削除理由・ユーザー承認のGit証拠は見つからない。
+UDE-001がactive masterをNo.001〜238へ限定している。
 
 **CLASSIFICATION**
 
-`UNRESOLVED`
+`CONFIRMED_CHANGE`
 
-**RECOMMENDATION**
+**CANONICAL IMPLICATION**
 
-原本救出後に No.239 の family / area / type / role / stage / encounter / evolution / boss/event性を実物から回収し、その情報を見てから採否を決定する。現時点で新規創作して戻さない。
+active runtimeは83系列。baseline/referenceは84系列を保全する。
 
-### 2.3 No.001〜238 の各進化系列
+### 2.3 No.239 シラユキヒメ
 
-**BASELINE**
+**BASELINE — E1**
 
-PR #15 validationは、原 `families.mjs` とNo.001〜238を比較し、`stage / maxStage / evolution method / evolution param` を含む不一致 **0件** と記録。
+司令塔exact確認:
 
-**CURRENT DESIGN**
+- No.239 = `シラユキヒメ`
+- Area4
+- ice系
+- special-event completed entity
 
-83系列、155進化。内訳 level 123 / stone 21 / held_item_levelup 11。
+**E0**
 
-**RUNTIME**
-
-`generate-runtime-master.mjs` が155遷移を読み込み、`tests/pr15-master.test.js` が件数・方式をassert。
-
-**EVIDENCE**
-
-`design/15-sol-review-validation-report.md` §3, §8。
+UDE-001でゲームから除外、元資料には残すと明示決定。
 
 **CLASSIFICATION**
 
-`SAME`
+`CONFIRMED_CHANGE`
 
-**RECOMMENDATION**
+**CANONICAL IMPLICATION**
 
-No.001〜238の系列構造は維持候補。ただしW-001 exact baseline取得後に全155遷移を再照合する。84系列目は別項目として未解決のままにする。
+- source/reference: retain
+- active species registry / dex target / runtime encounter / image required scope: exclude
+- 「存在しなかったこと」にして原本から削除しない
 
-### 2.4 84系列目
+### 2.4 No.001〜238の系列・進化・source area
 
-**BASELINE**
+**BASELINE — E2**
 
-Recovered evidenceでは84系列存在。
+PR #15 validationはNo.001〜238について原 `families.mjs` と以下を比較し、不一致0件:
 
-**CURRENT DESIGN**
+- No / name
+- `area`
+- type
+- source rank / role
+- stage / maxStage
+- motif / concept / description
+- evolution method / param
 
-83系列のみactive。
+**CURRENT**
 
-**RUNTIME**
-
-83系列固定test。
-
-**EVIDENCE**
-
-239除外と同時に84→83となっている。84系列目の詳細はexact archive未救出のため、このrepo内だけでは完全復元できない。
-
-**CLASSIFICATION**
-
-`UNRESOLVED`
-
-**RECOMMENDATION**
-
-No.239のexact family定義を原本から回収してから判断。
-
-### 2.5 18タイプ
-
-**BASELINE**
-
-PR #15 validationはNo.001〜238について原 `families.mjs` の `type` 照合不一致0件とし、active dataに18タイプすべて存在すると記録。
-
-**CURRENT DESIGN**
-
-18タイプ。
-
-**RUNTIME**
-
-`src/game/content.js` に normal / fire / water / electric / grass / ice / fighting / poison / ground / flying / psychic / bug / rock / ghost / dragon / dark / steel / fairy の18種。`tests/pr15-master.test.js` も18をassert。
-
-**EVIDENCE**
-
-Source comparison + current runtime/testが一致。
+83系列 / 155進化遷移。
 
 **CLASSIFICATION**
 
 `SAME`
 
-**RECOMMENDATION**
+**NOTE**
 
-維持候補。No.239のtypeのみ原本救出後に追加確認。
+238というactive範囲自体は2.1の `CONFIRMED_CHANGE`。その範囲内の元データ内容はbaseline一致。
 
-### 2.6 制作上のarea配置
+### 2.5 `area` と `adventureArea` / `adventureRegion`
+
+**BASELINE — E2**
+
+制作masterの `area` はNo.001〜238で原資料と一致。
+
+**LATER DESIGN — E3**
+
+`design/20` は、制作管理上の `area` とゲーム内配置 `adventure area / zone` を分離する方針を導入。
+
+**USER APPROVAL — E0**
+
+UDE-005は「自分で育てて進化させる」world/zone方向を後続承認済みとする。
+
+**CLASSIFICATION**
+
+- source `area` を保持: `SAME`
+- 冒険配置を別レイヤで持てるという方針: `CONFIRMED_CHANGE`
+- 個別speciesの全 relocation map: `UNRESOLVED` detail（design記載だけで全件承認とはしない）
+
+**NOTE**
+
+current code fieldは `adventureArea`。`adventureRegion` という別fieldを新設する根拠はない。
+
+### 2.6 Area1〜4 / EX
 
 **BASELINE**
 
-PR #15 validationはNo.001〜238の `area` を原 `families.mjs` と照合し、不一致0件。
+- production monster dataはArea1〜4を持つ。
+- exact archiveのEX位置付けについて、司令塔reviewの要約だけでは「独立第5area / event / postgame」の細目まで確認できない。
 
-**CURRENT DESIGN**
+**LATER DESIGN**
 
-growth masterのproduction `area` は保持。一方 `design/20` はproduction areaと実際の `adventureArea / zone` を分離可能とした。
+`design/20`:
 
-**RUNTIME**
+- Area1〜4 + EX
+- EXはやりこみ領域
 
-`worldProgression.js` は `sourceArea: stage.area` を保持しつつ、A1の第2形態をAdventure A3奥地、A2の第2形態をA4奥地へ送る等、別の `adventureArea` を付加する。
+**E0**
 
-**EVIDENCE**
+UDE-005でworld方向の承認は回収済み。
 
-- 原area値保存: `design/15` source comparison。
-- 冒険配置変更: PR #27 / `src/game/worldProgression.js`。
+**CLASSIFICATION**
+
+- Area1〜4を基本worldとすること: `SAME`
+- EXを後続world体験として持つ方向: `CONFIRMED_CHANGE`
+- EXの厳密なunlock条件・第5areaとしての内部表現: `UNRESOLVED` detail
+
+### 2.7 入口 / 中盤 / 奥地
+
+**LATER DESIGN / PR TIMELINE — E3**
+
+- PR #27: 各Areaを入口 / 中盤 / 奥地へ分割。
+- PR #29: 入口→中盤→奥地の順次解放を追加。
+
+**E0**
+
+UDE-005はworld / zone / evolution directionに加え、2026-08-25 10:25 JSTに再レビュー修正の実装継続承認を記録。
+
+**CLASSIFICATION**
+
+- 3zone構造と順次進む方向: `CONFIRMED_CHANGE`
+- 「前zoneの野生2ステージ初回clear」という**具体数2**: `UNRESOLVED` detail
+
+理由: UDE-005は方向性承認の証拠として強いが、数値2を直接引用したユーザー決定までは証拠台帳に固定されていない。
+
+### 2.8 zone Lv帯
+
+**LATER DESIGN**
+
+現行 `design/20`:
+
+- Area1 5–22
+- Area2 18–38
+- Area3 32–58
+- Area4 50–80
+- EX 70–100
+
+敵Lvをzone範囲でclampし、過去areaへ戻れば育成分だけ楽になる方向。
+
+**E0**
+
+UDE-005とUDE-003は、育成で過去敵/ボスが楽になる方向を支持する。
+
+**CLASSIFICATION**
+
+- **zoneごとにLv帯を持ち、完全追従させない方針**: `CONFIRMED_CHANGE`
+- 上記5組の**具体min/max数値**: `UNRESOLVED`
+
+数値はcurrent design/runtimeが一致していても、それだけでユーザー明示承認とはしない。
+
+### 2.9 ボス解放 / world unlock
+
+**BASELINE — canonical evidence**
+
+`USER-DECISION-EVIDENCE.md` の未回収項目は、baseline boss unlockを「地域別学習進行12pt + unique skill 2」と記録している。
+
+**CURRENT**
+
+- boss: `minAreaClears=5`
+- next area: previous area boss clear
+- zone: previous zone clear数
+- EX: Area1〜4 boss clear
+
+**E0**
+
+- UDE-005はworld方向を承認。
+- しかし同じ `USER-DECISION-EVIDENCE.md` は、**原本の12pt + unique skill 2 → current 5探索clearとの差を未回収・要継続調査**として明示的に残している。
+
+**CLASSIFICATION**
+
+- boss撃破で次areaへ進む基本方向: `SAME` / 維持候補
+- boss解放を「5探索clear」に変えること: `UNRESOLVED`
+- EXを4boss clearで開ける具体条件: `UNRESOLVED`
+
+ここは `design/20` の「ユーザー承認済み」表記だけで `CONFIRMED_CHANGE` に上げない。
+
+### 2.10 第1形態 wild
+
+**BASELINE / RECOVERED MASTER**
+
+原masterの `wildCatchable / encounterPool` をNo.001〜238で復元。第1形態を通常探索の中心にする構造と矛盾しない。
+
+**CURRENT / LATER**
+
+第1形態は通常wild、単段階完成種は例外としてwild可能。
 
 **CLASSIFICATION**
 
 `SAME`
 
-**RECOMMENDATION**
+**CAUTION**
 
-production area field自体は維持候補。冒険配置の後続変更は次項で別判定する。
+「全stage1を無条件wild」とはしない。原masterのevent/boss/completed entity指定を優先する。
 
-### 2.7 Area1〜4 / EX
+### 2.11 第2形態 — 初回は自力進化
 
 **BASELINE**
 
-Recovered source dataはproduction Area1〜4を持つ。EXを独立「第5の冒険area」とするexact baseline証拠は、原本未救出のため未確認。
+原masterにはwild/evolutionOnly区分があるが、currentの「全対象で初回自力進化を強制するgate」は後続強化。
 
-**CURRENT DESIGN**
+**E0**
 
-`design/20`: Area1 Lv5–22 / Area2 18–38 / Area3 32–58 / Area4 50–80 / EX 70–100。
+UDE-005の承認対象の中心は「自分で育てて進化させる体験」を強化すること。
 
-**RUNTIME**
+**LATER DESIGN**
 
-`worldProgression.js` は内部 `WORLD_AREA_META` にarea 1〜5を持ち、5を `EX いせかい` とする。通常UIはArea1〜4とEXを分けて表示。EXは4ボス全クリア後解放。
-
-**EVIDENCE**
-
-PR #27で明示的に現構造を導入。PR body / design本文は「当初設計思想を戻す」と記載するが、exact baseline bytesなし。
+第2形態の初回入手は自力進化限定。
 
 **CLASSIFICATION**
 
-`UNRESOLVED`
+`CONFIRMED_CHANGE`
 
-**RECOMMENDATION**
+これはUDE-005の方向性そのものに含まれる。
 
-Area1〜4は強い維持候補。EXの位置付け（独立area / event / postgame）を原本と再比較してcanonicalizeする。
+### 2.12 自力進化後、第2形態wild解禁
 
-### 2.8 入口 / 中盤 / 奥地
+**LATER DESIGN**
 
-**BASELINE**
+一度自力進化したspeciesのみ、上級/奥地wildで再遭遇可能。
 
-Exact baseline未確認。
+**E0**
 
-**CURRENT DESIGN**
-
-各Area1〜4を入口/中盤/奥地の3段階とする。中盤は入口野生2初回クリア、奥地は中盤野生2初回クリア。
-
-**RUNTIME**
-
-`WORLD_AREA_META` が各エリア3zonesを保持。`adventureZoneProgress()` が前zoneの野生2clearを要求。
-
-**EVIDENCE**
-
-PR #27で3zone構造、PR #29で2clearの逐次gateを追加。両PRのconversationに独立したユーザー承認コメントはない。`design/20` 自身は「ユーザー承認済み」と記載。
+UDE-005のaffected scopeにworld / zone / evolution discoveryが明示されている。
 
 **CLASSIFICATION**
 
-`UNRESOLVED`
+`CONFIRMED_CHANGE`
 
-**RECOMMENDATION**
+**DETAIL**
 
-実装品質の問題ではなくcanonical approval証拠の問題。原本比較＋当時のユーザー承認ログを回収し、確認できた場合のみ `CONFIRMED_CHANGE` へ昇格。
+A1系列をA3奥地、A2系列をA4奥地へ送る等の**全個別mapping**は2.5と同様に `UNRESOLVED` detail。
 
-### 2.9 通常野生出現
+### 2.13 最終形 wild不可
 
-**BASELINE**
+**BASELINE / recovered evidence**
 
-PR #15 validationは原資料と `encounterPool / wildCatchable / capturePolicy` を含むNo.001〜238の設定を復元し、active masterで wild 155 / evolutionOnly 79 / event完成個体4 と記録。
+後続復元文書は「当初設計から維持・復活」と明記し、原masterのwild/evolutionOnly区分とも整合。
 
-**CURRENT DESIGN**
+**E0**
 
-第1形態は通常wild。単段階種は例外としてwild可。第2形態は自力進化後のみ奥地wild。最終形は通常wild不可。
-
-**RUNTIME**
-
-Generatorはmasterの `wildCatchable` からwild stageを作り、その後 `worldProgression.js` が形態別に表示/gateを上書きする。
-
-**EVIDENCE**
-
-元のwildCatchableデータは保存されている一方、動的gate/relocationはPR #27/#29の後続レイヤ。
-
-**CLASSIFICATION**
-
-`UNRESOLVED`
-
-**RECOMMENDATION**
-
-「どの種がwild候補か」と「いつ/どこでwild表示するか」を分離してcanonicalizeする。前者はsource一致の維持候補、後者は後続変更として承認確認が必要。
-
-### 2.10 第2形態の野生
-
-**BASELINE**
-
-Exact baselineの出現タイミング・地域gateは未再取得。原masterのwildCatchable自体はNo.001〜238で復元一致。
-
-**CURRENT DESIGN**
-
-初回入手は必ず自力進化。一度自力進化したspeciesだけ、奥地で同形態wildを解禁。
-
-**RUNTIME**
-
-- `requiresEvolutionDiscoverySpeciesId`
-- `evolutionDiscoveries`
-- `evolveInstance()` 成功時に記録
-- `isStageUnlocked()` がその記録を要求
-- `tests/world-progression.test.js` が自力進化前lock / 後unlockをassert
-
-**EVIDENCE**
-
-PR #27で導入、PR #29で `dex.caught` ではなく専用 `evolutionDiscoveries` へ強化。
-
-**CLASSIFICATION**
-
-`UNRESOLVED`
-
-**RECOMMENDATION**
-
-ゲーム思想としては現行「自分で育てて進化」に整合するが、baseline差分としてはapproval証拠回収待ち。仕様は勝手に戻さない/固定しない。
-
-### 2.11 最終形態の野生
-
-**BASELINE**
-
-後続designは「当初設計の最終形野生不可を復活」と明記。PR #15復元masterも `wildCatchable / encounterPool` を原資料から保持している。
-
-**CURRENT DESIGN**
-
-最終進化形は通常wildに出さない。ボス等で見ることはあっても通常捕獲不可。
-
-**RUNTIME**
-
-`worldProgression.js` が `hidden=true`, `captureDisabled=true`, `finalEvolutionOnly=true`。world testで違反0をassert。
-
-**EVIDENCE**
-
-Baselineのexact bytesは未取得だが、PR #27が「復活」と明記し、原master比較記録とも矛盾しない。
+UDE-005はfinal-form wild policyをaffected scopeとして回収済み。
 
 **CLASSIFICATION**
 
 `SAME`
 
-**RECOMMENDATION**
+**CANONICAL IMPLICATION**
 
-維持候補。W-001後に `wildEncounter.mjs` で最終確認。
+通常探索で最終形を捕獲させない。ボス/強敵として姿を見ることと、通常wild捕獲は分ける。
 
-### 2.12 ボス / ボス解放条件
+### 2.14 `evolutionDiscoveries`
+
+**PR TIMELINE**
+
+- PR #27: 初回自力進化後wild解禁を導入。
+- PR #29: `dex.caught` ではなく専用 `evolutionDiscoveries` へ変更。
+
+**E0**
+
+UDE-005は「自力進化方向」および evolution discovery をaffected scopeに含め、再レビュー修正の実装継続承認も記録。
+
+**CLASSIFICATION**
+
+`CONFIRMED_CHANGE`
+
+**CANONICAL IMPLICATION**
+
+「捕まえたこと」と「自分で進化させたこと」を別記録にする。単なる `dex.caught` 代用へ戻さない。
+
+### 2.15 学年 / 先取り と world
 
 **BASELINE**
 
-Recovered principleとして「ボス撃破で次エリア解放」が `design/20` に「当初設計から維持・復活」と記録。exact unlock countは未確認。
+Kids Quest由来の学年・先取りは存在するが、gradeとManaEvo world unlockをどう結合するかは、司令塔exact要約と回収済みユーザー判断だけでは確定できない。
 
-**CURRENT DESIGN**
+**CURRENT**
 
-各Area1〜4にarea boss。大量図鑑埋めではなく、当面5探索clearでboss解放。boss撃破で次area解放。
+- 学年解放: Kids Quest learning side
+- world unlock: boss / route side
+- current `isStageUnlocked()` はgradeを参照しない
 
-**RUNTIME**
+**E0**
 
-- `worldProgression.js`: area bossの `minAreaClears=5`
-- `isStageUnlocked()`: `areaGateBossId` と `minAreaClears`
-- `GameScreens.jsx`: next areaは前area boss clearでunlock
-- `tests/world-progression.test.js`: 4boss / 5clear gateをassert
-
-**EVIDENCE**
-
-「次areaをbossで開ける」原則は維持記録あり。具体的な `5探索` はPR #27の後続設計。
+UDE-005は学年→world結合を承認した証拠ではない。
 
 **CLASSIFICATION**
 
 `UNRESOLVED`
 
-**RECOMMENDATION**
+学年とworldを勝手に結合もしない、分離をcanonical確定もしない。
 
-boss→next areaは維持候補。`5探索` という具体数はbaseline/approval確認後に確定する。
+### 2.16 学年報酬キャラ
 
-### 2.13 学年 / 先取り
+**BASELINE / USER HISTORY**
 
-**BASELINE**
+学年報酬キャラは重要候補として過去設計議論に存在するが、回収済み `USER-DECISION-EVIDENCE.md` に具体species割当の明示決定はない。
 
-Kids Quest移植対象として学年・先取りシステムが存在する。exact ManaEvo originalとの結合仕様はW-001原本未救出のため未確認。
+**CURRENT**
 
-**CURRENT DESIGN**
-
-`design/00` はKids Quest完成済み学習runtimeと先取りを維持すると記載。
-
-**RUNTIME**
-
-`src/kids-quest-study/data/grades.js`:
-
-- 年長〜小6
-- 現在学年MASTER後に次学年解放
-- 解放済み学年は行き来可
-
-`GameContext.jsx`:
-
-- `grade`, `gradeMax`, `pendingGradeUp`
-- ほしのしれん合格で `gradeMax + 1`
-- 保護者設定で選択可能学年を制御
-
-**EVIDENCE**
-
-学習runtimeとしては明確に実装済み。
-
-**CLASSIFICATION**
-
-`SAME`
-
-**RECOMMENDATION**
-
-学習側の先取り機構は維持候補。ゲーム側reward/worldとの関係は別項目で未解決。
-
-### 2.14 学年報酬キャラ
-
-**BASELINE**
-
-今回の重点項目だが、exact `FINAL-CORRECTED` が未救出のため原本の具体的な学年→キャラ割当を確認できない。
-
-**CURRENT DESIGN**
-
-現行 `design/00` / `design/20` に学年報酬キャラの具体masterはない。PR #15 validationの未決事項には「にじのわ供給量（学年初回+1）」はあるが、学年報酬monsterの確定表ではない。
-
-**RUNTIME**
-
-`STAR_TRIAL_RESULT` で進級解放は行うが、monster rewardを `pendingGameRewards` に積む処理はない。ManaEvo bridge `grantLearningReward()` が扱うのもticket / capture item / unit/hard masteryで、species grantはない。
-
-**EVIDENCE**
-
-現runtimeに学年報酬キャラ付与pathなし。
+具体masterなし。runtimeにgrade-up species grant pathなし。
 
 **CLASSIFICATION**
 
 `UNRESOLVED`
 
-**RECOMMENDATION**
+**RULE**
 
-原本の学年報酬キャラ表/ルールをW-001で回収してから、CURRENTから消えた仕様なのか、原本でも未確定だったのかを判定する。現時点でキャラを創作・割当しない。
+Workerがキャラを新規割当しない。原本表または後続明示決定を回収してからcanonicalizeする。
 
-### 2.15 学年 / 先取りとワールド解放の関係
+### 2.17 図鑑 / BOX / team
 
-**BASELINE**
+**BASELINE / historical design**
 
-Exact relation未確認。
-
-**CURRENT DESIGN**
-
-学習の学年解放とゲームworld unlockは別軸。worldはboss/route clear主体。
-
-**RUNTIME**
-
-`isStageUnlocked()` は学年/gradeを参照しない。Area2〜4は前area boss、EXはArea1〜4 boss clearで解放。
-
-**EVIDENCE**
-
-Current runtimeにgrade gateなし。
-
-**CLASSIFICATION**
-
-`UNRESOLVED`
-
-**RECOMMENDATION**
-
-原本に「学年ごとのエリア/報酬キャラ」連携があるかを回収してから判断。学年と世界進行を勝手に結合・分離しない。
-
-### 2.16 ワールド解放
-
-**BASELINE**
-
-Recovered principle: boss撃破で次area解放。
-
-**CURRENT DESIGN**
-
-- Area1初期解放
-- Area2〜4: 前area boss
-- EX: 4area boss全clear
-- zone: 前zone wild 2clear
-
-**RUNTIME**
-
-上記を `GameScreens.jsx`, `engine.js`, `worldProgression.js` で実装。
-
-**EVIDENCE**
-
-Area間boss gateは「当初原則」記録と一致。zone gate / EX細部は後続変更。
-
-**CLASSIFICATION**
-
-`UNRESOLVED`
-
-**RECOMMENDATION**
-
-Area間boss gateを強い維持候補、zone/EX細部をapproval確認対象として分離する。
-
-### 2.17 進化と地域進行の関係
-
-**BASELINE**
-
-原進化Lv値はPR #15で原資料から復元されたが、current zone Lv帯導入前の値だったとPR #29が記録する。exact baselineの地域進行との関係は未再確認。
-
-**CURRENT DESIGN**
-
-- 第2形態自力進化→後半area奥地wild解放
-- 捕獲直後の即進化を避けるためlevel進化thresholdをworld Lv帯へ合わせて上方補正
-- original levelは `evolution.originalLevel` に保存
-
-**RUNTIME**
-
-`generate-runtime-master.mjs`:
-
-- stage1 level evolution: encounter zone max +4以上
-- 3段階後段: 前段実効Lv+10以上 + area floor
-- stone / held_item_levelupは補正対象外
-
-**EVIDENCE**
-
-PR #29で意図的に追加。原CSV値を破棄せずruntime overlayとして保持している点は監査可能。
-
-**CLASSIFICATION**
-
-`UNRESOLVED`
-
-**RECOMMENDATION**
-
-原値保全は継続する。world補正の採否は「承認済み後続変更」と確認できるまでcanonical確定しない。
-
-### 2.18 「自分で育てて進化させる」体験
-
-**BASELINE**
-
-後続資料はこれを「当初設計思想」として復元対象にしている。`design/01` も中心ループを「捕まえたい / 育てたい / 進化させたい / 次を見たい → だから学ぶ」と記録。
-
-**CURRENT DESIGN**
-
-`design/20`: 「強いキャラを拾うゲームではなく、学んで、出会って、自分で育て、自分で進化」。
-
-**RUNTIME**
-
-- 第2形態初回自力進化gate
-- 最終形wild不可
-- battle resultから即「いま シンカする！」
-- homeに次進化目標
-- evolutionDiscoveries
-
-**EVIDENCE**
-
-原則レベルでは旧design snapshot / restored concept / current runtimeが同方向。
-
-**CLASSIFICATION**
-
-`SAME`
-
-**RECOMMENDATION**
-
-中心体験として維持候補。具体的なzone/gate数値は別項目で監査する。
-
-### 2.19 図鑑 / BOX / チーム
-
-**BASELINE**
-
-`design/02-dex-200.md` snapshot:
-
-- 図鑑 = 種族
-- BOX = 捕まえた個体
+- 図鑑 = species
+- BOX = captured instances
 - `みていない / みつけた / つかまえた`
-- 進化系列で表示
-- 手持ち3体
+- evolution family表示
+- team最大3体
 
-**CURRENT DESIGN**
+**CURRENT**
 
-同構造を維持。
-
-**RUNTIME**
-
-- save: `box`, `team`, `dex.seen`, `dex.caught`
-- `setTeam()` 最大3体
-- capture成功で個体をBOXへ追加、teamが2体以下なら自動加入
-- evolutionはinstanceId/Lv/XPを保ったままspeciesId更新
-- Monster UIで手持ち出し入れ、Lv/XP/type/進化条件を表示
-
-**EVIDENCE**
-
-旧design snapshotと現runtimeの概念が一致。
+- `dex.seen / dex.caught`
+- `box` instance storage
+- `team` 最大3
+- evolutionでinstanceId/Lv/XP維持
 
 **CLASSIFICATION**
 
 `SAME`
 
-**RECOMMENDATION**
+238 scope決定後、dex総数のみ238へ追随する。
 
-維持候補。239採否が決まった場合のみdex総数/registryを追随させる。
+### 2.18 duplicate capture
+
+**BASELINE EVIDENCE**
+
+`USER-DECISION-EVIDENCE.md` の未回収項目に、duplicate captureの原本候補として以下が明示されている。
+
+- `なかまにする`
+- `おうえんにかえる`
+- `育ちのかけら`
+
+**CURRENT RUNTIME**
+
+capture成功時は、同speciesを既に所持しているかに関係なく:
+
+- `makeMonster()` で新instance作成
+- `box[captured.instanceId]` へ追加
+- `dex.caught[speciesId]=true`
+- teamが3未満なら自動加入
+
+duplicate専用の選択分岐はない。
+
+**LATER APPROVAL**
+
+原本のduplicate分岐を削除したというユーザー明示承認は回収されていない。
+
+**CLASSIFICATION**
+
+`UNRESOLVED`
+
+**DRIFT RISK**
+
+`IMPLEMENTATION_DRIFT` の強い候補。exact baseline sourceと後続approvalの最終照合で、削除承認がなければbaseline側へ戻す対象。
 
 ---
 
-## 3. 238 / 239 Git timeline
+## 3. Approval scope matrix
 
-| JST | Git evidence | Meaning |
+| Topic | Baseline relation | User evidence | Result |
+|---|---|---|---|
+| 239→238 | baseline 239 | UDE-001 explicit | `CONFIRMED_CHANGE` |
+| 84→83 | baseline 84 | UDE-001 active 001–238 | `CONFIRMED_CHANGE` |
+| No.239 exclusion | baseline exists | UDE-001 explicit | `CONFIRMED_CHANGE` |
+| source `area` | baseline value retained | none needed | `SAME` |
+| separate adventure placement layer | later addition | UDE-005 direction | `CONFIRMED_CHANGE` |
+| all relocation mappings | later detail | no direct itemized evidence | `UNRESOLVED` |
+| Area1–4 | baseline structure | later reaffirmed | `SAME` |
+| EX postgame direction | later/current world | UDE-005 direction | `CONFIRMED_CHANGE` |
+| EX exact unlock | later detail | no explicit itemized evidence | `UNRESOLVED` |
+| entrance/mid/deep direction | later zone design | UDE-005 | `CONFIRMED_CHANGE` |
+| zone previous-clear count=2 | later numeric detail | not separately fixed in evidence ledger | `UNRESOLVED` |
+| zone Lv band concept | later world design | UDE-003/UDE-005 | `CONFIRMED_CHANGE` |
+| exact zone Lv numbers | later numeric detail | no itemized explicit decision | `UNRESOLVED` |
+| boss→next area | original principle | later reaffirmed | `SAME` |
+| boss unlock=5 clears | baseline differs | evidence ledger says unresolved | `UNRESOLVED` |
+| first-form wild principle | original/recovered | consistent | `SAME` |
+| stage2 first self-evolve | later strengthening | UDE-005 core direction | `CONFIRMED_CHANGE` |
+| stage2 wild after self-evolve | later strengthening | UDE-005 core direction | `CONFIRMED_CHANGE` |
+| final-form normal wild ban | original principle | UDE-005 reaffirmed | `SAME` |
+| `evolutionDiscoveries` | later explicit mechanism | UDE-005 affected scope | `CONFIRMED_CHANGE` |
+| grade→world | unclear | no explicit approval | `UNRESOLVED` |
+| grade reward species | unclear | no concrete assignment approval | `UNRESOLVED` |
+| dex/BOX/team | original | consistent | `SAME` |
+| duplicate capture conversion | baseline candidate exists; runtime differs | no removal approval | `UNRESOLVED` / drift candidate |
+
+---
+
+## 4. Corrected 238 / 239 timeline
+
+| JST | Evidence | Meaning |
 |---|---|---|
-| 2026-08-24 16:18 | `9837c36536b032ede4246492d0f79afc231cc5a4` | 238体growth review index追加。No.239シラユキヒメをmasterから除外と初めて明文化。 |
-| 2026-08-24 | `eda8679746e00eb19bb8de870c20a4794964de12` | 238体正式化の進捗台帳を追加。 |
-| 2026-08-24 | PR #15 `chatgpt/monster-master-238` | 238 species / 83 families / No239混入0をruntime gate化。 |
-| 2026-08-24 | `6ae781bf041a5c3f6685846a753f7aac7c76e09f` | PR #15 main merge。238がproduction runtimeへ固定。 |
-| 2026-08-25 | PR #35 W-001 | 再建側でも「238/239の仕様判断をしない」と明記。exact原本ZIP未取得。 |
+| FINAL-CORRECTED baseline | E1 exact commander review | 84 families / 239 monsters; No.239 シラユキヒメ exists |
+| 2026-08-24 16:18 | commit `9837c36536b032ede4246492d0f79afc231cc5a4` | Git上で238 master / No.239 reference-onlyを明文化 |
+| 2026-08-24 16:23:33 | UDE-001 | **ユーザー明示で active No.001–238 / No.239 game除外を決定** |
+| 2026-08-24 | PR #15 | 238 / 83 / No.239 absent をruntime gate化 |
+| 2026-08-25 09:40–10:25 | UDE-005 | 自力進化を中心とするworld/evolution directionを後続承認 |
+| 2026-08-25 Phase 1 review | Commander | PR #38はmaterial reclassification required、239→238はCONFIRMED_CHANGEと指示 |
 
-### Change reason found
-
-Gitに残る文言は以下のみ。
-
-> `現行ManaEvoの有効範囲は No.001〜238のため、元資料No.239 シラユキヒメは資料保全のみでruntime候補から除外した。`
-
-これは「なぜ有効範囲が238になったか」の根拠を説明していない。
-
-### User approval evidence found
-
-- PR #15 conversation: No.239除外を承認する明示コメント **なし**。
-- `239` を理由付きで決めたissue **なし**。
-- PR #15のMERGE GOはruntime品質判定としては強いが、再建governance上の「239→238仕様変更をユーザーが明示承認した証拠」と同一視しない。
-
-結論: **238/239の変更理由・明示承認はGitHub上では回収できていない。**
+旧auditの「GitHub conversationに239変更理由がないためUNRESOLVED」という結論は、GitHub外の過去チャットからUDE-001が回収された時点で**superseded**。
 
 ---
 
-## 4. Current runtime evidence map
+## 5. Current runtime evidence map
 
-| Topic | Runtime / test evidence |
+| Topic | Current evidence |
 |---|---|
-| 238 / 83 / 18 | `scripts/generate-runtime-master.mjs`, `tests/pr15-master.test.js` |
-| 155 evolutions | generator + `tests/pr15-master.test.js` |
-| Area/zone | `src/game/worldProgression.js` |
-| area/zone unlock | `src/game/engine.js` `isStageUnlocked`, `adventureZoneProgress` |
-| stage2 self-evolve unlock | `evolutionDiscoveries`, `evolveInstance`, world progression test |
-| final form wild ban | `hidden + captureDisabled`, world progression test |
-| boss unlock | `minAreaClears=5`, previous boss gate |
-| EX unlock | `requiresAllAreasCleared` / UI `exUnlocked` |
-| grade / ahead learning | `src/kids-quest-study/data/grades.js`, `GameContext.jsx` |
-| learning→game reward bridge | `pendingGameRewards` → `grantLearningReward()` |
-| grade reward monster | runtime path not found |
-| dex / box / team | `progression.js`, `engine.js`, `GameScreens.jsx` |
+| 238 / 83 / 18 | generator / PR15 master tests |
+| No.239 absent | generator / runtime registry tests |
+| area + adventure layer | `src/game/worldProgression.js` |
+| zone unlock | `adventureZoneProgress()` / `isStageUnlocked()` |
+| self-evolve unlock | `evolutionDiscoveries` / `evolveInstance()` |
+| final-form wild ban | `hidden + captureDisabled` |
+| boss unlock | `minAreaClears=5`, area boss gates |
+| grade / ahead learning | Kids Quest study runtime |
+| dex / BOX / team | progression / engine / screens |
+| duplicate capture | capture success always creates a new instance; no duplicate choice branch |
+
+Runtime一致は承認証拠ではなく、上表は現状確認のためだけに使う。
 
 ---
 
-## 5. Classification summary
-
-### SAME
-
-- No.001〜238の進化系列（exact archive再確認は残る）
-- 18タイプ
-- No.001〜238のproduction area field
-- 最終形を通常wildに出さないという原則
-- Kids Quest側の学年・先取り機構
-- 「自分で育てて進化」の中心体験
-- 図鑑 / BOX / 手持ち3体の基本構造
+## 6. Classification summary
 
 ### CONFIRMED_CHANGE
 
-今回のGitHub evidenceだけで、再建governanceの意味で「原本差分 + 明示ユーザー承認」を独立に証明できた項目は **0件**。
+- 239 → 238 active monster scope
+- 84 → 83 active family scope
+- No.239 active runtime除外・reference保全
+- production `area` と冒険配置レイヤを分離できる方針
+- Area/zoneを使って育成差が出るworld方向
+- 第2形態の初回自力進化
+- 自力進化後の第2形態wild解禁
+- `evolutionDiscoveries` で自力進化を別記録すること
+- 入口 / 中盤 / 奥地というzone progressionの方向
+- EXをpostgame/yari-komi worldとして持つ方向
 
-`design/20` は「ユーザー承認済み」と自己記載しているため有力な後続承認候補だが、PR #27/#29 conversationに承認発言がなく、exact decision sourceをまだ回収できていない。確認後に該当項目を `CONFIRMED_CHANGE` へ昇格可能。
+### SAME
 
-### IMPLEMENTATION_DRIFT
-
-今回確認範囲では、CURRENT DESIGNに明記されているのにruntimeだけが明確に反対挙動をする、という確定的な項目は見つからなかった。
-
-ただし「学年報酬キャラ」はCURRENT DESIGN自体に具体masterがないため、runtime未実装を直ちに `IMPLEMENTATION_DRIFT` とは分類できない。
+- No.001〜238の原系列 / 進化 / source area data
+- 18タイプ
+- Area1〜4を基本worldとすること
+- 第1形態を通常wildの中心にする原則
+- 最終進化形を通常wild捕獲させない原則
+- 図鑑=species / BOX=instance / team最大3
 
 ### UNRESOLVED
 
-- 239→238 / 84→83
-- No.239 / 84系列目
-- EXの原本上の位置付け
-- 入口/中盤/奥地の後続zone設計の承認証拠
-- wildの後続表示/gateロジック
-- 第2形態自力進化後wild解禁
-- boss 5探索clearという具体gate
-- 学年報酬キャラ
-- 学年/先取りとworld unlockの結合有無
-- zone/EXを含むworld unlock細部
-- world Lv帯に合わせた進化Lvruntime補正
+- speciesごとの全 `adventureArea` relocation mapping
+- entrance→mid / mid→deep の必要clear数 `2`
+- exact zone Lv ranges `5–22 / 18–38 / 32–58 / 50–80 / 70–100`
+- boss unlockを原本 `12pt + unique skill 2` から `5探索clear` へ変えること
+- EXの厳密なunlock条件
+- grade / ahead learning と world unlock の結合有無
+- 学年報酬キャラの具体割当
+- duplicate captureの `なかまにする / おうえんにかえる / 育ちのかけら`
+
+### IMPLEMENTATION_DRIFT CANDIDATE
+
+- duplicate capture: current runtimeに原本候補のduplicate分岐がない。後続削除承認がなければ次段で `IMPLEMENTATION_DRIFT` へ確定。
 
 ---
 
-## 6. Recommendation / handoff
+## 7. Recommendation / commander handoff
 
-1. **W-001 exact baseline救出を最優先**。`scripts/families.mjs`, `scripts/wildEncounter.mjs`, `02-dex.md`, world/progression関連原本を再取得する。
-2. W-001完了後、このauditのBASELINE欄をexact bytesで再照合する。
-3. 238/239は、原本239確認後も「238に変えた明示承認」が見つからなければユーザー決定事項へ上げる。Worker判断で決めない。
-4. PR #27/#29のworld変更について、当時のユーザー会話/decision evidenceを回収できれば、該当 `UNRESOLVED` を `CONFIRMED_CHANGE` へ変更する。
-5. 学年報酬キャラは原本に存在するかを確認し、存在するなら CURRENT DESIGN / RUNTIME の欠落として次段監査で `IMPLEMENTATION_DRIFT` へ再分類する。
-6. canonical decisionが終わるまで、238/239・学年報酬・world gateのruntime修正をこのWorkerでは行わない。
+1. 238 / 83 / No.239はcanonical decisionへそのまま昇格可能。ユーザー再質問不要。
+2. `design/current` 作成時は `area` と `adventureArea` を別概念として定義し、source areaを後続配置都合で書き換えない。
+3. 第2形態の「初回自力進化 → discovery → wild解禁」はcanonicalへ昇格可能。
+4. final form normal-wild banは維持。
+5. exact zone Lv数値、2-clear zone gate、boss 5-clear、EX unlockは、UDE-005の方向性承認だけを根拠に固定しない。必要なら司令塔が追加decision evidenceを回収する。
+6. grade/world、学年報酬キャラは未解決のままcurrent canonicalへ穴埋めしない。
+7. duplicate captureは次段でexact baseline sourceを直接回収し、後続削除承認がなければbaseline復元候補として扱う。
+8. 本Workerでは `src/**`、master、testsは変更しない。
 
-## 7. Files reviewed
+## 8. Files / evidence reviewed
 
-Governance / baseline:
+Governance:
 
 - `REBUILD-START-HERE.md`
+- `design/rebuild/USER-DECISION-EVIDENCE.md`
+- `design/rebuild/PHASE-1-COMMANDER-REVIEW.md`
 - `design/rebuild/DECISION-LOG.md`
-- `design/rebuild/WORK-QUEUE.md`
-- `design/rebuild/HANDOFF-TEMPLATE.md`
-- `rebuild/w-001-final-corrected-baseline:design/baseline/FINAL-CORRECTED/README.md`
 
-Current design / historical design evidence:
+Baseline / recovered original evidence:
 
-- `design/00-README.md`
-- `design/01-catch-and-evolution-design.md`
-- `design/02-dex-200.md`
-- `design/03-screens-catch-and-raise.md`
-- `design/06-battle-and-progression-design.md`
-- `design/11-battle-character-boss-review.md`
-- `design/13-monster-growth-master-238.md`
+- exact FINAL-CORRECTED facts recorded by commander
 - `design/15-sol-review-validation-report.md`
-- `design/19-sol-pr15-runtime-completion.md`
+- original-source comparison records for `scripts/families.mjs`
+- `design/02-dex-200.md`
+
+Later design / PR evidence:
+
 - `design/20-world-map-evolution-progression.md`
-- `design/DESIGN-SOURCE-METADATA.txt`
-
-Runtime / generator / tests:
-
-- `scripts/generate-runtime-master.mjs`
-- `src/game/content.js`
-- `src/game/worldProgression.js`
-- `src/game/progression.js`
-- `src/game/engine.js`
-- `src/game/GameScreens.jsx`
-- `src/App.jsx`
-- `src/kids-quest-study/data/grades.js`
-- `src/kids-quest-study/state/GameContext.jsx`
-- `tests/pr15-master.test.js`
-- `tests/world-progression.test.js`
-
-Git history / PR evidence:
-
-- PR #15
-- PR #27
-- PR #29
-- PR #35
+- PR #27 `feat: restore world progression and evolution-first encounters`
+- PR #29 `fix: make world progression reward actual raising`
 - commit `9837c36536b032ede4246492d0f79afc231cc5a4`
-- commit `eda8679746e00eb19bb8de870c20a4794964de12`
-- merge commit `6ae781bf041a5c3f6685846a753f7aac7c76e09f`
+- PR #15
 
-## 8. Final audit status
+Runtime evidence used only for present-state comparison:
 
-**AUDIT COMPLETE WITH BASELINE INPUT BLOCKER**
+- `src/game/engine.js`
+- `src/game/worldProgression.js`
+- current generator/tests as referenced by Phase 1 audit
 
-差分調査・Git trace・CURRENT/RUNTIME横断は完了した。ただし exact `FINAL-CORRECTED` archive未救出のため、BASELINEの最終確証が必要な項目は `UNRESOLVED` のまま残した。仕様変更・runtime変更は行っていない。
+## 9. Final audit status
+
+**PHASE 1.5 RE-AUDIT COMPLETE — MATERIAL RECLASSIFICATION APPLIED**
+
+最重要修正は、旧auditの `239→238 / 84→83 / No.239 = UNRESOLVED` を撤回し、UDE-001に基づく `CONFIRMED_CHANGE` へ更新したこと。
+
+またUDE-005を「design/20の全細目一括承認」とは扱わず、中心方向と数値/個別mappingを分離した。これにより「自分で育てて進化」の承認済み改善は残しつつ、boss gate・zone数値・学年報酬・duplicate capture等の未回収仕様を勝手に正本化しない状態にした。
