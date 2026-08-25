@@ -1,6 +1,21 @@
-import { AREA_META, CAPTURE_CONFIG, EVOLUTION_ITEMS, MOVES, SPECIES, STAGES, moveOf, speciesOf, typeEffectiveness } from './content.js'
+import { AREA_META, CAPTURE_CONFIG, EVOLUTION_ITEMS, MOVES, STAGES, moveOf, speciesOf, typeEffectiveness } from './content.js'
 import { BALANCE_VERSION, BOSS_RANKS, battleXpForStage, buildEnemyPlan, statsFromBase } from './balance.js'
 import { consumeTicket, grantEvolutionItem, refundTicket, specialProgressionStatus } from './progression.js'
+import {
+  BATTLE_STATUS,
+  STAB_MULTIPLIER,
+  canonicalDamage,
+  criticalMultiplier,
+  damageRandomMultiplier,
+  seededBattleRoll,
+  speedOrder,
+  statusActionResult,
+  statusAttackMultiplier,
+  statusEndTurnDamage,
+  statusSpeedMultiplier,
+  tryApplyBattleStatus,
+  wakeSleepOnDamagingHit
+} from './battleRules.js'
 
 const clamp = (min, value, max) => Math.max(min, Math.min(max, value))
 export const MAX_CAPTURE_ATTEMPTS = 3
@@ -144,12 +159,55 @@ function syncActiveBattle(game, battle) {
   return next
 }
 
+function battleId() {
+  return `battle-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+}
+
+function validBattleTeam(game) {
+  const raw = Array.isArray(game?.team) ? game.team : []
+  if (raw.length < 1 || raw.length > 3) return null
+  const unique = [...new Set(raw)]
+  if (unique.length !== raw.length || unique.some((id) => !game?.box?.[id])) return null
+  return unique
+}
+
+function reservationSource(battle) {
+  if (battle?.ticketReservation?.sourceLotId) {
+    return {
+      id: battle.ticketReservation.sourceLotId,
+      earnedDay: battle.ticketReservation.earnedDay,
+      expiresDay: battle.ticketReservation.expiresDay
+    }
+  }
+  return battle?.ticketSource || null
+}
+
+function reservationIsOpen(battle) {
+  return !battle?.ticketSettlement || battle.ticketSettlement === 'reserved'
+}
+
+function commitReservation(battle) {
+  if (!reservationIsOpen(battle)) return battle
+  battle.ticketSettlement = 'committed'
+  battle.ticketCommitted = true
+  if (battle.ticketReservation) battle.ticketReservation.status = 'committed'
+  return battle
+}
+
+function validateBattleAction(game, battle) {
+  const current = game?.activeBattle
+  if (!current) return 'STALE_BATTLE'
+  if (current.battleId && battle?.battleId && current.battleId !== battle.battleId) return 'STALE_BATTLE'
+  if (['won', 'caught', 'lost'].includes(current.status)) return 'BATTLE_FINISHED'
+  return null
+}
+
 export function currentPlayerHp(battle) {
   return Math.max(0, Number(battle?.partyHp?.[battle?.activeInstanceId]) || 0)
 }
 
 export function healthyTeamIds(game, battle) {
-  return (game.team || []).filter((id) => game.box?.[id] && (battle.partyHp?.[id] || 0) > 0)
+  return (battle?.teamAtStart || game.team || []).filter((id) => game.box?.[id] && (battle.partyHp?.[id] || 0) > 0)
 }
 
 function playerSpecialMultipliers(battle, instanceId) {
@@ -166,9 +224,41 @@ export function currentPlayerMaxHp(game, battle, instanceId = battle?.activeInst
   return statsFor(monster.speciesId, monster.level, playerSpecialMultipliers(battle, instanceId)).hp
 }
 
+function playerStatus(battle, instanceId = battle?.activeInstanceId) {
+  return battle?.partyStatuses?.[instanceId] || null
+}
+
+function setPlayerStatus(battle, instanceId, status) {
+  battle.partyStatuses ||= {}
+  if (status) battle.partyStatuses[instanceId] = status
+  else delete battle.partyStatuses[instanceId]
+}
+
 function battleMonster(game, battle, instanceId = battle.activeInstanceId) {
   const monster = game.box[instanceId]
-  return monster ? { ...monster, statMultipliers: playerSpecialMultipliers(battle, instanceId) } : null
+  return monster ? { ...monster, statMultipliers: playerSpecialMultipliers(battle, instanceId), battleStatus: playerStatus(battle, instanceId) } : null
+}
+
+function enemyBattleMonster(battle) {
+  return {
+    speciesId: battle.enemy.speciesId,
+    level: battle.enemy.level,
+    statMultipliers: battle.enemy.statMultipliers,
+    battleStatus: battle.enemy.status || null
+  }
+}
+
+function statusAdjustedStats(monster) {
+  const stats = statsFor(monster.speciesId, monster.level, monster.statMultipliers)
+  return {
+    ...stats,
+    attack: Math.max(1, Math.floor(stats.attack * statusAttackMultiplier(monster.battleStatus))),
+    speed: Math.max(1, Math.floor(stats.speed * statusSpeedMultiplier(monster.battleStatus)))
+  }
+}
+
+function battleRoll(battle, actor, kind, moveId = '') {
+  return seededBattleRoll(battle?.rngSeed, `${battle?.stageId}:${battle?.turn}:${actor}:${kind}:${moveId}`)
 }
 
 function bossBigMove(stage, enemySpecies) {
@@ -179,7 +269,7 @@ function bossBigMove(stage, enemySpecies) {
     name: `${enemySpecies.name}の おおわざ`,
     type: enemySpecies.types[0],
     power: rank.bigMovePower,
-    accuracy: 100,
+    accuracy: 90,
     effect: { type: 'damage' },
     role: 'boss-big'
   }
@@ -191,11 +281,14 @@ export function startBattle(game, stageId, { dailyCompleted = false, dailyDay = 
   if (!stage) return { ok: false, game, reason: 'UNKNOWN_STAGE' }
   if (!isStageUnlocked(game, stage)) return { ok: false, game, reason: 'LOCKED_STAGE' }
   if (!dailyCompleted || (dailyDay != null && dailyDay !== today)) return { ok: false, game, reason: 'DAILY_NOT_COMPLETED' }
+
+  const teamAtStart = validBattleTeam(game)
+  if (!teamAtStart) return { ok: false, game, reason: 'INVALID_TEAM' }
+  const activeId = teamAtStart.includes(game.activeMonsterId) ? game.activeMonsterId : teamAtStart[0]
+  if (!activeId || !game.box?.[activeId]) return { ok: false, game, reason: 'NO_ACTIVE_MONSTER' }
+
   const ticket = consumeTicket(game, today)
   if (!ticket.ok) return { ok: false, game: ticket.game, reason: 'NO_TICKET' }
-  const activeId = ticket.game.activeMonsterId || ticket.game.team?.[0]
-  const active = ticket.game.box?.[activeId]
-  if (!active) return { ok: false, game, reason: 'NO_ACTIVE_MONSTER' }
 
   const existingSnapshot = ticket.game.bossBalanceSnapshots?.[stage.id] || null
   const balancePlan = buildEnemyPlan(ticket.game, stage, speciesOf, existingSnapshot, { challenge })
@@ -205,7 +298,7 @@ export function startBattle(game, stageId, { dailyCompleted = false, dailyDay = 
   const nextGame = structuredClone(ticket.game)
   nextGame.bossBalanceSnapshots ||= {}
   nextGame.normalStageSnapshots ||= {}
-  if (balancePlan?.snapshot && !challenge && !existingSnapshot) {
+  if (balancePlan?.snapshot && !challenge && balancePlan.mode !== 'boss-locked') {
     nextGame.bossBalanceSnapshots[stage.id] = structuredClone(balancePlan.snapshot)
   }
   nextGame.battlesStarted = (nextGame.battlesStarted || 0) + 1
@@ -213,23 +306,28 @@ export function startBattle(game, stageId, { dailyCompleted = false, dailyDay = 
   nextGame.dex.seen[stage.enemySpeciesId] = true
 
   const enemyStats = statsFor(stage.enemySpeciesId, enemyLevel, enemyMultipliers)
-  const teamAtStart = (nextGame.team || []).filter((id) => nextGame.box[id]).slice(0, 3)
   const partyHp = Object.fromEntries(teamAtStart.map((id) => {
     const monster = nextGame.box[id]
     return [id, statsFor(monster.speciesId, monster.level).hp]
   }))
+  const id = battleId()
   const battle = {
+    battleId: id,
     stageId,
     challenge: !!challenge,
+    startedDay: today,
     rngSeed: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`,
     activeInstanceId: activeId,
     teamAtStart,
+    teamSpeciesAtStart: Object.fromEntries(teamAtStart.map((instanceId) => [instanceId, nextGame.box[instanceId].speciesId])),
     partyHp,
+    partyStatuses: {},
     enemy: {
       speciesId: stage.enemySpeciesId,
       level: enemyLevel,
       hp: enemyStats.hp,
       maxHp: enemyStats.hp,
+      status: null,
       statMultipliers: enemyMultipliers,
       balance: balancePlan ? {
         mode: balancePlan.mode,
@@ -248,11 +346,21 @@ export function startBattle(game, stageId, { dailyCompleted = false, dailyDay = 
     captureStars: 0,
     captureAttempts: 0,
     lastEffect: 1,
-    ticketCommitted: true,
+    ticketCommitted: false,
     ticketSource: ticket.consumed,
+    ticketReservation: {
+      sourceLotId: ticket.consumed.id,
+      earnedDay: ticket.consumed.earnedDay,
+      expiresDay: ticket.consumed.expiresDay,
+      status: 'reserved'
+    },
+    ticketSettlement: 'reserved',
+    ticketResolutionId: `${id}:ticket`,
     ticketRefunded: false,
+    rewardResolutionId: null,
     moveUses: {},
     lastPlayerAction: null,
+    protectCooldownUntilTurn: 0,
     specialUsed: false,
     playerSpecial: null,
     bossTelegraphed: false,
@@ -262,24 +370,32 @@ export function startBattle(game, stageId, { dailyCompleted = false, dailyDay = 
   return { ok: true, game: nextGame, battle }
 }
 
-export function damageAmount(attacker, defender, move) {
-  const aStats = statsFor(attacker.speciesId, attacker.level, attacker.statMultipliers)
-  const dStats = statsFor(defender.speciesId, defender.level, defender.statMultipliers)
+export function damageAmount(attacker, defender, move, { criticalRoll = 1, randomRoll = 1 } = {}) {
+  const aStats = statusAdjustedStats(attacker)
+  const dStats = statusAdjustedStats(defender)
   const attackerSpecies = speciesOf(attacker.speciesId)
   const defenderSpecies = speciesOf(defender.speciesId)
-  const stab = attackerSpecies.types.includes(move.type) ? 1.2 : 1
+  const stab = attackerSpecies.types.includes(move.type) ? STAB_MULTIPLIER : 1
   const effectiveness = typeEffectiveness(move.type, defenderSpecies.types)
-  const base = Math.floor((((2 * attacker.level / 5 + 2) * move.power * aStats.attack / Math.max(1, dStats.defense)) / 50) + 2)
-  return { damage: Math.max(effectiveness === 0 ? 0 : 1, Math.floor(base * stab * effectiveness)), effectiveness, stab }
+  const critical = criticalMultiplier(criticalRoll)
+  const random = damageRandomMultiplier(randomRoll)
+  const damage = canonicalDamage({
+    level: attacker.level,
+    power: move.power,
+    attack: aStats.attack,
+    defense: dStats.defense,
+    stab,
+    type: effectiveness,
+    critical,
+    random
+  })
+  return { damage, effectiveness, stab, critical, random }
 }
 
 function deterministicHit(move, battle, actor = 'player') {
   const accuracy = clamp(1, Number(move?.accuracy) || 100, 100)
   if (accuracy >= 100) return true
-  const seed = `${battle.rngSeed || 'legacy'}:${battle.stageId}:${battle.turn}:${move.id || move.moveId}:${actor}`
-  let hash = 2166136261
-  for (let i = 0; i < seed.length; i += 1) hash = Math.imul(hash ^ seed.charCodeAt(i), 16777619) >>> 0
-  return (hash % 100) < accuracy
+  return battleRoll(battle, actor, 'accuracy', move.id || move.moveId) * 100 < accuracy
 }
 
 function enemyMoveFor(enemy, player) {
@@ -294,8 +410,22 @@ function enemyMoveFor(enemy, player) {
     })[0] || Object.values(MOVES).find((move) => move.effect?.type === 'damage')
 }
 
+function planEnemyMove(game, battle) {
+  const player = battleMonster(game, battle)
+  if (!player || battle.enemy.hp <= 0) return null
+  const stage = stageById(battle.stageId)
+  const enemySpecies = speciesOf(battle.enemy.speciesId)
+  if (stage?.bossRank && battle.bossTelegraphed) return bossBigMove(stage, enemySpecies)
+  return enemyMoveFor(enemyBattleMonster(battle), player)
+}
+
 function activeMonster(game, battle) {
   return game.box[battle.activeInstanceId]
+}
+
+function clearBattleStatuses(battle) {
+  battle.partyStatuses = {}
+  if (battle.enemy) battle.enemy.status = null
 }
 
 function resolvePlayerFaint(game, battle) {
@@ -306,16 +436,22 @@ function resolvePlayerFaint(game, battle) {
     battle.log = [...battle.log.slice(-5), 'たおれた！ つぎの なかまを えらぼう！']
   } else {
     battle.status = 'lost'
+    clearBattleStatuses(battle)
     battle.log = [...battle.log.slice(-5), 'まけちゃった…。チームをそだてて もういちど！']
   }
   return battle
 }
 
-function refundLostBattleIfNeeded(game, battle, today) {
-  if (battle.status !== 'lost' || battle.ticketRefunded || !battle.ticketSource) return { game, battle }
-  const refund = refundTicket(game, battle.ticketSource, today)
+function refundLostBattleIfNeeded(game, battle, today = null) {
+  if (battle.status !== 'lost' || !reservationIsOpen(battle)) return { game, battle }
+  const source = reservationSource(battle)
+  if (!source) return { game, battle }
+  const effectiveToday = today == null ? battle.startedDay : today
+  const refund = refundTicket(game, source, effectiveToday)
   const nextBattle = structuredClone(battle)
   nextBattle.ticketRefunded = refund.refunded
+  nextBattle.ticketSettlement = refund.refunded ? 'refunded' : 'expired'
+  if (nextBattle.ticketReservation) nextBattle.ticketReservation.status = nextBattle.ticketSettlement
   if (refund.refunded) nextBattle.log = [...nextBattle.log.slice(-5), '🎫 バトルチケットが 1まい もどった！']
   return { game: refund.game, battle: nextBattle }
 }
@@ -335,15 +471,67 @@ function afterBossAction(stage, battle, log, usedBigMove = false) {
   }
 }
 
-function enemyAttackOnce(game, battle, log, { blocked = false } = {}) {
+function moveStatusSpec(move) {
+  const effect = move?.effect || {}
+  const raw = effect.status || (effect.type === 'status' ? effect.statusType : null)
+  if (!raw) return null
+  if (typeof raw === 'string') return { type: raw, chance: effect.statusChance ?? effect.chance ?? 1 }
+  if (typeof raw === 'object') return { type: raw.type || raw.status, chance: raw.chance ?? effect.statusChance ?? effect.chance ?? 1 }
+  return null
+}
+
+function normalizedChance(value) {
+  const numeric = Number(value)
+  if (!Number.isFinite(numeric)) return 1
+  return clamp(0, numeric > 1 ? numeric / 100 : numeric, 1)
+}
+
+function battleMonsterStatusSpeciesId(battle, instanceId) {
+  return battle?.teamSpeciesAtStart?.[instanceId] || null
+}
+
+function statusLabel(status) {
+  return ({ burn: 'やけど', paralysis: 'まひ', poison: 'どく', sleep: 'ねむり' })[status] || status
+}
+
+function applyMoveStatus(battle, move, target, log, actor) {
+  const spec = moveStatusSpec(move)
+  if (!spec?.type || !Object.values(BATTLE_STATUS).includes(spec.type)) return
+  if (battleRoll(battle, actor, 'status-chance', move.id || move.moveId) >= normalizedChance(spec.chance)) return
+  const targetSpecies = target === 'enemy' ? speciesOf(battle.enemy.speciesId) : speciesOf(battleMonsterStatusSpeciesId(battle, target))
+  const current = target === 'enemy' ? battle.enemy.status : playerStatus(battle, target)
+  const applied = tryApplyBattleStatus(current, spec.type, targetSpecies?.types || [], {
+    sleepRoll: battleRoll(battle, actor, 'sleep-turns', move.id || move.moveId)
+  })
+  if (!applied.applied) return
+  if (target === 'enemy') battle.enemy.status = applied.status
+  else setPlayerStatus(battle, target, applied.status)
+  log.push(`${target === 'enemy' ? speciesOf(battle.enemy.speciesId)?.name : 'なかま'} は ${statusLabel(spec.type)}！`)
+}
+
+function actorCanAct(battle, actor, log) {
+  const status = actor === 'enemy' ? battle.enemy.status : playerStatus(battle)
+  const result = statusActionResult(status, battleRoll(battle, actor, 'status-action'))
+  if (actor === 'enemy') battle.enemy.status = result.status
+  else setPlayerStatus(battle, battle.activeInstanceId, result.status)
+  if (!result.canAct) log.push(`${actor === 'enemy' ? speciesOf(battle.enemy.speciesId)?.name : 'なかま'} は ${result.reason === 'SLEEP' ? 'ねむっている…' : 'まひして うごけない！'}`)
+  return result.canAct
+}
+
+function enemyAttackOnce(game, battle, log, { blocked = false, plannedMove = null } = {}) {
   if (battle.enemy.hp <= 0) return null
   const player = battleMonster(game, battle)
   if (!player || currentPlayerHp(battle) <= 0) return null
   const stage = stageById(battle.stageId)
-  const enemy = { speciesId: battle.enemy.speciesId, level: battle.enemy.level, statMultipliers: battle.enemy.statMultipliers }
+  const enemy = enemyBattleMonster(battle)
   const enemySpecies = speciesOf(enemy.speciesId)
   const useBigMove = !!stage?.bossRank && !!battle.bossTelegraphed
-  const enemyMove = useBigMove ? bossBigMove(stage, enemySpecies) : enemyMoveFor(enemy, player)
+  const enemyMove = plannedMove || (useBigMove ? bossBigMove(stage, enemySpecies) : enemyMoveFor(enemy, player))
+  if (!enemyMove) return null
+  if (!actorCanAct(battle, 'enemy', log)) {
+    afterBossAction(stage, battle, log, false)
+    return { damage: 0, statusBlocked: true, move: enemyMove }
+  }
   if (blocked) {
     log.push(`🛡️ まもる！ ${enemySpecies.name} の ${enemyMove.name}を ふせいだ！`)
     afterBossAction(stage, battle, log, useBigMove)
@@ -354,11 +542,35 @@ function enemyAttackOnce(game, battle, log, { blocked = false } = {}) {
     afterBossAction(stage, battle, log, useBigMove)
     return { damage: 0, missed: true, move: enemyMove }
   }
-  const result = damageAmount(enemy, player, enemyMove)
+  const result = damageAmount(enemy, player, enemyMove, {
+    criticalRoll: battleRoll(battle, 'enemy', 'critical', enemyMove.id || enemyMove.moveId),
+    randomRoll: battleRoll(battle, 'enemy', 'damage-random', enemyMove.id || enemyMove.moveId)
+  })
   battle.partyHp[battle.activeInstanceId] = Math.max(0, currentPlayerHp(battle) - result.damage)
-  log.push(`${enemySpecies.name} の ${enemyMove.name}！ ${result.damage} ダメージ`)
+  const woke = wakeSleepOnDamagingHit(playerStatus(battle), result.damage)
+  setPlayerStatus(battle, battle.activeInstanceId, woke)
+  if (result.damage > 0) applyMoveStatus(battle, enemyMove, battle.activeInstanceId, log, 'enemy')
+  log.push(`${enemySpecies.name} の ${enemyMove.name}！ ${result.damage} ダメージ${result.critical > 1 ? ' きゅうしょ！' : ''}`)
   afterBossAction(stage, battle, log, useBigMove)
   return { ...result, move: enemyMove }
+}
+
+function applyEndTurnStatuses(game, battle, log) {
+  if (battle.enemy.hp > 0 && battle.enemy.status) {
+    const damage = statusEndTurnDamage(battle.enemy.status, battle.enemy.maxHp)
+    if (damage > 0) {
+      battle.enemy.hp = Math.max(0, battle.enemy.hp - damage)
+      log.push(`${speciesOf(battle.enemy.speciesId).name} は ${statusLabel(battle.enemy.status.type)}で ${damage} ダメージ`)
+    }
+  }
+  if (currentPlayerHp(battle) > 0) {
+    const status = playerStatus(battle)
+    const damage = statusEndTurnDamage(status, currentPlayerMaxHp(game, battle))
+    if (damage > 0) {
+      battle.partyHp[battle.activeInstanceId] = Math.max(0, currentPlayerHp(battle) - damage)
+      log.push(`なかまは ${statusLabel(status.type)}で ${damage} ダメージ`)
+    }
+  }
 }
 
 function grantStageEvolutionReward(game, stage, firstClear) {
@@ -414,16 +626,22 @@ function awardTeamBattleXp(game, battle, xp) {
   return { game: next, levelsByInstance }
 }
 
+function battleXpForOutcome(stage, firstClear) {
+  if (stage?.bossRank && !firstClear) return 0
+  return battleXpForStage(stage)
+}
+
 function awardWin(game, battle) {
   let next = structuredClone(game)
   const stage = stageById(battle.stageId)
-  const xp = battleXpForStage(stage)
-  const gained = awardTeamBattleXp(next, battle, xp)
-  next = gained.game
-  next.mana = (next.mana || 0) + stage.mana
-  next.battlesWon = (next.battlesWon || 0) + 1
   next.stagesCleared ||= []
   const firstClear = !next.stagesCleared.includes(stage.id)
+  const xp = battleXpForOutcome(stage, firstClear)
+  const gained = awardTeamBattleXp(next, battle, xp)
+  next = gained.game
+  // Battle-derived Mana amount is not canonicalized yet; preserve the existing compatibility value.
+  next.mana = (next.mana || 0) + stage.mana
+  next.battlesWon = (next.battlesWon || 0) + 1
   next = recordNormalFirstClearSnapshot(next, stage, battle)
   if (firstClear) next.stagesCleared.push(stage.id)
   const evolutionGrant = grantStageEvolutionReward(next, stage, firstClear)
@@ -463,7 +681,7 @@ export function availableBattleMoveIds(game, battle) {
   const monster = activeMonster(game, battle)
   const species = monster ? speciesOf(monster.speciesId) : null
   if (!species) return []
-  const ids = [...species.moves]
+  const ids = [...species.moves].slice(0, 4)
   if (battle.playerSpecial?.type === 'burst' && battle.playerSpecial.instanceId === monster.instanceId && species.burstMoveId) {
     const replaceIndex = ids.findIndex((id) => ['finisher', 'identity'].includes(moveOf(id)?.role))
     ids[replaceIndex >= 0 ? replaceIndex : Math.max(0, ids.length - 1)] = species.burstMoveId
@@ -471,18 +689,53 @@ export function availableBattleMoveIds(game, battle) {
   return ids
 }
 
-export function useMove(game, battle, moveId) {
+function playerAttackOnce(game, battle, move, log) {
+  const player = battleMonster(game, battle)
+  const playerSpecies = speciesOf(player.speciesId)
+  if (!actorCanAct(battle, 'player', log)) return { damage: 0, statusBlocked: true }
+  if (!deterministicHit(move, battle, 'player')) {
+    log.push(`${playerSpecies.name} の ${move.name}！ でも はずれた！`)
+    return { damage: 0, effectiveness: 1, missed: true }
+  }
+  if (move.effect?.type === 'heal') {
+    const maxHp = currentPlayerMaxHp(game, battle)
+    const heal = Math.max(1, Math.floor(maxHp * (move.effect.healRatio || 0.20)))
+    const before = currentPlayerHp(battle)
+    battle.partyHp[battle.activeInstanceId] = Math.min(maxHp, before + heal)
+    log.push(`${playerSpecies.name} の ${move.name}！ HPが ${battle.partyHp[battle.activeInstanceId] - before} かいふく！`)
+    return { damage: 0, heal: battle.partyHp[battle.activeInstanceId] - before }
+  }
+  if (move.effect?.type === 'status') {
+    applyMoveStatus(battle, move, 'enemy', log, 'player')
+    log.push(`${playerSpecies.name} の ${move.name}！`)
+    return { damage: 0 }
+  }
+  const enemy = enemyBattleMonster(battle)
+  const result = damageAmount(player, enemy, move, {
+    criticalRoll: battleRoll(battle, 'player', 'critical', move.id || move.moveId),
+    randomRoll: battleRoll(battle, 'player', 'damage-random', move.id || move.moveId)
+  })
+  battle.enemy.hp = Math.max(0, battle.enemy.hp - result.damage)
+  battle.enemy.status = wakeSleepOnDamagingHit(battle.enemy.status, result.damage)
+  if (result.damage > 0) applyMoveStatus(battle, move, 'enemy', log, 'player')
+  battle.lastEffect = result.effectiveness
+  log.push(`${playerSpecies.name} の ${move.name}！ ${result.damage} ダメージ${result.critical > 1 ? ' きゅうしょ！' : ''}`)
+  return result
+}
+
+export function useMove(game, battle, moveId, { today = null } = {}) {
+  const stale = validateBattleAction(game, battle)
+  if (stale) return { ok: false, game, battle: game.activeBattle || battle, reason: stale }
   if (battle.status !== 'fighting') return { ok: false, game, battle, reason: battle.status === 'needs_switch' ? 'SWITCH_REQUIRED' : 'BATTLE_FINISHED' }
   const playerRaw = activeMonster(game, battle)
-  const playerSpecies = speciesOf(playerRaw.speciesId)
+  if (!playerRaw) return { ok: false, game, battle, reason: 'NO_ACTIVE_MONSTER' }
   if (!availableBattleMoveIds(game, battle).includes(moveId)) return { ok: false, game, battle, reason: 'UNKNOWN_MOVE' }
   const move = moveOf(moveId)
   if (!move) return { ok: false, game, battle, reason: 'UNKNOWN_MOVE' }
+
   const next = structuredClone(battle)
   const log = []
-  const player = battleMonster(game, next)
-  const enemy = { speciesId: next.enemy.speciesId, level: next.enemy.level, statMultipliers: next.enemy.statMultipliers }
-  const useKey = moveUseKey(player.instanceId, moveId)
+  const useKey = moveUseKey(playerRaw.instanceId, moveId)
   if (move.effect?.usesPerBattle && (next.moveUses?.[useKey] || 0) >= move.effect.usesPerBattle) {
     return { ok: false, game, battle, reason: 'MOVE_USE_LIMIT' }
   }
@@ -490,43 +743,33 @@ export function useMove(game, battle, moveId) {
   next.moveUses[useKey] = (next.moveUses[useKey] || 0) + 1
   next.lastPlayerAction = `move:${moveId}`
 
-  const playerAttack = () => {
-    if (!deterministicHit(move, next, 'player')) {
-      log.push(`${playerSpecies.name} の ${move.name}！ でも はずれた！`)
-      return { damage: 0, effectiveness: 1, missed: true }
-    }
-    const result = damageAmount(player, enemy, move)
-    next.enemy.hp = Math.max(0, next.enemy.hp - result.damage)
-    next.lastEffect = result.effectiveness
-    log.push(`${playerSpecies.name} の ${move.name}！ ${result.damage} ダメージ`)
-    return result
-  }
+  const plannedEnemyMove = planEnemyMove(game, next)
+  const player = battleMonster(game, next)
+  const enemy = enemyBattleMonster(next)
+  const playerStats = statusAdjustedStats(player)
+  const enemyStats = statusAdjustedStats(enemy)
+  const order = move.effect?.type === 'heal' || move.effect?.type === 'status'
+    ? 'player'
+    : speedOrder(playerStats.speed, enemyStats.speed, battleRoll(next, 'turn', 'speed-tie'))
 
-  if (move.effect?.type === 'heal') {
-    const maxHp = currentPlayerMaxHp(game, next)
-    const heal = Math.max(1, Math.floor(maxHp * (move.effect.healRatio || 0.20)))
-    const before = currentPlayerHp(next)
-    next.partyHp[next.activeInstanceId] = Math.min(maxHp, before + heal)
-    log.push(`${playerSpecies.name} の ${move.name}！ HPが ${next.partyHp[next.activeInstanceId] - before} かいふく！`)
-    enemyAttackOnce(game, next, log)
+  if (order === 'player') {
+    playerAttackOnce(game, next, move, log)
+    if (next.enemy.hp > 0) enemyAttackOnce(game, next, log, { plannedMove: plannedEnemyMove })
   } else {
-    const playerStats = statsFor(player.speciesId, player.level, player.statMultipliers)
-    const enemyStats = statsFor(enemy.speciesId, enemy.level, enemy.statMultipliers)
-    if (playerStats.speed >= enemyStats.speed) {
-      playerAttack()
-      enemyAttackOnce(game, next, log)
-    } else {
-      enemyAttackOnce(game, next, log)
-      if (currentPlayerHp(next) > 0) playerAttack()
-    }
+    enemyAttackOnce(game, next, log, { plannedMove: plannedEnemyMove })
+    if (currentPlayerHp(next) > 0) playerAttackOnce(game, next, move, log)
   }
 
+  applyEndTurnStatuses(game, next, log)
   if (next.playerSpecial?.type === 'burst' && next.playerSpecial.instanceId === next.activeInstanceId) endBurstIfNeeded(game, next, log)
   next.turn += 1
   next.log = [...next.log.slice(-4), ...log].slice(-8)
 
   if (next.enemy.hp <= 0) {
     next.status = 'won'
+    commitReservation(next)
+    clearBattleStatuses(next)
+    next.rewardResolutionId ||= `${next.battleId || next.stageId}:reward`
     const rewards = awardWin(game, next)
     next.log.push(`かち！ XP +${rewards.xp} / マナ +${rewards.mana}`)
     const synced = syncActiveBattle(rewards.game, next)
@@ -534,28 +777,36 @@ export function useMove(game, battle, moveId) {
   }
 
   resolvePlayerFaint(game, next)
-  const resolved = refundLostBattleIfNeeded(game, next)
+  const resolved = refundLostBattleIfNeeded(game, next, today)
   return { ok: true, game: syncActiveBattle(resolved.game, resolved.battle), battle: resolved.battle }
 }
 
 export function canUseProtect(battle) {
-  return battle?.status === 'fighting' && battle.lastPlayerAction !== 'protect'
+  return battle?.status === 'fighting' && battle.lastPlayerAction !== 'protect' && Number(battle.turn || 0) > Number(battle.protectCooldownUntilTurn || 0)
 }
 
-export function useProtect(game, battle) {
-  if (!canUseProtect(battle)) return { ok: false, game, battle, reason: 'PROTECT_CONSECUTIVE' }
+export function useProtect(game, battle, { today = null } = {}) {
+  const stale = validateBattleAction(game, battle)
+  if (stale) return { ok: false, game, battle: game.activeBattle || battle, reason: stale }
+  if (!canUseProtect(battle)) return { ok: false, game, battle, reason: battle.lastPlayerAction === 'protect' ? 'PROTECT_CONSECUTIVE' : 'PROTECT_COOLDOWN' }
   const next = structuredClone(battle)
   const log = ['🛡️ まもる！']
+  const plannedEnemyMove = planEnemyMove(game, next)
   next.lastPlayerAction = 'protect'
-  enemyAttackOnce(game, next, log, { blocked: true })
+  next.protectCooldownUntilTurn = next.turn + 1
+  enemyAttackOnce(game, next, log, { blocked: true, plannedMove: plannedEnemyMove })
+  applyEndTurnStatuses(game, next, log)
   if (next.playerSpecial?.type === 'burst' && next.playerSpecial.instanceId === next.activeInstanceId) endBurstIfNeeded(game, next, log)
   next.turn += 1
   next.log = [...next.log.slice(-4), ...log].slice(-8)
   resolvePlayerFaint(game, next)
-  return { ok: true, game: syncActiveBattle(game, next), battle: next }
+  const resolved = refundLostBattleIfNeeded(game, next, today)
+  return { ok: true, game: syncActiveBattle(resolved.game, resolved.battle), battle: resolved.battle }
 }
 
 function activateSpecial(game, battle, type) {
+  const stale = validateBattleAction(game, battle)
+  if (stale) return { ok: false, game, battle: game.activeBattle || battle, reason: stale }
   if (battle?.status !== 'fighting') return { ok: false, game, battle, reason: 'BATTLE_FINISHED' }
   if (battle.specialUsed || battle.playerSpecial) return { ok: false, game, battle, reason: 'SPECIAL_ALREADY_USED' }
   const monster = activeMonster(game, battle)
@@ -601,7 +852,9 @@ export function canAttemptCapture(game, battle, itemType = 'star') {
     (battle.captureAttempts || 0) < MAX_CAPTURE_ATTEMPTS && (game.captureItems?.[itemType] || 0) > 0
 }
 
-export function attemptCapture(game, battle, rolls = null, itemType = 'star') {
+export function attemptCapture(game, battle, rolls = null, itemType = 'star', { today = null } = {}) {
+  const stale = validateBattleAction(game, battle)
+  if (stale) return { ok: false, game, battle: game.activeBattle || battle, reason: stale }
   if (!canAttemptCapture(game, battle, itemType)) {
     const stage = stageById(battle?.stageId)
     const reason = stage?.captureDisabled ? 'CAPTURE_DISABLED' : (battle.captureAttempts || 0) >= MAX_CAPTURE_ATTEMPTS ? 'CAPTURE_LIMIT' : 'CAPTURE_NOT_READY'
@@ -622,23 +875,29 @@ export function attemptCapture(game, battle, rolls = null, itemType = 'star') {
   nextBattle.captureAttempts = (nextBattle.captureAttempts || 0) + 1
   nextBattle.captureStars = stars
   nextBattle.lastPlayerAction = 'capture'
+  const plannedEnemyMove = planEnemyMove(nextGame, nextBattle)
   nextBattle.turn += 1
   if (stars < 4) {
     const log = [`「わ」を なげた！ ${stars}こ 光った！ でも逃げられた！`]
-    enemyAttackOnce(nextGame, nextBattle, log)
+    enemyAttackOnce(nextGame, nextBattle, log, { plannedMove: plannedEnemyMove })
+    applyEndTurnStatuses(nextGame, nextBattle, log)
     if (nextBattle.playerSpecial?.type === 'burst') endBurstIfNeeded(nextGame, nextBattle, log)
     nextBattle.log = [...nextBattle.log.slice(-4), ...log].slice(-8)
     resolvePlayerFaint(nextGame, nextBattle)
-    const resolved = refundLostBattleIfNeeded(nextGame, nextBattle)
+    const resolved = refundLostBattleIfNeeded(nextGame, nextBattle, today)
     resolved.game.activeBattle = structuredClone(resolved.battle)
     return { ok: true, caught: false, stars, chance, game: resolved.game, battle: resolved.battle }
   }
 
   const stage = stageById(battle.stageId)
-  const xp = battleXpForStage(stage)
+  nextGame.stagesCleared ||= []
+  const firstClear = !nextGame.stagesCleared.includes(stage.id)
+  const xp = battleXpForOutcome(stage, firstClear)
   const gained = awardTeamBattleXp(nextGame, battle, xp)
   nextGame = gained.game
 
+  // W-203 owns capture probability and duplicate settlement. Keep the existing
+  // capture result shape stable here; W-202 only settles the reserved ticket.
   const captured = makeMonster(battle.enemy.speciesId, battle.enemy.level)
   nextGame.box[captured.instanceId] = captured
   nextGame.dex ||= { seen: {}, caught: {} }
@@ -647,8 +906,6 @@ export function attemptCapture(game, battle, rolls = null, itemType = 'star') {
   if ((nextGame.team || []).length < 3) nextGame.team.push(captured.instanceId)
   nextGame.monstersCaught = (nextGame.monstersCaught || 0) + 1
   nextGame.mana = (nextGame.mana || 0) + Math.floor(stage.mana / 2)
-  nextGame.stagesCleared ||= []
-  const firstClear = !nextGame.stagesCleared.includes(stage.id)
   nextGame = recordNormalFirstClearSnapshot(nextGame, stage, battle)
   if (firstClear) nextGame.stagesCleared.push(stage.id)
   const evolutionGrant = grantStageEvolutionReward(nextGame, stage, firstClear)
@@ -656,6 +913,9 @@ export function attemptCapture(game, battle, rolls = null, itemType = 'star') {
   const specialGrant = grantStageSpecialReward(nextGame, stage, firstClear)
   nextGame = specialGrant.game
   nextBattle.status = 'caught'
+  commitReservation(nextBattle)
+  clearBattleStatuses(nextBattle)
+  nextBattle.rewardResolutionId ||= `${nextBattle.battleId || nextBattle.stageId}:reward`
   nextBattle.log = [...nextBattle.log.slice(-4), `★★★★ 「わ」を なげた！ 4つ ひかって ゲット！ XP +${xp}`]
   nextGame.activeBattle = structuredClone(nextBattle)
   return {
@@ -673,13 +933,18 @@ export function attemptCapture(game, battle, rolls = null, itemType = 'star') {
   }
 }
 
-export function switchBattleMonster(game, battle, instanceId) {
+export function switchBattleMonster(game, battle, instanceId, { today = null } = {}) {
+  const stale = validateBattleAction(game, battle)
+  if (stale) return { ok: false, game, battle: game.activeBattle || battle, reason: stale }
   if (!['fighting', 'needs_switch'].includes(battle.status)) return { ok: false, game, battle, reason: 'BATTLE_FINISHED' }
-  if (!(game.team || []).includes(instanceId) || !game.box[instanceId]) return { ok: false, game, battle, reason: 'NOT_IN_TEAM' }
+  if (!(battle.teamAtStart || game.team || []).includes(instanceId) || !game.box[instanceId]) return { ok: false, game, battle, reason: 'NOT_IN_TEAM' }
   if ((battle.partyHp?.[instanceId] || 0) <= 0) return { ok: false, game, battle, reason: 'FAINTED' }
   if (instanceId === battle.activeInstanceId) return { ok: true, game, battle }
 
   const forced = battle.status === 'needs_switch'
+  // Plan before applying the player's switch. This prevents AI from selecting a
+  // counter after seeing which monster was switched in.
+  const plannedEnemyMove = forced ? null : planEnemyMove(game, battle)
   const nextGame = structuredClone(game)
   nextGame.activeMonsterId = instanceId
   const nextBattle = structuredClone(battle)
@@ -689,13 +954,14 @@ export function switchBattleMonster(game, battle, instanceId) {
   const log = [`${speciesOf(game.box[instanceId].speciesId).name} に こうたい！`]
 
   if (!forced) {
-    enemyAttackOnce(nextGame, nextBattle, log)
+    enemyAttackOnce(nextGame, nextBattle, log, { plannedMove: plannedEnemyMove })
+    applyEndTurnStatuses(nextGame, nextBattle, log)
     if (nextBattle.playerSpecial?.type === 'burst') endBurstIfNeeded(nextGame, nextBattle, log)
     nextBattle.turn += 1
     resolvePlayerFaint(nextGame, nextBattle)
   }
   nextBattle.log = [...nextBattle.log.slice(-4), ...log].slice(-8)
-  const resolved = refundLostBattleIfNeeded(nextGame, nextBattle)
+  const resolved = refundLostBattleIfNeeded(nextGame, nextBattle, today)
   resolved.game.activeBattle = structuredClone(resolved.battle)
   return { ok: true, game: resolved.game, battle: resolved.battle }
 }
@@ -703,23 +969,29 @@ export function switchBattleMonster(game, battle, instanceId) {
 export function abandonBattle(game, { today } = {}) {
   if (!game.activeBattle) return { ok: false, game, reason: 'NO_ACTIVE_BATTLE' }
   const battle = structuredClone(game.activeBattle)
+  if (!['fighting', 'needs_switch'].includes(battle.status)) return { ok: false, game, reason: 'BATTLE_FINISHED' }
   let next = structuredClone(game)
-  if (!battle.ticketRefunded && battle.ticketSource) {
-    const refund = refundTicket(next, battle.ticketSource, today)
-    next = refund.game
-    battle.ticketRefunded = refund.refunded
+  if (reservationIsOpen(battle)) {
+    const source = reservationSource(battle)
+    if (source) {
+      const refund = refundTicket(next, source, today == null ? battle.startedDay : today)
+      next = refund.game
+      battle.ticketRefunded = refund.refunded
+      battle.ticketSettlement = refund.refunded ? 'refunded' : 'expired'
+      if (battle.ticketReservation) battle.ticketReservation.status = battle.ticketSettlement
+    }
   }
   next.activeBattle = null
   next.battlesAbandoned = (next.battlesAbandoned || 0) + 1
-  return { ok: true, game: next, refunded: !!battle.ticketRefunded }
+  return { ok: true, game: next, refunded: battle.ticketSettlement === 'refunded' }
 }
 
 export function clearFinishedBattle(game, { today } = {}) {
   if (!game.activeBattle || !['won', 'lost', 'caught'].includes(game.activeBattle.status)) return { ok: false, game, reason: 'BATTLE_NOT_FINISHED' }
   let next = structuredClone(game)
-  if (next.activeBattle.status === 'lost' && !next.activeBattle.ticketRefunded && next.activeBattle.ticketSource) {
-    const refund = refundTicket(next, next.activeBattle.ticketSource, today)
-    next = refund.game
+  if (next.activeBattle.status === 'lost' && reservationIsOpen(next.activeBattle)) {
+    const resolved = refundLostBattleIfNeeded(next, next.activeBattle, today)
+    next = resolved.game
   }
   next.activeBattle = null
   return { ok: true, game: next }
