@@ -37,6 +37,18 @@ async function installSave(page, game) {
   }, { learning, game })
 }
 
+async function forceFailedCaptureInPreviewBundle(page) {
+  let rewritten = false
+  await page.route('**/assets/index-*.js', async (route) => {
+    const response = await route.fetch()
+    const source = await response.text()
+    const forced = source.replaceAll('Math.random()', '0.999999')
+    rewritten ||= forced !== source
+    await route.fulfill({ response, body: forced })
+  })
+  return () => rewritten
+}
+
 function battleGameAtHalfHp({ rainbow = false, nearEvolution = false } = {}) {
   const today = dayNumber()
   const game = addTickets(createGameState(), 3, today)
@@ -128,11 +140,9 @@ test('iPhone WebKit plays the canonical four-star success sequence before GET', 
 
 test('iPhone WebKit failed capture never displays four completed stars', async ({ page }) => {
   await installSave(page, battleGameAtHalfHp())
+  const wasRewritten = await forceFailedCaptureInPreviewBundle(page)
   await page.goto('/')
-  await page.evaluate(() => {
-    Object.defineProperty(Math, 'random', { configurable: true, value: () => 0.999999 })
-  })
-  expect(await page.evaluate(() => Math.random())).toBe(0.999999)
+  expect(wasRewritten()).toBe(true)
   await openCapture(page)
 
   const star = page.locator('.capture-item-grid').getByRole('button', { name: /ほしのわ/ })
