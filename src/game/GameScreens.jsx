@@ -151,7 +151,7 @@ function StageMap({ game, onStart, goStudy, goHome, dailyCompleted, today, locat
       <div className="screen-title-row"><div><p className="eyebrow">ぼうけんマップ</p><h1>{area <= 4 ? AREA_META.find((item) => item.area === area)?.name : 'スペシャルエリア'}</h1>{area <= 4 && <p className="area-level-band">📍 いまのエリア　{AREA_META.find((item) => item.area === area)?.levelLabel}</p>}</div><strong>🎫 {ticketCount}</strong></div>
       <p className="kid-note">{dailyCompleted ? 'きょうの まなびクリア！ エリアと ゾーンで てきの強さが ちがうよ。そだてた強さを ためしてみよう！' : 'チケットを持っていても、きょうの まなびを終えてからバトルへ。'}</p>
 
-      <section className="world-overview-card">
+      <section className={`world-overview-card premium-world-map area-${area}`}>
         <div className="world-overview-heading"><div><p className="eyebrow">せかいを ぼうけん</p><h2>シンカの ちからを ひらこう！</h2></div><span>📍 エリア{area}{activeZone ? '・' + activeZone.name : ''}</span></div>
         <div className="world-area-route">{AREA_META.map((meta) => { const unlocked = areaUnlocked(meta.area); return <button key={meta.area} disabled={!unlocked} className={'world-area-node ' + (area === meta.area ? 'current' : '') + (unlocked ? ' unlocked' : ' locked')} onClick={() => selectArea(meta.area)}><span>{unlocked ? meta.icon : '🔒'}</span><b>エリア{meta.area}</b><small>{area === meta.area ? 'いまここ' : unlocked ? 'いける' : 'まだ'}</small></button> })}</div>
       </section>
@@ -191,7 +191,7 @@ function StageMap({ game, onStart, goStudy, goHome, dailyCompleted, today, locat
           return (
             <article key={stage.id} className={`stage-card formal-stage-card area-${stage.adventureArea || stage.area} zone-${stage.zoneId || 'special'} ${!unlocked ? 'locked' : ''}`}>
               <div className="stage-number">{dailyMode ? <b>{index + 1}</b> : isCleared ? '✅' : unlocked ? stage.kind === 'boss' ? '👑' : '⚔️' : '🔒'}</div><span className={'recommendation-tag kind-' + stage.kind}>{recommendationTag}</span>
-              <PlaceholderMonster speciesId={stage.enemySpeciesId} compact />
+              <div className="encounter-art"><PlaceholderMonster speciesId={stage.enemySpeciesId} size={dailyMode ? 96 : 76} /></div>
               <div className="stage-copy">
                 <small>{stage.zoneIcon || '🗺️'} {stage.zoneName || stageKindLabel(stage.kind)}　・　{stageKindLabel(stage.kind)}　{enemy?.no ? `No.${enemy.no}` : ''}</small>
                 <strong>{stage.label}</strong>
@@ -382,7 +382,7 @@ export function AdventureFlow({ game, setGame, goHome, goStudy, dailyCompleted, 
   return <StageMap game={game} onStart={start} goStudy={goStudy} goHome={goHome} dailyCompleted={dailyCompleted} today={today} location={game.adventureLocation} onLocationChange={setMapLocation} />
 }
 
-function MonsterRow({ monster, game, setGame, selected, setSelected }) {
+function MonsterRow({ monster, game, setGame, selected, setSelected, showcase = false }) {
   const species = speciesOf(monster.speciesId)
   const inTeam = game.team.includes(monster.instanceId)
   const evoLeft = levelsUntilEvolution(monster)
@@ -396,8 +396,8 @@ function MonsterRow({ monster, game, setGame, selected, setSelected }) {
     const result = setTeam(game, game.team.filter((id) => id !== monster.instanceId))
     if (result.ok) setGame(result.game)
   }
-  return <article className={`monster-row ${selected ? 'selected' : ''}`} onClick={() => setSelected(monster.instanceId)}>
-    <PlaceholderMonster speciesId={monster.speciesId} compact />
+  return <article className={`monster-row ${showcase ? 'showcase' : ''} ${selected ? 'selected' : ''}`} onClick={() => setSelected(monster.instanceId)}>
+    <PlaceholderMonster speciesId={monster.speciesId} size={showcase ? 92 : 56} compact={!showcase} />
     <div className="monster-row-main"><strong>No.{species.no} {species.name}</strong><span>Lv.{monster.level}　XP {monster.xp}/{xpToNext(monster.level)}</span><TypePills types={species.types} /><small>{!species.evolution ? '通常進化：最終形' : evoLeft === 0 ? '✨ いま進化できる！' : evoLeft == null ? describeEvolutionCondition(monster) : `進化まで あと ${evoLeft} レベル`}</small></div>
     <div className="team-actions">{inTeam ? <button disabled={game.team.length <= 1} onClick={(e) => { e.stopPropagation(); removeFromTeam() }}>手持ちから外す</button> : <button disabled={game.team.length >= 3} onClick={(e) => { e.stopPropagation(); addToTeam() }}>手持ちに入れる</button>}</div>
   </article>
@@ -448,7 +448,7 @@ function DetailPanel({ game, setGame, instanceId, onEvolution }) {
   }
   const nextSpecies = species.evolution ? speciesOf(species.evolution.to) : null
   return <section className="monster-detail-v2">
-    <div className="monster-detail-hero"><PlaceholderMonster speciesId={monster.speciesId} /><div><p className="eyebrow">No.{species.no} / {species.family}</p><h2>{species.name}</h2><p>Lv.{monster.level} / 進化段階 {species.stage}/{species.maxStage}</p><TypePills types={species.types} /></div></div>
+    <div className="monster-detail-hero"><PlaceholderMonster speciesId={monster.speciesId} size={178} /><div><p className="eyebrow">No.{species.no} / {species.family}</p><h2>{species.name}</h2><p>Lv.{monster.level} / 進化段階 {species.stage}/{species.maxStage}</p><TypePills types={species.types} /></div></div>
     <p className="monster-description">{species.description}</p>
     <div className="stat-grid"><span>HP <b>{stats.hp}</b></span><span>こうげき <b>{stats.attack}</b></span><span>ぼうぎょ <b>{stats.defense}</b></span><span>すばやさ <b>{stats.speed}</b></span></div>
     <section className="formal-moves"><h3>わざ</h3>{species.moves.map((moveId) => { const move = moveOf(moveId); return <div key={moveId}><strong>{move.name}</strong><span>{typeLabel(move.type)}</span><small>{move.effect?.type === 'heal' ? 'HP20%かいふく・1バトル1回' : `威力${move.power} / 命中${move.accuracy} / ${move.role}`}</small></div> })}</section>
@@ -499,10 +499,13 @@ export function MonsterScreen({ game, setGame, goHome }) {
   return <main className="screen monster-screen-v2">
     {evolutionReveal && <EvolutionCelebration reveal={evolutionReveal} onClose={() => setEvolutionReveal(null)} />}
     <button className="back" onClick={goHome}>← ホーム</button>
-    <div className="screen-title-row"><div><p className="eyebrow">モンスター</p><h1>そだてる・シンカ</h1></div><span>GET {caughtCount}/238　発見 {seenCount}/238</span></div>
-    <div className="monster-tabs"><button className={tab === 'team' ? 'active' : ''} onClick={() => setTab('team')}>手持ち {team.length}/3</button><button className={tab === 'box' ? 'active' : ''} onClick={() => setTab('box')}>ボックス {box.length}</button><button className={tab === 'dex' ? 'active' : ''} onClick={() => setTab('dex')}>図鑑 238</button></div>
-    {tab === 'team' && <><div className="monster-list">{team.map((monster) => <MonsterRow key={monster.instanceId} monster={monster} game={game} setGame={setGame} selected={selected === monster.instanceId} setSelected={setSelected} />)}</div><DetailPanel game={game} setGame={setGame} instanceId={selected} onEvolution={setEvolutionReveal} /></>}
-    {tab === 'box' && <><p className="kid-note">手持ちは3体まで。タイプのちがう仲間を組み合わせよう！</p><div className="monster-list">{box.map((monster) => <MonsterRow key={monster.instanceId} monster={monster} game={game} setGame={setGame} selected={selected === monster.instanceId} setSelected={setSelected} />)}</div><DetailPanel game={game} setGame={setGame} instanceId={selected} onEvolution={setEvolutionReveal} /></>}
-    {tab === 'dex' && <><p className="kid-note">No.001〜238の正式マスターで動いているよ。登録済みの正式画像はそのまま表示し、まだ画像ファイルがない個体だけ専用の準備中表示になるよ。ギガ/バーストを初めて使うと同じ図鑑枠に登録マークがつくよ。</p><DexGrid game={game} /></>}
+    <section className="monster-hq-hero">
+      <div><p className="eyebrow">MONSTER BASE</p><h1>そだてる・シンカ</h1><p>3たいの なかまと つよくなろう。シンカできる なかまは ここで光るよ。</p></div>
+      <div className="monster-hq-progress"><span><strong>{caughtCount}</strong><small>/238 GET</small></span><span><strong>{seenCount}</strong><small>/238 はっけん</small></span></div>
+    </section>
+    <div className="monster-tabs"><button className={tab === 'team' ? 'active' : ''} onClick={() => setTab('team')}>⚔️ チーム {team.length}/3</button><button className={tab === 'box' ? 'active' : ''} onClick={() => setTab('box')}>📦 ボックス {box.length}</button><button className={tab === 'dex' ? 'active' : ''} onClick={() => setTab('dex')}>📖 ずかん</button></div>
+    {tab === 'team' && <><div className="monster-list team-showcase">{team.map((monster) => <MonsterRow key={monster.instanceId} monster={monster} game={game} setGame={setGame} selected={selected === monster.instanceId} setSelected={setSelected} showcase />)}</div><DetailPanel game={game} setGame={setGame} instanceId={selected} onEvolution={setEvolutionReveal} /></>}
+    {tab === 'box' && <><p className="kid-note">つれていけるのは3たい。タイプや シンカの近さをみて チームをつくろう！</p><div className="monster-list">{box.map((monster) => <MonsterRow key={monster.instanceId} monster={monster} game={game} setGame={setGame} selected={selected === monster.instanceId} setSelected={setSelected} />)}</div><DetailPanel game={game} setGame={setGame} instanceId={selected} onEvolution={setEvolutionReveal} /></>}
+    {tab === 'dex' && <><p className="kid-note">みつけると シルエットがひらき、GETすると カラーで とうろく。ギガ・バーストの すがたも 同じずかんに のこるよ。</p><DexGrid game={game} /></>}
   </main>
 }

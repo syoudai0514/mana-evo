@@ -8,6 +8,7 @@ import './styles.css'
 import './parent-controls.css'
 import './kids-quest-study/styles/trace-mobile.css'
 import './game/runtime.css'
+import './premium-ui-v4.css'
 
 const CANONICAL_HOST = 'syoudai0514.github.io'
 const CANONICAL_PATH = '/mana-evo/'

@@ -135,3 +135,4 @@ Kids Quest学習基盤を正本とし、ManaEvo都合で簡略化しない。
 ## UIビジュアル正本
 
 - `design/21-mockup-ui-visual-system.md` — 承認済みモックアップを基準にした現行UI
+- [22-premium-ui-v4.md](./22-premium-ui-v4.md) — iPhone safe-area / premium adventure map / monster-base visual standard

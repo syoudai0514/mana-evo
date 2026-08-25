@@ -23,7 +23,13 @@ import { setTtsEnabled, setTtsPreferences, unlockTts } from './kids-quest-study/
 import { setSfxEnabled, unlockSfx, sfx } from './kids-quest-study/engine/sfx.js'
 
 function StatusBar({ game, today }) {
-  return <div className="status-bar"><span>🎫 {availableTicketCount(game, today)}</span><span>💎 {game.mana}</span><span>⭐ {game.captureItems?.star || 0}</span></div>
+  const tickets = availableTicketCount(game, today)
+  const starRings = game.captureItems?.star || 0
+  return <div className="status-bar resource-bar" aria-label="もちもの">
+    <span className="resource-pill ticket" title="バトルチケット：ぼうけんで1まい使う"><i>🎫</i><strong>{tickets}</strong><small>チケット</small></span>
+    <span className="resource-pill mana" title="マナ：まなびでたまる成長のちから"><i>💎</i><strong>{game.mana}</strong><small>マナ</small></span>
+    <span className="resource-pill star" title="ほしのわ：モンスターをGETするときに使う"><i>⭐</i><strong>{starRings}</strong><small>ほしのわ</small></span>
+  </div>
 }
 
 function Home({ learning, game, go, today }) {
@@ -198,7 +204,7 @@ export default function App() {
   const focusView=['activity','free','review','trial','dictionary','parent'].includes(view)
 
   return <div className={`app-shell${focusView?' app-shell--focus':''}`}>
-    {!focusView && <header><div className="logo"><span className="logo-gem">◆</span><b>マナ</b><strong>エボ</strong><small>まなびが、進化になる。</small></div><StatusBar game={game} today={today}/></header>}
+    {!focusView && <header className="game-header"><div className="logo"><span className="logo-gem">◆</span><b>マナ</b><strong>エボ</strong><small>まなびが、進化になる。</small></div><StatusBar game={game} today={today}/></header>}
     {view==='home' && <Home learning={learning} game={game} go={setView} today={today}/>} 
     {view==='study' && <StudyHub learning={learning} dispatch={learningDispatch} onStartTask={startTask} go={setView}/>} 
     {view==='activity' && activeTask && <ActivityPlayer task={activeTask} onDone={()=>{setActiveTask(null);setView('study')}}/>}

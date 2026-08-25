@@ -21,10 +21,10 @@ function resolvePublicAsset(url) {
   return `${normalizedBase}${String(url).replace(/^\/+/, '')}`
 }
 
-export default function PlaceholderMonster({ speciesId, stage = null, excited = false, compact = false }) {
+export default function PlaceholderMonster({ speciesId, stage = null, excited = false, compact = false, size: requestedSize = null }) {
   const species = speciesOf(speciesId)
   const resolvedStage = stage || species?.stage || 1
-  const size = compact ? 50 : 124
+  const size = requestedSize || (compact ? 50 : 124)
   const legacyFrame = monsterSpriteFrame(speciesId)
   const officialUrl = resolvePublicAsset(species?.officialImageUrl)
   const no = Number(species?.no || 0)
