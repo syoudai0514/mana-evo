@@ -65,7 +65,7 @@ function NextEvolutionCard({ game }) {
 
   return (
     <section className="howto-next-card">
-      <div className="howto-next-monster"><PlaceholderMonster speciesId={monster.speciesId} compact /></div>
+      <div className="howto-next-monster"><PlaceholderMonster speciesId={monster.speciesId} size={92} /></div>
       <div>
         <p className="howto-mini">いまの なかまは？</p>
         <h2>{title}</h2>
