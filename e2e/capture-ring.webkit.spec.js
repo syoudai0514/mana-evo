@@ -127,9 +127,12 @@ test('iPhone WebKit plays the canonical four-star success sequence before GET', 
 })
 
 test('iPhone WebKit failed capture never displays four completed stars', async ({ page }) => {
-  await page.addInitScript(() => { Math.random = () => 0.999999 })
   await installSave(page, battleGameAtHalfHp())
   await page.goto('/')
+  await page.evaluate(() => {
+    Object.defineProperty(Math, 'random', { configurable: true, value: () => 0.999999 })
+  })
+  expect(await page.evaluate(() => Math.random())).toBe(0.999999)
   await openCapture(page)
 
   const star = page.locator('.capture-item-grid').getByRole('button', { name: /ほしのわ/ })
