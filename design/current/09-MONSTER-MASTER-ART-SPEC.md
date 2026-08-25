@@ -15,7 +15,7 @@ This document follows the rebuild precedence and does not make runtime authorita
 5. Phase 1.5 `design/rebuild/audit/monster-world-progression-audit.md`
 6. current data/runtime only as derived implementation evidence
 
-Phase 1.5 recorded zero mismatches for No.001-238 between recovered baseline family data and the current master identity slice for No/name, source area, type, family/stage information and evolution method/parameter. Current data-master rows may therefore be used as a derived implementation source for this certified identity slice, but not as authority for unrelated runtime tuning.
+Phase 1.5 recorded broad agreement for No.001-238 between recovered baseline family data and the current master identity slice for No/name, source area, type, family/stage information and evolution method/parameter. W-114 identified one name-normalization exception that must not be hidden by that summary: exact baseline family F081 / No.236 is `ホシラディア`, while later derived CSV data contains `ソラリオン` without approval evidence. The exact baseline name therefore remains CURRENT. Current data-master rows may be used as a derived implementation source only after such canonical normalization; they are not authority for unrelated runtime tuning or unapproved name changes.
 
 ## 2. Active registry and stable IDs
 
@@ -32,6 +32,14 @@ Rules:
 - Asset names prefer stable IDs such as `m001.webp`.
 - Active IDs are exactly the contiguous set `m001` through `m238`; `m239` is reference-only.
 - Monster number is identity, not an array index to be renumbered after removal.
+
+### 2.1 m236 canonical-name guard
+
+- Stable ID / No.: `m236` / No.236
+- **CURRENT official display name: `ホシラディア`**
+- Exact-baseline source: family F081 in `scripts/families.mjs` and the matching Graphics Bible / visual brief material.
+- Later `design/13d-monster-growth-area4-part2.csv` value `ソラリオン` has no approved-change evidence and is treated as derived-data drift, not as a canonical rename.
+- Do not rename `m236`, its save references or art key because of that CSV drift.
 
 ## 3. Canonical monster-master slice
 
@@ -185,6 +193,7 @@ W-109 is acceptable only if:
 - active family count = 83;
 - m239 is absent from active assets and retained in baseline/reference;
 - stable IDs do not depend on display names;
+- **m236 CURRENT official name is `ホシラディア`; unapproved later `ソラリオン` data is drift and does not override it;**
 - family/stage/type/sourceArea/evolution-link provenance comes from exact baseline, not runtime guesses;
 - visual descriptions point to exact baseline visual briefs;
 - art rules match D-014 / Graphics Bible;
