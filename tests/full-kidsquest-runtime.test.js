@@ -2,6 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import { buildCoreMission, buildExtraTask, buildFreeTask } from '../src/kids-quest-study/engine/missions.js'
+import { FOCUSED_APP_VIEWS, isFocusedAppView } from '../src/navigation/viewOwnership.js'
 
 const read = (path) => fs.readFileSync(new URL(`../${path}`, import.meta.url), 'utf8')
 
@@ -35,9 +36,11 @@ test('free study does not mint tickets and extra challenge stays three questions
 })
 
 test('full learning state supports SRS, lessons, star trial, grade advancement and parent ahead-grade controls', () => {
-  const context = read('src/kids-quest-study/state/GameContext.jsx')
-  for (const action of ['ANSWER','CLEAR_TASK','PICK_CORE_TASK','LESSON_SEEN','STAR_TRIAL_RESULT','SET_GRADE','FORCE_GRADE_MAX','LOWER_GRADE_MAX','SET_MIN_SELECTABLE_GRADE','ENGLISH_SPEAKING_DONE']) assert.match(context, new RegExp(`['"]${action}['"]`), action)
-  for (const field of ['unitStats','writingStats','englishWordStats','englishPhraseStats','starTrials','lessonSeen','domainAccuracy','srs']) assert.match(context, new RegExp(field), field)
+  const wrapper = read('src/kids-quest-study/state/GameContext.jsx')
+  const core = read('src/kids-quest-study/state/GameContextCore.jsx')
+  assert.match(wrapper, /GameContextCore\.jsx/)
+  for (const action of ['ANSWER','CLEAR_TASK','PICK_CORE_TASK','LESSON_SEEN','STAR_TRIAL_RESULT','SET_GRADE','FORCE_GRADE_MAX','LOWER_GRADE_MAX','SET_MIN_SELECTABLE_GRADE','ENGLISH_SPEAKING_DONE']) assert.match(core, new RegExp(`['"]${action}['"]`), action)
+  for (const field of ['unitStats','writingStats','englishWordStats','englishPhraseStats','starTrials','lessonSeen','domainAccuracy','srs']) assert.match(core, new RegExp(field), field)
 })
 
 test('child learning hub cannot change grade, ahead-grade unlock or hard mode', () => {
@@ -76,7 +79,9 @@ test('parent controls are discoverable from home and protected by a four digit P
 test('learning focus screens do not stack the ManaEvo header over the Kids Quest header', () => {
   const app = read('src/App.jsx')
   const css = read('src/parent-controls.css')
-  assert.match(app, /focusView=\['activity','free','review','trial','dictionary','parent'\]/)
+  assert.deepEqual(FOCUSED_APP_VIEWS, ['activity','free','review','trial','dictionary','parent'])
+  for (const view of FOCUSED_APP_VIEWS) assert.equal(isFocusedAppView(view), true)
+  assert.match(app, /const focusView=isFocusedAppView\(view\)/)
   assert.match(app, /!focusView && <header(?:\s+[^>]*)?>/)
   assert.match(css, /\.app-shell--focus \.topbar\.app-header\{top:0/)
   assert.match(css, /\.app-shell--focus>\.screen\{padding:0 0 28px/)
