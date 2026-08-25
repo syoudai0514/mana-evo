@@ -239,13 +239,15 @@ Exactly three growth shards can be consumed to grant `育成XP +30` to one selec
 
 # 6. XP / raising
 
-## AC-XP-001 — Canonical XP curve and cap
+## AC-XP-001 — Canonical XP curve and compatibility cap handling
 
 Level progression uses the baseline canonical cumulative curve:
 
 `totalXp(L) = round(6 × (L - 1)^1.9)`
 
-Level is capped at 100. Level/XP normalization must be deterministic for the same saved value.
+The product's final level cap is **not an approved canonical decision**. W-102 records the existing Lv100 clamp as a compatibility value that may be preserved until a separate product decision is made. Therefore the CANONICAL GATE must not assert “Lv100 is the product's final cap” as an immutable rule; a Lv100 clamp may only be covered as an implementation/save-compatibility guard while that decision remains unresolved.
+
+Level/XP normalization must be deterministic for the same saved value.
 
 ## AC-XP-002 — Reward application is exactly-once
 
