@@ -28,3 +28,5 @@ jobs:
         run: npx playwright install --with-deps webkit
       - name: iPhone WebKit E2E
         run: npm run test:e2e
+        env:
+          VITE_BASE_PATH: /mana-evo/
