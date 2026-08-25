@@ -16,7 +16,8 @@
     "preview": "vite preview",
     "test": "node --test tests/*.test.js",
     "test:e2e": "playwright test",
-    "check": "npm test && npm run build"
+    "verify:release": "node scripts/release-readiness.mjs",
+    "check": "npm test && npm run build && npm run verify:release"
   },
   "dependencies": {
     "@vitejs/plugin-react": "^6.0.4",

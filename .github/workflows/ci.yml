@@ -24,6 +24,8 @@ jobs:
         run: npm run build
         env:
           VITE_BASE_PATH: /mana-evo/
+      - name: Release readiness artifact
+        run: npm run verify:release
       - name: Install WebKit browser
         run: npx playwright install --with-deps webkit
       - name: iPhone WebKit E2E

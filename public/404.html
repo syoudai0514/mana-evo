@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <title>マナエボへ もどります</title>
+    <script>
+      (() => {
+        const APP_BASE = '/mana-evo/'
+        if (window.location.pathname.startsWith(APP_BASE)) {
+          window.location.replace(`${APP_BASE}${window.location.search}${window.location.hash}`)
+        }
+      })()
+    </script>
+  </head>
+  <body>
+    <p><a href="/mana-evo/">マナエボへ もどる</a></p>
+  </body>
+</html>
