@@ -8,6 +8,8 @@ import { fileURLToPath } from 'node:url'
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8')
 const manifest = JSON.parse(fs.readFileSync(path.join(root, 'public/manifest.webmanifest'), 'utf8'))
+const revisions = JSON.parse(fs.readFileSync(path.join(root, 'public/monster-asset-revisions.json'), 'utf8'))
+const canonicalArt = JSON.parse(fs.readFileSync(path.join(root, 'design/current/monster-asset-manifest.json'), 'utf8'))
 const sw = fs.readFileSync(path.join(root, 'public/sw.js'), 'utf8')
 const main = fs.readFileSync(path.join(root, 'src/main.jsx'), 'utf8')
 const canonicalUrl = 'https://syoudai0514.github.io/mana-evo/'
@@ -49,15 +51,47 @@ test('service worker precache only references existing public assets', () => {
     const relativePath = match[1]
     assert.ok(fs.existsSync(publicAsset(relativePath)), `service worker precache asset is missing: ${relativePath}`)
   }
-  assert.match(sw, /CACHE_NAME = `\$\{CACHE_PREFIX\}v8`/)
+  assert.match(sw, /CACHE_NAME = `\$\{CACHE_PREFIX\}v9`/)
+  assert.match(sw, /monster-asset-revisions\.json/)
   assert.match(sw, /icons\/apple-touch-icon\.png/)
 })
 
-test('service worker warms only entry assets and uses cache-first for immutable app media', () => {
+test('service worker keeps scope/cache cleanup ManaEvo-only and update-safe', () => {
+  assert.match(sw, /const CACHE_PREFIX = 'manaevo-pwa-'/)
+  assert.match(sw, /url\.pathname\.startsWith\(BASE_PATH\)/)
+  assert.match(sw, /key\.startsWith\(CACHE_PREFIX\)/)
+  assert.doesNotMatch(sw, /kids-quest/)
+})
+
+test('monster cache uses revision identity for FORMAL art and network-first for non-formal art', () => {
+  assert.match(sw, /loadMonsterRevisions/)
+  assert.match(sw, /revisions\?\.formalByUrl\?\.\[relativePath\]/)
+  assert.match(sw, /__manaevo_rev/)
+  assert.match(sw, /previousRevisionResponse/)
+  assert.match(sw, /Candidate assets may be replaced by a later FORMAL asset/)
+  assert.doesNotMatch(sw, /relative\.startsWith\('monsters\/'\) \|\| relative\.startsWith\('icons\/'\)/)
+})
+
+test('generated monster revision manifest mirrors canonical states and revisions every FORMAL local asset', () => {
+  assert.equal(revisions.schemaVersion, 1)
+  assert.equal(revisions.sourceSchemaVersion, canonicalArt.schemaVersion)
+  assert.deepEqual(Object.keys(revisions.assets).sort(), Object.keys(canonicalArt.assets).sort())
+
+  for (const [speciesId, canonical] of Object.entries(canonicalArt.assets)) {
+    const generated = revisions.assets[speciesId]
+    assert.equal(generated.state, canonical.state, `${speciesId} state drift`)
+    if (canonical.state === 'FORMAL') {
+      assert.equal(generated.url, canonical.formalAsset)
+      assert.match(generated.revision, /^sha256-[a-f0-9]{64}$/)
+      assert.equal(revisions.formalByUrl[generated.url], generated.revision)
+      assert.ok(fs.existsSync(publicAsset(generated.url.replace(/^\//, ''))), `${speciesId} formal asset missing`)
+    }
+  }
+})
+
+test('service worker warms only entry assets and avoids heavyweight voice precache', () => {
   assert.match(sw, /async function warmEntryAssets/)
   assert.match(sw, /url\.pathname\.startsWith\(`\$\{BASE_PATH\}assets\/`\)/)
   assert.match(sw, /relative\.startsWith\('assets\/'\)/)
-  assert.match(sw, /relative\.startsWith\('monsters\/'\)/)
-  assert.match(sw, /const cached = await cache\.match\(request\)/)
   assert.doesNotMatch(sw, /APP_SHELL[\s\S]*piper_plus_wasm_bg/)
 })

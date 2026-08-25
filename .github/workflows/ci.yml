@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main, 'terra/**']
+    branches: [main, 'terra/**', 'rebuild/**']
   pull_request:
-    branches: [main]
+    branches: [main, rebuild/canonical-governance]
 
 jobs:
   test-and-build:
@@ -22,6 +22,8 @@ jobs:
         run: npm test
       - name: Build
         run: npm run build
+        env:
+          VITE_BASE_PATH: /mana-evo/
       - name: Install WebKit browser
         run: npx playwright install --with-deps webkit
       - name: iPhone WebKit E2E

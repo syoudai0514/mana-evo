@@ -1,10 +1,12 @@
 const CACHE_PREFIX = 'manaevo-pwa-'
-const CACHE_NAME = `${CACHE_PREFIX}v8`
+const CACHE_NAME = `${CACHE_PREFIX}v9`
 const BASE_URL = new URL('./', self.location.href).href
 const BASE_PATH = new URL(BASE_URL).pathname
+const MONSTER_REVISION_URL = new URL('monster-asset-revisions.json', BASE_URL).href
 const APP_SHELL = [
   BASE_URL,
   new URL('manifest.webmanifest', BASE_URL).href,
+  MONSTER_REVISION_URL,
   new URL('icons/icon-192.png', BASE_URL).href,
   new URL('icons/icon-512.png', BASE_URL).href,
   new URL('icons/apple-touch-icon.png', BASE_URL).href
@@ -57,7 +59,68 @@ self.addEventListener('activate', (event) => {
 function isCacheFirstAsset(url) {
   if (!url.pathname.startsWith(BASE_PATH)) return false
   const relative = url.pathname.slice(BASE_PATH.length)
-  return relative.startsWith('assets/') || relative.startsWith('monsters/') || relative.startsWith('icons/')
+  return relative.startsWith('assets/') || relative.startsWith('icons/')
+}
+
+async function loadMonsterRevisions(cache) {
+  try {
+    const response = await fetch(MONSTER_REVISION_URL, { cache: 'no-store' })
+    if (!response.ok) throw new Error('monster revision manifest unavailable')
+    await cache.put(MONSTER_REVISION_URL, response.clone())
+    return await response.json()
+  } catch {
+    const cached = await cache.match(MONSTER_REVISION_URL)
+    if (!cached) return null
+    try { return await cached.json() } catch { return null }
+  }
+}
+
+function revisionCacheKey(request, revision) {
+  const key = new URL(request.url)
+  key.searchParams.set('__manaevo_rev', revision)
+  return key.href
+}
+
+async function previousRevisionResponse(cache, request) {
+  const requestUrl = new URL(request.url)
+  const keys = await cache.keys()
+  for (const key of keys.reverse()) {
+    const keyUrl = new URL(key.url)
+    if (keyUrl.pathname === requestUrl.pathname && keyUrl.searchParams.has('__manaevo_rev')) {
+      const cached = await cache.match(key)
+      if (cached) return cached
+    }
+  }
+  return null
+}
+
+async function handleMonsterAsset(request, url) {
+  const cache = await caches.open(CACHE_NAME)
+  const relativePath = `/${url.pathname.slice(BASE_PATH.length)}`
+  const revisions = await loadMonsterRevisions(cache)
+  const revision = revisions?.formalByUrl?.[relativePath]
+
+  if (revision) {
+    const cacheKey = revisionCacheKey(request, revision)
+    const cached = await cache.match(cacheKey)
+    if (cached) return cached
+    try {
+      const response = await fetch(request, { cache: 'no-store' })
+      if (response.ok) await cache.put(cacheKey, response.clone())
+      return response
+    } catch {
+      return (await previousRevisionResponse(cache, request)) || (await cache.match(request)) || Response.error()
+    }
+  }
+
+  // Candidate assets may be replaced by a later FORMAL asset at the same URL, so they are network-first.
+  try {
+    const response = await fetch(request, { cache: 'no-store' })
+    if (response.ok) await cache.put(request, response.clone())
+    return response
+  } catch {
+    return (await cache.match(request)) || Response.error()
+  }
 }
 
 self.addEventListener('fetch', (event) => {
@@ -79,6 +142,11 @@ self.addEventListener('fetch', (event) => {
         return (await cache.match(request)) || (await cache.match(BASE_URL)) || Response.error()
       }
     })())
+    return
+  }
+
+  if (url.pathname.slice(BASE_PATH.length).startsWith('monsters/')) {
+    event.respondWith(handleMonsterAsset(request, url))
     return
   }
 

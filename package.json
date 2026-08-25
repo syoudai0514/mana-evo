@@ -7,9 +7,10 @@
   "scripts": {
     "postinstall": "patch-package",
     "generate:runtime": "node scripts/generate-runtime-master.mjs",
-    "predev": "npm run generate:runtime",
-    "pretest": "npm run generate:runtime",
-    "prebuild": "npm run generate:runtime",
+    "generate:pwa-assets": "node scripts/generate-pwa-asset-revisions.mjs",
+    "predev": "npm run generate:runtime && npm run generate:pwa-assets",
+    "pretest": "npm run generate:runtime && npm run generate:pwa-assets",
+    "prebuild": "npm run generate:runtime && npm run generate:pwa-assets",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
