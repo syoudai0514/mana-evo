@@ -1,11 +1,18 @@
 import React, { useMemo, useState } from 'react'
 import { dayNumber } from '../../study/srs.js'
 import PlaceholderMonster from '../PlaceholderMonster.jsx'
-import { AREA_META, STAGES, pickDailyEncounterStages, speciesOf, stageKindLabel } from '../content.js'
+import { AREA_META, EX_AREA_META, STAGES, pickDailyEncounterStages, speciesOf, stageKindLabel } from '../content.js'
 import { adventureZoneProgress, isAdventureZoneUnlocked, isStageUnlocked, startBattle } from '../engine.js'
+import { EVOLUTION_ITEM_CATALOG } from '../explorationDomain.js'
 import { availableTicketCount } from '../progression.js'
+import { explorationStatusForGame, performGameExploration } from '../sharedRuntime.js'
+import { areaBossEligibility } from '../worldProgression.js'
 import { BattleView } from './BattleScreen.jsx'
 import { TypePills } from './GameScreenPrimitives.jsx'
+
+function evolutionItemName(itemId) {
+  return EVOLUTION_ITEM_CATALOG[itemId]?.name || 'シンカアイテム'
+}
 
 function unlockReason(game, stage) {
   const cleared = new Set(game.stagesCleared || [])
@@ -13,6 +20,15 @@ function unlockReason(game, stage) {
   if (stage.requiresAllAreasCleared) return '4つの エリアを クリアしよう'
   const zoneProgress = stage.zoneId ? adventureZoneProgress(game, stage.adventureArea || stage.area, stage.zoneId) : null
   if (zoneProgress && !zoneProgress.unlocked) return `${zoneProgress.previousZoneName}で あと ${zoneProgress.remaining}かい クリアしよう`
+  if (stage.kind === 'boss') {
+    const progress = areaBossEligibility(game, stage.bossProgressArea || stage.adventureArea || stage.area)
+    if (!progress.eligible) {
+      const missing = []
+      if (progress.missingPoints > 0) missing.push(`まなびポイント あと${progress.missingPoints}`)
+      if (progress.missingUniqueSkills > 0) missing.push(`ちがうスキル あと${progress.missingUniqueSkills}`)
+      if (missing.length) return `ボスへ：${missing.join('・')}`
+    }
+  }
   if (stage.requiresEvolutionDiscoverySpeciesId && !game.evolutionDiscoveries?.[stage.requiresEvolutionDiscoverySpeciesId]) {
     const required = speciesOf(stage.requiresEvolutionDiscoverySpeciesId)
     return `まず ${required?.name || 'このすがた'}へ じぶんで シンカさせよう`
@@ -21,11 +37,19 @@ function unlockReason(game, stage) {
     const required = speciesOf(stage.requiresOwnedSpeciesId)
     return `${required?.name || '対象'}を GETしよう`
   }
-  if (stage.minAreaClears) return `このエリアで ${stage.minAreaClears}かい クリアしよう`
   return 'まだ あいていないよ'
 }
 
-export function StageMap({ game, onStart, goStudy, goHome, dailyCompleted, today, location, onLocationChange }) {
+function explorationResultCopy(result) {
+  if (!result) return ''
+  if (result.kind === 'material') return '🧺 ふつうの そざいを みつけた！'
+  if (result.kind === 'evolution_item') return `✨ ${evolutionItemName(result.itemId)}を みつけた！`
+  if (result.reason === 'PITY_CHOICE_REQUIRED') return 'ほしい シンカアイテムを 1つ えらぼう。'
+  if (result.reason === 'NOT_ENOUGH_EXPLORATION_POINTS') return 'たんさくポイントが たりないよ。'
+  return 'いまは たんさくできないよ。'
+}
+
+export function StageMap({ game, onStart, onExplore, goStudy, goHome, dailyCompleted, today, location, onLocationChange }) {
   const ticketCount = availableTicketCount(game, today)
   const cleared = new Set(game.stagesCleared || [])
   const highestArea = AREA_META.reduce((best, meta) => {
@@ -42,10 +66,13 @@ export function StageMap({ game, onStart, goStudy, goHome, dailyCompleted, today
   const [kind, setKind] = useState('all')
   const [search, setSearch] = useState('')
   const [showAll, setShowAll] = useState(false)
+  const [explorationChoice, setExplorationChoice] = useState(null)
+  const [explorationResult, setExplorationResult] = useState(null)
   const teamLevels = (game.team || []).map((id) => Number(game.box?.[id]?.level) || 1).filter(Boolean)
   const teamLevel = teamLevels.length ? Math.round(teamLevels.reduce((sum, level) => sum + level, 0) / teamLevels.length) : 1
   const areaUnlocked = (areaNo) => areaNo === 1 || cleared.has(`a${areaNo - 1}-boss`)
   const exUnlocked = [1, 2, 3, 4].every((areaNo) => cleared.has(`a${areaNo}-boss`))
+  const exploration = area <= 4 ? explorationStatusForGame(game, area) : null
 
   const selectArea = (nextArea) => {
     const meta = AREA_META.find((item) => item.area === nextArea)
@@ -53,6 +80,8 @@ export function StageMap({ game, onStart, goStudy, goHome, dailyCompleted, today
     setKind('all')
     setSearch('')
     setShowAll(false)
+    setExplorationChoice(null)
+    setExplorationResult(null)
   }
   const selectZone = (nextZoneId) => {
     if (areaMeta && !isAdventureZoneUnlocked(game, area, nextZoneId)) return
@@ -61,6 +90,21 @@ export function StageMap({ game, onStart, goStudy, goHome, dailyCompleted, today
     setSearch('')
     setShowAll(false)
   }
+  const runExploration = () => {
+    if (!exploration?.canExplore) return
+    if (exploration.pityChoiceRequired && !explorationChoice) {
+      setExplorationResult({ reason: 'PITY_CHOICE_REQUIRED' })
+      return
+    }
+    const result = onExplore?.(area, exploration.pityChoiceRequired ? explorationChoice : null)
+    if (!result) return
+    if (!result.ok) {
+      setExplorationResult({ reason: result.reason })
+      return
+    }
+    setExplorationChoice(null)
+    setExplorationResult(result.result || null)
+  }
 
   const filteredStages = useMemo(() => STAGES.filter((stage) => {
     if (stage.legacy || stage.hidden) return false
@@ -68,7 +112,6 @@ export function StageMap({ game, onStart, goStudy, goHome, dailyCompleted, today
     if (area === 5 && !['event', 'ex'].includes(stage.kind)) return false
     if (area <= 4 && stage.zoneId !== zoneId) return false
     if (kind === 'wild' && stage.kind !== 'wild') return false
-    if (kind === 'evo' && stage.kind !== 'evolution-trial') return false
     if (kind === 'special' && !['giga-challenge', 'burst-challenge'].includes(stage.kind)) return false
     if (kind === 'boss' && !['boss', 'ex'].includes(stage.kind)) return false
     if (search.trim()) {
@@ -89,27 +132,42 @@ export function StageMap({ game, onStart, goStudy, goHome, dailyCompleted, today
       isUnlocked: (stage) => isStageUnlocked(game, stage),
       isCaught: (stage) => stage.kind === 'wild' ? !!game.dex?.caught?.[stage.enemySpeciesId] : false,
       isCleared: (stage) => cleared.has(stage.id),
-      priority: (stage) => stage.kind === 'boss' ? 0 : stage.kind === 'evolution-trial' ? 1 : ['giga-challenge', 'burst-challenge'].includes(stage.kind) ? 2 : stage.kind === 'wild' ? 3 : 4
+      priority: (stage) => stage.kind === 'boss' ? 0 : ['giga-challenge', 'burst-challenge'].includes(stage.kind) ? 1 : stage.kind === 'wild' ? 2 : 3
     })
   }, [filteredStages, dailyMode, today, game, cleared])
 
+  const currentAreaName = area <= 4 ? AREA_META.find((item) => item.area === area)?.name : EX_AREA_META?.name || 'スペシャルエリア'
+  const resultCopy = explorationResultCopy(explorationResult)
+
   return <main className="screen adventure-map">
     <button className="back" onClick={goHome}>← ホーム</button>
-    <div className="screen-title-row"><div><p className="eyebrow">ぼうけんマップ</p><h1>{area <= 4 ? AREA_META.find((item) => item.area === area)?.name : 'スペシャルエリア'}</h1>{area <= 4 && <p className="area-level-band">📍 いまのエリア　{AREA_META.find((item) => item.area === area)?.levelLabel}</p>}</div><strong>🎫 {ticketCount}</strong></div>
+    <div className="screen-title-row"><div><p className="eyebrow">ぼうけんマップ</p><h1>{currentAreaName}</h1>{area <= 4 && <p className="area-level-band">📍 いまのエリア　{AREA_META.find((item) => item.area === area)?.levelLabel}</p>}</div><strong>🎫 {ticketCount}</strong></div>
     <p className="kid-note">{dailyCompleted ? 'きょうの まなびクリア！ エリアと ゾーンで てきの強さが ちがうよ。そだてた強さを ためしてみよう！' : 'チケットを持っていても、きょうの まなびを終えてからバトルへ。'}</p>
 
+    {exploration && <section className="no-ticket exploration-card" aria-label="シンカアイテムたんさく">
+      <div className="world-overview-heading"><div><p className="eyebrow">たんさくポイント</p><h2>🧭 {exploration.points}pt</h2></div><span>1かい {exploration.cost}pt</span></div>
+      <p className="kid-note">まなびで ためたポイントで たんさく！ ふつうは そざい、たまに シンカアイテムが みつかるよ。</p>
+      <section className="daily-ticket-summary" aria-label="たんさくのじょうたい"><div><span>🧭</span><small>いま</small><strong>{exploration.points}pt</strong></div><i/><div><span>✨</span><small>シンカアイテムなし</small><strong>{exploration.misses}/5</strong></div></section>
+      <p>{exploration.pityChoiceRequired ? '5かい つづけて シンカアイテムなし。つぎは ほしいものを 1つ えらべるよ！' : `あと ${5 - exploration.misses}かい つづくと、つぎは ほしい シンカアイテムを えらべるよ。`}</p>
+      {exploration.pityChoiceRequired && <div className="exploration-choice-panel">
+        <h3>ほしい シンカアイテムを 1つ えらぼう</h3>
+        <div className="stage-filters exploration-choices">{exploration.choices.map((itemId) => <button key={itemId} type="button" aria-pressed={explorationChoice === itemId} className={explorationChoice === itemId ? 'active' : ''} onClick={() => setExplorationChoice(itemId)}>{evolutionItemName(itemId)}</button>)}</div>
+      </div>}
+      <button className="primary" disabled={!exploration.canExplore || (exploration.pityChoiceRequired && !explorationChoice)} onClick={runExploration}>{exploration.pityChoiceRequired ? 'えらんで たんさく！' : `${exploration.cost}ptで たんさく！`}</button>
+      {exploration.points < exploration.cost && <small>あと {exploration.cost - exploration.points}pt ためると たんさくできるよ。</small>}
+      {resultCopy && <p className="kid-note" role="status">{resultCopy}</p>}
+    </section>}
+
     <section className={`world-overview-card premium-world-map area-${area}`}>
-      <div className="world-overview-heading"><div><p className="eyebrow">せかいを ぼうけん</p><h2>シンカの ちからを ひらこう！</h2></div><span>📍 エリア{area}{activeZone ? '・' + activeZone.name : ''}</span></div>
-      <div className="world-area-route">{AREA_META.map((meta) => { const unlocked = areaUnlocked(meta.area); return <button key={meta.area} disabled={!unlocked} className={'world-area-node ' + (area === meta.area ? 'current' : '') + (unlocked ? ' unlocked' : ' locked')} onClick={() => selectArea(meta.area)}><span>{unlocked ? meta.icon : '🔒'}</span><b>エリア{meta.area}</b><small>{area === meta.area ? 'いまここ' : unlocked ? 'いける' : 'まだ'}</small></button> })}</div>
+      <div className="world-overview-heading"><div><p className="eyebrow">せかいを ぼうけん</p><h2>どこへ いく？</h2></div><span>📍 {area <= 4 ? `エリア${area}` : 'EX'}{activeZone ? '・' + activeZone.name : ''}</span></div>
+      <div className="world-area-route">
+        {AREA_META.map((meta) => { const unlocked = areaUnlocked(meta.area); return <button key={meta.area} disabled={!unlocked} className={'world-area-node ' + (area === meta.area ? 'current' : '') + (unlocked ? ' unlocked' : ' locked')} onClick={() => selectArea(meta.area)}><span>{unlocked ? meta.icon : '🔒'}</span><b>エリア{meta.area}</b><small>{area === meta.area ? 'いまここ' : unlocked ? 'いける' : 'まだ'}</small></button> })}
+        <button disabled={!exUnlocked} className={'world-area-node ' + (area === 5 ? 'current' : '') + (exUnlocked ? ' unlocked' : ' locked')} onClick={() => selectArea(5)}><span>{exUnlocked ? EX_AREA_META?.icon || '🌀' : '🔒'}</span><b>EX</b><small>{area === 5 ? 'いまここ' : exUnlocked ? 'いける' : 'まだ'}</small></button>
+      </div>
     </section>
 
-    <div className="area-tabs world-area-tabs">
-      {AREA_META.map((meta) => { const unlocked = areaUnlocked(meta.area); return <button key={meta.area} disabled={!unlocked} className={area === meta.area ? 'active' : ''} onClick={() => selectArea(meta.area)}>{unlocked ? meta.icon : '🔒'} エリア{meta.area}</button> })}
-      <button disabled={!exUnlocked} className={area === 5 ? 'active' : ''} onClick={() => selectArea(5)}>{exUnlocked ? '🌀' : '🔒'} EX</button>
-    </div>
-
     {areaMeta && <section className={`zone-map area-zone-map area-${area}`}>
-      <div className="zone-map-title"><div><p className="eyebrow">エリア{area}の ぼうけん</p><h2>どこへ いく？</h2></div><span>チームの めやす Lv.{teamLevel}</span></div>
+      <div className="zone-map-title"><div><p className="eyebrow">エリア{area}の ぼうけん</p><h2>どこまで すすむ？</h2></div><span>チームの めやす Lv.{teamLevel}</span></div>
       <div className="zone-grid">{areaMeta.zones.map((zone, index) => {
         const danger = teamLevel < zone.minLevel
         const progress = adventureZoneProgress(game, area, zone.id)
@@ -120,13 +178,15 @@ export function StageMap({ game, onStart, goStudy, goHome, dailyCompleted, today
       })}</div>
     </section>}
 
-    <div className="stage-filters">
-      {[['all','ぜんぶ'],['wild','たんさく'],['evo','シンカ'],['special','とくべつ'],['boss','ボス']].map(([id,label]) => <button key={id} className={kind === id ? 'active' : ''} onClick={() => setKind(id)}>{label}</button>)}
-    </div>
-    <input className="monster-search" value={search} onChange={(event) => { setSearch(event.target.value); if (event.target.value) setShowAll(true) }} placeholder="なまえ・No.で さがす" />
+    {showAll && <section className="encounter-browse-controls" aria-label="であいを さがす">
+      <div className="stage-filters">
+        {[['all','ぜんぶ'],['wild','やせい'],['special','とくべつ'],['boss','ボス']].map(([id,label]) => <button key={id} className={kind === id ? 'active' : ''} onClick={() => setKind(id)}>{label}</button>)}
+      </div>
+      <input className="monster-search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="なまえ・No.で さがす" />
+    </section>}
 
     {dailyMode && <section className="daily-ticket-summary"><div><span>🎫</span><small>1にち</small><strong>3チケット</strong></div><i/><div><span>⭐</span><small>おすすめ</small><strong>{visibleStages.length}けん</strong></div></section>}
-    {area <= 4 && <div className="encounter-heading"><div><p className="eyebrow">{dailyMode ? 'きょう みつかっている' : 'このゾーンの モンスター'}</p><h2>{activeZone?.icon} {activeZone?.name}</h2><small>{dailyMode ? '野生・シンカ・ボスから、いま意味のある であいを5つまで えらぶよ。' : 'ずかんのように ぜんぶ さがせるよ。'}</small></div><button className="secondary compact" onClick={() => { setShowAll((value) => !value); setKind('all'); setSearch('') }}>{showAll ? 'きょうの であいへ' : 'ほかも さがす'}</button></div>}
+    {area <= 4 && <div className="encounter-heading"><div><p className="eyebrow">{dailyMode ? 'きょう みつかっている' : 'このゾーンの モンスター'}</p><h2>{activeZone?.icon} {activeZone?.name}</h2><small>{dailyMode ? '野生・とくべつ・ボスから、いま意味のある であいを5つまで えらぶよ。' : 'ずかんのように ぜんぶ さがせるよ。'}</small></div><button className="secondary compact" onClick={() => { setShowAll((value) => !value); setKind('all'); setSearch('') }}>{showAll ? 'きょうの であいへ' : 'ほかも さがす'}</button></div>}
 
     <div className="stage-list full-master-stage-list">
       {visibleStages.map((stage, index) => {
@@ -134,7 +194,7 @@ export function StageMap({ game, onStart, goStudy, goHome, dailyCompleted, today
         const isCleared = cleared.has(stage.id)
         const enemy = speciesOf(stage.enemySpeciesId)
         const canStart = unlocked && dailyCompleted && ticketCount > 0
-        const recommendationTag = stage.kind === 'boss' ? (isCleared ? '再戦' : 'おすすめ') : stage.kind === 'evolution-trial' ? (isCleared ? '取得済' : '未GET') : ['giga-challenge', 'burst-challenge'].includes(stage.kind) ? (isCleared ? '再挑戦' : '初回') : stage.kind === 'wild' ? (game.dex?.caught?.[stage.enemySpeciesId] ? '育成向け' : '未GET') : index === 0 ? 'おすすめ' : '挑戦'
+        const recommendationTag = stage.kind === 'boss' ? (isCleared ? '再戦' : 'おすすめ') : ['giga-challenge', 'burst-challenge'].includes(stage.kind) ? (isCleared ? '再挑戦' : '初回') : stage.kind === 'wild' ? (game.dex?.caught?.[stage.enemySpeciesId] ? '育成向け' : '未GET') : index === 0 ? 'おすすめ' : '挑戦'
         return <article key={stage.id} className={`stage-card formal-stage-card area-${stage.adventureArea || stage.area} zone-${stage.zoneId || 'special'} ${!unlocked ? 'locked' : ''}`}>
           <div className="stage-number">{dailyMode ? <b>{index + 1}</b> : isCleared ? '✅' : unlocked ? stage.kind === 'boss' ? '👑' : '⚔️' : '🔒'}</div><span className={'recommendation-tag kind-' + stage.kind}>{recommendationTag}</span>
           <div className="encounter-art"><PlaceholderMonster speciesId={stage.enemySpeciesId} size={dailyMode ? 96 : 76} /></div>
@@ -147,7 +207,6 @@ export function StageMap({ game, onStart, goStudy, goHome, dailyCompleted, today
           </div>
           <div className="stage-actions">
             <span>🎫×1</span>
-            {stage.evolutionReward && <small>🎁 シンカアイテム</small>}
             {stage.id === 'a1-boss' && <small>🔷 はじめてなら ギガキー</small>}
             {stage.specialReward?.type === 'giga' && <small>🔷 ギガコア</small>}
             {stage.specialReward?.type === 'burst' && <small>💥 バーストのしるし</small>}
@@ -174,7 +233,12 @@ export function AdventureFlow({ game, setGame, goHome, goStudy, dailyCompleted, 
     }
     setGame(result.game)
   }
+  const explore = (areaId, choiceItemId = null) => {
+    const result = performGameExploration(game, { areaId, choiceItemId })
+    if (result.ok) setGame(result.game)
+    return result
+  }
   const setMapLocation = (nextLocation) => setGame((current) => ({ ...current, adventureLocation: nextLocation }))
   if (game.activeBattle) return <BattleView game={game} setGame={setGame} onExitToMap={() => {}} goStudy={goStudy} />
-  return <StageMap game={game} onStart={start} goStudy={goStudy} goHome={goHome} dailyCompleted={dailyCompleted} today={today} location={game.adventureLocation} onLocationChange={setMapLocation} />
+  return <StageMap game={game} onStart={start} onExplore={explore} goStudy={goStudy} goHome={goHome} dailyCompleted={dailyCompleted} today={today} location={game.adventureLocation} onLocationChange={setMapLocation} />
 }
