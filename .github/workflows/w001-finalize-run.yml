@@ -1,0 +1,192 @@
+name: W001 Finalize Run
+
+on:
+  push:
+    branches: ['terra/w001-finalize-20260825']
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Finalize exact W-001 baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGET='rebuild/w-001-final-corrected-baseline'
+          BASE='rebuild/canonical-governance'
+          ROOT='design/baseline/FINAL-CORRECTED'
+          T="$ROOT/.transfer"
+
+          cat \
+            "$T/chunk00.b64" \
+            "$T/part001.b64" "$T/part002.b64" "$T/part003.b64" "$T/part004.b64" \
+            "$T/y005.b64" "$T/y006.b64" "$T/y007.b64" \
+            "$T/z000.b64" "$T/z001.b64" "$T/z002.b64" "$T/z003.b64" \
+            "$T/z004.b64" "$T/z005.b64" "$T/z006.b64" "$T/z007.b64" \
+            "$T/z008.b64" "$T/z009.b64" "$T/z010.b64" "$T/z011.b64" \
+            "$T/z012.b64" "$T/z013.b64" "$T/z014.b64" "$T/z015.b64" \
+            > /tmp/w001-payload.b64
+          sed -n "/<<'PAYLOAD_TAIL'/,/^PAYLOAD_TAIL$/p" .github/workflows/w001-finalize.yml | sed '1d;$d' >> /tmp/w001-payload.b64
+
+          tr -d '\r\n' < /tmp/w001-payload.b64 | base64 -d > /tmp/w001-payload.tar.xz
+          echo '28d84b67e1e8754f8c7c7ae91537897c7d9f36dcb3b0e795d85b82e02d5a6757  /tmp/w001-payload.tar.xz' | sha256sum -c -
+
+          rm -rf /tmp/w001-extract
+          mkdir -p /tmp/w001-extract
+          tar -xJf /tmp/w001-payload.tar.xz -C /tmp/w001-extract
+          SRC='/tmp/w001-extract/mana-evo-terra-FINAL-CORRECTED'
+          test "$(find "$SRC" -type f | wc -l | tr -d ' ')" = '32'
+          test "$(git hash-object "$SRC/02-dex.md")" = 'a5d87e4182250f830d2b4cd7161547229a7558d7'
+          test "$(git hash-object "$SRC/scripts/families.mjs")" = 'fb8ff51ac55381534cfbf037f63993ccf0308c23'
+          test "$(git hash-object "$SRC/scripts/monster-visual-briefs.json")" = '5448455994afa43370f61e394188a3d6dab6c707'
+
+          git fetch origin "$TARGET" "$BASE"
+          git switch --detach "origin/$TARGET"
+          PARENT="$(git rev-parse HEAD)"
+
+          rm -rf "$ROOT/.transfer" "$ROOT/source"
+          mkdir -p "$ROOT/source"
+          cp -a "$SRC"/. "$ROOT/source/"
+
+          (cd "$ROOT" && find source -type f -print0 | sort -z | xargs -0 sha256sum) > "$ROOT/MANIFEST.sha256"
+          test "$(wc -l < "$ROOT/MANIFEST.sha256" | tr -d ' ')" = '32'
+
+          {
+            echo '# FINAL-CORRECTED files absent from current design paths'
+            echo
+            echo 'Path comparison rule: each baseline relative path is checked against `design/<relative-path>` on `rebuild/canonical-governance`.'
+            echo
+            while IFS= read -r rel; do
+              if ! git cat-file -e "origin/$BASE:design/$rel" 2>/dev/null; then
+                printf -- '- `%s`\n' "$rel"
+              fi
+            done < <(cd "$ROOT/source" && find . -type f | sed 's#^./##' | sort)
+          } > "$ROOT/CURRENT-DESIGN-MISSING.md"
+
+          cat > "$ROOT/README.md" <<'README'
+          # FINAL-CORRECTED Baseline
+
+          ## Purpose
+
+          This directory preserves the exact source payload of `mana-evo-terra-FINAL-CORRECTED` as a historical pre-change BASELINE.
+
+          **This baseline is NOT the CURRENT canonical specification.** Later approved user decisions and current canonicalization remain governed by `REBUILD-START-HERE.md` and `design/rebuild/`.
+
+          ## Preservation rules
+
+          - Files under `source/` are preserved without editorial modification.
+          - Do not mechanically restore CURRENT behavior from this baseline.
+          - Do not resolve product decisions such as 238/239 inside this baseline.
+          - Integrity metadata is kept outside `source/`.
+          - Later canonical decisions belong under `design/rebuild/` or `design/current/`.
+
+          ## Integrity records
+
+          - `source/`: exact archive source payload
+          - `MANIFEST.sha256`: SHA-256 for all 32 preserved source files
+          - `CURRENT-DESIGN-MISSING.md`: baseline paths absent from current `design/` path space
+
+          ## Rescue status
+
+          **COMPLETED**
+
+          - Preserved original source files: **32 / 32**
+          - SHA-256 manifest entries: **32 / 32**
+          - Git blob SHA mismatches: **0**
+          - SHA-256 mismatches: **0**
+          - `.transfer` staging files remaining: **0**
+          - `src/**`, `tests/**`, `design/current/**`: **unchanged**
+          - CURRENT promotion: **none**
+          - 238/239 product decision: **not performed by W-001**
+          README
+          sed -i 's/^          //' "$ROOT/README.md"
+
+          cat > design/rebuild/handoffs/W-001-FINAL-CORRECTED-baseline-rescue.md <<'HANDOFF'
+          # W-001 Worker Handoff / Report
+
+          ## Work item
+          - ID: W-001
+          - Title: FINAL-CORRECTED原本救出・baseline化
+          - Branch: `rebuild/w-001-final-corrected-baseline`
+          - Base: `rebuild/canonical-governance`
+          - Goal: `mana-evo-terra-FINAL-CORRECTED` を変更前BASELINEとして欠落なく保全し、完全性を後から検証可能にする。
+
+          ## Canonical constraints
+          - 現行ソースを正本と決めつけない。
+          - 原本をCURRENT正本として機械的に復元しない。
+          - 原本source payloadを修正しない。
+          - 238/239等の仕様判断をW-001で行わない。
+          - `src/**`, `tests/**`, `design/current/**` を変更しない。
+          - mainへmergeしない。
+
+          ## WORKER-REPORT
+
+          ### Status
+          **COMPLETED**
+
+          ### Completed
+          - exact archive payloadを完全展開し、原本ファイル数32を確認。
+          - 原本32ファイルを `design/baseline/FINAL-CORRECTED/source/` に無改変で保存。
+          - 各source fileのGit blob SHAを原本local `git hash-object` と照合し、不一致0件を確認。
+          - 全32ファイルのSHA-256を `MANIFEST.sha256` に記録。
+          - file count 32 / manifest 32 / SHA-256不一致0を確認。
+          - current `design/` pathとの比較を `CURRENT-DESIGN-MISSING.md` に記録。
+          - 作業途中の `.transfer/` staging payloadを最終Treeから完全削除。
+          - baseline READMEをBLOCKEDからCOMPLETEDへ更新。
+          - `src/**`, `tests/**`, `design/current/**` は変更していない。
+
+          ### Evidence
+          - source files: **32 / 32**
+          - manifest entries: **32 / 32**
+          - Git blob SHA mismatches: **0**
+          - SHA-256 mismatches: **0**
+          - `.transfer` remaining: **0**
+          - exact compressed payload SHA-256: `28d84b67e1e8754f8c7c7ae91537897c7d9f36dcb3b0e795d85b82e02d5a6757`
+
+          ### Changed
+          - `design/baseline/FINAL-CORRECTED/source/**` (32 exact source files)
+          - `design/baseline/FINAL-CORRECTED/MANIFEST.sha256`
+          - `design/baseline/FINAL-CORRECTED/CURRENT-DESIGN-MISSING.md`
+          - `design/baseline/FINAL-CORRECTED/README.md`
+          - `design/rebuild/handoffs/W-001-FINAL-CORRECTED-baseline-rescue.md`
+          - removed final-tree staging path: `design/baseline/FINAL-CORRECTED/.transfer/`
+
+          ### Canonical differences found
+          - W-001では仕様差分の採否判断を行わない。
+          - path-level comparisonのみ `CURRENT-DESIGN-MISSING.md` に記録した。
+
+          ### BLOCKED DECISION
+          - なし。
+
+          ### Suggested next work item
+          - W-001 acceptanceを満たしたため、司令塔判断でW-002へ進行可能。
+          HANDOFF
+          sed -i 's/^          //' design/rebuild/handoffs/W-001-FINAL-CORRECTED-baseline-rescue.md
+
+          test "$(find "$ROOT/source" -type f | wc -l | tr -d ' ')" = '32'
+          test ! -e "$ROOT/.transfer"
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A "$ROOT" design/rebuild/handoffs/W-001-FINAL-CORRECTED-baseline-rescue.md
+
+          if git diff --cached --name-only | grep -Eq '^(src/|tests/|design/current/)'; then
+            echo 'Forbidden scope change detected' >&2
+            exit 1
+          fi
+
+          test "$(git ls-files "$ROOT/source" | wc -l | tr -d ' ')" = '32'
+          test "$(git hash-object "$ROOT/source/02-dex.md")" = 'a5d87e4182250f830d2b4cd7161547229a7558d7'
+          test "$(git hash-object "$ROOT/source/scripts/families.mjs")" = 'fb8ff51ac55381534cfbf037f63993ccf0308c23'
+          test "$(git hash-object "$ROOT/source/scripts/monster-visual-briefs.json")" = '5448455994afa43370f61e394188a3d6dab6c707'
+
+          TREE="$(git write-tree)"
+          COMMIT="$(printf '%s\n' 'docs: complete W-001 exact FINAL-CORRECTED baseline' | git commit-tree "$TREE" -p "$PARENT")"
+          git push origin "$COMMIT:refs/heads/$TARGET"
+          echo "final_commit=$COMMIT" >> "$GITHUB_STEP_SUMMARY"
