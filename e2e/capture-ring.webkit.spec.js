@@ -40,9 +40,13 @@ async function installSave(page, game) {
 async function installCaptureFailureRandomGate(page) {
   await page.addInitScript(() => {
     const originalRandom = Math.random.bind(Math)
-    Math.random = () => document.documentElement?.dataset.w216CaptureRoll === 'fail'
-      ? 0.999999
-      : originalRandom()
+    Math.random = () => {
+      if (document.documentElement?.dataset.w216CaptureRoll === 'fail') {
+        document.documentElement.dataset.w216ForcedCaptureRoll = 'used'
+        return 0.999999
+      }
+      return originalRandom()
+    }
   })
 }
 
@@ -148,13 +152,13 @@ test('iPhone WebKit failed capture never displays four completed stars', async (
 
   const root = page.locator('html')
   await root.evaluate((element) => { element.dataset.w216CaptureRoll = 'fail' })
-  try {
-    await throwButton.click()
-  } finally {
-    await root.evaluate((element) => { delete element.dataset.w216CaptureRoll })
-  }
+  await throwButton.click()
 
   const sequence = page.getByTestId('capture-sequence')
+  await expect(sequence).toBeVisible()
+  await expect(root).toHaveAttribute('data-w216-forced-capture-roll', 'used')
+  await root.evaluate((element) => { delete element.dataset.w216CaptureRoll })
+
   await expect(sequence).toHaveAttribute('data-lit-stars', '1')
   await expect(sequence).not.toHaveAttribute('data-lit-stars', '4')
   await expect(sequence).toHaveAttribute('data-frame-type', 'ring_scatter')
