@@ -1,134 +1,88 @@
-# SOLレビュー前 バリデーション報告 — 238体 / 成長 / 進化
+# W-209 バリデーション報告 — 238体 / identity / 進化 / 特殊形態
 
-更新日: 2026-08-24
-対象: PR #15 `chatgpt/monster-master-238`
-状態: **SOL REVIEW CANDIDATE / runtime未実装**
+更新日: 2026-08-25  
+Work Item: **W-209**  
+状態: **RECONCILED / runtime未実装**
 
 ## 1. 目的
 
-`design/12`〜`14` が、過去の実装前設計を土台にした再現可能な詳細設計になっているかを、別SOLへ渡す前に機械検証した結果を記録する。
+Phase 3 `W-209 — Active monster data-master reconciliation` として、No.001〜238の派生monster masterをCURRENT canonicalとexact FINAL-CORRECTEDへ再照合した結果を記録します。
 
-この報告は「runtimeへ実装済み」という意味ではない。No.001〜238の正式runtime masterへ投入する前の設計レビュー用データである。
+この報告はruntime実装を意味しません。W-209はdata master reconciliationのみで、immutable baseline・`src/**`・runtime・他Work Item所有ファイルを変更しません。
 
-## 2. 復元元
+## 2. 権威順序
 
-主な復元元は `mana-evo-design-v10-terra-ready` / `mana-evo-terra-FINAL-CORRECTED` 系の以下。
+判断は `REBUILD-START-HERE.md` / `design/rebuild/DECISION-LOG.md` に従い、概ね次の順序を使いました。
 
-- `scripts/families.mjs`
-- `scripts/forms.mjs`
-- `scripts/battle.mjs`
-- `scripts/capture.mjs`
-- `scripts/wildEncounter.mjs`
-- `02-dex.md`
-- `01-catch-and-evolution-design.md`
+1. ユーザー明示決定
+2. exact FINAL-CORRECTED baseline
+3. 承認済み後続変更
+4. CURRENT canonical
+5. derived data master
+6. runtime / review history
 
-`families.mjs` を機械的にflattenすると **84系列 / 239体**。現行ManaEvoの有効範囲は No.001〜238のため、元資料No.239 `シラユキヒメ` は資料保全のみでruntime候補から除外した。
+主な照合根拠:
 
-## 3. 238体ソース照合
+- `design/baseline/FINAL-CORRECTED/source/scripts/families.mjs`
+- `design/current/09-MONSTER-MASTER-ART-SPEC.md`
+- `design/current/04-EVOLUTION-ITEMS-SPECIAL-FORMS.md`
+- `design/09-special-forms-master.md`
+- `design/rebuild/PHASE-2-FINAL-REVIEW.md`
+- `design/rebuild/PHASE-3-WORK-ITEMS.md`
 
-No.001〜238について、元 `families.mjs` と成長マスターを全件比較した。
+## 3. 既知driftの再判定
 
-比較項目:
+旧検証には「No.001〜238について元 `families.mjs` との名前等の照合不一致0件」という記述がありましたが、表示名についてはそのままでは正確ではありませんでした。
 
-- No
-- 名前
-- area
-- type
-- source rank (`catchRarity`)
-- source role (`sourceRole`)
-- stage / maxStage
-- motif
-- concept
-- description
-- evolution method / evolution param
+W-209で確認したdisplay-name例外は次の2件です。
 
-**照合不一致: 0件**
+| speciesId | exact baseline | W-209前 derived master | 判定 | W-209後 |
+|---|---|---|---|---|
+| `m142` | カブトレクス | ヘラクレオン | **承認済み後続変更**。CURRENTを維持 | ヘラクレオン |
+| `m236` | ホシラディア | ソラリオン | **未承認drift**。baselineへ戻す | ホシラディア |
 
-したがって、名前・系列・エリア・属性・元レア度・元ロール・設定文・進化条件は今回その場で創作したものではなく、元資料から復元されたものと一致している。
+結果:
+
+- raw baselineとのdisplay-name直比較差: **1件**（m142、意図的・承認済み）
+- authority precedence適用後の未承認display-name mismatch: **0件**
+- m236のstable ID / F081 / Area4 / psychic / legend / single-stage / stats / descriptionは変更なし
+
+つまり、m142をbaseline旧名へ戻すことも、m236のlater-data driftを残すことも、どちらも誤りです。
 
 ## 4. active master構造
+
+7個の `13*monster-growth*.csv` をactive対象として確認しました。
 
 | 項目 | 結果 |
 |---|---:|
 | active monster | 238 |
-| No範囲 | 001〜238 |
+| stable ID範囲 | m001〜m238 |
 | 欠番 | 0 |
 | ID重複 | 0 |
 | active系列 | 83 |
-| タイプ | 18 |
 | Area1 | 54 |
 | Area2 | 64 |
 | Area3 | 65 |
 | Area4 | 55 |
-| wild | 155 |
-| evolutionOnly | 79 |
-| event完成個体 | 4 |
-| No.239混入 | 0 |
+| No.239 active混入 | 0 |
 
-## 5. 戦闘ロール分布
+No.239 `シラユキヒメ` はbaseline/referenceのみで、active data masterへ入れません。
 
-`sourceRole` は元設定保存用、`combatRoleV2` は現行の初期戦闘で意味が出る8ロールへ変換した値。
+## 5. m142 CURRENT決定の保持
 
-| combatRoleV2 | 体数 |
-|---|---:|
-| attacker | 48 |
-| balanced | 44 |
-| hpTank | 36 |
-| speed | 26 |
-| defenseTank | 23 |
-| slowPower | 23 |
-| guard | 20 |
-| fastGlass | 18 |
-| **合計** | **238** |
+`design/13c-monster-growth-area3-part1.csv` と `design/14c-evolution-balance-area3.csv` を確認しました。
 
-元 `healer` / `support` の設定は `sourceRole` に残し、初期版で未実装の回復・補助戦闘能力を前提にしないよう `combatRoleV2` へ変換している。個別設定との整合性はSOL重点レビューR4。
+- `m141 / カブトガル -> m142 / ヘラクレオン`
+- method: `held_item_levelup`
+- param: `barkarmor`
+- `m142` stage 3 / final
+- `burstEligible=true`
 
-## 6. power tier分布
+stable IDは `m142` のままで、CURRENT正式名 `ヘラクレオン` を維持しています。
 
-初期seedは元資料rankを `powerTierV1` に使っているが、`catchRarity` とフィールド自体は分離済み。
+## 6. 155進化リンク
 
-| powerTierV1 | 体数 |
-|---|---:|
-| common | 82 |
-| rare | 87 |
-| epic | 57 |
-| legend | 12 |
-| **合計** | **238** |
-
-戦闘力と捕獲レア度をさらに独立補正すべきかはSOL重点レビューR1。
-
-## 7. BST / Lv能力値検証
-
-### 7.1 BST
-
-全238体について:
-
-```text
-BST = baseHP + baseAttack + baseDefense + baseSpeed
-```
-
-**不一致: 0件**
-
-### 7.2 target BST
-
-`design/12` の進化段階基準BST × powerTier倍率で再計算したtarget BSTとの不一致:
-
-**0件**
-
-### 7.3 Lv能力式
-
-Lv1 / 5 / 10 / 20 / 30 / 50 / 100について全238体を再計算。
-
-```text
-HP = floor(baseHP × Lv / 50) + Lv + 10
-ATK/DEF/SPD = floor(base × Lv / 50) + 5
-```
-
-CSV記載値との不一致:
-
-**0件**
-
-## 8. 155進化遷移検証
+`design/14a`〜`14d` と CURRENT canonical のactive transition contractを再照合しました。
 
 | method | 件数 |
 |---|---:|
@@ -137,64 +91,87 @@ CSV記載値との不一致:
 | held_item_levelup | 11 |
 | **合計** | **155** |
 
-全155遷移について `baseHP / baseAttack / baseDefense / baseSpeed` が進化後に減少しないことを確認。
+Area別:
 
-**能力低下遷移: 0件**
+| area | links |
+|---|---:|
+| Area1 | 36 |
+| Area2 | 42 |
+| Area3 | 43 |
+| Area4 | 34 |
+| **合計** | **155** |
 
-全遷移中の最小増加量:
+m236は `maxStage=1` の完成個体で進化リンクを持たないため、今回の名前補正によるリンク増減はありません。m142への進化リンクもCURRENT名のまま保持されています。
 
-- baseHP: +13
-- baseAttack: +13
-- baseDefense: +9
-- baseSpeed: +5
+## 7. Giga / Burst stable-ID検証
 
-level進化についてはトリガーLv直前/直後の実能力も監査CSVへ記録。stone / held-itemは固定トリガーLvを持たないため、基礎値差を正とする。
+正本 `design/09-special-forms-master.md` と派生monster masterのeligibilityを照合しました。
 
-## 9. 特殊形態対象照合
+### Giga 12
 
-### ギガ12体
+`m003, m006, m009, m051, m054, m072, m090, m121, m153, m156, m159, m186`
 
-`003 / 006 / 009 / 051 / 054 / 072 / 090 / 121 / 153 / 156 / 159 / 186`
+### Burst 8
 
-### キョダイバースト8体
+`m060, m066, m133, m136, m142, m165, m171, m174`
 
-`060 / 066 / 133 / 136 / 142 / 165 / 171 / 174`
+結果:
 
-- ギガ: 12/12
-- バースト: 8/8
-- 重複: 0
-- すべてNo.001〜238内
+- Giga: **12**
+- Burst: **8**
+- overlap: **0**
+- 全対象がm001〜m238内
+- No.142は `m142 / ヘラクレオン / burstEligible=true`
 
-対象割当の正本は `design/09-special-forms-master.md`。
+対象判定は表示名ではなくstable species IDで維持します。
 
-## 10. SOLレビュー対象ファイル
+## 8. obsolete 14e の扱い
 
-- `design/12-detailed-balance-design-for-sol-review.md`
-- `design/13-monster-growth-master-238.md`
-- `design/13a-monster-growth-area1.csv`
-- `design/13b-monster-growth-area2-part1.csv`
-- `design/13b-monster-growth-area2-part2.csv`
-- `design/13c-monster-growth-area3-part1.csv`
-- `design/13c-monster-growth-area3-part2.csv`
-- `design/13d-monster-growth-area4-part1.csv`
-- `design/13d-monster-growth-area4-part2.csv`
-- `design/14a-evolution-balance-area1.csv`
-- `design/14b-evolution-balance-area2.csv`
-- `design/14c-evolution-balance-area3.csv`
-- `design/14d-evolution-balance-area4.csv`
-- `design/09-special-forms-master.md`
-- `design/11-battle-character-boss-review.md`
+`design/14e-evolution-item-acquisition-master.csv` は32件の専用evolution trial初回クリアを進化アイテム取得源として記録した旧派生資料です。
 
-## 11. レビュー前結論
+しかしD-008および `design/current/04-EVOLUTION-ITEMS-SPECIAL-FORMS.md` により、CURRENTの進化アイテム取得はbaseline探索ポイント方式へ戻されています。
 
-データ完全性・元資料整合・成長式・BST・進化非減少・特殊形態対象について、機械検証上のP0不整合は見つかっていない。
+したがってW-209では:
 
-ただし以下は意図的に**別SOLの設計判断待ち**であり、runtimeへはまだ入れない。
+- 14eをCURRENT acquisition authorityへ昇格しない
+- 14eを根拠に専用evolution trialをactive仕様へ戻さない
+- monster identity / evolution transitionの照合と、item acquisition仕様を混同しない
 
-1. `powerTierV1` を元catchRarityと同seedのまま始めるか
-2. 戦闘開始時の手持ち3体へ全員100% Battle XPを配るか
-3. ボス予告大技への共通行動 `まもる` を採用するか
-4. source healer/support → combatRoleV2 の個別設定整合
-5. にじのわ供給量（学年初回+1 / 全エリア後EX初回+1）
+と判定しました。
 
-SOL判定 `GO` または指摘修正後の `GO WITH FIX` を受けるまで、No.001〜238正式runtime masterへの投入を開始しない。
+## 9. 変更内容
+
+W-209で変更するdataは最小限です。
+
+1. `design/13d-monster-growth-area4-part2.csv`
+   - m236 family: `ソラリオン` -> `ホシラディア`
+   - m236 name: `ソラリオン` -> `ホシラディア`
+   - その他fieldは不変
+2. `design/13-monster-growth-master-238.md`
+   - W-209 authority-precedence reconciliationを反映
+   - 旧「raw baseline name mismatch 0」の誤解を訂正
+   - obsolete 14eをCURRENTへ再昇格しないことを明記
+3. 本報告
+   - W-209再検証結果へ更新
+
+## 10. Acceptance結果
+
+| Acceptance | 結果 |
+|---|---|
+| active IDs exactly m001〜m238 / 83 families | PASS |
+| No.239 excluded active/reference only | PASS |
+| identity follows authority precedence | PASS |
+| m142 official `ヘラクレオン` preserved | PASS |
+| m236 `ソラリオン` drift corrected to `ホシラディア` | PASS |
+| all 155 evolution links remain valid | PASS |
+| Giga12 / Burst8 stable IDs verified | PASS |
+| obsolete 14e not re-promoted | PASS |
+| demonstrably false zero-mismatch wording corrected | PASS |
+| immutable baseline unchanged | PASS |
+| runtime source unchanged | PASS |
+
+## 11. 結論
+
+W-209のactive monster data-master reconciliationは **PASS** です。
+
+m236の未承認later-data driftだけをcanonical名へ戻し、m142の承認済みCURRENT名は保持しました。active 238 / 83系列、155進化リンク、Giga12 / Burst8のstable-ID契約に変更はありません。
