@@ -287,7 +287,7 @@ test('formal level evolution preserves monster instance and follows canonical le
   const game = createGameState()
   const id = game.activeMonsterId
   assert.equal(game.box[id].speciesId, 'm004')
-  game.box[id].level = 17
+  game.box[id].level = SPECIES.m004.evolution.level
   assert.equal(canNormalEvolve(game.box[id], game), true)
   const result = evolveInstance(game, id)
   assert.equal(result.ok, true)
@@ -345,7 +345,7 @@ test('legacy v1 save migrates to formal IDs without stale Star Awakening fields'
   }
   const migrated = normalizeGameState(legacy, day)
   assert.equal(migrated.version, CURRENT_GAME_VERSION)
-  assert.equal(CURRENT_GAME_VERSION, 8)
+  assert.equal(CURRENT_GAME_VERSION, 9)
   assert.equal(availableTicketCount(migrated, day), 7)
   assert.equal(availableTicketCount(migrated, day + 7), 0)
   assert.equal(migrated.box[migrated.activeMonsterId].speciesId, 'm005')

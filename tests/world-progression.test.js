@@ -16,7 +16,7 @@ test('second-form wild encounter is locked until that form has been obtained by 
   const stage = STAGES.find((s) => s.kind === 'wild' && s.area === 1 && speciesOf(s.enemySpeciesId)?.stage === 2 && speciesOf(s.enemySpeciesId)?.evolution)
   assert.ok(stage, 'area1 should contain a non-final second form')
   assert.equal(stage.firstAcquireByEvolution, true)
-  assert.equal(stage.requiresOwnedSpeciesId, stage.enemySpeciesId)
+  assert.equal(stage.requiresEvolutionDiscoverySpeciesId, stage.enemySpeciesId)
 
   const predecessor = Object.values(SPECIES).find((s) => s.evolution?.to === stage.enemySpeciesId && s.evolution?.method === 'level')
   assert.ok(predecessor, 'needs a level-evolution predecessor for the test')
@@ -31,12 +31,17 @@ test('second-form wild encounter is locked until that form has been obtained by 
   game.activeMonsterId = 'evo'
   game.dex = { seen: { [predecessor.id]: true }, caught: { [predecessor.id]: true } }
   game.stagesCleared = ['a1-boss', 'a2-boss']
+  for (const zoneId of ['coast', 'frost', 'city', 'skyway']) {
+    const route = STAGES.filter((entry) => entry.kind === 'wild' && entry.adventureArea === stage.adventureArea && entry.zoneId === zoneId).slice(0, 2)
+    if (route.length === 2) game.stagesCleared.push(...route.map((entry) => entry.id))
+  }
   assert.equal(isStageUnlocked(game, stage), false)
 
   const evolved = evolveInstance(game, 'evo')
   assert.equal(evolved.ok, true)
   assert.equal(evolved.to, stage.enemySpeciesId)
   assert.equal(evolved.game.dex.caught[stage.enemySpeciesId], true)
+  assert.equal(evolved.game.evolutionDiscoveries[stage.enemySpeciesId], true)
   assert.equal(isStageUnlocked(evolved.game, stage), true)
 })
 

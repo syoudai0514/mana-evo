@@ -38,12 +38,16 @@ function Home({ learning, game, go, today }) {
   const nextEvolution = species?.evolution ? speciesOf(species.evolution.to) : null
   const evolutionLeft = monster ? levelsUntilEvolution(monster) : null
   const clearedStages = new Set(game.stagesCleared || [])
-  const currentAreaNo = [1, 2, 3, 4].reduce((best, areaNo) => areaNo === 1 || clearedStages.has(`a${areaNo - 1}-boss`) ? Math.max(best, areaNo) : best, 1)
+  const highestAreaNo = [1, 2, 3, 4].reduce((best, areaNo) => areaNo === 1 || clearedStages.has(`a${areaNo - 1}-boss`) ? Math.max(best, areaNo) : best, 1)
+  const requestedAreaNo = Number(game.adventureLocation?.area)
+  const requestedAreaUnlocked = requestedAreaNo === 1 || (requestedAreaNo >= 2 && requestedAreaNo <= 4 && clearedStages.has(`a${requestedAreaNo - 1}-boss`))
+  const currentAreaNo = requestedAreaUnlocked ? requestedAreaNo : highestAreaNo
   const currentArea = AREA_META.find((meta) => meta.area === currentAreaNo)
+  const currentZone = currentArea?.zones?.find((zone) => zone.id === game.adventureLocation?.zoneId) || currentArea?.zones?.[0]
 
   return <main className="screen home-screen">
     <section className="hero-card"><div><p className="eyebrow">きょうの まなび</p><h1>{dailyCompleted ? 'クリア！' : `あと ${leftTasks} きょうか！`}</h1><div className="progress-dots">{Array.from({length:totalTasks},(_,i)=><span key={i} className={i<doneTasks?'done':''}/>)}</div><p className="kid-note">{gradeOf(learning.grade).short} ・ 1きょうか 2〜5もん</p><button className="primary" onClick={()=>go('study')}>{dailyCompleted?'もっと まなぶ':'まなぶ！'}</button></div>{monster && <PlaceholderMonster speciesId={monster.speciesId} excited={dailyCompleted}/>}</section>
-    <section className="world-status-card"><div><p className="eyebrow">📍 いまの ぼうけん</p><h2>エリア{currentAreaNo}　{currentArea?.name}</h2><p>{currentArea?.levelLabel}。つよくなったら、まえのエリアへ もどって せいちょうも ためせるよ。</p></div><div className="evolution-goal"><strong>{nextEvolution ? (evolutionLeft === 0 ? '✨ シンカできるよ！' : evolutionLeft != null ? `あと ${evolutionLeft}Lvで ${nextEvolution.name}` : `つぎは ${nextEvolution.name}`) : '👑 さいしゅうの すがた！'}</strong><span>{nextEvolution ? 'はじめての シンカが、つぎの野生出会いも ひらく！' : 'ギガ・バーストや EXを めざそう！'}</span></div></section>
+    <section className="world-status-card"><div><p className="eyebrow">📍 いまの ぼうけん</p><h2>エリア{currentAreaNo}　{currentArea?.name}</h2><p><b>{currentZone?.icon} {currentZone?.name}</b>　{currentArea?.levelLabel}。つよくなったら、まえのエリアへ もどって せいちょうも ためせるよ。</p></div><div className="evolution-goal"><strong>{nextEvolution ? (evolutionLeft === 0 ? '✨ シンカできるよ！' : evolutionLeft != null ? `あと ${evolutionLeft}Lvで ${nextEvolution.name}` : `つぎは ${nextEvolution.name}`) : '👑 さいしゅうの すがた！'}</strong><span>{nextEvolution ? 'はじめての シンカが、つぎの野生出会いも ひらく！' : 'ギガ・バーストや EXを めざそう！'}</span></div></section>
     <section className={`adventure-card ${!canAdventure?'locked':''}`}><div><p className="eyebrow">ぼうけん</p>{!dailyCompleted ? <><h2>まず きょうの まなび！</h2><p>5つの きょうかが おわると バトルへ いけるよ。マップは いつでも みられるよ。</p></> : <><h2>{ticketCount>0?`あと ${ticketCount} かい ぼうけん！`:'チケットが ないよ'}</h2><p>{ticketCount>0?'マップで敵を見つけて、バトル・ゲット・シンカ！':'ついかチャレンジ 3もん中2もんで 🎫+1！'}</p></>}</div><button className={canAdventure?'battle':'secondary'} onClick={()=>go('adventure')}>{canAdventure?'マップへ！':'マップをみる'}</button></section>
     <section className="grid-two"><button className="menu-card" onClick={()=>go('study')}><strong>📚 学習メニュー</strong><span>じゅぎょう・とっくん・しれん</span></button><button className="menu-card" onClick={()=>go('monsters')}><strong>🐾 モンスター</strong><span>{species?.name||'相棒'} Lv.{monster?.level||1}</span></button></section>
     <button className="parent-home-card" onClick={()=>go('parent')}><span>🔒</span><div><strong>おうちのひと</strong><small>学年・先取り・むずかしさ・つくよみちゃん設定</small></div><b>›</b></button>
