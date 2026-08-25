@@ -129,7 +129,7 @@ export default function HowToPlay({ game, today, goHome, goAdventure, goMonsters
         <p>バトルを はじめると、チケットを 1まい あずけるよ。かつか GETできたら その1まいを つかい、まけたり バトルを やめたりしたときは もどってくるよ。</p>
         <div className="howto-reward-grid">
           <article><strong>① HPが はんぶんいか</strong><p>GETできる あいては、HPが はんぶんいかに なると「わ」を なげられるよ。</p></article>
-          <article><strong>② 1バトル 3かいまで</strong><p>「わ」を なげられるのは、1つの バトルで さいだい 3かいまで。</p></article>
+          <article><strong>② 「わ」を なげよう！</strong><p>「わ」を なげられるのは、1つの バトルで さいだい 3かいまで。</p></article>
           <article><strong>⭐ ほしのわ</strong><p>きほんの つかまえやすさ。</p></article>
           <article><strong>⚪ ぎんのわ</strong><p>ほしのわの 1.2ばい つかまえやすいよ。</p></article>
           <article><strong>🟡 きんのわ</strong><p>ほしのわの 1.5ばい つかまえやすいよ。</p></article>
