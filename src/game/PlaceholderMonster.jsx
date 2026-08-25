@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { speciesOf, typeLabel } from './content.js'
+import { fallbackMonsterArt, resolveMonsterArt } from './monsterArt.js'
 import { monsterSpriteFrame } from './monsterSprite.js'
 
 function legacySpriteStyle(frame, size) {
@@ -21,19 +22,19 @@ function resolvePublicAsset(url) {
   return `${normalizedBase}${String(url).replace(/^\/+/, '')}`
 }
 
-export default function PlaceholderMonster({ speciesId, stage = null, excited = false, compact = false, size: requestedSize = null }) {
+export function MonsterArt({ speciesId, stage = null, excited = false, compact = false, size: requestedSize = null }) {
   const species = speciesOf(speciesId)
   const resolvedStage = stage || species?.stage || 1
   const size = requestedSize || (compact ? 50 : 124)
   const legacyFrame = monsterSpriteFrame(speciesId)
-  const officialUrl = resolvePublicAsset(species?.officialImageUrl)
+  const art = useMemo(() => resolveMonsterArt(speciesId, 'runtime'), [speciesId])
+  const [failedFormalSrc, setFailedFormalSrc] = useState(null)
+  const formalImageUrl = art.isFormal && art.src && failedFormalSrc !== art.src
+    ? resolvePublicAsset(art.src)
+    : null
   const no = Number(species?.no || 0)
-  const formalSvgUrl = no >= 1 && no <= 20 ? resolvePublicAsset(`/monsters/${speciesId}.svg`) : null
-  const imageSources = [formalSvgUrl, officialUrl].filter(Boolean)
-  const [imageSourceIndex, setImageSourceIndex] = useState(0)
-  const imageUrl = imageSources[imageSourceIndex] || null
 
-  useEffect(() => { setImageSourceIndex(0) }, [officialUrl, formalSvgUrl])
+  useEffect(() => { setFailedFormalSrc(null) }, [speciesId, art.src])
 
   const fallbackStyle = useMemo(() => {
     const hue = (no * 47 + resolvedStage * 23) % 360
@@ -46,16 +47,28 @@ export default function PlaceholderMonster({ speciesId, stage = null, excited = 
     }
   }, [no, resolvedStage, size])
 
-  if (imageUrl) {
-    return (
-      <div className={`placeholder-monster monster-art official-art stage-${resolvedStage} ${excited ? 'excited' : ''} ${compact ? 'compact' : ''}`} style={{ width: size, height: size, minWidth: size, flexBasis: size }} role="img" aria-label={species?.name || 'モンスター'}>
-        <img src={imageUrl} alt={species?.name || 'モンスター'} onError={() => setImageSourceIndex((index) => index + 1)} loading="lazy" decoding="async" />
-      </div>
-    )
-  }
-
+  // Legacy sprite support exists only for old saved IDs outside the active m001-m238
+  // registry. It is not an artwork source for active monsters.
   if (!species?.no && legacyFrame) {
     return <div className={`placeholder-monster monster-art legacy-art ${compact ? 'compact' : ''}`} style={legacySpriteStyle(legacyFrame, size)} role="img" aria-label={species?.name || 'モンスター'} />
+  }
+
+  if (formalImageUrl) {
+    return (
+      <div className={`placeholder-monster monster-art official-art formal-art stage-${resolvedStage} ${excited ? 'excited' : ''} ${compact ? 'compact' : ''}`} style={{ width: size, height: size, minWidth: size, flexBasis: size }} role="img" aria-label={species?.name || 'モンスター'}>
+        <img
+          src={formalImageUrl}
+          alt={species?.name || 'モンスター'}
+          onError={() => {
+            const fallback = fallbackMonsterArt(art, 'formal-asset-load-error')
+            console.error('[MonsterArt] FORMAL asset failed to load; using canonical placeholder', fallback)
+            setFailedFormalSrc(art.src)
+          }}
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+    )
   }
 
   const type = species?.types?.[0] || 'normal'
@@ -73,3 +86,5 @@ export default function PlaceholderMonster({ speciesId, stage = null, excited = 
     </div>
   )
 }
+
+export default MonsterArt
