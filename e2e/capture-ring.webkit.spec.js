@@ -40,6 +40,7 @@ async function installSave(page, game) {
 async function installCaptureFailureRandomGate(page) {
   await page.addInitScript(() => {
     const originalRandom = Math.random.bind(Math)
+    const OriginalNumber = Number
     Math.random = () => {
       if (document.documentElement?.dataset.w216CaptureRoll === 'fail') {
         document.documentElement.dataset.w216ForcedCaptureRoll = 'used'
@@ -47,6 +48,18 @@ async function installCaptureFailureRandomGate(page) {
       }
       return originalRandom()
     }
+    globalThis.Number = new Proxy(OriginalNumber, {
+      apply(target, thisArg, args) {
+        if (document.documentElement?.dataset.w216CaptureRoll === 'fail' && args[0] === null) {
+          document.documentElement.dataset.w216NullRollGuard = 'used'
+          return NaN
+        }
+        return Reflect.apply(target, thisArg, args)
+      },
+      construct(target, args, newTarget) {
+        return Reflect.construct(target, args, newTarget)
+      }
+    })
   })
 }
 
