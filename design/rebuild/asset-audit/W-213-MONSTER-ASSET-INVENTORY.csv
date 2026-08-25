@@ -1,0 +1,5 @@
+range,firstNo,lastNo,count,state,assetPattern,preferredReviewPattern,formatDimensions,currentApproval,reviewability,action
+m001-m010,1,10,10,CANDIDATE,public/monsters/mNNN.webp; public/monsters/mNNN.svg,public/monsters/mNNN.webp,WEBP 128x128; SVG 96x96 wrapper,NOT_FOUND_CURRENT; historical labels only,REVIEWABLE_NOW_WITH_CANONICAL_CONTEXT,REVIEW_NOW_FOR_CURRENT_APPROVAL
+m011-m015,11,15,5,CANDIDATE,public/monsters/mNNN.svg,public/monsters/mNNN.svg,SVG 96x96 wrapper with embedded WebP,NOT_FOUND_CURRENT; PR#30 historical approval claim only,REVIEWABLE_NOW_WITH_CANONICAL_CONTEXT,REVIEW_NOW_FOR_CURRENT_APPROVAL
+m016-m020,16,20,5,CANDIDATE,public/monsters/mNNN.svg,public/monsters/mNNN.svg,SVG 64x64 wrapper with embedded WebP,NOT_FOUND_CURRENT; PR#30 historical approval claim only,REVIEWABLE_NOW_WITH_CANONICAL_CONTEXT,REVIEW_NOW_FOR_CURRENT_APPROVAL
+m021-m238,21,238,218,PLACEHOLDER,NONE_PER_ID,,N/A,N/A_NO_ASSET,CONTEXT_READY_ASSET_MISSING,ART_ASSET_REQUIRED_BEFORE_VISUAL_REVIEW
