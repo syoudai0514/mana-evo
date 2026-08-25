@@ -1,26 +1,28 @@
-import React, { useState } from 'react'
-import { dayNumber } from '../../study/srs.js'
+import React, { useRef, useState } from 'react'
+import { dayNumber } from '../../kids-quest-study/engine/srs.js'
 import PlaceholderMonster from '../PlaceholderMonster.jsx'
 import { effectivenessLabel, moveOf, speciesOf, typeEffectiveness, typeLabel } from '../content.js'
+import { GROWTH_SHARD_RULE } from '../captureDomain.js'
 import {
   abandonBattle,
   activateBurst,
   activateGiga,
   attemptCapture,
   availableBattleMoveIds,
-  canNormalEvolve,
+  canAttemptCapture,
   canUseProtect,
   clearFinishedBattle,
   currentPlayerHp,
   currentPlayerMaxHp,
-  evolveInstance,
+  redeemGrowthShardXp,
+  resolveDuplicateCaptureChoice,
   stageById,
   switchBattleMonster,
   useMove,
   useProtect
 } from '../engine.js'
-import { availableTicketCount, specialProgressionStatus } from '../progression.js'
-import { CapturePanel } from './CapturePanel.jsx'
+import { availableTicketCount, CAPTURE_ITEM_IDS, specialProgressionStatus } from '../progression.js'
+import { CapturePanel, CapturePresentation } from './CapturePanel.jsx'
 import { EvolutionCelebration } from './EvolutionOverlay.jsx'
 import { HpBar, TypePills } from './GameScreenPrimitives.jsx'
 
@@ -35,14 +37,44 @@ export function BattleView({ game, setGame, onExitToMap, goStudy }) {
   const finished = ['won', 'lost', 'caught'].includes(battle.status)
   const forcedSwitch = battle.status === 'needs_switch'
   const special = specialProgressionStatus(active, game)
-  const [battleEvolutionReveal, setBattleEvolutionReveal] = useState(null)
-  const readyEvolutionMonster = finished && battle.status !== 'lost'
-    ? (battle.teamAtStart || []).map((id) => game.box?.[id]).find((monster) => monster && canNormalEvolve(monster, game))
-    : null
+  const [captureOpen, setCaptureOpen] = useState(false)
+  const [switchOpen, setSwitchOpen] = useState(false)
+  const [captureSequence, setCaptureSequence] = useState(null)
+  const [evolutionQueue, setEvolutionQueue] = useState([])
+  const [shardResult, setShardResult] = useState(null)
+  const seenEvolutionKeys = useRef(new Set())
+
+  const captureResolutionId = battle.rewardResolutionId ? `${battle.rewardResolutionId}:capture` : null
+  const captureSettlement = captureResolutionId ? game.captureDomain?.settlements?.[captureResolutionId] : null
+  const duplicatePending = captureSettlement?.status === 'pending_duplicate_choice'
+  const captureEligible = !finished && !forcedSwitch && CAPTURE_ITEM_IDS.some((id) => canAttemptCapture(game, battle, id))
+  const activeEvolutionReveal = !captureSequence && !duplicatePending ? evolutionQueue[0] || null : null
+
+  const enqueueEvolutions = (evolutionsByInstance, nextGame) => {
+    const reveals = []
+    for (const [instanceId, evolution] of Object.entries(evolutionsByInstance || {})) {
+      if (!evolution?.from || !evolution?.to) continue
+      const key = `${instanceId}:${evolution.from}->${evolution.to}`
+      if (seenEvolutionKeys.current.has(key)) continue
+      seenEvolutionKeys.current.add(key)
+      const monster = nextGame?.box?.[instanceId]
+      reveals.push({
+        fromId: evolution.from,
+        toId: evolution.to,
+        level: monster?.level || 1,
+        firstEvolutionDiscovery: !!evolution.firstEvolutionDiscovery
+      })
+    }
+    if (reveals.length) setEvolutionQueue((queue) => [...queue, ...reveals])
+  }
 
   const act = (moveId) => {
     const result = useMove(game, battle, moveId)
-    if (result.ok) setGame(result.game)
+    if (!result.ok) return
+    enqueueEvolutions(result.rewards?.evolutionsByInstance, result.game)
+    setGame(result.game)
+    setCaptureOpen(false)
+    setSwitchOpen(false)
   }
   const protect = () => {
     const result = useProtect(game, battle)
@@ -54,13 +86,50 @@ export function BattleView({ game, setGame, onExitToMap, goStudy }) {
   }
   const capture = (itemType) => {
     const result = attemptCapture(game, battle, null, itemType)
-    if (result.ok) setGame(result.game)
+    if (!result.ok) return
+    const frames = result.capturePresentation?.frames || result.battle?.capturePresentation || []
+    if (Array.isArray(frames) && frames.length) {
+      setCaptureSequence({
+        id: `${result.battle?.battleId || result.battle?.stageId || 'capture'}:${result.battle?.captureAttempts || 0}`,
+        frames
+      })
+    }
+    enqueueEvolutions(result.evolutionsByInstance, result.game)
+    setGame(result.game)
+    setCaptureOpen(false)
   }
   const swap = (instanceId) => {
     const result = switchBattleMonster(game, battle, instanceId)
-    if (result.ok) setGame(result.game)
+    if (!result.ok) return
+    setGame(result.game)
+    setSwitchOpen(false)
+  }
+  const resolveDuplicate = (choice) => {
+    if (!captureResolutionId) return
+    const result = resolveDuplicateCaptureChoice(game, captureResolutionId, choice)
+    if (!result.ok) return
+    setGame(result.game)
+    if (choice === 'support') {
+      setShardResult({ kind: 'support', text: `そだちのかけら ${result.game.growthShards || 0}こ` })
+    }
+  }
+  const redeemShard = (instanceId) => {
+    const redemptionIndex = Object.keys(game.captureDomain?.shardRedemptions || {}).length + 1
+    const redemptionId = `${battle.battleId || battle.stageId}:growth-shard:${instanceId}:${redemptionIndex}`
+    const before = game.box?.[instanceId]
+    const result = redeemGrowthShardXp(game, { redemptionId, instanceId })
+    if (!result.ok) return
+    const after = result.game.box?.[instanceId]
+    setGame(result.game)
+    const xp = result.redemption?.xp || GROWTH_SHARD_RULE.xpPerUse
+    setShardResult({
+      kind: 'redeem',
+      text: `${speciesOf(after?.speciesId || before?.speciesId)?.name || 'なかま'}に XP +${xp}！ Lv.${before?.level || 1} → Lv.${after?.level || before?.level || 1}`
+    })
+    if (result.evolution) enqueueEvolutions({ [instanceId]: result.evolution }, result.game)
   }
   const exit = () => {
+    if (duplicatePending || captureSequence) return
     const today = dayNumber()
     if (finished) {
       const result = clearFinishedBattle(game, { today })
@@ -76,20 +145,16 @@ export function BattleView({ game, setGame, onExitToMap, goStudy }) {
     onExitToMap()
   }
 
-  const evolveReadyMonster = () => {
-    if (!readyEvolutionMonster) return
-    const fromId = readyEvolutionMonster.speciesId
-    const level = readyEvolutionMonster.level
-    const result = evolveInstance(game, readyEvolutionMonster.instanceId)
-    if (!result.ok) return
-    setGame(result.game)
-    setBattleEvolutionReveal({ fromId, toId: result.to, level })
-  }
-
   const battleMoves = availableBattleMoveIds(game, battle)
+  const showNormalCommands = !finished && !forcedSwitch && !captureOpen && !switchOpen && !captureSequence
+  const showTeamChoice = !finished && !captureSequence && (forcedSwitch || switchOpen)
+  const showShardTools = finished && battle.status !== 'lost' && !duplicatePending && ((game.growthShards || 0) > 0 || captureSettlement?.choice === 'support')
+
   return <main className={`screen battle-screen-v2 area-theme-${stage?.adventureArea || stage?.area || 5}`}>
-    <EvolutionCelebration reveal={battleEvolutionReveal} onClose={() => setBattleEvolutionReveal(null)} />
-    <div className="battle-head"><button className="back" onClick={exit}>{finished ? '← マップ' : '✕ やめる'}</button><strong>{stage?.zoneName ? `${stage.zoneName}｜${stage.label}` : stage?.label}</strong><span>TURN {battle.turn}</span></div>
+    <EvolutionCelebration reveal={activeEvolutionReveal} onClose={() => setEvolutionQueue((queue) => queue.slice(1))} />
+    <CapturePresentation sequence={captureSequence} onComplete={() => setCaptureSequence(null)} />
+
+    <div className="battle-head"><button className="back" disabled={!!captureSequence || duplicatePending} onClick={exit}>{finished ? '← マップ' : '✕ やめる'}</button><strong>{stage?.zoneName ? `${stage.zoneName}｜${stage.label}` : stage?.label}</strong><span>TURN {battle.turn}</span></div>
     {battle.challenge && <div className="challenge-banner">🔥 チャレンジモード：いまの強さで再調整</div>}
     {battle.bossTelegraphed && !finished && <div className="boss-warning"><strong>⚠️ つぎに おおわざ！</strong><span>まもるなら いま！</span></div>}
     {battle.playerSpecial && <div className={`special-active ${battle.playerSpecial.type}`}><strong>{battle.playerSpecial.type === 'giga' ? '🔷 ギガシンカ中！' : '💥 キョダイバースト中！'}</strong>{battle.playerSpecial.type === 'burst' && <span>あと {battle.playerSpecial.turnsLeft}ターン</span>}</div>}
@@ -107,7 +172,7 @@ export function BattleView({ game, setGame, onExitToMap, goStudy }) {
 
     <section className="battle-log">{battle.log.slice(-5).map((line, i) => <p key={`${line}-${i}`}>{line}</p>)}</section>
 
-    {!finished && !forcedSwitch && <>
+    {showNormalCommands && <>
       <section className="move-grid">
         {battleMoves.map((moveId) => {
           const move = moveOf(moveId)
@@ -122,33 +187,57 @@ export function BattleView({ game, setGame, onExitToMap, goStudy }) {
       </section>
       <div className="battle-action-row">
         <button className={`protect-action ${battle.bossTelegraphed ? 'recommended' : ''}`} disabled={!canUseProtect(battle)} onClick={protect}>🛡️ まもる<small>{canUseProtect(battle) ? 'ダメージを ふせぐ' : 'れんぞくでは つかえない'}</small></button>
+        {game.team.some((id) => id !== battle.activeInstanceId && (battle.partyHp?.[id] || 0) > 0) && <button className="secondary" onClick={() => setSwitchOpen(true)}>🔁 こうたい<small>なかまを えらぶ</small></button>}
+        {captureEligible && <button className="capture-main-cta ready" onClick={() => setCaptureOpen(true)}>⭕ わを なげる<small>HPは はんぶんいか！</small></button>}
         {!battle.specialUsed && special.giga.activatable && <button className="giga-action" onClick={() => specialAct('giga')}>🔷 ギガシンカ<small>このバトル中 ぜんのうりょく×1.35</small></button>}
         {!battle.specialUsed && special.burst.activatable && <button className="burst-action" onClick={() => specialAct('burst')}>💥 キョダイバースト<small>3ターン・HP×2 / こうげき×1.2</small></button>}
       </div>
-
-      <CapturePanel game={game} battle={battle} captureDisabled={stage?.captureDisabled} onCapture={capture} />
-      <section className="battle-point-guide"><h3>🛡️ バトルのポイント</h3><div><p><span>❤️</span>HPが <b>50%いか</b> だと つかまえやすい</p><p><span>⭕</span>わ は 1バトル <b>3かい</b>まで</p><p><span>🐾</span>チームは <b>3たい</b>まで</p><p><span>⭐</span>しょうりで <b>けいけんちGET</b></p></div></section>
     </>}
 
-    {forcedSwitch && <section className="battle-result-card"><h2>つぎの なかまを えらぼう！</h2><p>まだ元気な仲間がいるから、バトルは続けられるよ。</p></section>}
+    {!finished && !forcedSwitch && captureOpen && !captureSequence && <CapturePanel game={game} battle={battle} captureDisabled={stage?.captureDisabled} onCapture={capture} onCancel={() => setCaptureOpen(false)} />}
 
-    {!finished && <section className="team-switch"><h3>{forcedSwitch ? 'こうたい ひっす' : 'こうたい（相手も1回こうげき）'}</h3><div>{game.team.map((id) => {
+    {forcedSwitch && !captureSequence && <section className="battle-result-card"><h2>つぎの なかまを えらぼう！</h2><p>まだ元気な仲間がいるから、バトルは続けられるよ。</p></section>}
+
+    {showTeamChoice && <section className="team-switch"><h3>{forcedSwitch ? 'こうたい ひっす' : 'こうたいする なかまを えらぼう'}</h3><div>{game.team.map((id) => {
       const member = game.box[id]
       const sp = speciesOf(member.speciesId)
       const hp = battle.partyHp?.[id] || 0
       const max = currentPlayerMaxHp(game, battle, id)
       return <button key={id} disabled={id === battle.activeInstanceId || hp <= 0} onClick={() => swap(id)}><PlaceholderMonster speciesId={member.speciesId} compact /><span>{sp.name}<small>Lv.{member.level}　HP {hp}/{max}</small><TypePills types={sp.types} /></span></button>
-    })}</div></section>}
+    })}</div>{!forcedSwitch && <button className="secondary" onClick={() => setSwitchOpen(false)}>もどる</button>}</section>}
 
-    {finished && <section className="battle-result-card">
+    {finished && duplicatePending && !captureSequence && <section className="battle-result-card duplicate-choice-card" aria-label="つかまえたモンスターをどうする？">
+      <h2>もう いる なかまだ！</h2>
+      <p>{enemySpecies.name}を どうする？ どちらか 1つを えらぼう。</p>
+      <div className="battle-action-row">
+        <button className="primary" onClick={() => resolveDuplicate('keep')}>なかまにする<small>べつの1たいとして ボックスへ</small></button>
+        <button className="secondary" onClick={() => resolveDuplicate('support')}>おうえんにかえる<small>そだちのかけら +1</small></button>
+      </div>
+    </section>}
+
+    {finished && !duplicatePending && <section className="battle-result-card">
       <h2>{battle.status === 'won' ? 'かち！ 🎉' : battle.status === 'caught' ? 'ゲット！ ★★★★' : 'まけちゃった…'}</h2>
-      {battle.status === 'won' && stage?.evolutionReward && <p>🎁 初回クリアなら シンカアイテムをGET！</p>}
       {battle.status === 'won' && stage?.id === 'a1-boss' && <p>🔷 はじめてのクリアで ギガキーが ひらいた！</p>}
       {battle.status === 'won' && stage?.specialReward?.type === 'giga' && <p>🔷 {enemySpecies.name}のギガコアを解放！</p>}
       {battle.status === 'won' && stage?.specialReward?.type === 'burst' && <p>💥 {enemySpecies.name}のバーストのしるしを解放！</p>}
-      {battle.status === 'caught' && <p>「わ」が 4つ ひかって GET！ 新しい仲間はボックスに入ったよ。手持ちが2体以下なら自動でチーム入り！</p>}
+      {battle.status === 'caught' && !captureSettlement?.duplicate && <p>新しいなかまは、べつの1たいとして ボックスに入ったよ。チームは「モンスター」で えらべるよ。</p>}
+      {battle.status === 'caught' && captureSettlement?.duplicate && captureSettlement.choice === 'keep' && <p>もう1たいの {enemySpecies.name}が、べつの1たいとして ボックスに入ったよ。</p>}
+      {battle.status === 'caught' && captureSettlement?.duplicate && captureSettlement.choice === 'support' && <p>{enemySpecies.name}の おうえんで、そだちのかけらが ふえたよ！</p>}
       {battle.status === 'lost' && <p>{battle.ticketRefunded ? '🎫は1まい返ってきたよ。仲間を育てて再挑戦しよう！' : '🎫は期限をすぎていたので戻らなかったよ。もう一度学んで挑戦しよう！'}</p>}
-      {readyEvolutionMonster && <div className="battle-evolution-ready"><strong>✨ {speciesOf(readyEvolutionMonster.speciesId)?.name}が シンカできるよ！</strong><span>バトルで そだった いまが チャンス！</span><button className="evolve-now" onClick={evolveReadyMonster}>✨ いま シンカする！</button></div>}
+
+      {showShardTools && <div className="growth-shard-tools">
+        <strong>✨ そだちのかけら {game.growthShards || 0}こ</strong>
+        {shardResult?.text && <p aria-live="polite">{shardResult.text}</p>}
+        {(game.growthShards || 0) >= GROWTH_SHARD_RULE.shardsPerUse && <>
+          <p>{GROWTH_SHARD_RULE.shardsPerUse}こで、いまのチームの1たいに XP +{GROWTH_SHARD_RULE.xpPerUse}！</p>
+          <div className="growth-shard-targets">{game.team.map((instanceId) => {
+            const member = game.box?.[instanceId]
+            if (!member) return null
+            return <button key={instanceId} onClick={() => redeemShard(instanceId)}><strong>{speciesOf(member.speciesId)?.name}</strong><small>Lv.{member.level}　この子に つかう</small></button>
+          })}</div>
+        </>}
+      </div>}
+
       <button className="primary" onClick={exit}>マップへ</button>
       {availableTicketCount(game, dayNumber()) < 1 && <button className="secondary" onClick={goStudy}>まなぶ！</button>}
     </section>}
