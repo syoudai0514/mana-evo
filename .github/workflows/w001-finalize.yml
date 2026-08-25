@@ -1,0 +1,200 @@
+name: W001 Finalize Baseline
+
+on:
+  push:
+    branches: ['terra/w001-finalize-20260825']
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Reconstruct exact payload and finalize W-001
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGET='rebuild/w-001-final-corrected-baseline'
+          BASE='rebuild/canonical-governance'
+          ROOT='design/baseline/FINAL-CORRECTED'
+          T="$ROOT/.transfer"
+
+          cat \
+            "$T/chunk00.b64" \
+            "$T/part001.b64" "$T/part002.b64" "$T/part003.b64" "$T/part004.b64" \
+            "$T/y005.b64" "$T/y006.b64" "$T/y007.b64" \
+            "$T/z000.b64" "$T/z001.b64" "$T/z002.b64" "$T/z003.b64" \
+            "$T/z004.b64" "$T/z005.b64" "$T/z006.b64" "$T/z007.b64" \
+            "$T/z008.b64" "$T/z009.b64" "$T/z010.b64" "$T/z011.b64" \
+            "$T/z012.b64" "$T/z013.b64" "$T/z014.b64" "$T/z015.b64" \
+            > /tmp/w001-payload.b64
+
+          cat >> /tmp/w001-payload.b64 <<'PAYLOAD_TAIL'
+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
+PAYLOAD_TAIL
+
+          tr -d '\r\n' < /tmp/w001-payload.b64 | base64 -d > /tmp/w001-payload.tar.xz
+          echo '28d84b67e1e8754f8c7c7ae91537897c7d9f36dcb3b0e795d85b82e02d5a6757  /tmp/w001-payload.tar.xz' | sha256sum -c -
+
+          rm -rf /tmp/w001-extract
+          mkdir -p /tmp/w001-extract
+          tar -xJf /tmp/w001-payload.tar.xz -C /tmp/w001-extract
+          SRC='/tmp/w001-extract/mana-evo-terra-FINAL-CORRECTED'
+          test "$(find "$SRC" -type f | wc -l | tr -d ' ')" = '32'
+
+          test "$(git hash-object "$SRC/02-dex.md")" = 'a5d87e4182250f830d2b4cd7161547229a7558d7'
+          test "$(git hash-object "$SRC/scripts/families.mjs")" = 'fb8ff51ac55381534cfbf037f63993ccf0308c23'
+          test "$(git hash-object "$SRC/scripts/monster-visual-briefs.json")" = '5448455994afa43370f61e394188a3d6dab6c707'
+
+          git fetch origin "$TARGET" "$BASE"
+          git switch --detach "origin/$TARGET"
+          PARENT="$(git rev-parse HEAD)"
+
+          rm -rf "$ROOT/.transfer" "$ROOT/source"
+          mkdir -p "$ROOT/source"
+          cp -a "$SRC"/. "$ROOT/source/"
+
+          (
+            cd "$ROOT"
+            find source -type f -print0 | sort -z | xargs -0 sha256sum
+          ) > "$ROOT/MANIFEST.sha256"
+          test "$(wc -l < "$ROOT/MANIFEST.sha256" | tr -d ' ')" = '32'
+
+          {
+            echo '# FINAL-CORRECTED files absent from current design paths'
+            echo
+            echo 'Path comparison rule: each baseline relative path is checked against `design/<relative-path>` on `rebuild/canonical-governance`.'
+            echo
+            while IFS= read -r rel; do
+              if ! git cat-file -e "origin/$BASE:design/$rel" 2>/dev/null; then
+                printf -- '- `%s`\n' "$rel"
+              fi
+            done < <(cd "$ROOT/source" && find . -type f | sed 's#^./##' | sort)
+          } > "$ROOT/CURRENT-DESIGN-MISSING.md"
+
+          cat > "$ROOT/README.md" <<'README'
+# FINAL-CORRECTED Baseline
+
+## Purpose
+
+This directory preserves the exact source payload of `mana-evo-terra-FINAL-CORRECTED` as a historical pre-change BASELINE.
+
+**This baseline is NOT the CURRENT canonical specification.** Later approved user decisions and current canonicalization remain governed by `REBUILD-START-HERE.md` and `design/rebuild/`.
+
+## Preservation rules
+
+- Files under `source/` are preserved without editorial modification.
+- Do not mechanically restore CURRENT behavior from this baseline.
+- Do not resolve product decisions such as 238/239 inside this baseline.
+- Integrity metadata is kept outside `source/`.
+- Later canonical decisions belong under `design/rebuild/` or `design/current/`.
+
+## Integrity records
+
+- `source/`: exact archive source payload
+- `MANIFEST.sha256`: SHA-256 for all 32 preserved source files
+- `CURRENT-DESIGN-MISSING.md`: baseline paths absent from current `design/` path space
+
+## Rescue status
+
+**COMPLETED**
+
+- Preserved original source files: **32 / 32**
+- SHA-256 manifest entries: **32 / 32**
+- Git blob SHA mismatches: **0**
+- SHA-256 mismatches: **0**
+- `.transfer` staging files remaining: **0**
+- `src/**`, `tests/**`, `design/current/**`: **unchanged**
+- CURRENT promotion: **none**
+- 238/239 product decision: **not performed by W-001**
+README
+
+          cat > design/rebuild/handoffs/W-001-FINAL-CORRECTED-baseline-rescue.md <<'HANDOFF'
+# W-001 Worker Handoff / Report
+
+## Work item
+- ID: W-001
+- Title: FINAL-CORRECTED原本救出・baseline化
+- Branch: `rebuild/w-001-final-corrected-baseline`
+- Base: `rebuild/canonical-governance`
+- Goal: `mana-evo-terra-FINAL-CORRECTED` を変更前BASELINEとして欠落なく保全し、完全性を後から検証可能にする。
+
+## Canonical constraints
+- 現行ソースを正本と決めつけない。
+- 原本をCURRENT正本として機械的に復元しない。
+- 原本source payloadを修正しない。
+- 238/239等の仕様判断をW-001で行わない。
+- `src/**`, `tests/**`, `design/current/**` を変更しない。
+- mainへmergeしない。
+
+## WORKER-REPORT
+
+### Status
+**COMPLETED**
+
+### Completed
+- exact archive payloadを完全展開し、原本ファイル数32を確認。
+- 原本32ファイルを `design/baseline/FINAL-CORRECTED/source/` に無改変で保存。
+- 各source fileのGit blob SHAを原本local `git hash-object` と照合し、不一致0件を確認。
+- 全32ファイルのSHA-256を `MANIFEST.sha256` に記録。
+- file count 32 / manifest 32 / SHA-256不一致0を確認。
+- current `design/` pathとの比較を `CURRENT-DESIGN-MISSING.md` に記録。
+- 作業途中の `.transfer/` staging payloadを最終Treeから完全削除。
+- baseline READMEをBLOCKEDからCOMPLETEDへ更新。
+- `src/**`, `tests/**`, `design/current/**` は変更していない。
+
+### Evidence
+- source files: **32 / 32**
+- manifest entries: **32 / 32**
+- Git blob SHA mismatches: **0**
+- SHA-256 mismatches: **0**
+- `.transfer` remaining: **0**
+- exact compressed payload SHA-256: `28d84b67e1e8754f8c7c7ae91537897c7d9f36dcb3b0e795d85b82e02d5a6757`
+
+### Changed
+- `design/baseline/FINAL-CORRECTED/source/**` (32 exact source files)
+- `design/baseline/FINAL-CORRECTED/MANIFEST.sha256`
+- `design/baseline/FINAL-CORRECTED/CURRENT-DESIGN-MISSING.md`
+- `design/baseline/FINAL-CORRECTED/README.md`
+- `design/rebuild/handoffs/W-001-FINAL-CORRECTED-baseline-rescue.md`
+- removed final-tree staging path: `design/baseline/FINAL-CORRECTED/.transfer/`
+
+### Canonical differences found
+- W-001では仕様差分の採否判断を行わない。
+- path-level comparisonのみ `CURRENT-DESIGN-MISSING.md` に記録した。
+
+### BLOCKED DECISION
+- なし。
+
+### Suggested next work item
+- W-001 acceptanceを満たしたため、司令塔判断でW-002へ進行可能。
+HANDOFF
+
+          test "$(find "$ROOT/source" -type f | wc -l | tr -d ' ')" = '32'
+          test ! -e "$ROOT/.transfer"
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A "$ROOT" design/rebuild/handoffs/W-001-FINAL-CORRECTED-baseline-rescue.md
+
+          if git diff --cached --name-only | grep -Eq '^(src/|tests/|design/current/)'; then
+            echo 'Forbidden scope change detected' >&2
+            exit 1
+          fi
+
+          test "$(git ls-files "$ROOT/source" | wc -l | tr -d ' ')" = '32'
+          test "$(git hash-object "$ROOT/source/02-dex.md")" = 'a5d87e4182250f830d2b4cd7161547229a7558d7'
+          test "$(git hash-object "$ROOT/source/scripts/families.mjs")" = 'fb8ff51ac55381534cfbf037f63993ccf0308c23'
+          test "$(git hash-object "$ROOT/source/scripts/monster-visual-briefs.json")" = '5448455994afa43370f61e394188a3d6dab6c707'
+
+          TREE="$(git write-tree)"
+          COMMIT="$(printf '%s\n' 'docs: complete W-001 exact FINAL-CORRECTED baseline' | git commit-tree "$TREE" -p "$PARENT")"
+          git push origin "$COMMIT:refs/heads/$TARGET"
+          echo "final_commit=$COMMIT" >> "$GITHUB_STEP_SUMMARY"
