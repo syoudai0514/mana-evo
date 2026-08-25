@@ -16,11 +16,29 @@ test('header resources are named instead of ambiguous bare icons', () => {
   assert.ok(css.includes('safe-area-inset-bottom'))
 })
 
-test('premium CSS loads after runtime CSS so it can be the visual authority', () => {
-  const runtime = main.indexOf("import './game/runtime.css'")
-  const premium = main.indexOf("import './premium-ui-v4.css'")
-  assert.ok(runtime >= 0)
-  assert.ok(premium > runtime)
+test('visual authority is screen-scoped instead of load-order or important based', () => {
+  assert.ok(main.includes("import './premium-ui-v4.css'"))
+  for (const owner of [
+    '.app-shell .game-bottom-nav',
+    '.howto-screen .howto-hero',
+    '.adventure-map .premium-world-map',
+    '.battle-screen-v2 .battle-arena-v2',
+    '.monster-screen-v2 .monster-tabs',
+    '.parent-gate-screen .parent-gate-card',
+    '.evolution-overlay .evolution-celebration-card'
+  ]) assert.ok(css.includes(owner), owner)
+  assert.equal(css.includes('!important'), false)
+  assert.equal(main.includes('premium-ui-v5.css'), false)
+})
+
+test('390 and 375 portrait contracts are explicit and keep the child shell bounded', () => {
+  assert.ok(css.includes('@media(max-width:390px)'))
+  assert.ok(css.includes('@media(max-width:375px)'))
+  assert.ok(css.includes('overflow-x:clip'))
+  assert.ok(css.includes('repeat(5,minmax(0,1fr))'))
+  assert.ok(css.includes('.home-screen .home-primary-actions button{min-height:50px'))
+  assert.ok(css.includes('.battle-screen-v2 .move-grid button{min-height:62px'))
+  assert.ok(css.includes('.parent-gate-screen .primary.huge{min-height:50px'))
 })
 
 test('adventure is rendered as a premium world map with large encounter art', () => {
