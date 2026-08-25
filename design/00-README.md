@@ -130,3 +130,8 @@ Kids Quest学習基盤を正本とし、ManaEvo都合で簡略化しない。
 正本: [`20-world-map-evolution-progression.md`](./20-world-map-evolution-progression.md)
 
 当初設計の「エリア固定寄りの敵Lv・最終形は野生入手不可」を復活し、さらに「第2形態の初回入手は自力進化、初進化後に上級ゾーン野生解禁」を正式採用する。完全手持ち追従ではなく、ゾーンLv帯でクランプするハイブリッド制を正とする。
+
+
+## UIビジュアル正本
+
+- `design/21-mockup-ui-visual-system.md` — 承認済みモックアップを基準にした現行UI
