@@ -5,7 +5,7 @@ import {
   RUNTIME_SPECIES,
   RUNTIME_STAGES
 } from './runtimeMaster.generated.js'
-import { WORLD_AREA_META, enrichStage } from './worldProgression.js'
+import { WORLD_AREA_META, enrichStage, pickDailyEncounterStages } from './worldProgression.js'
 
 export const TYPES = [
   ['normal', 'ノーマル', '◯'], ['fire', 'ほのお', '🔥'], ['water', 'みず', '💧'], ['electric', 'でんき', '⚡'],
@@ -113,7 +113,7 @@ export const EVOLUTION_ITEMS = Object.freeze({
 })
 const BASE_STAGES = [...RUNTIME_STAGES, ...LEGACY_STAGES]
 export const STAGES = BASE_STAGES.map((stage) => stage.legacy ? stage : enrichStage(stage, SPECIES[stage.enemySpeciesId]))
-export { RUNTIME_META, RUNTIME_STAGES }
+export { RUNTIME_META, RUNTIME_STAGES, pickDailyEncounterStages }
 
 export const AREA_META = WORLD_AREA_META.filter((meta) => meta.area <= 4).map((meta) => ({ ...meta }))
 export const EX_AREA_META = { ...WORLD_AREA_META.find((meta) => meta.area === 5) }

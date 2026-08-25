@@ -101,7 +101,7 @@ function ownsSpecies(game, speciesId) {
 
 function areaWildClearCount(game, area) {
   const cleared = new Set(game?.stagesCleared || [])
-  return STAGES.filter((stage) => stage.area === area && stage.kind === 'wild' && cleared.has(stage.id)).length
+  return STAGES.filter((stage) => (stage.adventureArea || stage.area) === area && stage.kind === 'wild' && cleared.has(stage.id)).length
 }
 
 export function isStageUnlocked(game, stage) {

@@ -10,6 +10,7 @@ import {
   TYPES,
   effectivenessLabel,
   moveOf,
+  pickDailyEncounterStages,
   speciesOf,
   stageKindLabel,
   typeEffectiveness,
@@ -68,21 +69,46 @@ function unlockReason(game, stage) {
   return 'まだ あいていないよ'
 }
 
-function StageMap({ game, onStart, goStudy, goHome, dailyCompleted, today }) {
+function StageMap({ game, onStart, goStudy, goHome, dailyCompleted, today, location, onLocationChange }) {
   const ticketCount = availableTicketCount(game, today)
   const cleared = new Set(game.stagesCleared || [])
   const highestArea = AREA_META.reduce((best, meta) => {
     const gate = meta.area === 1 || cleared.has(`a${meta.area - 1}-boss`)
     return gate ? Math.max(best, meta.area) : best
   }, 1)
-  const [area, setArea] = useState(highestArea)
+  const requestedArea = Number(location?.area)
+  const area = requestedArea >= 1 && requestedArea <= 5 ? requestedArea : highestArea
+  const areaMeta = area <= 4 ? AREA_META.find((meta) => meta.area === area) : null
+  const defaultZoneId = areaMeta?.zones?.[0]?.id || 'ex'
+  const zoneId = areaMeta?.zones?.some((zone) => zone.id === location?.zoneId) ? location.zoneId : defaultZoneId
+  const activeZone = areaMeta?.zones?.find((zone) => zone.id === zoneId) || null
   const [kind, setKind] = useState('all')
   const [search, setSearch] = useState('')
+  const [showAll, setShowAll] = useState(false)
+  const teamLevels = (game.team || []).map((id) => Number(game.box?.[id]?.level) || 1).filter(Boolean)
+  const teamLevel = teamLevels.length ? Math.round(teamLevels.reduce((sum, level) => sum + level, 0) / teamLevels.length) : 1
+  const areaUnlocked = (areaNo) => areaNo === 1 || cleared.has(`a${areaNo - 1}-boss`)
+  const exUnlocked = [1, 2, 3, 4].every((areaNo) => cleared.has(`a${areaNo}-boss`))
 
-  const visibleStages = useMemo(() => STAGES.filter((stage) => {
+  const selectArea = (nextArea) => {
+    const meta = AREA_META.find((item) => item.area === nextArea)
+    onLocationChange?.({ area: nextArea, zoneId: meta?.zones?.[0]?.id || 'ex' })
+    setKind('all')
+    setSearch('')
+    setShowAll(false)
+  }
+  const selectZone = (nextZoneId) => {
+    onLocationChange?.({ area, zoneId: nextZoneId })
+    setKind('all')
+    setSearch('')
+    setShowAll(false)
+  }
+
+  const filteredStages = useMemo(() => STAGES.filter((stage) => {
     if (stage.legacy || stage.hidden) return false
-    if (area <= 4 && stage.area !== area) return false
+    if (area <= 4 && (stage.adventureArea || stage.area) !== area) return false
     if (area === 5 && !['event', 'ex'].includes(stage.kind)) return false
+    if (area <= 4 && stage.zoneId !== zoneId) return false
     if (kind === 'wild' && stage.kind !== 'wild') return false
     if (kind === 'evo' && stage.kind !== 'evolution-trial') return false
     if (kind === 'special' && !['giga-challenge', 'burst-challenge'].includes(stage.kind)) return false
@@ -94,7 +120,22 @@ function StageMap({ game, onStart, goStudy, goHome, dailyCompleted, today }) {
       if (!hay.includes(needle)) return false
     }
     return true
-  }), [area, kind, search])
+  }), [area, zoneId, kind, search])
+
+  const dailyMode = area <= 4 && kind === 'all' && !search.trim() && !showAll
+  const visibleStages = useMemo(() => {
+    if (!dailyMode) return filteredStages
+    const wild = filteredStages.filter((stage) => stage.kind === 'wild')
+    const other = filteredStages.filter((stage) => stage.kind !== 'wild')
+    const dailyWild = pickDailyEncounterStages(wild, {
+      day: today,
+      limit: 5,
+      isUnlocked: (stage) => isStageUnlocked(game, stage),
+      isCaught: (stage) => !!game.dex?.caught?.[stage.enemySpeciesId],
+      isCleared: (stage) => cleared.has(stage.id)
+    })
+    return [...dailyWild, ...other]
+  }, [filteredStages, dailyMode, today, game, cleared])
 
   return (
     <main className="screen adventure-map">
@@ -102,14 +143,27 @@ function StageMap({ game, onStart, goStudy, goHome, dailyCompleted, today }) {
       <div className="screen-title-row"><div><p className="eyebrow">ぼうけんマップ</p><h1>{area <= 4 ? AREA_META.find((item) => item.area === area)?.name : 'スペシャルエリア'}</h1>{area <= 4 && <p className="area-level-band">📍 いまのエリア　{AREA_META.find((item) => item.area === area)?.levelLabel}</p>}</div><strong>🎫 {ticketCount}</strong></div>
       <p className="kid-note">{dailyCompleted ? 'きょうの まなびクリア！ エリアと ゾーンで てきの強さが ちがうよ。そだてた強さを ためしてみよう！' : 'チケットを持っていても、きょうの まなびを終えてからバトルへ。'}</p>
 
-      <div className="area-tabs">
-        {AREA_META.map((meta) => <button key={meta.area} className={area === meta.area ? 'active' : ''} onClick={() => setArea(meta.area)}>エリア{meta.area}</button>)}
-        <button className={area === 5 ? 'active' : ''} onClick={() => setArea(5)}>EX</button>
+      <div className="area-tabs world-area-tabs">
+        {AREA_META.map((meta) => { const unlocked = areaUnlocked(meta.area); return <button key={meta.area} disabled={!unlocked} className={area === meta.area ? 'active' : ''} onClick={() => selectArea(meta.area)}>{unlocked ? meta.icon : '🔒'} エリア{meta.area}</button> })}
+        <button disabled={!exUnlocked} className={area === 5 ? 'active' : ''} onClick={() => selectArea(5)}>{exUnlocked ? '🌀' : '🔒'} EX</button>
       </div>
+
+      {areaMeta && <section className={`zone-map area-zone-map area-${area}`}>
+        <div className="zone-map-title"><div><p className="eyebrow">エリア{area}の ぼうけん</p><h2>どこへ いく？</h2></div><span>チームの めやす Lv.{teamLevel}</span></div>
+        <div className="zone-grid">{areaMeta.zones.map((zone, index) => {
+          const danger = teamLevel < zone.minLevel
+          return <button key={zone.id} className={`${zoneId === zone.id ? 'active' : ''} ${danger ? 'danger' : 'ready'}`} onClick={() => selectZone(zone.id)}>
+            <span className="zone-path-dot">{zoneId === zone.id ? '📍' : index + 1}</span><b>{zone.icon} {zone.name}</b><small>Lv.{zone.minLevel}〜{zone.maxLevel}</small><em>{danger ? '⚠️ かなり つよい' : zoneId === zone.id ? 'いま ここ！' : 'いけるよ'}</em>
+          </button>
+        })}</div>
+      </section>}
+
       <div className="stage-filters">
         {[['all','ぜんぶ'],['wild','たんさく'],['evo','シンカ'],['special','とくべつ'],['boss','ボス']].map(([id,label]) => <button key={id} className={kind === id ? 'active' : ''} onClick={() => setKind(id)}>{label}</button>)}
       </div>
-      <input className="monster-search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="なまえ・No.で さがす" />
+      <input className="monster-search" value={search} onChange={(event) => { setSearch(event.target.value); if (event.target.value) setShowAll(true) }} placeholder="なまえ・No.で さがす" />
+
+      {area <= 4 && <div className="encounter-heading"><div><p className="eyebrow">{dailyMode ? 'きょう みつかっている' : 'このゾーンの モンスター'}</p><h2>{activeZone?.icon} {activeZone?.name}</h2><small>{dailyMode ? 'まずは5たいまで。GETしていない なかまを ゆうせんして みつけるよ。' : 'ずかんのように ぜんぶ さがせるよ。'}</small></div><button className="secondary compact" onClick={() => { setShowAll((value) => !value); setKind('all'); setSearch('') }}>{showAll ? 'きょうの であいへ' : 'ほかも さがす'}</button></div>}
 
       <div className="stage-list full-master-stage-list">
         {visibleStages.map((stage) => {
@@ -118,7 +172,7 @@ function StageMap({ game, onStart, goStudy, goHome, dailyCompleted, today }) {
           const enemy = speciesOf(stage.enemySpeciesId)
           const canStart = unlocked && dailyCompleted && ticketCount > 0
           return (
-            <article key={stage.id} className={`stage-card formal-stage-card area-${stage.area} zone-${stage.zoneId || 'special'} ${!unlocked ? 'locked' : ''}`}>
+            <article key={stage.id} className={`stage-card formal-stage-card area-${stage.adventureArea || stage.area} zone-${stage.zoneId || 'special'} ${!unlocked ? 'locked' : ''}`}>
               <div className="stage-number">{isCleared ? '✅' : unlocked ? stage.kind === 'boss' ? '👑' : '⚔️' : '🔒'}</div>
               <PlaceholderMonster speciesId={stage.enemySpeciesId} compact />
               <div className="stage-copy">
@@ -200,7 +254,7 @@ function BattleView({ game, setGame, onExitToMap, goStudy }) {
 
   const battleMoves = availableBattleMoveIds(game, battle)
   return (
-    <main className={`screen battle-screen-v2 area-theme-${stage?.area || 5}`}>
+    <main className={`screen battle-screen-v2 area-theme-${stage?.adventureArea || stage?.area || 5}`}>
       <div className="battle-head"><button className="back" onClick={exit}>{finished ? '← マップ' : '✕ やめる'}</button><strong>{stage?.zoneName ? `${stage.zoneName}｜${stage.label}` : stage?.label}</strong><span>TURN {battle.turn}</span></div>
       {battle.challenge && <div className="challenge-banner">🔥 チャレンジモード：いまの強さで再調整</div>}
       {battle.bossTelegraphed && !finished && <div className="boss-warning"><strong>⚠️ つぎに おおわざ！</strong><span>まもるなら いま！</span></div>}
@@ -278,7 +332,7 @@ function BattleView({ game, setGame, onExitToMap, goStudy }) {
 }
 
 export function AdventureFlow({ game, setGame, goHome, goStudy, dailyCompleted, dailyDay, today }) {
-  const [mapNonce, setMapNonce] = useState(0)
+  const [mapLocation, setMapLocation] = useState(null)
   const start = (stageId, challenge = false) => {
     const liveToday = dayNumber()
     const liveDailyCompleted = dailyCompleted && dailyDay === liveToday
@@ -289,8 +343,8 @@ export function AdventureFlow({ game, setGame, goHome, goStudy, dailyCompleted, 
     }
     setGame(result.game)
   }
-  if (game.activeBattle) return <BattleView game={game} setGame={setGame} onExitToMap={() => setMapNonce((n) => n + 1)} goStudy={goStudy} />
-  return <StageMap key={mapNonce} game={game} onStart={start} goStudy={goStudy} goHome={goHome} dailyCompleted={dailyCompleted} today={today} />
+  if (game.activeBattle) return <BattleView game={game} setGame={setGame} onExitToMap={() => {}} goStudy={goStudy} />
+  return <StageMap game={game} onStart={start} goStudy={goStudy} goHome={goHome} dailyCompleted={dailyCompleted} today={today} location={mapLocation} onLocationChange={setMapLocation} />
 }
 
 function MonsterRow({ monster, game, setGame, selected, setSelected }) {
@@ -314,15 +368,42 @@ function MonsterRow({ monster, game, setGame, selected, setSelected }) {
   </article>
 }
 
-function DetailPanel({ game, setGame, instanceId }) {
+
+function EvolutionCelebration({ reveal, onClose }) {
+  if (!reveal) return null
+  const from = speciesOf(reveal.fromId)
+  const to = speciesOf(reveal.toId)
+  const before = statsFor(reveal.fromId, reveal.level)
+  const after = statsFor(reveal.toId, reveal.level)
+  const gain = (key) => Math.max(0, (after?.[key] || 0) - (before?.[key] || 0))
+  return <div className="evolution-overlay" role="dialog" aria-modal="true" aria-label="シンカ！">
+    <div className="evolution-stars">✦　✧　✦　✧　✦</div>
+    <section className="evolution-celebration-card">
+      <p className="evolution-kicker">✨ シンカ！ ✨</p>
+      <div className="evolution-pair"><div className="evolution-old"><PlaceholderMonster speciesId={reveal.fromId} /><strong>{from?.name}</strong></div><span className="evolution-arrow">→</span><div className="evolution-new"><div className="evolution-glow"/><PlaceholderMonster speciesId={reveal.toId} /><strong>{to?.name}</strong></div></div>
+      <h2>{from?.name} は<br/><b>{to?.name}</b> に シンカした！</h2>
+      <p>じぶんで そだてたから たどりついた すがただよ！</p>
+      <div className="evolution-stat-gains"><span>HP <b>+{gain('hp')}</b></span><span>こうげき <b>+{gain('attack')}</b></span><span>ぼうぎょ <b>+{gain('defense')}</b></span><span>すばやさ <b>+{gain('speed')}</b></span></div>
+      <div className="evolution-unlock-note">🗺️ この すがたが ずかんに とうろく！<br/>こうレベルの おくちで であえる ばしょも あるよ。</div>
+      <button className="primary huge" onClick={onClose}>つづける！</button>
+    </section>
+  </div>
+}
+
+function DetailPanel({ game, setGame, instanceId, onEvolution }) {
   const monster = game.box[instanceId]
   if (!monster) return null
   const species = speciesOf(monster.speciesId)
   const stats = statsFor(monster.speciesId, monster.level)
   const special = specialProgressionStatus(monster, game)
   const evolve = () => {
+    const fromId = monster.speciesId
+    const level = monster.level
     const result = evolveInstance(game, instanceId)
-    if (result.ok) setGame(result.game)
+    if (result.ok) {
+      setGame(result.game)
+      onEvolution?.({ fromId, toId: result.to, level })
+    }
   }
   const equipRequiredItem = () => {
     const itemId = species.evolution?.heldItemId
@@ -372,17 +453,19 @@ function DexGrid({ game }) {
 export function MonsterScreen({ game, setGame, goHome }) {
   const [tab, setTab] = useState('team')
   const [selected, setSelected] = useState(game.activeMonsterId)
+  const [evolutionReveal, setEvolutionReveal] = useState(null)
   const box = useMemo(() => Object.values(game.box || {}).sort((a, b) => b.level - a.level), [game.box])
   const team = game.team.map((id) => game.box[id]).filter(Boolean)
   const caughtCount = Object.keys(game.dex?.caught || {}).length
   const seenCount = Object.keys(game.dex?.seen || {}).length
 
   return <main className="screen monster-screen-v2">
+    {evolutionReveal && <EvolutionCelebration reveal={evolutionReveal} onClose={() => setEvolutionReveal(null)} />}
     <button className="back" onClick={goHome}>← ホーム</button>
     <div className="screen-title-row"><div><p className="eyebrow">モンスター</p><h1>育成・図鑑</h1></div><span>GET {caughtCount}/238　発見 {seenCount}/238</span></div>
     <div className="monster-tabs"><button className={tab === 'team' ? 'active' : ''} onClick={() => setTab('team')}>手持ち {team.length}/3</button><button className={tab === 'box' ? 'active' : ''} onClick={() => setTab('box')}>ボックス {box.length}</button><button className={tab === 'dex' ? 'active' : ''} onClick={() => setTab('dex')}>図鑑 238</button></div>
-    {tab === 'team' && <><div className="monster-list">{team.map((monster) => <MonsterRow key={monster.instanceId} monster={monster} game={game} setGame={setGame} selected={selected === monster.instanceId} setSelected={setSelected} />)}</div><DetailPanel game={game} setGame={setGame} instanceId={selected} /></>}
-    {tab === 'box' && <><p className="kid-note">手持ちは3体まで。タイプのちがう仲間を組み合わせよう！</p><div className="monster-list">{box.map((monster) => <MonsterRow key={monster.instanceId} monster={monster} game={game} setGame={setGame} selected={selected === monster.instanceId} setSelected={setSelected} />)}</div><DetailPanel game={game} setGame={setGame} instanceId={selected} /></>}
+    {tab === 'team' && <><div className="monster-list">{team.map((monster) => <MonsterRow key={monster.instanceId} monster={monster} game={game} setGame={setGame} selected={selected === monster.instanceId} setSelected={setSelected} />)}</div><DetailPanel game={game} setGame={setGame} instanceId={selected} onEvolution={setEvolutionReveal} /></>}
+    {tab === 'box' && <><p className="kid-note">手持ちは3体まで。タイプのちがう仲間を組み合わせよう！</p><div className="monster-list">{box.map((monster) => <MonsterRow key={monster.instanceId} monster={monster} game={game} setGame={setGame} selected={selected === monster.instanceId} setSelected={setSelected} />)}</div><DetailPanel game={game} setGame={setGame} instanceId={selected} onEvolution={setEvolutionReveal} /></>}
     {tab === 'dex' && <><p className="kid-note">No.001〜238の正式マスターで動いているよ。登録済みの正式画像はそのまま表示し、まだ画像ファイルがない個体だけ専用の準備中表示になるよ。ギガ/バーストを初めて使うと同じ図鑑枠に登録マークがつくよ。</p><DexGrid game={game} /></>}
   </main>
 }

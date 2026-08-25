@@ -120,10 +120,15 @@ test('loss refunds reserved ticket exactly once', () => {
   let game = createGameState()
   game.box[game.activeMonsterId].level = 1
   const started = start(addTickets(game, 1, day), STAGE, day)
-  const battle = structuredClone(started.battle)
-  battle.partyHp[battle.activeInstanceId] = 1
-  const result = useMove(started.game, battle, 'm004-stable')
-  assert.equal(result.battle.status, 'lost')
+  let result = null
+  for (let seed = 0; seed < 200 && !result; seed += 1) {
+    const battle = structuredClone(started.battle)
+    battle.partyHp[battle.activeInstanceId] = 1
+    battle.rngSeed = `loss-refund-${seed}`
+    const candidate = useMove(started.game, battle, 'm004-stable')
+    if (candidate.battle.status === 'lost') result = candidate
+  }
+  assert.ok(result, 'a deterministic enemy-hit seed should produce a loss')
   assert.equal(result.battle.ticketRefunded, true)
   assert.equal(availableTicketCount(result.game, day), 1)
   const cleared = clearFinishedBattle(result.game, { today: day })

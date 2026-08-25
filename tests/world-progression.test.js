@@ -30,6 +30,7 @@ test('second-form wild encounter is locked until that form has been obtained by 
   game.team = ['evo']
   game.activeMonsterId = 'evo'
   game.dex = { seen: { [predecessor.id]: true }, caught: { [predecessor.id]: true } }
+  game.stagesCleared = ['a1-boss', 'a2-boss']
   assert.equal(isStageUnlocked(game, stage), false)
 
   const evolved = evolveInstance(game, 'evo')

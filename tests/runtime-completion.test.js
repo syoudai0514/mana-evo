@@ -41,7 +41,7 @@ function preparedGame(speciesId = 'm004', level = 40, day = 7000) {
 
 function unlockAreaBoss(game, area) {
   const boss = STAGES.find((stage) => stage.id === `a${area}-boss`)
-  const wild = STAGES.filter((stage) => stage.area === area && stage.kind === 'wild')
+  const wild = STAGES.filter((stage) => (stage.adventureArea || stage.area) === area && stage.kind === 'wild')
   game.stagesCleared = [...new Set([...(game.stagesCleared || []), ...wild.slice(0, boss.minAreaClears).map((stage) => stage.id)])]
   if (area > 1) for (let a = 1; a < area; a += 1) game.stagesCleared.push(`a${a}-boss`)
   return boss
@@ -119,7 +119,7 @@ test('evolution trial grants its item only on the first clear', () => {
   const day = 7100
   let game = preparedGame('m026', 80, day)
   const trial = STAGES.find((stage) => stage.id === 'evo-026-027')
-  const areaWild = STAGES.filter((stage) => stage.area === 1 && stage.kind === 'wild')
+  const areaWild = STAGES.filter((stage) => (stage.adventureArea || stage.area) === 1 && stage.kind === 'wild')
   game.stagesCleared = areaWild.slice(0, trial.minAreaClears).map((stage) => stage.id)
   assert.equal(isStageUnlocked(game, trial), true)
   let started = startBattle(game, trial.id, { dailyCompleted: true, today: day })
