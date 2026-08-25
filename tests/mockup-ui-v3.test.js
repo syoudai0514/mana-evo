@@ -17,10 +17,14 @@ test('approved five-tab navigation is present in the child game shell', () => {
   for (const label of ['バトル','つかまえる','ずかん','シンカ']) assert.ok(!navigation.includes('>' + label + '</span>'), label)
 })
 
-test('home exposes the approved six-step learning to evolution loop', () => {
-  for (const label of ['まなぶ','チケットGET','ぼうけん','バトル','つかまえる','そだてる・シンカ']) assert.ok(app.includes(label), label)
-  assert.ok(app.includes('いまの じょうきょう'))
-  assert.ok(app.includes('ゲームせつめい'))
+test('home follows the canonical next-action contract instead of a permanent manual', () => {
+  assert.ok(app.includes('📖 まなぶ！'))
+  assert.ok(app.includes('🗺️ ぼうけんへ！'))
+  assert.ok(app.includes('つかえるチケット'))
+  assert.ok(app.includes('いまのぼうけん'))
+  assert.ok(app.includes('つぎのシンカ'))
+  assert.ok(!app.includes('home-flow-strip'))
+  assert.ok(!app.includes('ゲームせつめい'))
 })
 
 test('adventure UI exposes world route, daily five and recommendation meaning', () => {
