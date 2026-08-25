@@ -90,7 +90,7 @@ async function openCapture(page) {
 
 async function throwRainbow(page) {
   await openCapture(page)
-  const rainbow = page.getByRole('button', { name: /にじのわ/ })
+  const rainbow = page.locator('.capture-item-grid').getByRole('button', { name: /にじのわ/ })
   await expect(rainbow).toBeEnabled()
   await rainbow.click()
   await page.getByRole('button', { name: /にじのわを なげる！/ }).click()
@@ -132,7 +132,7 @@ test('iPhone WebKit failed capture never displays four completed stars', async (
   await page.goto('/')
   await openCapture(page)
 
-  const star = page.getByRole('button', { name: /ほしのわ/ })
+  const star = page.locator('.capture-item-grid').getByRole('button', { name: /ほしのわ/ })
   await star.click()
   await page.getByRole('button', { name: /ほしのわを なげる！/ }).click()
 
