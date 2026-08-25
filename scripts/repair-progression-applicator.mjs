@@ -29,12 +29,14 @@ if (!world.includes(oldZone)) throw new Error('world entry-zone assignment targe
 world = world.replace(oldZone, newZone)
 fs.writeFileSync(worldPath, world)
 
-// Restore the canonical existing game tests, then update only the intentional save-version assertion.
+// Restore the canonical existing game tests, then update only assertions intentionally changed by the new world rules.
 execSync('git checkout origin/main -- tests/game.test.js')
 const gameTestPath = 'tests/game.test.js'
 let gameTest = fs.readFileSync(gameTestPath, 'utf8')
 if (!gameTest.includes('assert.equal(CURRENT_GAME_VERSION, 8)')) throw new Error('save version assertion not found')
 gameTest = gameTest.replace('assert.equal(CURRENT_GAME_VERSION, 8)', 'assert.equal(CURRENT_GAME_VERSION, 9)')
+if (!gameTest.includes('game.box[id].level = 17')) throw new Error('old m004 evolution level fixture not found')
+gameTest = gameTest.replace('game.box[id].level = 17', 'game.box[id].level = SPECIES.m004.evolution.level')
 fs.writeFileSync(gameTestPath, gameTest)
 
 // Update the pre-existing world test to assert self-evolution discovery instead of mere ownership,
