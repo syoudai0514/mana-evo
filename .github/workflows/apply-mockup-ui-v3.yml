@@ -20,6 +20,8 @@ jobs:
         with:
           node-version: 24
           cache: npm
+      - name: Repair applicator templates
+        run: node scripts/repair-mockup-ui-applicator.mjs
       - name: Apply approved mockup UI
         run: node scripts/apply-mockup-ui-v3.mjs
       - name: Install dependencies
@@ -32,7 +34,7 @@ jobs:
         run: npm run build
       - name: Commit implementation only
         run: |
-          rm -f scripts/apply-mockup-ui-v3.mjs .github/workflows/apply-mockup-ui-v3.yml
+          rm -f scripts/apply-mockup-ui-v3.mjs scripts/repair-mockup-ui-applicator.mjs .github/workflows/apply-mockup-ui-v3.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
