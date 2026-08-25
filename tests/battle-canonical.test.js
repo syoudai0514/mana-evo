@@ -16,12 +16,13 @@ import {
   useProtect
 } from '../src/game/engine.js'
 import { addTickets, availableTicketCount, createGameState } from '../src/game/progression.js'
+import { applyAreaBossProgressEvent } from '../src/game/worldProgression.js'
 
 const DAY = 4100
 const FIRST_WILD = 'a1-wild-001'
 
 function unlockForStage(game, stage) {
-  const next = structuredClone(game)
+  let next = structuredClone(game)
   next.stagesCleared ||= []
   const add = (id) => { if (id && !next.stagesCleared.includes(id)) next.stagesCleared.push(id) }
   add(stage.unlockedBy)
@@ -38,6 +39,11 @@ function unlockForStage(game, stage) {
   }
   for (const candidate of STAGES) {
     if (candidate.kind === 'wild' && (candidate.adventureArea || candidate.area) === (stage.adventureArea || stage.area)) add(candidate.id)
+  }
+  const area = Number(stage.adventureArea || stage.area)
+  if (stage.kind === 'boss' && area >= 1 && area <= 4) {
+    next = applyAreaBossProgressEvent(next, { id: `test:${stage.id}:a`, area, points: 6, skillId: `${stage.id}:skill-a` }).game
+    next = applyAreaBossProgressEvent(next, { id: `test:${stage.id}:b`, area, points: 6, skillId: `${stage.id}:skill-b` }).game
   }
   return next
 }
