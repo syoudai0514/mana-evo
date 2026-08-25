@@ -67,6 +67,16 @@
 - Classification: `EVIDENCE_FOR_LATER_CHANGE`
 - Affected: UI/UX
 
+## UDE-007 捕獲成功でもBattle XPを付与
+
+- User evidence: 2026-08-24 12:19 UTC / 21:19 JST
+- Explicit decision:
+  - 捕獲成功でも撃破/勝利と同額のBattle XPを付与する。
+  - その戦闘で新しく捕まえた個体には、その戦闘XPを付与しない。
+- Corroboration: `design/current/03-CAPTURE-DUPLICATES.md` §0 / §7 and `design/18-sol-pr15-fix-resolution.md` §3.
+- Classification: `CONFIRMED_CHANGE`
+- Affected: battle settlement / capture / XP
+
 ---
 
 ## 未回収・要継続調査
