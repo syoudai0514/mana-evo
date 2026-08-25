@@ -325,3 +325,64 @@ body{background:radial-gradient(circle at 50% -15%,#0b73c7 0,#062e61 28%,#031a38
   .monster-screen-v2 .monster-row.showcase .monster-row-main>strong{font-size:10px}
   .battle-screen-v2 .battle-action-row button small{font-size:8px}
 }
+
+/* Adventure's iPhone first-decision surface stays progressive without becoming a scroll wall. */
+@media(max-width:390px){
+  .adventure-map>.back{display:none}
+  .adventure-map .screen-title-row{min-height:0;margin:0 0 3px;padding:2px 4px}
+  .adventure-map .screen-title-row .eyebrow{margin:0;font-size:7px}
+  .adventure-map .screen-title-row h1{margin:0;font-size:18px}
+  .adventure-map .area-level-band{margin:1px 0 0;font-size:8px;line-height:1.15}
+  .adventure-map .screen-title-row>strong{padding:5px 8px;font-size:9px}
+  .adventure-map>.kid-note{margin:2px 0 5px;padding:5px 7px;font-size:9px;line-height:1.25}
+
+  .adventure-map .premium-world-map{min-height:0;margin:0 0 5px;padding:5px 6px 4px;border-width:2px;border-radius:16px}
+  .adventure-map .premium-world-map:before{inset:32px -10px 28px}
+  .adventure-map .premium-world-map:after{height:54px;bottom:-27px}
+  .adventure-map .world-overview-heading{display:flex;align-items:center;justify-content:space-between;gap:5px}
+  .adventure-map .world-overview-heading .eyebrow{display:none}
+  .adventure-map .world-overview-heading h2{margin:0;font-size:13px;line-height:1.1}
+  .adventure-map .world-overview-heading>span{padding:3px 5px;font-size:7px}
+  .adventure-map .world-area-route{grid-template-columns:repeat(5,minmax(0,1fr));min-height:0;height:58px;gap:2px;padding:1px 0 0;align-items:center}
+  .adventure-map .world-area-route:before{left:7%;right:7%;bottom:31px;height:3px}
+  .adventure-map .world-area-node{min-height:54px;padding:1px;justify-content:center}
+  .adventure-map .world-area-node>span{width:30px;height:30px;font-size:15px;border-width:2px}
+  .adventure-map .world-area-node>b{margin-top:2px;padding:1px 3px;font-size:7.5px;line-height:1.1}
+  .adventure-map .world-area-node>small{font-size:6px;line-height:1}
+  .adventure-map .world-area-node.current>span{transform:translateY(-2px) scale(1.03)}
+  .adventure-map .world-area-node.current:after{display:none}
+
+  .adventure-map .area-zone-map{margin:0 0 5px;padding:4px 6px;border-radius:15px}
+  .adventure-map .zone-map-title{align-items:center;margin:0 0 3px}
+  .adventure-map .zone-map-title .eyebrow{display:none}
+  .adventure-map .zone-map-title h2{margin:0;font-size:13px;line-height:1.1}
+  .adventure-map .zone-map-title>span{padding:3px 5px;font-size:7px}
+  .adventure-map .zone-grid{gap:3px;margin-top:0}
+  .adventure-map .zone-grid:before{top:13px;height:3px}
+  .adventure-map .zone-grid button{min-height:58px;padding:3px 2px;border-radius:12px}
+  .adventure-map .zone-grid button.active{transform:none}
+  .adventure-map .zone-path-dot{width:24px;height:24px;font-size:10px;border-width:2px}
+  .adventure-map .zone-grid button>b{margin:2px 0 0;font-size:7.5px;line-height:1.05}
+  .adventure-map .zone-grid button>small{font-size:6.5px;line-height:1.05}
+  .adventure-map .zone-grid button>em{margin-top:1px;font-size:6px;line-height:1.05}
+
+  .adventure-map .encounter-heading{min-height:46px;margin:0 0 4px;padding:4px 6px;border-radius:14px;align-items:center}
+  .adventure-map .encounter-heading .eyebrow,.adventure-map .encounter-heading small{display:none}
+  .adventure-map .encounter-heading h2{margin:0;font-size:14px;line-height:1.1}
+  .adventure-map .encounter-heading button{min-height:44px;padding:6px 8px}
+  .adventure-map .full-master-stage-list{gap:6px;margin-top:0}
+  .adventure-map .formal-stage-card{grid-template-columns:56px minmax(0,1fr) 82px;grid-template-rows:minmax(62px,auto);gap:5px;min-height:72px;padding:5px;border-radius:14px;align-items:center}
+  .adventure-map .formal-stage-card>.stage-number{position:absolute;z-index:3;left:5px;top:5px;font-size:11px;line-height:1}
+  .adventure-map .formal-stage-card>.recommendation-tag{position:absolute;z-index:3;left:38px;top:4px;font-size:6.5px;padding:2px 4px}
+  .adventure-map .formal-stage-card .encounter-art{grid-column:1;grid-row:1;width:52px;height:58px;min-width:0;overflow:hidden;border-radius:12px}
+  .adventure-map .formal-stage-card .stage-copy{grid-column:2;grid-row:1;min-width:0;padding:13px 0 0}
+  .adventure-map .formal-stage-card .stage-copy>small{display:none}
+  .adventure-map .formal-stage-card .stage-copy>strong{font-size:12px;line-height:1.05}
+  .adventure-map .formal-stage-card .stage-copy>span{font-size:8px;line-height:1.05}
+  .adventure-map .formal-stage-card .type-pills{gap:2px;margin-top:2px}
+  .adventure-map .formal-stage-card .type-pills span{padding:1px 3px;font-size:6px}
+  .adventure-map .formal-stage-card .stage-actions{grid-column:3;grid-row:1;align-self:center;display:flex;flex-direction:column;justify-content:center;gap:2px;min-width:0}
+  .adventure-map .formal-stage-card .stage-actions>span{font-size:8px;line-height:1}
+  .adventure-map .formal-stage-card .stage-actions>small{display:none}
+  .adventure-map .formal-stage-card .stage-actions>button{grid-column:auto;min-height:44px;padding:7px 4px;border-radius:11px}
+}
