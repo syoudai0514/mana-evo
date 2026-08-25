@@ -5,6 +5,7 @@ import {
   RUNTIME_SPECIES,
   RUNTIME_STAGES
 } from './runtimeMaster.generated.js'
+import { WORLD_AREA_META, enrichStage } from './worldProgression.js'
 
 export const TYPES = [
   ['normal', 'ノーマル', '◯'], ['fire', 'ほのお', '🔥'], ['water', 'みず', '💧'], ['electric', 'でんき', '⚡'],
@@ -110,13 +111,12 @@ export const EVOLUTION_ITEMS = Object.freeze({
   stones: { ...RUNTIME_EVOLUTION_ITEMS.stones, 'glow-stone': { id: 'glow-stone', name: 'ひかりのいし（旧）' } },
   heldItems: { ...RUNTIME_EVOLUTION_ITEMS.heldItems, 'bond-charm': { id: 'bond-charm', name: 'きずなのチャーム（旧）' } }
 })
-export const STAGES = [...RUNTIME_STAGES, ...LEGACY_STAGES]
+const BASE_STAGES = [...RUNTIME_STAGES, ...LEGACY_STAGES]
+export const STAGES = BASE_STAGES.map((stage) => stage.legacy ? stage : enrichStage(stage, SPECIES[stage.enemySpeciesId]))
 export { RUNTIME_META, RUNTIME_STAGES }
 
-export const AREA_META = [1, 2, 3, 4].map((area) => {
-  const first = Object.values(SPECIES).find((species) => species.area === area)
-  return { area, name: first?.areaName || `エリア${area}` }
-})
+export const AREA_META = WORLD_AREA_META.filter((meta) => meta.area <= 4).map((meta) => ({ ...meta }))
+export const EX_AREA_META = { ...WORLD_AREA_META.find((meta) => meta.area === 5) }
 
 export function speciesOf(id) { return SPECIES[id] || LEGACY_SPECIES[id] || null }
 export function moveOf(id) { return MOVES[id] || null }

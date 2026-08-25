@@ -115,7 +115,7 @@ export default function HowToPlay({ game, today, goHome, goAdventure, goMonsters
           <Step number="4" icon="⭐" title="「わ」を なげよう！">ほし・ぎん・きん・にじ から つかう「わ」を えらんで タップ！ 1バトルで 3かいまで なげられるよ。</Step>
           <Step number="5" icon="✨" title="4つ ひかったら GET！">「わ」が 4つ ひかると GET！ しっぱいすると あいてが 1かい こうげきしてくるよ。</Step>
           <Step number="6" icon="🎯" title="もっと バトルしたい！">ついかチャレンジは 3もん。2もん できたら、バトルチケットが 1まい もらえるよ！</Step>
-          <Step number="7" icon="🌱" title="そだてて シンカ！">バトルで けいけんを ためて レベルアップ！ シンカの じょうけんが そろったら「モンスター」から シンカできるよ。</Step>
+          <Step number="7" icon="🌱" title="そだてて シンカ！">バトルで けいけんを ためて レベルアップ！ シンカの じょうけんが そろったら「モンスター」から シンカできるよ。2だんかいめの すがたは、まず じぶんで シンカさせるのが だいじ！ いちど シンカすると、おくの つよいゾーンでも であえるようになるよ。</Step>
         </div>
         <div className="howto-actions">
           <button className="primary" onClick={goStudy}>📚 まなぶ！</button>

@@ -1,4 +1,4 @@
-export const BALANCE_VERSION = 3
+export const BALANCE_VERSION = 4
 export const MAX_MONSTER_LEVEL = 100
 export const NORMAL_REPEAT_CAP = 1.10
 export const NORMAL_REPEAT_MASTERY_FLOOR = 0.70
@@ -22,6 +22,17 @@ export const BOSS_RANKS = Object.freeze({
 const clamp = (min, value, max) => Math.max(min, Math.min(max, value))
 const positive = (value, fallback = 1) => Math.max(1, Number(value) || fallback)
 const statMultiplier = (value, fallback = 1) => clamp(0.5, Number(value) || fallback, 4)
+
+function stageLevelBounds(stage) {
+  const min = clamp(1, Math.floor(Number(stage?.minEnemyLevel) || 1), MAX_MONSTER_LEVEL)
+  const max = clamp(min, Math.floor(Number(stage?.maxEnemyLevel) || MAX_MONSTER_LEVEL), MAX_MONSTER_LEVEL)
+  return { min, max }
+}
+
+function clampStageLevel(stage, level) {
+  const { min, max } = stageLevelBounds(stage)
+  return clamp(min, Math.floor(Number(level) || min), max)
+}
 
 export function normalizeStatMultipliers(value = null) {
   return {
@@ -141,7 +152,9 @@ export function difficultyLabelFromRatio(ratio) {
 }
 
 function validBossSnapshot(snapshot, stage) {
-  return !!snapshot && snapshot.stageId === stage?.id && Number(snapshot.lockedLevel) >= 1 && Number(snapshot.lockedLevel) <= MAX_MONSTER_LEVEL
+  if (!snapshot || snapshot.stageId !== stage?.id || Number(snapshot.balanceVersion) !== BALANCE_VERSION) return false
+  const { min, max } = stageLevelBounds(stage)
+  return Number(snapshot.lockedLevel) >= min && Number(snapshot.lockedLevel) <= max
 }
 
 function validNormalSnapshot(snapshot, stage) {
@@ -184,7 +197,7 @@ export function buildEnemyPlan(game, stage, speciesOf, existingSnapshot = null, 
     const rank = BOSS_RANKS[stage.bossRank] || BOSS_RANKS.A
     const statMultipliers = normalizeStatMultipliers({ hp: rank.hp, attack: rank.attack, defense: rank.defense, speed: 1 })
     const targetPower = ref * rank.targetMultiplier
-    const level = levelForTargetPower(species, targetPower, statMultipliers)
+    const level = clampStageLevel(stage, levelForTargetPower(species, targetPower, statMultipliers))
     const actualPower = combatPowerFromStats(statsFromBase(species.base, level, statMultipliers))
     const snapshot = {
       stageId: stage.id,
@@ -227,7 +240,7 @@ export function buildEnemyPlan(game, stage, speciesOf, existingSnapshot = null, 
   // Pick the normal level from the capped reference first, then apply repeat
   // mastery HP/DEF easing. Including easing in level search would cancel the
   // intended "I got stronger" feeling by raising the enemy level again.
-  const level = levelForTargetPower(species, targetPower)
+  const level = clampStageLevel(stage, levelForTargetPower(species, targetPower))
   const actualPower = combatPowerFromStats(statsFromBase(species.base, level, statMultipliers))
   return {
     mode,
