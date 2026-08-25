@@ -1,12 +1,27 @@
-# ManaEvo 238体 成長ステータスマスター — SOLレビュー索引
+# ManaEvo 238体 成長ステータスマスター — W-209 reconciliation index
 
-更新日: 2026-08-24
-対象: PR #15 `chatgpt/monster-master-238`
-状態: **SOL REVIEW READY / runtime未実装**
+更新日: 2026-08-25  
+Work Item: **W-209**  
+状態: **DERIVED MASTER RECONCILED / runtime未実装**
 
 ## 目的
 
-No.001〜238の各キャラについて、キャラ設定と戦闘用数値を1行で横断レビューできるようにした詳細設計データです。GitHub上でレビューしやすいようエリア単位・必要に応じて分割しています。**下記7ファイルを合わせて238体ちょうど**です。
+No.001〜238の派生成長データを、Phase 3 の権威順序に従って active monster data master として再照合するための索引です。runtimeを正本とはせず、`REBUILD-START-HERE.md` / `design/rebuild/DECISION-LOG.md` / CURRENT canonical / exact FINAL-CORRECTED を優先します。
+
+W-209では新しいモンスター仕様や数値を作っていません。既存238体データのidentity・進化リンク・特殊形態対象を再検証し、既知の未承認driftだけを補正しています。
+
+## W-209 reconciliation
+
+- active scope: **m001〜m238 / 83系列**。
+- No.239 `シラユキヒメ` は immutable baseline/reference のみに保全し、active masterへ入れません。
+- No.142 `m142` は、exact baselineの旧表示名 `カブトレクス` より後の承認済みCURRENT決定を優先し、**`ヘラクレオン` を維持**します。
+- No.236 `m236` は、exact baselineの `ホシラディア` に対し派生CSVだけが `ソラリオン` へ変わっていた未承認driftだったため、**`ホシラディア` に補正**しました。
+- したがって raw baseline との表示名直比較では、補正後も承認済み変更である m142 の1件だけが意図的に異なります。権威順序を適用した**未承認identity mismatchは0件**です。
+- m236は単独完成個体であり、今回の名前補正による進化リンク数の変化はありません。
+
+## 238体データファイル
+
+下記7ファイルを合わせて238体ちょうどです。
 
 | ファイル | 対象 | 行数（ヘッダ除く） |
 |---|---|---:|
@@ -19,32 +34,30 @@ No.001〜238の各キャラについて、キャラ設定と戦闘用数値を1�
 | `13d-monster-growth-area4-part2.csv` | No.212〜238 / Area4後半 + イベント完成個体 | 27 |
 | **合計** | No.001〜238 | **238** |
 
-No.239 `シラユキヒメ` は元資料保全のみで、現行238体masterには含めません。
-
 ## 1行に含む項目
 
-- No / 正式ID候補 / 系列No / 系列名 / 名前
+- No / stable ID / 系列No / 系列名 / 名前
 - エリア / タイプ
 - stage / maxStage
 - `catchRarity` / `powerTierV1`
-- 復元元 `sourceRole` / 現行 `combatRoleV2`
+- 復元元 `sourceRole` / `combatRoleV2`
 - BST / 基礎HP / 基礎こうげき / 基礎ぼうぎょ / 基礎すばやさ
 - 進化方式 / 条件 / 次ID / 次の名前
 - encounterPool / capturePolicy / wildCatchable / catchRank
 - 技威力profile
 - gigaEligible / burstEligible
 - motif / concept / description
-- **Lv1 / 5 / 10 / 20 / 30 / 50 / 100 の HP・攻撃・防御・素早さ**
+- Lv1 / 5 / 10 / 20 / 30 / 50 / 100 の HP・攻撃・防御・素早さ
 
 ## 数値の読み方
 
-Lv能力値は `design/12-detailed-balance-design-for-sol-review.md` の式で算出しています。進化後は前形態の4能力をfloorにして、増えたBST予算だけを進化後ロール比率で配分するため、進化による能力低下を禁止しています。
+Lv能力値は `design/12-detailed-balance-design-for-sol-review.md` の既存式で算出されています。W-209はこの数値設計を変更していません。
 
-`powerTierV1` は初期seedとして元資料のcatchRarityと同値ですが、**フィールドは分離済み**です。別SOLレビューで戦闘力と捕獲レア度をさらに分離すべきと判断された場合、`powerTier`だけ修正できます。
+`powerTierV1` と `catchRarity` もW-209では再チューニングしません。今回の担当はactive data-master reconciliationであり、新しいバランス仕様は追加しません。
 
 ## 進化比較
 
-155進化遷移は以下4ファイルで全件確認できます。
+155進化遷移は以下4ファイルで確認できます。
 
 | ファイル | 対象 | 遷移数 |
 |---|---|---:|
@@ -54,27 +67,25 @@ Lv能力値は `design/12-detailed-balance-design-for-sol-review.md` の式で�
 | `14d-evolution-balance-area4.csv` | Area4 | 34 |
 | **合計** | 全エリア | **155** |
 
-level進化ではトリガーLvでの進化前後実能力も記録しています。stone / held-item+levelupは固定トリガーLvを持たないため、基礎値差を監査します。
+CURRENT canonicalの内訳と一致します。
 
-## 自動検証済み
+- `level`: 123
+- `stone`: 21
+- `held_item_levelup`: 11
 
-- active ID: 001〜238、欠番0、重複0
-- 83系列
-- 18タイプすべて存在
-- 155進化遷移 = level 123 / stone 21 / held-item+levelup 11
-- 155遷移すべてで基礎4能力非減少
-- 155遷移すべてでtarget BST一致
-- Lv1/5/10/20/30/50/100の能力式不一致0
-- BST合計不一致0
-- 元 `families.mjs` のNo.001〜238との名前/area/type/rank/role/stage/設定/進化条件照合不一致0
-- 野生155 / 進化専用79 / イベント完成個体4
-- ギガ12 / バースト8 / 重複0
-- No.239 runtime候補混入0
+`design/14e-evolution-item-acquisition-master.csv` は専用evolution trial初回クリアを進化アイテム取得源にしていた旧派生資料です。D-008 / `design/current/04-EVOLUTION-ITEMS-SPECIAL-FORMS.md` により、これは**CURRENT取得仕様へ再昇格しません**。W-209は14eをactive acquisition authorityとして扱っていません。
 
-詳細は `design/15-sol-review-validation-report.md` を参照。
+## W-209 検証結果
 
-## レビュー時の注意
+- active ID: m001〜m238、欠番0、重複0
+- active系列: 83
+- No.239 active混入: 0
+- identity: m236 drift補正後、権威順序違反0
+- approved later decision: m142 = `ヘラクレオン` を維持
+- 進化リンク: 155 = level 123 / stone 21 / held_item_levelup 11
+- Giga: 12 stable IDs
+- Burst: 8 stable IDs
+- Giga/Burst重複: 0
+- baseline / `src/**` / `tests/**`: W-209変更なし
 
-このCSVは**実装用確定masterではなく、SOLレビュー用の詳細設計候補**です。別SOLが `GO` または指摘修正後の `GO WITH FIX` を出すまでruntimeへ投入しません。
-
-レビュー開始点はリポジトリ直下 `SOL-REVIEW-REQUEST-PR15-BALANCE.md` とします。
+詳細は `design/15-sol-review-validation-report.md` を参照してください。
