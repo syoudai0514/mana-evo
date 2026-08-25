@@ -77,7 +77,7 @@ test('learning focus screens do not stack the ManaEvo header over the Kids Quest
   const app = read('src/App.jsx')
   const css = read('src/parent-controls.css')
   assert.match(app, /focusView=\['activity','free','review','trial','dictionary','parent'\]/)
-  assert.match(app, /!focusView && <header>/)
+  assert.match(app, /!focusView && <header(?:\s+[^>]*)?>/)
   assert.match(css, /\.app-shell--focus \.topbar\.app-header\{top:0/)
   assert.match(css, /\.app-shell--focus>\.screen\{padding:0 0 28px/)
 })
