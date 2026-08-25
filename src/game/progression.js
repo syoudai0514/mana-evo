@@ -1,6 +1,6 @@
 import { EVOLUTION_ITEMS, STAGES, speciesOf } from './content.js'
 
-export const CURRENT_GAME_VERSION = 8
+export const CURRENT_GAME_VERSION = 9
 export const CAPTURE_ITEM_IDS = ['star', 'silver', 'gold', 'rainbow']
 export const TICKET_TTL_DAYS = 7
 
@@ -55,6 +55,8 @@ export function createGameState() {
     gigaCoreSpecies: {},
     burstMarks: {},
     specialDex: { giga: {}, burst: {} },
+    evolutionDiscoveries: {},
+    adventureLocation: { area: 1, zoneId: 'meadow' },
     appliedLearningRewardIds: [],
     bossBalanceSnapshots: {},
     normalStageSnapshots: {},
@@ -110,6 +112,36 @@ function normalizeOwnershipMap(value) {
     .map(([speciesId, owned]) => [canonicalSpeciesId(speciesId), owned])
     .filter(([speciesId, owned]) => !!owned && !!speciesOf(speciesId))
     .map(([speciesId]) => [speciesId, true]))
+}
+
+const VALID_ADVENTURE_ZONES = Object.freeze({
+  1: ['meadow', 'forest', 'deep'],
+  2: ['foothill', 'magma', 'deep'],
+  3: ['coast', 'frost', 'deep'],
+  4: ['city', 'skyway', 'deep'],
+  5: ['ex']
+})
+
+function normalizeAdventureLocation(value) {
+  const area = Math.max(1, Math.min(5, positiveInt(value?.area) || 1))
+  const allowed = VALID_ADVENTURE_ZONES[area] || VALID_ADVENTURE_ZONES[1]
+  return { area, zoneId: allowed.includes(value?.zoneId) ? value.zoneId : allowed[0] }
+}
+
+function normalizeEvolutionDiscoveries(saved, box) {
+  const explicit = normalizeOwnershipMap(saved?.evolutionDiscoveries)
+  if (positiveInt(saved?.version) >= 9) return explicit
+  // v8 and earlier could not distinguish caught-vs-evolved. Grandfather already owned
+  // evolved forms so an existing child save never loses previously reachable content.
+  const candidates = new Set([
+    ...Object.keys(saved?.dex?.caught || {}).map(canonicalSpeciesId),
+    ...Object.values(box || {}).map((monster) => monster.speciesId)
+  ])
+  for (const speciesId of candidates) {
+    const species = speciesOf(speciesId)
+    if (species && Number(species.stage) > 1) explicit[speciesId] = true
+  }
+  return explicit
 }
 
 function normalizeRewardIds(value) {
@@ -291,6 +323,8 @@ export function normalizeGameState(saved, today = localDayNumber()) {
       giga: normalizeOwnershipMap(saved.specialDex?.giga),
       burst: normalizeOwnershipMap(saved.specialDex?.burst)
     },
+    evolutionDiscoveries: normalizeEvolutionDiscoveries(saved, box),
+    adventureLocation: normalizeAdventureLocation(saved.adventureLocation),
     appliedLearningRewardIds: normalizeRewardIds(saved.appliedLearningRewardIds),
     bossBalanceSnapshots: normalizeBossBalanceSnapshots(saved.bossBalanceSnapshots),
     normalStageSnapshots: normalizeNormalStageSnapshots(saved.normalStageSnapshots),

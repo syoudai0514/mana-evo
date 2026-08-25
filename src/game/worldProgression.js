@@ -93,13 +93,14 @@ function zoneForStage(meta, stage, species) {
   const formStage = Math.max(1, Number(species?.stage) || 1)
   if (formStage >= 2) return meta.zones[meta.zones.length - 1]
   const earlyZones = meta.zones.slice(0, Math.min(2, meta.zones.length))
-  return earlyZones[numberOf(species) % earlyZones.length]
+  return earlyZones[(Math.max(1, numberOf(species)) - 1) % earlyZones.length]
 }
 
 export function enrichStage(stage, species) {
   if (!stage || stage.legacy) return stage
   const meta = metaForStage(stage, species)
   const zone = zoneForStage(meta, stage, species)
+  const zoneIndex = Math.max(0, meta.zones.findIndex((entry) => entry.id === zone.id))
   const formStage = Math.max(1, Number(species?.stage) || 1)
   const isFinalEvolution = formStage > 1 && !species?.evolution
   const isEvolvedWild = stage.kind === 'wild' && formStage >= 2
@@ -112,6 +113,9 @@ export function enrichStage(stage, species) {
     zoneId: zone.id,
     zoneName: zone.name,
     zoneIcon: zone.icon,
+    zoneIndex,
+    zoneGatePreviousId: zoneIndex > 0 ? meta.zones[zoneIndex - 1]?.id || null : null,
+    zoneGateMinClears: zoneIndex > 0 ? 2 : 0,
     minEnemyLevel: zone.minLevel,
     maxEnemyLevel: zone.maxLevel,
     levelLabel: `Lv.${zone.minLevel}〜${zone.maxLevel}`,
@@ -122,8 +126,8 @@ export function enrichStage(stage, species) {
   // 冒険エリアの解放条件は、制作上のareaではなく実際の配置先で決める。
   if (stage.kind === 'wild' && meta.area !== Number(stage.area) && meta.area > 1 && meta.area <= 4) next.areaGateBossId = `a${meta.area - 1}-boss`
 
-  // 第2形態の初回入手は自力進化。進化後に dex.caught が立つので奥地野生が解禁される。
-  if (isFirstEvolvedForm) next.requiresOwnedSpeciesId = species.id
+  // 第2形態の初回入手は自力進化。所有ではなく「自分で進化した記録」で奥地野生を解禁する。
+  if (isFirstEvolvedForm) next.requiresEvolutionDiscoverySpeciesId = species.id
 
   // 最終進化形は通常野生では出さない。単段階種(stage=1)は例外。
   if (stage.kind === 'wild' && isFinalEvolution) {
@@ -153,12 +157,15 @@ export function pickDailyEncounterStages(stages, {
   limit = 5,
   isUnlocked = () => true,
   isCaught = () => false,
-  isCleared = () => false
+  isCleared = () => false,
+  priority = () => 0
 } = {}) {
   return [...(stages || [])]
     .sort((a, b) => {
       const unlocked = Number(!isUnlocked(a)) - Number(!isUnlocked(b))
       if (unlocked) return unlocked
+      const priorityDiff = Number(priority(a) || 0) - Number(priority(b) || 0)
+      if (priorityDiff) return priorityDiff
       const uncaught = Number(isCaught(a)) - Number(isCaught(b))
       if (uncaught) return uncaught
       const uncleared = Number(isCleared(a)) - Number(isCleared(b))

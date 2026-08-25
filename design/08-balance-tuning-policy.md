@@ -1,6 +1,8 @@
-# バランス初期値・調整運用 正本仕様
+# バランス初期値・調整運用（履歴＋運用方針）
 
-更新日: 2026-08-24
+更新日: 2026-08-25
+
+> **現行数値の正本ではありません。** 数値が競合する場合は `design/12-detailed-balance-design-for-sol-review.md`、`design/20-world-map-evolution-progression.md`、および現行runtimeを優先します。この文書は調整プロセス・受入思想を残す履歴資料です。
 
 この文書は `design/06-battle-and-progression-design.md` の数値運用を補足する正本である。
 
@@ -62,7 +64,8 @@ ChatGPT側の実装担当が、以下を行う。
 PR #15 の初期値は、現行engineの以下を基準値として使用する。
 
 ```text
-xpToNext(level) = 60 + 18 * level
+totalXp(L) = round(6 * (L - 1)^1.9)
+xpToNext(L) = totalXp(L+1) - totalXp(L)
 Lv上限 = 100
 ```
 
@@ -142,7 +145,7 @@ HP50%時の「ほしのわ」目安:
 
 ## 7. 通常敵・ボス倍率 初期実装
 
-`src/game/balance.js` の `BALANCE_VERSION=1` を初期値とする。
+現行 `src/game/balance.js` は `BALANCE_VERSION=4`。ゾーンLv帯クランプと再戦成長実感を含む。
 
 ### 通常敵
 

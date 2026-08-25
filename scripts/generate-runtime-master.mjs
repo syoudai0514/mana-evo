@@ -178,6 +178,39 @@ for (const row of growth) {
   }
 }
 
+// World-progression overlay: the original CSV level thresholds were authored before
+// the current zone Lv bands. Keep those values as baselines, then raise only level
+// evolutions that would otherwise be ready immediately after a normal wild capture.
+const EARLY_ZONE_MAX = { 1: [10, 16], 2: [24, 31], 3: [40, 49], 4: [60, 70] }
+const FINAL_STAGE_FLOOR = { 1: 30, 2: 38, 3: 52, 4: 72 }
+const families = new Map()
+for (const monster of Object.values(species)) {
+  if (!families.has(monster.familyNo)) families.set(monster.familyNo, [])
+  families.get(monster.familyNo).push(monster)
+}
+for (const family of families.values()) {
+  family.sort((a, b) => a.stage - b.stage)
+  for (let index = 0; index < family.length; index += 1) {
+    const monster = family[index]
+    const evo = monster.evolution
+    if (!evo || evo.method !== 'level') continue
+    const originalLevel = evo.level
+    if (monster.stage === 1) {
+      const zoneMaxes = EARLY_ZONE_MAX[monster.area] || [10, 16]
+      const zoneIndex = (Math.max(1, Number(monster.no)) - 1) % Math.min(2, zoneMaxes.length)
+      evo.level = Math.max(originalLevel, zoneMaxes[zoneIndex] + 4)
+    } else {
+      const previous = family[index - 1]
+      const previousAcquireLevel = previous?.evolution?.method === 'level'
+        ? previous.evolution.level
+        : Math.max(...(EARLY_ZONE_MAX[monster.area] || [10])) + 4
+      evo.level = Math.max(originalLevel, FINAL_STAGE_FLOOR[monster.area] || originalLevel, previousAcquireLevel + 10)
+    }
+    evo.originalLevel = originalLevel
+    evo.worldAdjusted = evo.level !== originalLevel
+  }
+}
+
 const evolutionItems = { stones: {}, heldItems: {} }
 for (const row of acquisitions) {
   const bucket = row.method === 'stone' ? evolutionItems.stones : evolutionItems.heldItems

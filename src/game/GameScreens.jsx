@@ -32,6 +32,8 @@ import {
   currentPlayerMaxHp,
   describeEvolutionCondition,
   evolveInstance,
+  adventureZoneProgress,
+  isAdventureZoneUnlocked,
   isStageUnlocked,
   levelsUntilEvolution,
   setTeam,
@@ -61,9 +63,15 @@ function unlockReason(game, stage) {
   const cleared = new Set(game.stagesCleared || [])
   if (stage.areaGateBossId && !cleared.has(stage.areaGateBossId)) return 'まえの エリアボスを たおそう'
   if (stage.requiresAllAreasCleared) return '4つの エリアを クリアしよう'
+  const zoneProgress = stage.zoneId ? adventureZoneProgress(game, stage.adventureArea || stage.area, stage.zoneId) : null
+  if (zoneProgress && !zoneProgress.unlocked) return `${zoneProgress.previousZoneName}で あと ${zoneProgress.remaining}かい クリアしよう`
+  if (stage.requiresEvolutionDiscoverySpeciesId && !game.evolutionDiscoveries?.[stage.requiresEvolutionDiscoverySpeciesId]) {
+    const required = speciesOf(stage.requiresEvolutionDiscoverySpeciesId)
+    return `まず ${required?.name || 'このすがた'}へ じぶんで シンカさせよう`
+  }
   if (stage.requiresOwnedSpeciesId && !game.dex?.caught?.[stage.requiresOwnedSpeciesId]) {
     const required = speciesOf(stage.requiresOwnedSpeciesId)
-    return stage.firstAcquireByEvolution ? `まず ${required?.name || 'このすがた'}に シンカさせよう` : `${required?.name || '対象'}を GETしよう`
+    return `${required?.name || '対象'}を GETしよう`
   }
   if (stage.minAreaClears) return `このエリアで ${stage.minAreaClears}かい クリアしよう`
   return 'まだ あいていないよ'
@@ -80,7 +88,8 @@ function StageMap({ game, onStart, goStudy, goHome, dailyCompleted, today, locat
   const area = requestedArea >= 1 && requestedArea <= 5 ? requestedArea : highestArea
   const areaMeta = area <= 4 ? AREA_META.find((meta) => meta.area === area) : null
   const defaultZoneId = areaMeta?.zones?.[0]?.id || 'ex'
-  const zoneId = areaMeta?.zones?.some((zone) => zone.id === location?.zoneId) ? location.zoneId : defaultZoneId
+  const requestedZoneId = areaMeta?.zones?.some((zone) => zone.id === location?.zoneId) ? location.zoneId : defaultZoneId
+  const zoneId = areaMeta && !isAdventureZoneUnlocked(game, area, requestedZoneId) ? defaultZoneId : requestedZoneId
   const activeZone = areaMeta?.zones?.find((zone) => zone.id === zoneId) || null
   const [kind, setKind] = useState('all')
   const [search, setSearch] = useState('')
@@ -98,6 +107,7 @@ function StageMap({ game, onStart, goStudy, goHome, dailyCompleted, today, locat
     setShowAll(false)
   }
   const selectZone = (nextZoneId) => {
+    if (areaMeta && !isAdventureZoneUnlocked(game, area, nextZoneId)) return
     onLocationChange?.({ area, zoneId: nextZoneId })
     setKind('all')
     setSearch('')
@@ -125,16 +135,14 @@ function StageMap({ game, onStart, goStudy, goHome, dailyCompleted, today, locat
   const dailyMode = area <= 4 && kind === 'all' && !search.trim() && !showAll
   const visibleStages = useMemo(() => {
     if (!dailyMode) return filteredStages
-    const wild = filteredStages.filter((stage) => stage.kind === 'wild')
-    const other = filteredStages.filter((stage) => stage.kind !== 'wild')
-    const dailyWild = pickDailyEncounterStages(wild, {
+    return pickDailyEncounterStages(filteredStages, {
       day: today,
       limit: 5,
       isUnlocked: (stage) => isStageUnlocked(game, stage),
-      isCaught: (stage) => !!game.dex?.caught?.[stage.enemySpeciesId],
-      isCleared: (stage) => cleared.has(stage.id)
+      isCaught: (stage) => stage.kind === 'wild' ? !!game.dex?.caught?.[stage.enemySpeciesId] : false,
+      isCleared: (stage) => cleared.has(stage.id),
+      priority: (stage) => stage.kind === 'boss' ? 0 : stage.kind === 'evolution-trial' ? 1 : ['giga-challenge', 'burst-challenge'].includes(stage.kind) ? 2 : stage.kind === 'wild' ? 3 : 4
     })
-    return [...dailyWild, ...other]
   }, [filteredStages, dailyMode, today, game, cleared])
 
   return (
@@ -152,8 +160,10 @@ function StageMap({ game, onStart, goStudy, goHome, dailyCompleted, today, locat
         <div className="zone-map-title"><div><p className="eyebrow">エリア{area}の ぼうけん</p><h2>どこへ いく？</h2></div><span>チームの めやす Lv.{teamLevel}</span></div>
         <div className="zone-grid">{areaMeta.zones.map((zone, index) => {
           const danger = teamLevel < zone.minLevel
-          return <button key={zone.id} className={`${zoneId === zone.id ? 'active' : ''} ${danger ? 'danger' : 'ready'}`} onClick={() => selectZone(zone.id)}>
-            <span className="zone-path-dot">{zoneId === zone.id ? '📍' : index + 1}</span><b>{zone.icon} {zone.name}</b><small>Lv.{zone.minLevel}〜{zone.maxLevel}</small><em>{danger ? '⚠️ かなり つよい' : zoneId === zone.id ? 'いま ここ！' : 'いけるよ'}</em>
+          const progress = adventureZoneProgress(game, area, zone.id)
+          const locked = !progress.unlocked
+          return <button key={zone.id} disabled={locked} className={`${zoneId === zone.id ? 'active' : ''} ${danger ? 'danger' : 'ready'} ${locked ? 'zone-locked' : ''}`} onClick={() => selectZone(zone.id)}>
+            <span className="zone-path-dot">{locked ? '🔒' : zoneId === zone.id ? '📍' : index + 1}</span><b>{zone.icon} {zone.name}</b><small>Lv.{zone.minLevel}〜{zone.maxLevel}</small><em>{locked ? progress.previousZoneName + ' あと' + progress.remaining + 'かい' : danger ? '⚠️ かなり つよい' : zoneId === zone.id ? 'いま ここ！' : 'いけるよ'}</em>
           </button>
         })}</div>
       </section>}
@@ -163,7 +173,7 @@ function StageMap({ game, onStart, goStudy, goHome, dailyCompleted, today, locat
       </div>
       <input className="monster-search" value={search} onChange={(event) => { setSearch(event.target.value); if (event.target.value) setShowAll(true) }} placeholder="なまえ・No.で さがす" />
 
-      {area <= 4 && <div className="encounter-heading"><div><p className="eyebrow">{dailyMode ? 'きょう みつかっている' : 'このゾーンの モンスター'}</p><h2>{activeZone?.icon} {activeZone?.name}</h2><small>{dailyMode ? 'まずは5たいまで。GETしていない なかまを ゆうせんして みつけるよ。' : 'ずかんのように ぜんぶ さがせるよ。'}</small></div><button className="secondary compact" onClick={() => { setShowAll((value) => !value); setKind('all'); setSearch('') }}>{showAll ? 'きょうの であいへ' : 'ほかも さがす'}</button></div>}
+      {area <= 4 && <div className="encounter-heading"><div><p className="eyebrow">{dailyMode ? 'きょう みつかっている' : 'このゾーンの モンスター'}</p><h2>{activeZone?.icon} {activeZone?.name}</h2><small>{dailyMode ? '野生・シンカ・ボスから、いま意味のある であいを5つまで えらぶよ。' : 'ずかんのように ぜんぶ さがせるよ。'}</small></div><button className="secondary compact" onClick={() => { setShowAll((value) => !value); setKind('all'); setSearch('') }}>{showAll ? 'きょうの であいへ' : 'ほかも さがす'}</button></div>}
 
       <div className="stage-list full-master-stage-list">
         {visibleStages.map((stage) => {
@@ -215,6 +225,10 @@ function BattleView({ game, setGame, onExitToMap, goStudy }) {
   const special = specialProgressionStatus(active, game)
   const captureHpReady = battle.enemy.hp > 0 && battle.enemy.hp / battle.enemy.maxHp <= 0.5
   const captureAttemptsLeft = Math.max(0, MAX_CAPTURE_ATTEMPTS - (battle.captureAttempts || 0))
+  const [battleEvolutionReveal, setBattleEvolutionReveal] = useState(null)
+  const readyEvolutionMonster = finished && battle.status !== 'lost'
+    ? (battle.teamAtStart || []).map((id) => game.box?.[id]).find((monster) => monster && canNormalEvolve(monster, game))
+    : null
 
   const act = (moveId) => {
     const result = useMove(game, battle, moveId)
@@ -252,9 +266,20 @@ function BattleView({ game, setGame, onExitToMap, goStudy }) {
     onExitToMap()
   }
 
+  const evolveReadyMonster = () => {
+    if (!readyEvolutionMonster) return
+    const fromId = readyEvolutionMonster.speciesId
+    const level = readyEvolutionMonster.level
+    const result = evolveInstance(game, readyEvolutionMonster.instanceId)
+    if (!result.ok) return
+    setGame(result.game)
+    setBattleEvolutionReveal({ fromId, toId: result.to, level })
+  }
+
   const battleMoves = availableBattleMoveIds(game, battle)
   return (
     <main className={`screen battle-screen-v2 area-theme-${stage?.adventureArea || stage?.area || 5}`}>
+      <EvolutionCelebration reveal={battleEvolutionReveal} onClose={() => setBattleEvolutionReveal(null)} />
       <div className="battle-head"><button className="back" onClick={exit}>{finished ? '← マップ' : '✕ やめる'}</button><strong>{stage?.zoneName ? `${stage.zoneName}｜${stage.label}` : stage?.label}</strong><span>TURN {battle.turn}</span></div>
       {battle.challenge && <div className="challenge-banner">🔥 チャレンジモード：いまの強さで再調整</div>}
       {battle.bossTelegraphed && !finished && <div className="boss-warning"><strong>⚠️ つぎに おおわざ！</strong><span>まもるなら いま！</span></div>}
@@ -324,6 +349,7 @@ function BattleView({ game, setGame, onExitToMap, goStudy }) {
         {battle.status === 'won' && stage?.specialReward?.type === 'burst' && <p>💥 {enemySpecies.name}のバーストのしるしを解放！</p>}
         {battle.status === 'caught' && <p>「わ」が 4つ ひかって GET！ 新しい仲間はボックスに入ったよ。手持ちが2体以下なら自動でチーム入り！</p>}
         {battle.status === 'lost' && <p>{battle.ticketRefunded ? '🎫は1まい返ってきたよ。仲間を育てて再挑戦しよう！' : '🎫は期限をすぎていたので戻らなかったよ。もう一度学んで挑戦しよう！'}</p>}
+        {readyEvolutionMonster && <div className="battle-evolution-ready"><strong>✨ {speciesOf(readyEvolutionMonster.speciesId)?.name}が シンカできるよ！</strong><span>バトルで そだった いまが チャンス！</span><button className="evolve-now" onClick={evolveReadyMonster}>いま シンカする！</button></div>}
         <button className="primary" onClick={exit}>マップへ</button>
         {availableTicketCount(game, dayNumber()) < 1 && <button className="secondary" onClick={goStudy}>まなぶ！</button>}
       </section>}
@@ -332,7 +358,6 @@ function BattleView({ game, setGame, onExitToMap, goStudy }) {
 }
 
 export function AdventureFlow({ game, setGame, goHome, goStudy, dailyCompleted, dailyDay, today }) {
-  const [mapLocation, setMapLocation] = useState(null)
   const start = (stageId, challenge = false) => {
     const liveToday = dayNumber()
     const liveDailyCompleted = dailyCompleted && dailyDay === liveToday
@@ -343,8 +368,9 @@ export function AdventureFlow({ game, setGame, goHome, goStudy, dailyCompleted, 
     }
     setGame(result.game)
   }
+  const setMapLocation = (nextLocation) => setGame((current) => ({ ...current, adventureLocation: nextLocation }))
   if (game.activeBattle) return <BattleView game={game} setGame={setGame} onExitToMap={() => {}} goStudy={goStudy} />
-  return <StageMap game={game} onStart={start} goStudy={goStudy} goHome={goHome} dailyCompleted={dailyCompleted} today={today} location={mapLocation} onLocationChange={setMapLocation} />
+  return <StageMap game={game} onStart={start} goStudy={goStudy} goHome={goHome} dailyCompleted={dailyCompleted} today={today} location={game.adventureLocation} onLocationChange={setMapLocation} />
 }
 
 function MonsterRow({ monster, game, setGame, selected, setSelected }) {

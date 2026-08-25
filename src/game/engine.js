@@ -1,4 +1,4 @@
-import { CAPTURE_CONFIG, EVOLUTION_ITEMS, MOVES, SPECIES, STAGES, moveOf, speciesOf, typeEffectiveness } from './content.js'
+import { AREA_META, CAPTURE_CONFIG, EVOLUTION_ITEMS, MOVES, SPECIES, STAGES, moveOf, speciesOf, typeEffectiveness } from './content.js'
 import { BALANCE_VERSION, BOSS_RANKS, battleXpForStage, buildEnemyPlan, statsFromBase } from './balance.js'
 import { consumeTicket, grantEvolutionItem, refundTicket, specialProgressionStatus } from './progression.js'
 
@@ -104,6 +104,26 @@ function areaWildClearCount(game, area) {
   return STAGES.filter((stage) => (stage.adventureArea || stage.area) === area && stage.kind === 'wild' && cleared.has(stage.id)).length
 }
 
+function zoneWildClearCount(game, area, zoneId) {
+  const cleared = new Set(game?.stagesCleared || [])
+  return STAGES.filter((stage) => (stage.adventureArea || stage.area) === area && stage.kind === 'wild' && stage.zoneId === zoneId && cleared.has(stage.id)).length
+}
+
+export function adventureZoneProgress(game, area, zoneId) {
+  const meta = AREA_META.find((entry) => entry.area === Number(area))
+  if (!meta) return { unlocked: Number(area) === 5, clears: 0, required: 0, remaining: 0, previousZoneName: null }
+  const index = meta.zones.findIndex((zone) => zone.id === zoneId)
+  if (index <= 0) return { unlocked: true, clears: 0, required: 0, remaining: 0, previousZoneName: null }
+  const previous = meta.zones[index - 1]
+  const required = 2
+  const clears = zoneWildClearCount(game, meta.area, previous.id)
+  return { unlocked: clears >= required, clears, required, remaining: Math.max(0, required - clears), previousZoneName: previous.name }
+}
+
+export function isAdventureZoneUnlocked(game, area, zoneId) {
+  return adventureZoneProgress(game, area, zoneId).unlocked
+}
+
 export function isStageUnlocked(game, stage) {
   if (!stage) return false
   const cleared = new Set(game?.stagesCleared || [])
@@ -111,6 +131,8 @@ export function isStageUnlocked(game, stage) {
   if (stage.unlockedBy && !cleared.has(stage.unlockedBy)) return false
   if (stage.areaGateBossId && !cleared.has(stage.areaGateBossId)) return false
   if (stage.requiresAllAreasCleared && ![1, 2, 3, 4].every((area) => cleared.has(`a${area}-boss`))) return false
+  if (stage.zoneId && Number(stage.adventureArea || stage.area) <= 4 && !isAdventureZoneUnlocked(game, stage.adventureArea || stage.area, stage.zoneId)) return false
+  if (stage.requiresEvolutionDiscoverySpeciesId && !game?.evolutionDiscoveries?.[stage.requiresEvolutionDiscoverySpeciesId]) return false
   if (stage.requiresOwnedSpeciesId && !ownsSpecies(game, stage.requiresOwnedSpeciesId)) return false
   if (stage.minAreaClears && areaWildClearCount(game, stage.area) < stage.minAreaClears) return false
   return true
@@ -720,7 +742,10 @@ export function evolveInstance(game, instanceId) {
   next.dex ||= { seen: {}, caught: {} }
   next.dex.seen[result.monster.speciesId] = true
   next.dex.caught[result.monster.speciesId] = true
-  return { ok: true, game: next, from, to: result.monster.speciesId }
+  next.evolutionDiscoveries ||= {}
+  const firstEvolutionDiscovery = !next.evolutionDiscoveries[result.monster.speciesId]
+  next.evolutionDiscoveries[result.monster.speciesId] = true
+  return { ok: true, game: next, from, to: result.monster.speciesId, firstEvolutionDiscovery }
 }
 
 export function setTeam(game, instanceIds) {
