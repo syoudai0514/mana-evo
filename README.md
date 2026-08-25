@@ -118,3 +118,8 @@ npm run build
 ```
 
 CIでは `npm audit --audit-level=high`、全テスト、production buildを必須にする。
+
+
+### ゲームコンセプト正本
+
+ワールド・進化・育成の最新方針は [`design/20-world-map-evolution-progression.md`](design/20-world-map-evolution-progression.md) を参照してください。

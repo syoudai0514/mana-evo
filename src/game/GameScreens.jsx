@@ -60,7 +60,10 @@ function unlockReason(game, stage) {
   const cleared = new Set(game.stagesCleared || [])
   if (stage.areaGateBossId && !cleared.has(stage.areaGateBossId)) return 'まえの エリアボスを たおそう'
   if (stage.requiresAllAreasCleared) return '4つの エリアを クリアしよう'
-  if (stage.requiresOwnedSpeciesId && !game.dex?.caught?.[stage.requiresOwnedSpeciesId]) return `${speciesOf(stage.requiresOwnedSpeciesId)?.name || '対象'}を GETしよう`
+  if (stage.requiresOwnedSpeciesId && !game.dex?.caught?.[stage.requiresOwnedSpeciesId]) {
+    const required = speciesOf(stage.requiresOwnedSpeciesId)
+    return stage.firstAcquireByEvolution ? `まず ${required?.name || 'このすがた'}に シンカさせよう` : `${required?.name || '対象'}を GETしよう`
+  }
   if (stage.minAreaClears) return `このエリアで ${stage.minAreaClears}かい クリアしよう`
   return 'まだ あいていないよ'
 }
@@ -77,7 +80,7 @@ function StageMap({ game, onStart, goStudy, goHome, dailyCompleted, today }) {
   const [search, setSearch] = useState('')
 
   const visibleStages = useMemo(() => STAGES.filter((stage) => {
-    if (stage.legacy) return false
+    if (stage.legacy || stage.hidden) return false
     if (area <= 4 && stage.area !== area) return false
     if (area === 5 && !['event', 'ex'].includes(stage.kind)) return false
     if (kind === 'wild' && stage.kind !== 'wild') return false
@@ -96,8 +99,8 @@ function StageMap({ game, onStart, goStudy, goHome, dailyCompleted, today }) {
   return (
     <main className="screen adventure-map">
       <button className="back" onClick={goHome}>← ホーム</button>
-      <div className="screen-title-row"><div><p className="eyebrow">ぼうけんマップ</p><h1>{area <= 4 ? AREA_META.find((item) => item.area === area)?.name : 'スペシャルエリア'}</h1></div><strong>🎫 {ticketCount}</strong></div>
-      <p className="kid-note">{dailyCompleted ? 'きょうの まなびクリア！ 手持ちの強さに合わせて、ちょうどいい相手になるよ。' : 'チケットを持っていても、きょうの まなびを終えてからバトルへ。'}</p>
+      <div className="screen-title-row"><div><p className="eyebrow">ぼうけんマップ</p><h1>{area <= 4 ? AREA_META.find((item) => item.area === area)?.name : 'スペシャルエリア'}</h1>{area <= 4 && <p className="area-level-band">📍 いまのエリア　{AREA_META.find((item) => item.area === area)?.levelLabel}</p>}</div><strong>🎫 {ticketCount}</strong></div>
+      <p className="kid-note">{dailyCompleted ? 'きょうの まなびクリア！ エリアと ゾーンで てきの強さが ちがうよ。そだてた強さを ためしてみよう！' : 'チケットを持っていても、きょうの まなびを終えてからバトルへ。'}</p>
 
       <div className="area-tabs">
         {AREA_META.map((meta) => <button key={meta.area} className={area === meta.area ? 'active' : ''} onClick={() => setArea(meta.area)}>エリア{meta.area}</button>)}
@@ -115,13 +118,13 @@ function StageMap({ game, onStart, goStudy, goHome, dailyCompleted, today }) {
           const enemy = speciesOf(stage.enemySpeciesId)
           const canStart = unlocked && dailyCompleted && ticketCount > 0
           return (
-            <article key={stage.id} className={`stage-card formal-stage-card ${!unlocked ? 'locked' : ''}`}>
+            <article key={stage.id} className={`stage-card formal-stage-card area-${stage.area} zone-${stage.zoneId || 'special'} ${!unlocked ? 'locked' : ''}`}>
               <div className="stage-number">{isCleared ? '✅' : unlocked ? stage.kind === 'boss' ? '👑' : '⚔️' : '🔒'}</div>
               <PlaceholderMonster speciesId={stage.enemySpeciesId} compact />
               <div className="stage-copy">
-                <small>{stageKindLabel(stage.kind)}　{enemy?.no ? `No.${enemy.no}` : ''}</small>
+                <small>{stage.zoneIcon || '🗺️'} {stage.zoneName || stageKindLabel(stage.kind)}　・　{stageKindLabel(stage.kind)}　{enemy?.no ? `No.${enemy.no}` : ''}</small>
                 <strong>{stage.label}</strong>
-                <span>{enemy?.name}　{stage.bossRank ? `BOSS ${stage.bossRank}` : '手持ちに合わせて調整'}</span>
+                <span>{enemy?.name}　{stage.bossRank ? `BOSS ${stage.bossRank}` : stage.levelLabel || `Lv.${stage.enemyLevel || 1}`}</span>
                 <TypePills types={enemy?.types} />
                 {!unlocked && <em>{unlockReason(game, stage)}</em>}
               </div>
@@ -197,8 +200,8 @@ function BattleView({ game, setGame, onExitToMap, goStudy }) {
 
   const battleMoves = availableBattleMoveIds(game, battle)
   return (
-    <main className="screen battle-screen-v2">
-      <div className="battle-head"><button className="back" onClick={exit}>{finished ? '← マップ' : '✕ やめる'}</button><strong>{stage?.label}</strong><span>TURN {battle.turn}</span></div>
+    <main className={`screen battle-screen-v2 area-theme-${stage?.area || 5}`}>
+      <div className="battle-head"><button className="back" onClick={exit}>{finished ? '← マップ' : '✕ やめる'}</button><strong>{stage?.zoneName ? `${stage.zoneName}｜${stage.label}` : stage?.label}</strong><span>TURN {battle.turn}</span></div>
       {battle.challenge && <div className="challenge-banner">🔥 チャレンジモード：いまの強さで再調整</div>}
       {battle.bossTelegraphed && !finished && <div className="boss-warning"><strong>⚠️ つぎに おおわざ！</strong><span>まもるなら いま！</span></div>}
       {battle.playerSpecial && <div className={`special-active ${battle.playerSpecial.type}`}><strong>{battle.playerSpecial.type === 'giga' ? '🔷 ギガシンカ中！' : '💥 キョダイバースト中！'}</strong>{battle.playerSpecial.type === 'burst' && <span>あと {battle.playerSpecial.turnsLeft}ターン</span>}</div>}
