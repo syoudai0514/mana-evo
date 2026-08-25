@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 
+// One-shot repair executed before the applicator so nested JSX text never closes its template early.
 const path = 'scripts/apply-mockup-ui-v3.mjs'
 let source = fs.readFileSync(path, 'utf8')
 const replacements = [
