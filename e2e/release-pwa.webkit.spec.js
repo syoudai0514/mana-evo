@@ -9,15 +9,15 @@ test('release PWA installs under /mana-evo, owns only ManaEvo caches, and preser
     localStorage.setItem('w220-release-save-sentinel', 'preserve-me')
   })
 
-  const registration = await page.evaluate(async () => {
-    const ready = await navigator.serviceWorker.ready
-    return {
-      scope: ready.scope,
-      activeState: ready.active?.state || null
-    }
+  const scope = await page.evaluate(async () => {
+    const registration = await navigator.serviceWorker.ready
+    return registration.scope
   })
-  expect(registration.scope).toBe('http://127.0.0.1:4173/mana-evo/')
-  expect(registration.activeState).toBe('activated')
+  expect(scope).toBe('http://127.0.0.1:4173/mana-evo/')
+  await expect.poll(() => page.evaluate(async () => {
+    const registration = await navigator.serviceWorker.ready
+    return registration.active?.state || null
+  })).toBe('activated')
 
   await page.reload({ waitUntil: 'domcontentloaded' })
   await expect.poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBe(true)
