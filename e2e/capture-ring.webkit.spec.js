@@ -37,6 +37,15 @@ async function installSave(page, game) {
   }, { learning, game })
 }
 
+async function installCaptureFailureRandomGate(page) {
+  await page.addInitScript(() => {
+    const originalRandom = Math.random.bind(Math)
+    Math.random = () => document.documentElement?.dataset.w216CaptureRoll === 'fail'
+      ? 0.999999
+      : originalRandom()
+  })
+}
+
 function battleGameAtHalfHp({ rainbow = false, nearEvolution = false } = {}) {
   const today = dayNumber()
   const game = addTickets(createGameState(), 3, today)
@@ -128,6 +137,7 @@ test('iPhone WebKit plays the canonical four-star success sequence before GET', 
 
 test('iPhone WebKit failed capture never displays four completed stars', async ({ page }) => {
   await installSave(page, battleGameAtHalfHp())
+  await installCaptureFailureRandomGate(page)
   await page.goto('/')
   await openCapture(page)
 
@@ -136,18 +146,13 @@ test('iPhone WebKit failed capture never displays four completed stars', async (
   const throwButton = page.getByRole('button', { name: /ほしのわを なげる！/ })
   await expect(throwButton).toBeEnabled()
 
-  // Keep deterministic control scoped to the synchronous capture click itself.
-  // Battle/UI initialization has already completed, and Math.random is restored
-  // before the presentation timers start.
-  await throwButton.evaluate((button) => {
-    const originalRandom = Math.random
-    try {
-      Math.random = () => 0.999999
-      button.click()
-    } finally {
-      Math.random = originalRandom
-    }
-  })
+  const root = page.locator('html')
+  await root.evaluate((element) => { element.dataset.w216CaptureRoll = 'fail' })
+  try {
+    await throwButton.click()
+  } finally {
+    await root.evaluate((element) => { delete element.dataset.w216CaptureRoll })
+  }
 
   const sequence = page.getByTestId('capture-sequence')
   await expect(sequence).toHaveAttribute('data-lit-stars', '1')
