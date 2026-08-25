@@ -33,10 +33,11 @@ test('adventure UI exposes world route, daily five and recommendation meaning', 
   for (const tag of ['おすすめ','未GET','育成向け','初回']) assert.ok(adventure.includes(tag), tag)
 })
 
-test('battle capture and evolution keep the mockup primary actions visible', () => {
+test('battle capture and evolution keep focused canonical actions visible', () => {
   assert.ok(capture.includes('capture-main-cta'))
-  assert.ok(capture.includes('わを なげる'))
-  assert.ok(battle.includes('✨ いま シンカする！'))
+  assert.ok(capture.includes('どの「わ」を つかう？'))
+  assert.ok(battle.includes('EvolutionCelebration'))
+  assert.ok(!battle.includes('✨ いま シンカする！'))
   assert.ok(monster.includes('シンカの ほうほう'))
   assert.ok(monster.includes('シンカの せつめい'))
   assert.ok(evolution.includes('evolution-overlay'))
