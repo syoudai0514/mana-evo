@@ -1,519 +1,620 @@
-# Learning / Ticket / Kids Quest Migration Audit
+# Learning / Ticket / Kids Quest Migration Audit — Phase 1.5 re-audit
 
 - Worker: SOL② / Worker 2
-- Scope: 学習・チケット・Kids Quest移植の差分調査のみ
-- Audit date: 2026-08-25
+- Scope: 学習・チケット・Kids Quest移植の差分監査のみ
+- Re-audit date: 2026-08-25
 - Repository: `syoudai0514/mana-evo`
 - Runtime ref inspected: `main`
 - Rebuild governance ref: `rebuild/canonical-governance`
-- Baseline rescue ref inspected: `rebuild/w-001-final-corrected-baseline` / PR #35
+- PR: #36 / `rebuild/w-002-learning-ticket-audit`
+- Constraint: `src/**` / `tests/**` は変更しない
 
-> この文書は仕様を決定しない。現行source、現行design、古い原本のいずれも自動的に正本扱いしない。`REBUILD-START-HERE.md` / `DECISION-LOG.md` の優先順位に従い、証拠と未解決点を司令塔へ渡すための監査記録である。
+> この文書はCURRENT仕様を新規決定する文書ではない。原本、後続のユーザー明示判断、Git/PR履歴、current design、runtime、testsを分離して比較し、`SAME` / `CONFIRMED_CHANGE` / `IMPLEMENTATION_DRIFT` / `UNRESOLVED` のいずれかへ分類するための監査記録である。
 
-## 0. 先に結論
+---
 
-### Baseline blocker
+## 0. 判定ルールと今回使った証拠
 
-W-001 / PR #35 は `mana-evo-terra-FINAL-CORRECTED(3).zip` の実体を取得できておらず、`design/baseline/FINAL-CORRECTED/README.md` に以下を明記している。
+### 0.1 正本順位
 
-- preserved original source files: **0**
-- original-source manifest: **not generated**
-- completeness: **BLOCKED / not yet verifiable**
+`REBUILD-START-HERE.md` / `DECISION-LOG.md` に従う。
 
-したがって、本監査で `BASELINE` を原本ファイルから断定することはできない。原本内容を後続designやruntimeから逆算して作らない。
+1. ユーザーの明示決定
+2. 原本 `mana-evo-terra-FINAL-CORRECTED`
+3. 原本以降の、変更理由と承認を確認できる仕様
+4. current canonical
+5. data master
+6. runtime
+7. 過去レビュー / 完了報告
 
-この制約のため、原本との一致を必要とする項目は原則 `UNRESOLVED` とする。ただし、GitHub上に「ユーザーが正式承認/確定」と明記された後続判断がある項目は、原本未取得でも優先順位1の証拠として `CONFIRMED_CHANGE` にできる。
+したがって、後続design・runtime・testsに存在するだけでは `CONFIRMED_CHANGE` にしない。
 
-### 強い後続証拠
+### 0.2 exact FINAL-CORRECTED の扱い
 
-1. PR #5 (`1e638b7...`) は「その後のユーザー承認」「今回ユーザーが確定した仕様」と明記し、次を固定している。
-   - 新規バトル開始時にチケット1枚reserve
-   - 敗北 / 明示的な逃走・やめる → 同じ期限の1枚を返却
-   - 勝利 / 捕獲成功 → 消費確定
-   - reload / Safari終了 / crash → `activeBattle` 再開、追加消費なし
-   - 獲得日を含む7日間保持、期限近い順
-   - daily ほしのわ+3 / 追加学習3正解ごと ほしのわ+1 / 単元MASTER ぎん+1 / むずかしいMASTER きん+1
-2. PR #8 (`b8c658e...`) は初期縦切り `991e98a...` の「全科目合計5問」「自由学習1問正解=チケット+1」を誤った簡略化と記録し、Kids Quest基準へ戻したと説明している。
-3. PR #9 (`8fdc4d8...`) はコピー済みKids Quest学習基盤が実行経路へ接続されず旧簡易 `src/study` が動いていた状態をP0/要件レベル問題として修正し、Kids Quest commit `ddfe594789890aef6958bf169bf50dccb72f818e` を学習sourceとして固定した。
-4. 現行 `README.md` と `tests/full-kidsquest-runtime.test.js` は旧 `src/study` を現行画面へ再接続しないことを明記/検証している。したがって、旧 `src/study` 用テストは履歴・互換性証拠として読み、現行routingの証拠と混同しない。
+このWorker実行環境からZIP payload自体を再取得することはできなかった。一方、司令塔は exact `mana-evo-terra-FINAL-CORRECTED(3).zip` を直接展開し、32ファイルを確認済みである。
 
-### 判定サマリー
+司令塔の `PHASE-1-COMMANDER-REVIEW.md` と PR #36 review では、原本 `08-gameplay-state-spec.md` / `12-KIDS-QUEST-LEARNING-IMPORT-SPEC.md` 等から少なくとも次を直接確認済みと記録している。
 
-| 項目 | 判定 | 要点 |
+- Kids Quest 最新 `main` を学習 source of truth として移植する
+- 学習ロジックをManaEvo側で独自に作り直さない
+- core taskは5
+- 基本ノルマ all clear で `ticket +3`
+- 追加問題は **1問ごとに `ticket +1`**
+- 追加ticketに日次上限なし
+- core taskごとに `ほしのわ +1`
+- core all clearで `ぎんのわ +1`
+- 追加4問中3正解で `きんのわ +1`
+- ticket lotは7日保持 / FEFO
+
+上記は「後続designから原本を逆算」した値ではなく、exact ZIPを開いた司令塔による原本直接確認記録として扱う。
+
+### 0.3 原本が委譲した Kids Quest source の直接確認
+
+現行ManaEvoが固定している Kids Quest snapshot SHA は:
+
+`ddfe594789890aef6958bf169bf50dccb72f818e`
+
+`syoudai0514/kids-quest` の同commitを直接確認した。
+
+`src/engine/missions.js`:
+
+- core mission = 5 task
+- 国語(`yomu`) / 算数(`suuji`) = 各5問
+- 通常task = 4問
+- 道徳 = 2問
+- `buildExtraTask()` = 3問
+- `buildFreeTask()` = 自由勉強、ticketなし
+
+`src/screens/ActivityPlayer.jsx`:
+
+- `わからない` を明示的に持つ
+- `わからない` は初回missとして記録
+- 正解 / 解説を提示
+- 補強 / 後日SRSへ送る
+
+`src/state/GameContext.jsx` / learning unit実装:
+
+- `grade` / `gradeMax`
+- 保護者による先取り解放
+- `STAR_TRIAL_QUESTIONS = 6`
+- `STAR_TRIAL_ROUNDS = 2`
+- 2日分合計12問中9正解 + 必須単元条件による進級判定
+
+原本はKids Quest学習ロジックそのものをsource of truthに指定しているため、これらは「ManaEvo後続designが勝手に追加した仕様」ではなく、委譲先学習sourceとの一致確認に用いる。
+
+### 0.4 後続ユーザー明示判断
+
+`USER-DECISION-EVIDENCE.md` には、この監査領域について原本を置換する新しい確定判断は回収されていない。むしろ同文書は次を「未回収・要継続調査」としている。
+
+- 原本 `追加1問ごと+1 / 上限なし` と current `3問中2問で+1` の差
+- 原本の `core task/star・all-clear/silver・extra4問3正解/gold` と current の差
+
+一方、PR #5 は本文で **「今回ユーザーが確定した仕様」** と明示しており、学習報酬について次を後続承認済みとして扱える。
+
+- daily完了 → `ほしのわ +3`
+- 追加学習 **3正解ごと** → `ほしのわ +1`
+- 単元MASTER → `ぎんのわ +1`
+- むずかしいMASTER → `きんのわ +1`
+- ticketは獲得日を含む7日、期限近い順
+
+PR #8 / #9 は重要な実装履歴だが、PR本文だけを「ユーザー明示承認」とは扱わない。
+
+---
+
+## 1. 最終判定サマリー
+
+| 項目 | 判定 | 結論 |
 |---|---|---|
-| Kids Questから何を移植 | UNRESOLVED | B/C/D/Eは学習資産のみで一致。A原本未取得 |
-| 1日の基本学習 | UNRESOLVED | 現行は5教科タスク。PR #8は簡略化回帰と記録。A未取得 |
-| 科目数 | UNRESOLVED | 現行5タスク。A未取得 |
-| 1科目あたり問題数 | UNRESOLVED | 国語/算数5、通常4、道徳2。A未取得 |
-| 「わからない」 | UNRESOLVED | 現行あり。PR #8/#9は復元と記録。A未取得 |
-| 難易度 | UNRESOLVED | 自動適応 + 保護者のみhard切替。A未取得 |
-| 先取り | UNRESOLVED | grade/gradeMax + 保護者解放。A未取得 |
-| 自由勉強 | UNRESOLVED | 現行チケット0。PR #8はfree ticketを回帰と記録。A未取得 |
-| 章末/試練 | UNRESOLVED | ほしのしれん6問×別日2、合計12中9 + 単元条件。A未取得 |
-| チケット基本付与 | UNRESOLVED | 5教科完了で3枚。A未取得 |
-| 追加学習チケット | UNRESOLVED | 専用3問中2正解で+1。A未取得/明示承認証拠不足 |
-| 日次上限 | UNRESOLVED | 現行extraは実質上限なし。current designに明文化なし、直接testなし |
-| チケット有効期限 | CONFIRMED_CHANGE | PR #5でユーザー確定: 取得日含む7日、期限近い順 |
-| チケット消費タイミング | CONFIRMED_CHANGE | PR #5でユーザー確定: 開始時reserve、成功時確定、中断resume |
-| 敗北/逃走 | CONFIRMED_CHANGE | PR #5でユーザー確定: 同期限で返却 |
-| 学習XP/報酬 | IMPLEMENTATION_DRIFT | PR #5承認の「追加3正解→ほしのわ+1」が現行full runtimeから消失。後続明示承認なし |
-| 保護者設定 | UNRESOLVED | B/C/D/EはPIN・学年・先取り・hard・音声等で整合。A未取得 |
+| Kids Quest移植境界 | `SAME` | 学習はKids Quest、ゲームはManaEvo、接点は報酬bridge。原本意図と現行active routingが一致 |
+| 5教科 / 問題数 | `SAME` | 5task、国語/算数5、通常4、道徳2。委譲先Kids Quest sourceと現行runtimeが一致 |
+| `わからない` | `SAME` | Kids Quest sourceにも現行active runtimeにも存在し、miss→解説→補強/SRS |
+| 自由勉強 | `SAME` | Kids Quest source / currentともticket 0 |
+| 追加チャレンジの学習task | `SAME` | Kids Quest source由来の3問extra taskをcurrentも使用。報酬方式は別判定 |
+| 追加ticket方式 | `IMPLEMENTATION_DRIFT` | 原本は追加1問ごと+1無制限。currentは3問中2問でtask全体+1。後続明示承認を確認できない |
+| ticket日次上限 | `SAME` | 原本は上限なし。current extraにも回数上限なし。`OKAWARI_MAX=6`はextraではない |
+| 基本ノルマticket | `SAME` | 原本 / currentともall clearで+3 |
+| ticket 7日保持 / FEFO | `SAME` | 原本 / PR #5 / current / testsが一致 |
+| `わ`の学習報酬 | `IMPLEMENTATION_DRIFT` | 原本からの報酬変更自体はPR #5で承認済みだが、currentは「追加3正解ごとstar+1」を実装していない |
+| 先取り | `SAME` | Kids Quest `grade/gradeMax` + 保護者解放をcurrentがそのまま使用 |
+| ほしのしれん | `SAME` | 6問×別日2回、合計12問中9 + 必須単元条件。Kids Quest sourceとcurrent一致 |
+| `src/kids-quest-study` の位置付け | `SAME` | active authoritative migrated learning runtime |
+| `src/study` の位置付け | `SAME` | legacy save compatibility / regression evidenceのみ。active routing禁止 |
+| stale migration documentation | `IMPLEMENTATION_DRIFT` | `docs/KIDS_QUEST_STUDY_MIGRATION.md` が旧 `src/study` active / 段階接続中 / free ticket等を残す。実装変更対象ではなく後続文書整理対象 |
+
+**このPhase 1.5監査で、指定された重点項目に `UNRESOLVED` は残さない。**
+
+ただし、これはW-001の原本32ファイル保存作業が完了したことを意味しない。W-001は別PRで継続中であり、本監査は司令塔のexact-ZIP直接確認記録と、原本が委譲したKids Quest sourceの直接確認を根拠に再判定した。
 
 ---
 
-## 1. Kids Questから何を移植する設計だったか
+## 2. Kids Questから何を移植するか
 
-**BASELINE**
-- 原本payload未取得のため不明。W-001 / PR #35が0 source filesと明記。推測しない。
+### BASELINE
 
-**CURRENT DESIGN**
-- `design/00-README.md`: Kids Quest完成済み学習runtimeを使用し、ManaEvo都合で簡略化しない。
-- `docs/KIDS_QUEST_STUDY_MIGRATION.md`: 学習専用sourceを `src/kids-quest-study/` に保持し、`itemKey` / `unitId` を互換境界とする。学習データ、学年、授業、SRS、難易度、learningUnits、review、trial、英語、TTS、学習UI候補を含む。
-- 同台帳は battle / battleTickets / monsters / weapons / missions / planets 等のKids Questゲーム固有資産を移植対象外とする。
-- ただし同台帳の「段階接続中」「自由学習でticket+1」はPR #9/#8より古い履歴記述なので、現状記述としてはstale。
+原本はKids Quest最新mainを学習 source of truth とし、学習ロジックをManaEvo側で独自再実装しない。
 
-**RUNTIME**
-- `src/kids-quest-study/SOURCE_COMMIT.txt` = `ddfe594789890aef6958bf169bf50dccb72f818e`。
-- `src/App.jsx` は `ActivityPlayer`, `FreeStudyScreen`, `ReviewScreen`, `ChapterTestScreen`, `EnglishDictionaryScreen` を `src/kids-quest-study/` から直接使用。
-- game側は `src/game/*` に分離し、学習から報酬bridgeのみ行う。
+境界は「学習」と「ManaEvoゲーム」を分ける思想である。
 
-**TESTS**
-- `tests/kidsquest-snapshot.test.js`: source commit SHA形式、SRS/difficulty委譲、relative import解決、game-specific Kids Quest filesがsnapshotにないことを検証。
-- `tests/full-kidsquest-runtime.test.js`: Appが旧 `src/study/engine.js` / `questions.js` をimportしないことを検証。
+### CURRENT DESIGN
 
-**CHANGE EVIDENCE**
-- commit `3adf516...`: Kids Quest mainから学習専用source 49 filesを取り込み、ゲーム固有資産を除外したと記録。
-- PR #9: copied-but-not-routed状態をP0として修正し、full learning runtimeを接続。
+`README.md` / `design/00-README.md` は:
 
-**判定: UNRESOLVED**
-- B/C/D/Eは「学習だけ移植、ゲームはManaEvo」で強く整合するが、Aが未取得のため原本からの同一/変更を確定しない。
+- 学習フロー
+- 問題
+- 単元
+- 難易度
+- SRS / 復習
+- 授業
+- 自由勉強
+- しれん
+- 学年進行 / 先取り
+- 音声
 
-## 2. 1日の基本学習
+をKids Quest正本として扱い、battle / capture / monster / evolutionはManaEvo側とする。
 
-**BASELINE**
-- 原本payload未取得。断定不可。
+### RUNTIME
 
-**CURRENT DESIGN**
-- `design/00-README.md`: 今日の基本は5教科タスク。
-- `README.md`: 5つの教科タスクをすべて完了して基本学習完了。
-- `design/06-battle-and-progression-design.md` §10には古い表現「今日の基本5問完了」が残るため、current design内部にstale wordingあり。
+`src/App.jsx` はactive学習画面をすべて `src/kids-quest-study/**` からimportしている。
 
-**RUNTIME**
-- `src/kids-quest-study/engine/missions.js`: `CORE_TASK_COUNT = 5`。
-- `src/App.jsx` StudyHub: remaining 5 subject tasksから子どもが順番を選択可能。
-- `GameContext.jsx`: core taskをすべてclearした時点で `coreDone`。
+ManaEvoとの接点は `pendingGameRewards` → `grantLearningReward()` のbridgeであり、学習エンジンをManaEvo用に置換していない。
 
-**TESTS**
-- `tests/full-kidsquest-runtime.test.js`: daily mission = five tasksを固定。
-- `tests/kidsquest-flow.test.js`: “five subject tasks, not five total questions”を回帰テスト。
+### TESTS
 
-**CHANGE EVIDENCE**
-- commit `991e98a...`: 初期縦切りで簡略学習を導入。
-- PR #8: 「全科目合計5問」は誤った簡略化だったと明記し、5教科タスクへ復元。
-- PR #9: full Kids Quest runtimeへrouting。
+`tests/full-kidsquest-runtime.test.js` は:
 
-**判定: UNRESOLVED**
-- 後続の意図は非常に強いが、PR #8の「復元」がFINAL-CORRECTED原本と同一だったかはA未取得で検証不能。PR #8本文にもこの点の独立したユーザー承認記録はない。
+- active AppがKids Quest学習screenを使う
+- `src/study/engine.js` / `questions.js` をactive Appからimportしない
 
-## 3. 科目数
+ことを回帰固定している。
 
-**BASELINE**
-- 不明（W-001 blocked）。
+### 判定: `SAME`
 
-**CURRENT DESIGN**
-- 基本学習は5教科タスク。
-- 国語/算数を固定し、学年・曜日に応じた教科で5枠を構成。
-
-**RUNTIME**
-- `missions.js` `weeklyDomains()` は `yomu` / `suuji` を含め、道徳該当日や学年別electiveを加えて最大5タスク。
-
-**TESTS**
-- `full-kidsquest-runtime.test.js`: `tasks.length === 5`。
-
-**CHANGE EVIDENCE**
-- PR #8/#9で5教科ミッションを復元/完全接続。
-
-**判定: UNRESOLVED**
-- A不在のためSAMEは付けない。
-
-## 4. 1科目あたり問題数
-
-**BASELINE**
-- 不明（W-001 blocked）。
-
-**CURRENT DESIGN**
-- `design/00-README.md` / `README.md`: 国語・算数各5問、通常教科各4問、道徳は該当日2問。
-
-**RUNTIME**
-- `missions.js`: `QUESTIONS_PER_TASK = 4`; `yomu/suuji = 5`; `doutoku = 2`。
-
-**TESTS**
-- `full-kidsquest-runtime.test.js`: 上記問題数を直接assert。
-
-**CHANGE EVIDENCE**
-- PR #8: compatibility adapterの `questionCount: 1` を撤回し、Kids Quest基準へ復元。
-- PR #9: 同じ数をfull runtimeに固定。
-
-**判定: UNRESOLVED**
-- B/C/D/Eは一致するがA不在。
-
-## 5. 「わからない」
-
-**BASELINE**
-- 不明（W-001 blocked）。
-
-**CURRENT DESIGN**
-- `design/00-README.md`: `わからない` を残し、誤答→解説→補強→後日復習へ。
-- `README.md`: 正解/解説を見せ、再回答/補強/後日の復習につなげる。
-
-**RUNTIME**
-- `ActivityPlayer.jsx`: `🤔 わからない（こたえを みる）` を表示。
-- `handleDontKnow()` は初回をmissとして記録し、正解を見せ、reinforcement/review対象へ送る。
-
-**TESTS**
-- `full-kidsquest-runtime.test.js` はActivityPlayer接続を固定。
-- 旧 `tests/learning.test.js` は「誤答→解説だけでは完了不可」「正しいretry」「suspicious時の別確認」を検証するが、これは現行画面ではないlegacy `src/study` 用。学習原則の履歴証拠としてのみ扱う。
-
-**CHANGE EVIDENCE**
-- PR #5: ユーザー承認反映として、誤答後は解説確認だけで完了せず正しい再回答が必要と記録。
-- PR #8: `わからない` を「復活」と明記。
-- PR #9: full ActivityPlayerへ接続。
-
-**判定: UNRESOLVED**
-- `わからない` 自体の現行存在は確実。ただしFINAL-CORRECTED Aとの関係を確認できないため、原本からのSAME/CHANGEは未確定。
-
-## 6. 難易度
-
-**BASELINE**
-- 不明（W-001 blocked）。
-
-**CURRENT DESIGN**
-- `design/07-parent-controls.md`: 子どもは `ふつう / むずかしい` を変更不可。保護者のみ変更。
-- 通常学習内では正誤履歴に応じて自動調整し、hardは別学習台帳。
-
-**RUNTIME**
-- `difficulty.js`: internal level 1〜12、start 2。直近4問中3正解で上昇、直近5問中3missで0.5低下、missに応じヒント増加。
-- `ParentScreen.jsx`: normal/hard切替は保護者画面のみ。hardは別習熟度/復習台帳。
-
-**TESTS**
-- `tests/learning.test.js`: adaptive difficulty上昇/ヒント増加をlegacy互換として検証。
-- `tests/full-kidsquest-runtime.test.js`: full learning stateと保護者境界を検証。
-
-**CHANGE EVIDENCE**
-- commit `991e98a...` / `3adf516...`: Kids Quest SRS/difficultyの移植。
-- PR #9: full adaptive runtime + hard separate ledger接続。
-
-**判定: UNRESOLVED**
-- B/C/D/E整合。A不在。
-
-## 7. 先取り
-
-**BASELINE**
-- 不明（W-001 blocked）。
-
-**CURRENT DESIGN**
-- `design/07-parent-controls.md`: 必須単元 + ほしのしれんで次学年を解放。子ども自身は学年変更不可。
-- 保護者は `SET_GRADE`, `FORCE_GRADE_MAX`, `LOWER_GRADE_MAX` を使用可能。
-
-**RUNTIME**
-- `GameContext.jsx`: `grade`, `gradeMax`, `SET_GRADE`, `FORCE_GRADE_MAX`, `LOWER_GRADE_MAX`, `SET_MIN_SELECTABLE_GRADE`。
-- `ParentScreen.jsx`: 先取り解放・戻し・学習学年選択。
-- StudyHubは設定変更UIを持たない。
-
-**TESTS**
-- `full-kidsquest-runtime.test.js`: child hubにgrade/advance actionがないこと、parent側にあることをassert。
-
-**CHANGE EVIDENCE**
-- PR #9: parent ahead-grade controlsをfull runtimeへ接続。
-
-**判定: UNRESOLVED**
-- A不在。
-
-## 8. 自由勉強
-
-**BASELINE**
-- 不明（W-001 blocked）。
-
-**CURRENT DESIGN**
-- `design/00-README.md` / `README.md`: 自由勉強は好きな教科、チケット0枚。
-
-**RUNTIME**
-- `missions.js`: `buildFreeTask()` = 4問task。
-- `App.jsx`: 「じゆうべんきょう / 好きな教科・チケットなし」。
-- `GameContext.jsx`: `kind === free` にticket reward処理なし。
-
-**TESTS**
-- `full-kidsquest-runtime.test.js`: free task 4問、ticket mintしない構造を固定。
-- `learning.test.js` にもfree ticket=0のlegacy回帰あり。
-
-**CHANGE EVIDENCE**
-- 初期縦切り `991e98a...` はfree study 1正解でticket+1を導入。
-- PR #8はこれを「誤って簡略化」と明記して削除。
-
-**判定: UNRESOLVED**
-- 現行意図は強いが、A原本未取得かつPR #8の変更に独立したユーザー承認記録がGitHub上で見つからないため、司令塔判断待ち。
-
-## 9. 章末 / 試練
-
-**BASELINE**
-- 不明（W-001 blocked）。
-
-**CURRENT DESIGN**
-- `README.md`: `ChapterTestScreen` = ほしのしれん。1日6問、別日2回、合計12問中9問 + 必須単元条件。
-- `design/07-parent-controls.md`: 必須単元 + ほしのしれんを学年解放条件とする。
-
-**RUNTIME**
-- `GameContext.jsx`: `STAR_TRIAL_QUESTIONS = 6`, `STAR_TRIAL_ROUNDS = 2`, `STAR_TRIAL_PASS_CORRECT = 9`。
-- `learningUnits.js` `promotionResult()`: total >= 12, correct >= 9、required domains、missing unitsをすべてgateに含む。
-- `unitReady()`: attempts >=4、first-attempt correct >=3、成功日2日以上、複数item unitでは2種類以上。
-
-**TESTS**
-- `full-kidsquest-runtime.test.js`: STAR_TRIAL_RESULT / grade advancement stateを固定。
-
-**CHANGE EVIDENCE**
-- PR #9: ほしのしれん「別日6問×2、12問中9＋単元条件」をfull runtimeへ接続。
-
-**判定: UNRESOLVED**
-- A不在。
-
-## 10. チケット基本付与
-
-**BASELINE**
-- 不明（W-001 blocked）。
-
-**CURRENT DESIGN**
-- `design/00-README.md`: 基本5教科完了でバトルチケット3枚 + ほしのわ3個。
-- `README.md`も同一。
-
-**RUNTIME**
-- `GameContext.jsx` `CLEAR_TASK(core)`: 最終core task完了時にreward ID `daily:<date>`、`ticketDelta: 3`, `captureItemDelta.star: 3` をenqueue。
-- `App.jsx` reward bridge → `grantLearningReward()`。
-
-**TESTS**
-- `kidsquest-flow.test.js`: 全slot完了まで0、最後で3 tickets + 3 starを検証（legacy bridge guard）。
-- `review-hardening.test.js`: reward ID冪等性を検証。
-
-**CHANGE EVIDENCE**
-- PR #8: 5教科task全完了報酬へ移行。
-- PR #26: learning reward bridgeをreward IDで冪等化。
-
-**判定: UNRESOLVED**
-- 現行B/D/Eは一致するが、基本ticket 3枚自体のFINAL-CORRECTED根拠/後続明示承認をA/Cから確定できない。
-
-## 11. 追加学習によるチケット
-
-**BASELINE**
-- 不明（W-001 blocked）。
-
-**CURRENT DESIGN**
-- `design/00-README.md` / `README.md`: 追加チャレンジ3問中2問正解でticket+1。
-- 自由勉強とは分離。
-
-**RUNTIME**
-- `missions.js` `buildExtraTask()` = 3問。
-- `GameContext.jsx` `CLEAR_TASK(extra)`: coreDoneかつ非suspicious、accuracy >= 2/3で `ticketDelta: 1`。
-- `App.jsx`: 「ついかチャレンジ（3もん中2もん → 🎫+1）」。
-
-**TESTS**
-- `kidsquest-flow.test.js`: 3問中2正解/3正解で+1、0/1正解で0。
-- `full-kidsquest-runtime.test.js`: extra task = 3問。
-
-**CHANGE EVIDENCE**
-- PR #8: free study ticketを廃止し、専用3問中2問のextra challengeへ分離。
-
-**判定: UNRESOLVED**
-- A不在。PR #8の理由は明確だが、後続ユーザー明示承認のGitHub証拠は未確認。
-
-## 12. 日次上限
-
-**BASELINE**
-- 不明（W-001 blocked）。
-
-**CURRENT DESIGN**
-- `design/00-README.md` / `README.md` は基本3枚とextra +1条件を記載するが、extra ticketの日次上限を明文化していない。
-- `OKAWARI_MAX = 6` は「おかわり学習」の回数上限であり、extra ticket challengeの上限ではない。
-
-**RUNTIME**
-- `GameContext.jsx`: `daily.extraIndex` は成功ごとに増えるがcap checkなし。
-- `App.jsx`: `daily.coreDone` 後のextra challenge CTAはextraIndex上限条件なし。
-- したがって現行runtimeは実質「追加ticket上限なし」。
-
-**TESTS**
-- extraの3問/2正解条件はあるが、「1日N枚まで」または「無制限」を直接固定するtestは確認できない。
-
-**CHANGE EVIDENCE**
-- PR #8/#9はextra challenge条件を記録するが、日次capの明示判断は見つからない。
-
-**判定: UNRESOLVED**
-- runtimeの挙動を仕様へ昇格しない。司令塔で明示判断が必要。
-
-## 13. チケット有効期限
-
-**BASELINE**
-- exact payload未取得のため原本値は不明。
-
-**CURRENT DESIGN**
-- `design/00-README.md` / `README.md`: 獲得日を含む7日間保持、期限近い順。
-
-**RUNTIME**
-- `progression.js`: `TICKET_TTL_DAYS = 7`; grantは `expiresDay = earnedDay + 7`; valid条件は `expiresDay > today`。
-- earned day〜day+6が有効、day+7開始時に失効。grantは期限順sort。
-
-**TESTS**
-- `game.test.js`: day+6有効、day+7失効をassert。
-- nearest-expiry ticket消費もassert。
-
-**CHANGE EVIDENCE**
-- PR #5本文: 「今回ユーザーが確定した仕様」として、獲得日を含む7日間保持・期限近い順を明記。
-- `design/DESIGN-SOURCE-METADATA.txt`: 2026-08-23 user decisionを入力に含める。
-
-**判定: CONFIRMED_CHANGE**
-- FINAL-CORRECTED原本の旧値は未確認だが、rebuild優先順位1の「後続ユーザー確定」がGitHubに明示されているため、現在採用すべき後続判断として確認済み。
-
-## 14. チケット消費タイミング
-
-**BASELINE**
-- exact payload未取得。原本挙動不明。
-
-**CURRENT DESIGN**
-- `design/06-battle-and-progression-design.md` §10 / `README.md`: 新規開始時に期限近い1枚をreserve、`activeBattle` 保存、reload/crash resume、勝利/捕獲成功で消費確定。
-
-**RUNTIME**
-- `engine.js` `startBattle()`: daily gate通過後 `consumeTicket()` を実行し、その出所を `battle.ticketSource` に保存、`activeBattle` 永続化。
-- 実装上はgrant inventoryから開始時に1枚減らすが、敗北/明示離脱で元期限を使って戻せるため意味論としてreserve。
-
-**TESTS**
-- `game.test.js`: nearest-expiry消費、`activeBattle` reload persistence、win/capture時にticketが戻らないことを検証。
-
-**CHANGE EVIDENCE**
-- PR #5: ユーザー確定として「開始時reserve / 成功時確定 / 技術中断resume」を明記。
-
-**判定: CONFIRMED_CHANGE**
-- 後続ユーザー確定証拠あり。
-
-## 15. 敗北 / 逃走時の扱い
-
-**BASELINE**
-- exact payload未取得。原本挙動不明。
-
-**CURRENT DESIGN**
-- `design/06...` / `README.md`: 敗北・明示的なやめる/逃げるはreserve ticket返却。
-
-**RUNTIME**
-- `engine.js` `refundLostBattleIfNeeded()`: lost時に未返却ならrefund。
-- `abandonBattle()`: 明示離脱でrefundしてactiveBattleをclear。
-- `clearFinishedBattle()`: lost未返却をfail-safeでrefund。
-- `progression.js` `refundTicket()`: original `earnedDay` / `expiresDay` を維持し、既に期限切れなら返さない。
-
-**TESTS**
-- `game.test.js`: explicit quitでoriginal expiry維持、lossでexactly once refundをassert。
-
-**CHANGE EVIDENCE**
-- PR #5: 「今回ユーザーが正式承認した仕様」として敗北/明示逃走は返却、勝利/捕獲成功は消費確定。
-- `DESIGN-SOURCE-METADATA.txt`: “User decision 2026-08-23: ticket loss/explicit quit refunds”。
-
-**判定: CONFIRMED_CHANGE**
-- 後続ユーザー確定証拠あり。
-
-## 16. 学習XP / 報酬
-
-**BASELINE**
-- exact payload未取得。学習XPとMana/ゲームXPの元設計関係を確認できない。
-
-**CURRENT DESIGN**
-- `design/00-README.md`: daily 3 tickets + star 3、unit MASTER silver、hard MASTER gold。
-- `README.md`: 同様に学習完了/extra/Masterをgameへbridge。
-- 現行designには `grantLearningReward()` のMana数値（ticket 1枚につきMana+5、unit MASTER +40、hard MASTER +80）の正本記述を確認できない。
-- `design/06` のXPはbattle/progression XPであり、「学習XP」と同一とは断定しない。
-
-**RUNTIME**
-- `GameContext.jsx` stateに `xp: 0` は存在するが、今回確認範囲ではfull learning runtimeのANSWER/CLEAR_TASKからこのlearning `xp` を増やす処理を確認できない。
-- `progression.js` `grantLearningReward()`:
-  - ticketDelta > 0 → ticket付与 + Mana `ticketDelta * 5`
-  - unitMastered → Mana +40 + silver ring +1
-  - hardMastered → Mana +80 + gold ring +1
-  - daily full clearは star +3
-  - current extra challengeはticket +1のみでstar追加なし
-- reward IDで冪等化。
-
-**TESTS**
-- `learning.test.js`: unit MASTER silver / hard MASTER goldを検証（legacy domain経由）。
-- `review-hardening.test.js`: reward IDの冪等性をticket/star/manaで検証。
-- current extra challengeで「3正解ごとstar+1」を保証するtestは確認できない。
-
-**CHANGE EVIDENCE**
-- PR #5は「今回ユーザーが正式承認した仕様」として:
-  - daily → star +3
-  - **追加学習3正解ごと → star +1**
-  - unit MASTER → silver +1
-  - hard MASTER → gold +1
-  を明記。
-- PR #8は後にfree-ticketを廃止しextra challengeを3問中2正解ticket+1へ変更したが、PR本文には「追加3正解ごとstar+1を廃止する」というユーザー明示承認はない。
-- 現行full runtime `GameContext.jsx` はextra時starを付与しない。
-
-**判定: IMPLEMENTATION_DRIFT**
-- 少なくとも「追加学習3正解ごとstar+1」は、優先順位1の明示承認証拠(PR #5)と現行runtimeが食い違う。後続でこの報酬を撤回した明示的ユーザー承認証拠をGitHub上で確認できない。
-- 学習XPそのもの、Mana +5/+40/+80はbaseline/current design根拠が不足しているため、この監査で新仕様として確定しない。
-
-## 17. 保護者設定
-
-**BASELINE**
-- 不明（W-001 blocked）。
-
-**CURRENT DESIGN**
-- `design/07-parent-controls.md`: 子ども画面からgrade、gradeMax、normal/hard、TTS、profile、backup、道徳設定を変更不可。
-- 4桁PIN gate。初回/再設定時は大人確認。
-- 保護者メニュー: 学年・先取り / つくよみちゃん / むずかしさ / プロフィール / バックアップ。
-
-**RUNTIME**
-- `ParentGate.jsx` + `ParentScreen.jsx`。
-- `ParentScreen`: grade/gradeMax、hard mode、TTS voice/rate/volume、profile、backup/import、道徳topic、SFX等。
-- StudyHubはcurrent grade表示のみで設定actionなし。
-
-**TESTS**
-- `full-kidsquest-runtime.test.js`: child hubからgrade/ahead-grade/hard変更不能、homeからparent discoverable、4桁PIN、大人確認、parent action存在をassert。
-
-**CHANGE EVIDENCE**
-- PR #9: grade/gradeMax、parent ahead-grade controls、hard separate ledger、Tsukuyomi、profile/引継ぎをfull runtimeへ接続。
-- PR #26: profile別game progressとbackup/restoreをhardening。
-
-**判定: UNRESOLVED**
-- B/C/D/Eは整合するがA未取得。原本とのSAME/CHANGEは司令塔へ保留。
+現行active architectureは原本の移植境界と一致する。
 
 ---
 
-## 18. Current design内のstale / conflict evidence
+## 3. 5教科 / 問題数
 
-仕様決定ではなく、司令塔がcanonical化するときに見落とさないため記録する。
+### BASELINE
 
-1. `docs/KIDS_QUEST_STUDY_MIGRATION.md`
-   - 「コピー済みだが現行UIへ段階接続中」と記載するが、PR #9/current runtimeではfull connection済み。
-   - 「自由学習1問正解 → ticket+1」「free正解時ticket+1を接続完了gate」とする古い記述が残るが、PR #8/current runtimeではfree ticket=0。
-2. `design/06-battle-and-progression-design.md` §10
-   - 「今日の基本5問完了」という古い表現が残る。
-   - `design/00-README.md` / current runtimeは5教科タスク。
-3. `tests/learning.test.js` / `tests/kidsquest-flow.test.js`
-   - `src/study` legacy runtimeを直接検証するtestが残る。
-   - これは current `README.md` と `full-kidsquest-runtime.test.js` により現行画面routingではないと明記されている。test件数だけを見てcurrent behaviorと誤認しないこと。
+原本はKids Quest学習sourceを正本とし、core task 5を持つ。
 
-## 19. 司令塔へ渡す未決事項
+委譲先Kids Quest SHA `ddfe594...` の `missions.js` は:
 
-このWorkerでは決めない。
+- 1日5task
+- 国語 5問
+- 算数 5問
+- 通常教科 4問
+- 道徳 2問
 
-1. **W-001 exact baseline payload取得後、全17項目のBASELINE欄を埋め直す。** 現時点の最大blocker。
-2. PR #8/#9のKids Quest復元内容について、FINAL-CORRECTEDと同一なのか、原本後のユーザー変更なのかをbaseline + user approval evidenceで再判定する。
-3. 追加ticketの日次上限。runtimeは実質無制限だがcurrent designに明文化/直接testがない。
-4. PR #5承認の「追加学習3正解ごとstar+1」を維持するか。現行runtimeから欠落しており `IMPLEMENTATION_DRIFT`。
-5. `grantLearningReward()` のMana +5/+40/+80およびlearning state `xp` の扱い。現行design根拠を確定してからcanon化する。
-6. `design/06` の「基本5問」やmigration台帳の旧free-ticket記述を、canonical確定後に履歴文書として注記/移動するか判断する。今回のWorkerは既存designを変更しない。
+### CURRENT
 
-## 20. 変更範囲確認
+`src/kids-quest-study/engine/missions.js` も同じ構造。
 
-このWorkerが変更するのは本ファイルのみ。
+### TESTS
 
-- `src/**`: 変更なし
-- `tests/**`: 変更なし
-- 既存 `design/**`: 変更なし
-- 新規: `design/rebuild/audit/learning-ticket-audit.md`
+`tests/full-kidsquest-runtime.test.js` が5taskと各問題数を直接assertする。
 
-仕様修正・runtime修正・test修正は行っていない。
+### 履歴
+
+PR #8 は、初期縦切りの「全科目合計5問」を誤った簡略化として5教科taskへ戻した。
+
+これは「PR #8だから正しい」のではなく、今回exact baseline + 委譲先Kids Quest sourceとの一致を確認できたためSAMEと判定する。
+
+### 判定: `SAME`
+
+---
+
+## 4. `わからない`
+
+### BASELINE
+
+原本が委譲するKids Quest sourceの `ActivityPlayer.jsx` に `handleDontKnow()` が存在する。
+
+挙動:
+
+1. 初回missとして記録
+2. 正解を表示
+3. 解説を表示 / 読み上げ
+4. 補強問題 / SRSへ送る
+
+### CURRENT
+
+現行 `src/kids-quest-study/screens/ActivityPlayer.jsx` はこの学習runtimeを継承している。
+
+### 判定: `SAME`
+
+「わからない」を削除する根拠はない。
+
+---
+
+## 5. 自由勉強
+
+### BASELINE
+
+Kids Quest sourceの `buildFreeTask()` は自由勉強を独立taskとして持ち、ticketは付けない。
+
+### CURRENT
+
+`StudyHub` は「じゆうべんきょう / 好きな教科・チケットなし」と表示し、free task完了からticket rewardをmintしない。
+
+### 履歴
+
+初期ManaEvo縦切りには `自由学習1問正解=ticket+1` が存在したが、PR #8で撤回された。
+
+今回の判定根拠はPR #8本文ではなく、原本が委譲するKids Quest sourceとの一致である。
+
+### 判定: `SAME`
+
+---
+
+## 6. 追加チャレンジと追加ticketを分離して判定
+
+ここは混同すると結論を誤るため、**学習taskの形** と **ManaEvoゲーム報酬** を分ける。
+
+### 6.1 追加チャレンジの学習task
+
+Kids Quest sourceには `buildExtraTask()` があり、3問taskである。current `src/kids-quest-study/engine/missions.js` も同じ。
+
+#### 判定: `SAME`
+
+3問のextra taskそのものはKids Quest学習runtime由来。
+
+### 6.2 追加ticket方式
+
+#### BASELINE
+
+exact FINAL-CORRECTED:
+
+- 追加問題 **1問ごと** `ticket +1`
+- 日次上限なし
+
+#### CURRENT
+
+`GameContext.jsx`:
+
+- extra taskは3問
+- core完了後
+- `accuracy >= 2/3`
+- suspiciousでない
+
+場合に、**task全体で `ticket +1`**。
+
+つまり現在は:
+
+- 1問正解: 0枚
+- 2問正解: 1枚
+- 3問正解: 1枚
+
+であり、原本の「1問ごと+1」とは明確に異なる。
+
+#### CHANGE EVIDENCE
+
+PR #8 は「3問中2問で+1」を実装しているが、`USER-DECISION-EVIDENCE.md` はこの差を未回収事項として残している。
+
+PR #8本文だけをユーザー承認として扱うことは禁止されているため、原本を置換する明示承認は確認できない。
+
+#### 判定: `IMPLEMENTATION_DRIFT`
+
+CURRENT canonicalizationでは、別の後続明示承認が発見されない限り、原本の「追加1問ごと+1 / 上限なし」を優先候補とする。
+
+**このWorkerでは実装修正しない。**
+
+---
+
+## 7. ticket日次上限
+
+### BASELINE
+
+追加ticketは上限なし。
+
+### CURRENT
+
+`daily.extraIndex` は増えるが、extra challengeに `EXTRA_MAX` 等の上限はない。core完了後は繰り返しextra taskを開始できる。
+
+`OKAWARI_MAX = 6` は「おかわり」taskの上限であり、追加ticket challengeの上限ではない。
+
+### 判定: `SAME`
+
+現行の「3問中2問」という付与粒度はdriftだが、回数上限なしという別軸はbaselineと一致する。
+
+---
+
+## 8. 基本ノルマ ticket +3
+
+### BASELINE
+
+基本ノルマall clearで `ticket +3`。
+
+### CURRENT
+
+全core task終了時に一度だけ:
+
+- `ticketDelta: 3`
+
+を `pendingGameRewards` にenqueueし、ゲーム側bridgeでticket grantへ変換する。
+
+### TESTS
+
+legacy互換側の `tests/kidsquest-flow.test.js` にもall clear `ticketDelta === 3` の回帰がある。active routingの根拠は `full-kidsquest-runtime.test.js` + current `GameContext.jsx` とする。
+
+### 判定: `SAME`
+
+---
+
+## 9. ticket 7日保持 / FEFO
+
+### BASELINE
+
+- 7日保持
+- FEFO
+
+### LATER EXPLICIT DECISION
+
+PR #5でも「獲得日を含む7日間保持、期限近い順」をユーザー確定仕様として再確認している。
+
+これはbaselineを変更したのではなく、同じルールを後続で再確認したもの。
+
+### CURRENT
+
+`src/game/progression.js`:
+
+- `TICKET_TTL_DAYS = 7`
+- `expiresDay = earnedDay + 7`
+- `expiresDay > today` の期間だけ有効
+- grantを `expiresDay`, `earnedDay` 順にsort
+- `consumeTicket()` は先頭の有効lotを消費
+
+### TESTS
+
+`tests/game.test.js`:
+
+- day+6は有効
+- day+7開始時に失効
+- nearest-expiry lotを先に消費
+
+### 判定: `SAME`
+
+---
+
+## 10. `わ`の学習報酬
+
+この項目は「baselineからの変更」と「currentが承認後仕様を実装できているか」を分けて読む必要がある。
+
+### 10.1 BASELINE
+
+exact FINAL-CORRECTED:
+
+- core taskごと → `ほしのわ +1`
+- core all clear → `ぎんのわ +1`
+- 追加4問中3正解 → `きんのわ +1`
+
+### 10.2 LATER EXPLICIT USER DECISION — PR #5
+
+PR #5「今回ユーザーが確定した仕様」:
+
+- daily完了 → `ほしのわ +3`
+- 追加学習3正解ごと → `ほしのわ +1`
+- 単元MASTER → `ぎんのわ +1`
+- むずかしいMASTER → `きんのわ +1`
+
+これは原本と異なるが、明示承認証拠があるため、**意図された報酬体系の変更部分は `CONFIRMED_CHANGE`**。
+
+したがって、後続実装でbaselineのring economyへ機械的に巻き戻してはいけない。
+
+### 10.3 CURRENT RUNTIME
+
+現行は:
+
+- daily core all clear → `ほしのわ +3` ✅
+- unit MASTER → `ぎんのわ +1` ✅
+- hard MASTER → `きんのわ +1` ✅
+- 追加3正解ごと → `ほしのわ +1` ❌ **実装なし**
+
+extra taskのcurrent rewardはticketだけで、`captureItemDelta` は空。
+
+### 10.4 最終判定: `IMPLEMENTATION_DRIFT`
+
+理由:
+
+1. baseline→PR #5の報酬方針変更は明示承認済み
+2. currentはその後続承認を一部だけ実装
+3. 特に「追加学習3正解ごとstar+1」が欠落
+
+よって「わの学習報酬」という現行実装全体は `IMPLEMENTATION_DRIFT`。
+
+**修正時はbaselineへ戻すのではなく、PR #5の承認済み体系へ揃える。**
+
+---
+
+## 11. 先取り
+
+### BASELINE
+
+Kids Quest sourceを正本とするため、学年進行 / 先取りもKids Quest方式を引き継ぐ。
+
+Kids Quest sourceには:
+
+- `grade`
+- `gradeMax`
+- 必須単元台帳
+- 保護者による上限解放
+- 子ども画面からの任意上げを防ぐ制御
+
+がある。
+
+### CURRENT
+
+現行 `src/kids-quest-study` に同機構があり、`StudyHub`から変更できず、保護者画面に先取り解放を置く。
+
+### TESTS
+
+`tests/full-kidsquest-runtime.test.js` は子ども画面でのgrade変更不可、parent controlを検証する。
+
+### 判定: `SAME`
+
+---
+
+## 12. ほしのしれん
+
+### BASELINE
+
+Kids Quest学習sourceを正本とする。
+
+source constants:
+
+- 1 round = 6問
+- 2 round
+- 別日実施
+- 合計12問中9正解
+- 必須単元条件も満たす
+
+### CURRENT
+
+current `GameContext.jsx` / `ChapterTestScreen` が同じ方式。
+
+### TESTS
+
+`tests/full-kidsquest-runtime.test.js` はstar trial state / grade advancementをactive learning runtimeの一部として固定する。
+
+### 判定: `SAME`
+
+---
+
+## 13. `src/kids-quest-study` と `src/study` の位置付け
+
+### 13.1 `src/kids-quest-study`
+
+- Kids Quest学習source snapshot
+- `SOURCE_COMMIT.txt` でcommit固定
+- active `App.jsx` が直接利用
+- 現行の authoritative migrated learning runtime
+
+**判定: `SAME`**
+
+### 13.2 `src/study`
+
+現在も:
+
+- `engine.js`
+- `questions.js`
+- `kidsQuestMission.js`
+- `srs.js`
+- `difficulty.js`
+
+が残る。
+
+しかし `README.md` / tests / active imports は、これを:
+
+- 旧セーブ互換
+- 過去回帰テスト
+- compatibility補助
+
+としてのみ残し、**画面のactive execution pathへ戻さない** と固定している。
+
+**判定: `SAME`**
+
+存在自体は二重正本を意味しない。active authorityは `src/kids-quest-study` のみ。
+
+### 13.3 stale documentation
+
+`docs/KIDS_QUEST_STUDY_MIGRATION.md` には古い記述が残る。
+
+例:
+
+- `src/study` が実行runtimeであるかのような表
+- 「段階接続中」
+- 旧 `基本学習5問`
+- 旧 `自由学習1問正解=ticket+1`
+
+これは現在のactive architectureと矛盾する。
+
+**判定: `IMPLEMENTATION_DRIFT`（documentation drift）**
+
+このWorkerの成果物範囲外なので、今回その文書は変更しない。
+
+---
+
+## 14. PR #8 / #9 の扱い
+
+### PR #8
+
+有用な履歴事実:
+
+- 全科目合計5問の簡略版を撤回
+- 5教科taskを復元
+- `わからない` を復元
+- free ticketを撤回
+- extra 3問中2問ticket+1を導入
+
+ただし、**最後のextra reward方式を含め、PR本文だけをユーザー承認証拠とはしない。**
+
+原本と一致する部分は `SAME`、原本と不一致で別の明示承認がない部分は `IMPLEMENTATION_DRIFT` とした。
+
+### PR #9
+
+有用な履歴事実:
+
+- copied-but-not-routedだったKids Quest runtimeをactive Appへ接続
+- source commit `ddfe594...` を固定
+- 旧 `src/study` をactive routingから排除
+
+これはexact baselineの「Kids Quest学習sourceをそのまま使う」という要求と一致するため、active routingは `SAME` と判定できる。
+
+---
+
+## 15. Current canonicalizationへ渡す具体的アクション
+
+### A. 追加ticket
+
+**要canonical修正候補**
+
+- current: extra 3問中2問 → ticket+1
+- baseline: extra **1問ごと** → ticket+1、上限なし
+- later explicit approval: 未確認
+
+したがって司令塔は、別の明示承認証拠が出ない限りbaseline方式をCURRENT候補とする。
+
+### B. `わ`報酬
+
+**baselineへ戻さない。PR #5の後続明示承認を優先する。**
+
+CURRENT候補:
+
+- daily complete → star +3
+- additional learning 3 correctごと → star +1
+- unit MASTER → silver +1
+- hard MASTER → gold +1
+
+current runtimeの不足は「additional learning 3 correctごと → star +1」。
+
+### C. 学習runtime
+
+維持:
+
+- `src/kids-quest-study` = active source
+- `src/study` = legacy / regression only
+- Kids Quest学習ロジックをManaEvo側で再発明しない
+
+### D. stale docs
+
+後続canonicalizationで `docs/KIDS_QUEST_STUDY_MIGRATION.md` を整理する。
+
+今回のWorkerでは監査成果物だけ変更する。
+
+---
+
+## 16. Scope verification
+
+このPRでPhase 1.5 Worker 2が変更してよい成果物:
+
+- `design/rebuild/audit/learning-ticket-audit.md`
+
+変更禁止:
+
+- `src/**`
+- `tests/**`
+- current design本体
+- game/data master
+
+本監査は実装修正を行わず、司令塔が `design/current/*` を作るための差分判定だけを提供する。
