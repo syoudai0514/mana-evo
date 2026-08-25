@@ -1,0 +1,157 @@
+name: W001 Finalize Run 2
+
+on:
+  push:
+    branches: ['terra/w001-finalize-20260825']
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Finalize exact W-001 baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGET='rebuild/w-001-final-corrected-baseline'
+          BASE='rebuild/canonical-governance'
+          ROOT='design/baseline/FINAL-CORRECTED'
+          T="$ROOT/.transfer"
+
+          cat \
+            "$T/chunk00.b64" \
+            "$T/part001.b64" "$T/part002.b64" "$T/part003.b64" "$T/part004.b64" \
+            "$T/y005.b64" "$T/y006.b64" "$T/y007.b64" \
+            "$T/z000.b64" "$T/z001.b64" "$T/z002.b64" "$T/z003.b64" \
+            "$T/z004.b64" "$T/z005.b64" "$T/z006.b64" "$T/z007.b64" \
+            "$T/z008.b64" "$T/z009.b64" "$T/z010.b64" "$T/z011.b64" \
+            "$T/z012.b64" "$T/z013.b64" "$T/z014.b64" \
+            > /tmp/w001-payload.b64
+          cat >> /tmp/w001-payload.b64 <<'Z015'
+          sptHQosLU42efWagj9C1kc2fsmGMdru5m8lWYvov2FbYDzdSb7oqzBYplVu2sdwsJXIcxP9RT1OvSgSGuhE6TAcJpIuGIu9EQnK57cNPgHYSMZSdoA8Oi1tpVpV/lK+QVkUvNCbmkf1WNEaJyMThns1BggJN7ci+4HeqEtqlVv7rhive9016Wsgl5ta1tGqGf7aM8T/T+LlcJxemHBtHUan+3KYFNy9d3MQKONz5AuVY3Njg2CgLuu1pQNSqAjyS4ayJ436jDDIu+FHGpj3Z2xSYoB96a1+Nv8ZbsJTS1bawvM7XrrW8wXFmbkQUOxlzppJe3KrCrrNpCADlmk6H414bmaLVCtexhQpKOTWxI6EPSgMuTlaZC7pZbZBb00+9V5cVdqt04at2cVglWjBzCkuPqmGBKdn3vBI+ZH+TnseuVogdWLI1PfWtuTjlDgEv7zG49O2SbuRBo1nG12bCtxzpRbgIbTFNrMbNZ4L8l6BENdWirar3LDwPsmpP8lIvMVxbl7pfl0aecXSGp858NTlyrAiA+ajGiOVXfcyKBCBlkOGI7Lh0zTGBIMRyTmhDZV+KwOKrURMr8RO0t+aGVUWQGjsebU0rAqw2i5NW0nsf6DiM/48z5Vbe1ecDN6xOUZZZ6Qjl0ehkjWl7B7Omlb5Pnc69LXNIwcQIEIobpDoQhiKWdTrqO+wS+5s3F/AOOMt9kBVDI07WxDw+sKLXpCowbqZ08a4qq4a77xJ65sPzlByF4bazWMZbhD1cFYO46koYEGCuaF5GqA3NTk14gH9B382F0/8atv0zm7+3lw+2L9VMUduOWlrVahp1V7xfYSu3blhrBgyT1GSaFFoDgMdGknE1sVmrs9FPcUJa7wd7BJf8SMIcz2djKBv7fudRGIKObxMjTY1lUu0uLoiLSZrayVVPfc8GFCrtAX078JaeTzadyJXqCNAfTFnovhq4S1daqG3v7rEr2l1ZZApYvvxDbMek+TSRQYkEY2wsOLpB9ljltluyFyevc27SAld1cRJh35k/WGoVaIzCo2aJ167Cnr1g1m9hMm4wnjAgfNDRQWFg+4n8eHQhs1MrQo+kWc50ekz/Q6ZN3FxCIw3yiQY8ugHqxUlA4d4UPZ/LFaOM7sbheJu1mnvcxAro1nVKefS86YctT5C4tl8j3KM/Wb1D9Bba0W7Ein+yj5DRbuBef5m4RMql3otoGhA/EYiw+sn9ZgUckQCDztGYYrCSO/yyFSesjF6m+ZtY+EJ9QaYr54NEdnCHtajykxpwkBrHpadkKLBg7nUmyzu6oI3T13wJr1vpHbm6dhouxb/WuEU4vA6FjLG55/wu06G3ci0KBYt/TPHUa5UIidcPjMM547yBmk2V9/wN0FALgBwO4TsHTTOu4wjUmdEC05+R3aNiyxKCyWGtoxQa5/bgtXsB91M057UO+Yw6CxCkfjyaWrOZPKjoOecuWRxfSWtTXBMBDuW6LlTdGycaf14+F7bEic6nHVWbMOIG8tLpcykQSvHaruyai9ZZilfJzJqSkWOS8DJq7elWdBONKrB21Qkex9XiRKZwzy8ZZtPUdtZzDovAV4F8BC8EYBHRgWFLTlewf3RSVSMqcqzclX9aRIs3CSPP2xecDxSZYsxDii7oUNlVn/o5qTf5ImntLkcNMbrFClr0bXVJz0zAeUQQfqy3RX5R7wmQqHieciWcsevukhcUfLba0Gd+4iHMNyG94XK0ZTXmDpfgeud+p58911g66Iv8/lt5lWQX4hbhRPHAqc4seipMVMwOTsI65NxXho7XDmiiogzBv9wLhaJyyZ8escl34bRYmyV5aY3rU+KBCwQvIZGwJE5OHGebq5FZLQCawuro/ANJl7FePdYGzD/YHkwzrXOnFf6tTphQbKE9E3YCx6zNyxY8g98YngKiFjfn6Pm5KLLU1aobMKR7xAG3HXzc5OYGCCFg9PpCdZKoKertfkJuEAZuOE4dW1K3/f/oNICYq53UC6vNG4c5SNsU15MjU7cBOETSYxbEulQwhrWBOdbdjU+8lQdE+G1RelzycFsfTYORY7bNQc9Cvtrru9RfmdURzcUUNQ+6dhMktMxoLdxtY7PYRjeWoW5Z6sRBUEj3y3Ia+1wdsJT2McEzs1i5LhTO9e25xHeQbG0Oe54AN5rCNc0w2BwWELOorEr0vP0pOlCtErfbSttFHbbIGC29JMpwrBvssvKv+bJ9e+FnUqG8oHUn3nJmI55G6Bt6WzIirQCqX3a/wVZtWBZTdANpzRRu4xllGIXDUmDh8/q5Edl43K8uHDyj0Xee++gOr0gV6kDcTXMMEHo9dQoU7LCqAmzq9thBiN+EWLB/aOfn0RcNRM516z93hvpZxezd2MBHVBD/3WRvwNGXD0SZ3b4nKTlt6IzVHVodniKD/C2rSdVl0CBZJDDLjnZ1Ndv0G9Cyc9iJN4xNeh1KRMQ+3hdJyVAM26aMt5Y1Kbg1YiHLf/UC+u1efzhKcwrraoWW7SJc4pNsnkhmhE8m3NkDjWjd567oD0gekK90bh7WmqB3Jf9jiUMFGKREeKsgmFshvTMqwksYzueYcfDwo44P4qoeZrKzij9BEIRjpeIITLVwWZZIMpcnaeLh/B1J+ZH27LEBCubJdXiXiP/HxyXVRaZ1xlNUR6WpdTcvjgMGureRhDOKA2LiNTFGwcHRuuk3ImbgH4u6LXfSEN8usazLjLvgDFNbvea2uj/Xc5iuWek3DDuWgWWTKpYgp+3ilgThuiEqWoZggaiMz2tzWizeJviULI/cPdZfyedV+TjdLzpk7vLxUirbCbzpqe7wpLvyt/ChuuFriU2Tn2B0B1L2B1xQjgCgxdXJ8zi1dbd3GNQLL6XNFnY+w6Rsvk2ZfH93VBXeF4UbvrU+5AFRc185xf9kwzXGuxh5tUKhDknYxlltzMFJlBGc2QW0uFOvhDI2eWTyIqnuvT8xs2f0THYrw4HJv4w975sOZrEs+gzgX9UkOEfQY207N4aoG7zFKpfDw3a43gRYYnFO3o4l0OmFtB9Hv5aP6SpPmfbtZpzGvOGfgzI0mjPE7QB8FmnioOn+FKXTvTKhDnzNmOQfyrs4UMrgDgfgOW15pdBIZ8RwO0GWRHSVss0/BlvkMB8S8pZO5nKNvBOESXM3pon8kTPyesjRi8GOSBgtaQRLi5G2SLuO9N412fraeQN2HwrsMHkqDdCDEk5riI/0elSliQoUX9fQBHT8nnIieUgvk1krmZzPmxD4mrz0b48YsYkj5uM2y8SYDj5aQ/2HP5WzrViBpRorVS0XnqJ8EEHv9vJQoxDzaC/LwjmEuKHcQzaRNHcewY+iErc3XebO5tmtJKJj6Pi2Ig/4IIgsYbsERwBZJ/KhOMp3LaiLgHMDxRcIgWwK9VMpA7j6l2WvMOd18wNJTPBfAM+4IoLsah7bUUxnlK4YG69bN3LkJkGSrmXAeUiWNz/3oVTg9BLKtmN9dJS+/p8c3HHvWsLhT/TG5Q0P+wsa3xP1zVVKaO5YZKFoT9fUA5/F9dlUJozbQH4eApoQ5ZitUF8V+DztFYJ/1Zx7UqQE9vymVp0AOP+xorUqz5/R6BxuNU+DZr2J7TUH8AIoMHI9FfJsewhiuNPjNqQGpeAUZ4T2ZZJoTioBuuNn7B07TaObbCRQlKaGOh+eQpoLAJH9LvK9bskq5UQA3dj7CvpwWc6mTxsW2V9XeUFpOaBwn6axwh+6EmYggj4uzRsr7UU5gH7H1jKsQcAMPLRFsgIYsnr4BmnbbEf02//4nvczM4aLmDYbVgxyke+6s898HRbv890gV63gmvqdIz8ddjNt1RDv8/st3e6NPkdSDt//wKJKYogkCI0aFJEeIaEuVOTz2p59hIueD0g6DEd819w75gqu08E1inDHU7qwPgq44P9Z+U3vBeo57Nzg7YWcmQG30LsNXBvh0/ZEwpVPump1bxeBYvo/+Lvo7yrTUcGi7UwEF1RNWaY/my7fkVwzXfLzLR/Cpm+NZ
+          Z015
+          sed -n "/<<'PAYLOAD_TAIL'/,/^PAYLOAD_TAIL$/p" .github/workflows/w001-finalize.yml | sed '1d;$d' >> /tmp/w001-payload.b64
+
+          tr -d ' \t\r\n' < /tmp/w001-payload.b64 | base64 -d > /tmp/w001-payload.tar.xz
+          echo '28d84b67e1e8754f8c7c7ae91537897c7d9f36dcb3b0e795d85b82e02d5a6757  /tmp/w001-payload.tar.xz' | sha256sum -c -
+
+          rm -rf /tmp/w001-extract
+          mkdir -p /tmp/w001-extract
+          tar -xJf /tmp/w001-payload.tar.xz -C /tmp/w001-extract
+          SRC='/tmp/w001-extract/mana-evo-terra-FINAL-CORRECTED'
+          test "$(find "$SRC" -type f | wc -l | tr -d ' ')" = '32'
+          test "$(git hash-object "$SRC/02-dex.md")" = 'a5d87e4182250f830d2b4cd7161547229a7558d7'
+          test "$(git hash-object "$SRC/scripts/families.mjs")" = 'fb8ff51ac55381534cfbf037f63993ccf0308c23'
+          test "$(git hash-object "$SRC/scripts/monster-visual-briefs.json")" = '5448455994afa43370f61e394188a3d6dab6c707'
+
+          git fetch origin "$TARGET" "$BASE"
+          git switch --detach "origin/$TARGET"
+          PARENT="$(git rev-parse HEAD)"
+          rm -rf "$ROOT/.transfer" "$ROOT/source"
+          mkdir -p "$ROOT/source"
+          cp -a "$SRC"/. "$ROOT/source/"
+          (cd "$ROOT" && find source -type f -print0 | sort -z | xargs -0 sha256sum) > "$ROOT/MANIFEST.sha256"
+          test "$(wc -l < "$ROOT/MANIFEST.sha256" | tr -d ' ')" = '32'
+
+          {
+            echo '# FINAL-CORRECTED files absent from current design paths'
+            echo
+            echo 'Path comparison rule: each baseline relative path is checked against `design/<relative-path>` on `rebuild/canonical-governance`.'
+            echo
+            while IFS= read -r rel; do
+              if ! git cat-file -e "origin/$BASE:design/$rel" 2>/dev/null; then
+                printf -- '- `%s`\n' "$rel"
+              fi
+            done < <(cd "$ROOT/source" && find . -type f | sed 's#^./##' | sort)
+          } > "$ROOT/CURRENT-DESIGN-MISSING.md"
+
+          cat > "$ROOT/README.md" <<'README'
+          # FINAL-CORRECTED Baseline
+
+          ## Purpose
+          This directory preserves the exact source payload of `mana-evo-terra-FINAL-CORRECTED` as a historical pre-change BASELINE.
+
+          **This baseline is NOT the CURRENT canonical specification.**
+
+          ## Preservation rules
+          - Files under `source/` are preserved without editorial modification.
+          - Do not mechanically restore CURRENT behavior from this baseline.
+          - Do not resolve product decisions such as 238/239 inside this baseline.
+          - Integrity metadata is kept outside `source/`.
+
+          ## Integrity records
+          - `source/`: exact archive source payload
+          - `MANIFEST.sha256`: SHA-256 for all 32 preserved source files
+          - `CURRENT-DESIGN-MISSING.md`: baseline paths absent from current `design/` path space
+
+          ## Rescue status
+          **COMPLETED**
+          - Preserved original source files: **32 / 32**
+          - SHA-256 manifest entries: **32 / 32**
+          - Git blob SHA mismatches: **0**
+          - SHA-256 mismatches: **0**
+          - `.transfer` staging files remaining: **0**
+          - `src/**`, `tests/**`, `design/current/**`: **unchanged**
+          - CURRENT promotion: **none**
+          - 238/239 product decision: **not performed by W-001**
+          README
+          sed -i 's/^          //' "$ROOT/README.md"
+
+          cat > design/rebuild/handoffs/W-001-FINAL-CORRECTED-baseline-rescue.md <<'HANDOFF'
+          # W-001 Worker Handoff / Report
+
+          ## Work item
+          - ID: W-001
+          - Title: FINAL-CORRECTED原本救出・baseline化
+          - Branch: `rebuild/w-001-final-corrected-baseline`
+          - Base: `rebuild/canonical-governance`
+
+          ## WORKER-REPORT
+          ### Status
+          **COMPLETED**
+
+          ### Completed
+          - exact archive payloadを完全展開し、原本ファイル数32を確認。
+          - 原本32ファイルを `design/baseline/FINAL-CORRECTED/source/` に無改変で保存。
+          - 各source fileのGit blob SHAを原本local `git hash-object` と照合し、不一致0件を確認。
+          - 全32ファイルのSHA-256を `MANIFEST.sha256` に記録。
+          - current `design/` pathとの比較を `CURRENT-DESIGN-MISSING.md` に記録。
+          - `.transfer/` を最終Treeから完全削除。
+          - READMEをBLOCKEDからCOMPLETEDへ更新。
+          - `src/**`, `tests/**`, `design/current/**` は変更していない。
+
+          ### Evidence
+          - source files: **32 / 32**
+          - manifest entries: **32 / 32**
+          - Git blob SHA mismatches: **0**
+          - SHA-256 mismatches: **0**
+          - `.transfer` remaining: **0**
+          - exact compressed payload SHA-256: `28d84b67e1e8754f8c7c7ae91537897c7d9f36dcb3b0e795d85b82e02d5a6757`
+
+          ### BLOCKED DECISION
+          - なし。
+
+          ### Suggested next work item
+          - W-001 acceptanceを満たしたため、司令塔判断でW-002へ進行可能。
+          HANDOFF
+          sed -i 's/^          //' design/rebuild/handoffs/W-001-FINAL-CORRECTED-baseline-rescue.md
+
+          test "$(find "$ROOT/source" -type f | wc -l | tr -d ' ')" = '32'
+          test ! -e "$ROOT/.transfer"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A "$ROOT" design/rebuild/handoffs/W-001-FINAL-CORRECTED-baseline-rescue.md
+          if git diff --cached --name-only | grep -Eq '^(src/|tests/|design/current/)'; then exit 1; fi
+          test "$(git ls-files "$ROOT/source" | wc -l | tr -d ' ')" = '32'
+          test "$(git hash-object "$ROOT/source/02-dex.md")" = 'a5d87e4182250f830d2b4cd7161547229a7558d7'
+          test "$(git hash-object "$ROOT/source/scripts/families.mjs")" = 'fb8ff51ac55381534cfbf037f63993ccf0308c23'
+          test "$(git hash-object "$ROOT/source/scripts/monster-visual-briefs.json")" = '5448455994afa43370f61e394188a3d6dab6c707'
+          TREE="$(git write-tree)"
+          COMMIT="$(printf '%s\n' 'docs: complete W-001 exact FINAL-CORRECTED baseline' | git commit-tree "$TREE" -p "$PARENT")"
+          git push origin "$COMMIT:refs/heads/$TARGET"
+          echo "final_commit=$COMMIT" >> "$GITHUB_STEP_SUMMARY"
