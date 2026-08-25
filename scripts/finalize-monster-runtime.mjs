@@ -92,15 +92,7 @@ for (const entry of descriptionsRaw) {
 if (descriptions.m236?.name !== 'ホシラディア') throw new Error(`Canonical m236 must be ホシラディア, got ${descriptions.m236?.name ?? 'missing'}`)
 
 assertExactActiveIds('Generated runtime species', Object.keys(baseRuntime.RUNTIME_SPECIES || {}))
-const familyNames = new Map()
-for (const description of Object.values(descriptions)) {
-  const code = familyCode(description.familyNo)
-  const current = familyNames.get(code)
-  if (!current || description.stage < current.stage) familyNames.set(code, { stage: description.stage, name: description.name })
-}
-
 const species = structuredClone(baseRuntime.RUNTIME_SPECIES)
-const nameCorrections = new Map()
 for (const speciesId of ACTIVE_IDS) {
   const monster = species[speciesId]
   const description = descriptions[speciesId]
@@ -108,13 +100,19 @@ for (const speciesId of ACTIVE_IDS) {
   if (String(monster.no).padStart(3, '0') !== String(description.no).padStart(3, '0')) throw new Error(`Runtime/description No mismatch for ${speciesId}`)
   if (familyCode(monster.familyNo) !== familyCode(description.familyNo)) throw new Error(`Runtime/description family mismatch for ${speciesId}`)
   if (Number(monster.stage) !== description.stage) throw new Error(`Runtime/description stage mismatch for ${speciesId}`)
-
-  const oldName = monster.name
-  const canonicalName = description.name
-  if (oldName !== canonicalName) nameCorrections.set(speciesId, { oldName, canonicalName })
-  monster.name = canonicalName
-  monster.family = familyNames.get(familyCode(description.familyNo))?.name || monster.family
+  // Artwork must never bypass the manifest-driven resolver.
   delete monster.officialImageUrl
+}
+
+// Phase 2 final review explicitly classifies the m236 later-master rename as drift.
+// Do not blanket-promote other description-shard names into the battle master.
+const m236OldName = species.m236.name
+const m236CanonicalName = descriptions.m236.name
+const nameCorrections = new Map()
+if (m236OldName !== m236CanonicalName) {
+  nameCorrections.set('m236', { oldName: m236OldName, canonicalName: m236CanonicalName })
+  species.m236.name = m236CanonicalName
+  if (species.m236.family === m236OldName) species.m236.family = m236CanonicalName
 }
 
 const moves = structuredClone(baseRuntime.RUNTIME_MOVES)
