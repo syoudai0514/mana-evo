@@ -105,15 +105,17 @@ test('clean child goes Home -> Study, canonical daily completion applies once, t
 
   const completedLearning = learningState({ coreDone: true, coreIndex: 5 })
   const rewardRuntime = canonicalDailyCompletionRuntime()
+  const cleanGame = createGameState()
+  const expectedStarRings = (cleanGame.captureItems?.star || 0) + 3
   await replaceStorage(page, {
     learning: completedLearning,
-    games: { 'child-1': createGameState() },
+    games: { 'child-1': cleanGame },
     rewards: { 'child-1': rewardRuntime }
   })
 
   await expect(page.getByRole('button', { name: /ぼうけんへ！/ })).toBeVisible()
   await expect(page.locator('.resource-pill.ticket strong')).toHaveText('3')
-  await expect(page.locator('.resource-pill.star strong')).toHaveText('3')
+  await expect(page.locator('.resource-pill.star strong')).toHaveText(String(expectedStarRings))
 
   await expect.poll(async () => {
     const game = await storedGame(page)
@@ -126,7 +128,7 @@ test('clean child goes Home -> Study, canonical daily completion applies once, t
     }
   }).toMatchObject({
     tickets: 3,
-    star: 3,
+    star: expectedStarRings,
     explorePoint: 2,
     appliedRewardCount: 1,
     appliedSignalCount: 2

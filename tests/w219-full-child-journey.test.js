@@ -94,6 +94,7 @@ test('vertical learning reward is exactly once and boss remains learning-gated a
 
   const initial = createGameState()
   initial.adventureLocation = { area: 1, zoneId: 'meadow' }
+  const initialStarRings = initial.captureItems.star || 0
 
   const first = applyLearningQueues(initial, {
     rewards: runtime.pendingGameRewards,
@@ -103,7 +104,7 @@ test('vertical learning reward is exactly once and boss remains learning-gated a
   assert.deepEqual(first.appliedRewardIds, runtime.pendingGameRewards.map((reward) => reward.id))
   assert.deepEqual(first.appliedSignalIds, runtime.pendingProgressionSignals.map((signal) => signal.id))
   assert.equal(availableTicketCount(first.game, DAY), 3)
-  assert.equal(first.game.captureItems.star, 3)
+  assert.equal(first.game.captureItems.star, initialStarRings + 3)
   assert.equal(first.game.explorePoint, 2)
   assert.equal(first.game.areaBossProgress[1].points, 1)
   assert.equal(first.game.areaBossProgress[1].uniqueSkillIds.length, 1)
@@ -116,7 +117,7 @@ test('vertical learning reward is exactly once and boss remains learning-gated a
   assert.deepEqual(replay.appliedRewardIds, [])
   assert.deepEqual(replay.appliedSignalIds, [])
   assert.equal(availableTicketCount(replay.game, DAY), 3)
-  assert.equal(replay.game.captureItems.star, 3)
+  assert.equal(replay.game.captureItems.star, first.game.captureItems.star)
   assert.equal(replay.game.explorePoint, 2)
   assert.equal(replay.game.areaBossProgress[1].points, 1)
 
