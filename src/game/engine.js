@@ -782,13 +782,13 @@ export function useMove(game, battle, moveId, { today = null } = {}) {
 }
 
 export function canUseProtect(battle) {
-  return battle?.status === 'fighting' && Number(battle.turn || 0) > Number(battle.protectCooldownUntilTurn || 0)
+  return battle?.status === 'fighting' && battle.lastPlayerAction !== 'protect' && Number(battle.turn || 0) > Number(battle.protectCooldownUntilTurn || 0)
 }
 
 export function useProtect(game, battle, { today = null } = {}) {
   const stale = validateBattleAction(game, battle)
   if (stale) return { ok: false, game, battle: game.activeBattle || battle, reason: stale }
-  if (!canUseProtect(battle)) return { ok: false, game, battle, reason: 'PROTECT_COOLDOWN' }
+  if (!canUseProtect(battle)) return { ok: false, game, battle, reason: battle.lastPlayerAction === 'protect' ? 'PROTECT_CONSECUTIVE' : 'PROTECT_COOLDOWN' }
   const next = structuredClone(battle)
   const log = ['🛡️ まもる！']
   const plannedEnemyMove = planEnemyMove(game, next)
