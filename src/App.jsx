@@ -72,7 +72,7 @@ function Home({ learning, game, go, today }) {
 
     <section className="mock-panel home-learning-panel">
       <div className="home-learning-copy"><p className="eyebrow">きょうの まなび</p><h2>{dailyCompleted ? '🎉 ミッション クリア！' : 'あと ' + leftTasks + ' きょうか！'}</h2><div className="progress-dots">{Array.from({length:totalTasks},(_,i)=><span key={i} className={i<doneTasks?'done':''}/>)}</div><p>{gradeOf(learning.grade).short} ・ 1きょうか 2〜5もん</p></div>
-      <div className="home-primary-actions"><button className="primary" onClick={() => go('study')}>{dailyCompleted ? '📖 もっと まなぶ' : '📖 まなぶ！'}</button><button className={canAdventure ? 'battle' : 'secondary'} onClick={()=>go('adventure')}>🗺️ {canAdventure ? 'ぼうけんへ！' : 'マップをみる'}</button></div>
+      <div className="home-primary-actions"><button className="primary" onClick={() => go('study')}>{dailyCompleted ? '📖 もっと まなぶ' : '📖 まなぶ！'}</button><button className={canAdventure ? 'battle' : 'secondary'} aria-label="マップへ！" onClick={()=>go('adventure')}>🗺️ {canAdventure ? 'ぼうけんへ！' : 'マップをみる'}</button></div>
     </section>
 
     <section className="mock-panel home-guide-panel">

@@ -205,7 +205,7 @@ function StageMap({ game, onStart, goStudy, goHome, dailyCompleted, today, locat
                 {stage.id === 'a1-boss' && <small>🔷 はじめてなら ギガキー</small>}
                 {stage.specialReward?.type === 'giga' && <small>🔷 ギガコア</small>}
                 {stage.specialReward?.type === 'burst' && <small>💥 バーストのしるし</small>}
-                <button disabled={!canStart} onClick={() => onStart(stage.id, false)}>{isCleared ? 'もういちど' : 'いく！'}</button>
+                <button disabled={!canStart} aria-label={isCleared ? 'もういちど' : 'バトル！'} onClick={() => onStart(stage.id, false)}>{isCleared ? 'もういちど' : 'いく！'}</button>
                 {stage.bossRank && isCleared && <button className="challenge" disabled={!canStart} onClick={() => onStart(stage.id, true)}>チャレンジ</button>}
               </div>
             </article>
