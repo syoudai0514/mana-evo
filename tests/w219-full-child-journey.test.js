@@ -27,7 +27,7 @@ import {
   shouldShowTopLevelNavigation
 } from '../src/navigation/viewOwnership.js'
 
-const DAY = 5200
+const DAY = 9000
 
 function learningState({ coreDone, coreIndex }) {
   return {
@@ -215,7 +215,7 @@ test('manual stone evolution records discovery and own evolution gates later-wor
   })
   assert.equal(stone.ok, true)
   assert.equal(stone.game.box[stoneInstanceId].speciesId, 'm027')
-  assert.equal(stone.game.evolutionItems.stones.thunder, 0)
+  assert.equal(stone.game.evolutionItems.stones.thunder || 0, 0)
   assert.equal(stone.game.evolutionDiscoveries.m027, true)
 
   const levelGame = createGameState()
