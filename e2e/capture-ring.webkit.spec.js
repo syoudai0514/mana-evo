@@ -37,18 +37,6 @@ async function installSave(page, game) {
   }, { learning, game })
 }
 
-async function forceFailedCaptureInPreviewBundle(page) {
-  let rewritten = false
-  await page.route('**/assets/index-*.js', async (route) => {
-    const response = await route.fetch()
-    const source = await response.text()
-    const forced = source.replaceAll('Math.random()', '0.999999')
-    rewritten ||= forced !== source
-    await route.fulfill({ response, body: forced })
-  })
-  return () => rewritten
-}
-
 function battleGameAtHalfHp({ rainbow = false, nearEvolution = false } = {}) {
   const today = dayNumber()
   const game = addTickets(createGameState(), 3, today)
@@ -140,14 +128,26 @@ test('iPhone WebKit plays the canonical four-star success sequence before GET', 
 
 test('iPhone WebKit failed capture never displays four completed stars', async ({ page }) => {
   await installSave(page, battleGameAtHalfHp())
-  const wasRewritten = await forceFailedCaptureInPreviewBundle(page)
   await page.goto('/')
-  expect(wasRewritten()).toBe(true)
   await openCapture(page)
 
   const star = page.locator('.capture-item-grid').getByRole('button', { name: /ほしのわ/ })
   await star.click()
-  await page.getByRole('button', { name: /ほしのわを なげる！/ }).click()
+  const throwButton = page.getByRole('button', { name: /ほしのわを なげる！/ })
+  await expect(throwButton).toBeEnabled()
+
+  // Keep deterministic control scoped to the synchronous capture click itself.
+  // Battle/UI initialization has already completed, and Math.random is restored
+  // before the presentation timers start.
+  await throwButton.evaluate((button) => {
+    const originalRandom = Math.random
+    try {
+      Math.random = () => 0.999999
+      button.click()
+    } finally {
+      Math.random = originalRandom
+    }
+  })
 
   const sequence = page.getByTestId('capture-sequence')
   await expect(sequence).toHaveAttribute('data-lit-stars', '1')
