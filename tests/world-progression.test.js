@@ -68,8 +68,11 @@ test('normal encounter scaling is clamped to the zone level band', () => {
   assert.ok(easyPlan.level <= easy.maxEnemyLevel)
 })
 
-test('story bosses use a small route-clear gate instead of half the species catalog', () => {
+test('story bosses use the canonical per-area learning gate instead of route-clear count', () => {
   const bosses = STAGES.filter((s) => s.kind === 'boss' && [1, 2, 3, 4].includes(s.area))
   assert.equal(bosses.length, 4)
-  assert.ok(bosses.every((s) => s.minAreaClears === 5))
+  assert.ok(bosses.every((s) => s.minAreaClears === undefined))
+  assert.ok(bosses.every((s) => s.requiresAreaBossProgress === true))
+  assert.ok(bosses.every((s) => s.bossProgressRequirement?.minPoints === 12))
+  assert.ok(bosses.every((s) => s.bossProgressRequirement?.minUniqueSkills === 2))
 })
