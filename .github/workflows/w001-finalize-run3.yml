@@ -1,0 +1,237 @@
+name: W001 Finalize Run 3
+
+on:
+  push:
+    branches: ['terra/w001-finalize-20260825']
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Finalize exact W-001 baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGET='rebuild/w-001-final-corrected-baseline'
+          BASE='rebuild/canonical-governance'
+          ROOT='design/baseline/FINAL-CORRECTED'
+          T="$ROOT/.transfer"
+
+          python - <<'PY'
+          from pathlib import Path
+          import base64, hashlib, re, subprocess
+
+          T=Path('design/baseline/FINAL-CORRECTED/.transfer')
+          expected={
+          'chunk00.b64':'9926c3e8162ed44c70752b54a75785f87ef33aba',
+          'part001.b64':'9bc3ceb35bc4988646fc71705cc35eaf479611e3',
+          'part002.b64':'2b5ccb47c034ddddc3cad0b88def27c6756d0b5e',
+          'part003.b64':'b8a030516e06ede46564aff17f20d866562ca103',
+          'part004.b64':'31551861b92563b51d8844a44df7fedefeecc031',
+          'y005.b64':'606472ce905a3fea7900d61c1f5d7add5aa83f68',
+          'y006.b64':'a29e772369a092c7b5d5e00ff64f40137d70b02e',
+          'y007.b64':'9c4dfb90dc3190215732c0f4f86b30be48c6d73a',
+          'z000.b64':'bf851a3059bbef0fb6c0f85d65046b151c238140',
+          'z001.b64':'136b05b5dd4690561bf969d9ccb643cd9f2b978e',
+          'z002.b64':'80932876e9b0cb015a67cebfd98cbdcce2ab57cb',
+          'z003.b64':'a85dc6cbc74f63d4c71e8536e9f89b5ded6b2bc5',
+          'z004.b64':'53391565beb07e714d2a0a5ecf77509d0a451bcc',
+          'z005.b64':'b57b0eb1ca7d99c150f3be94443761732b7cbb67',
+          'z006.b64':'0d718b679a23fb300cf1f814cf70651026c1835b',
+          'z007.b64':'dc1b4caac52ba7aa47c74f3659050cb2fe4a8c7a',
+          'z008.b64':'14bf483094fdfac9ad86ab3a366cf2c95bf9322a',
+          'z009.b64':'198afa49688062d81da323e13896b3a3b908a9d1',
+          'z010.b64':'bb2955f5c4d9aa7e736241f42c7b0bf0746573a8',
+          'z011.b64':'94a7434d29e1e34882d65752059085a076c8425b',
+          'z012.b64':'b698e7cd279b6d84cc2c45366783a1c5d8001e38',
+          'z013.b64':'08003abb97ee156a7a4b82e237107692e189cf9f',
+          'z014.b64':'3c00e0e18dfd85b03fb81f2e467b1f4454b80a58',
+          }
+          order=['chunk00.b64','part001.b64','part002.b64','part003.b64','part004.b64','y005.b64','y006.b64','y007.b64']+[f'z{i:03d}.b64' for i in range(15)]
+          pieces=[]
+          for name in order:
+              p=T/name
+              got=subprocess.check_output(['git','hash-object',str(p)],text=True).strip()
+              if got != expected[name]:
+                  raise SystemExit(f'segment SHA mismatch {name}: {got} != {expected[name]}')
+              pieces.append(p.read_text(encoding='ascii'))
+
+          run2=Path('.github/workflows/w001-finalize-run2.yml').read_text(encoding='utf-8')
+          m=re.search(r"<<'Z015'\n(.*?)\n\s*Z015\n",run2,re.S)
+          if not m: raise SystemExit('z015 marker not found')
+          z015=''.join(line.strip() for line in m.group(1).splitlines())
+          if len(z015)!=4000: raise SystemExit(f'z015 length {len(z015)}')
+          got=subprocess.check_output(['git','hash-object','--stdin'],input=z015,text=True).strip()
+          if got!='3baca4187ddc89586611ed2e14fabfe2b6db903c': raise SystemExit(f'z015 SHA {got}')
+
+          holder=Path('.github/workflows/w001-finalize.yml').read_text(encoding='utf-8')
+          m=re.search(r"<<'PAYLOAD_TAIL'\n(.*?)\nPAYLOAD_TAIL(?:\n|$)",holder,re.S)
+          if not m: raise SystemExit('tail marker not found')
+          tail=''.join(line.strip() for line in m.group(1).splitlines())
+          if len(tail)!=13712: raise SystemExit(f'tail length {len(tail)}')
+          got=subprocess.check_output(['git','hash-object','--stdin'],input=tail,text=True).strip()
+          if got!='356c7041de1c01ea3b5b1c37e097d0fc23bc148f': raise SystemExit(f'tail SHA {got}')
+
+          payload=''.join(pieces)+z015+tail
+          if len(payload)!=153712: raise SystemExit(f'payload length {len(payload)}')
+          raw=base64.b64decode(payload,validate=True)
+          if hashlib.sha256(raw).hexdigest()!='28d84b67e1e8754f8c7c7ae91537897c7d9f36dcb3b0e795d85b82e02d5a6757':
+              raise SystemExit('compressed payload SHA-256 mismatch')
+          Path('/tmp/w001-payload.tar.xz').write_bytes(raw)
+          PY
+
+          rm -rf /tmp/w001-extract
+          mkdir -p /tmp/w001-extract
+          tar -xJf /tmp/w001-payload.tar.xz -C /tmp/w001-extract
+          SRC='/tmp/w001-extract/mana-evo-terra-FINAL-CORRECTED'
+          test "$(find "$SRC" -type f | wc -l | tr -d ' ')" = '32'
+
+          cat > /tmp/expected-blobs.txt <<'EOF'
+          61a939ec431655c42d1ce605cedb8f2aebd034a6 00-START-HERE.md
+          d38071037b73a9e685a99c4c7ac6be4c5904116c 00-TERRA-IMPLEMENTATION-REQUEST.md
+          96681a821a7ca5a64699a71363a9bccbdb4b225e 01-catch-and-evolution-design.md
+          a5d87e4182250f830d2b4cd7161547229a7558d7 02-dex.md
+          f2883314387e76230278726e8cc9ee104d9c6cd1 03-screens-catch-and-raise.md
+          d66f90cd9ee28058ae899f0bb9b2c5e7e6a2925e 06-battle-and-progression-design.md
+          756dbfe09db43dab4ca0a595808fe76bb4a47988 07-wild-encounter-and-capture-design.md
+          af0745e17ead3516d7f7cb61623da57f0f18e5fc 08-gameplay-state-spec.md
+          19fc6ade7825c096e92a165638612b430f75c8c9 09-implementation-traceability.md
+          b1b4d7cd580596a6f21dbea2bbab6b6a1c395a1b 10-BRAND-AND-REPOSITORY-SPEC.md
+          2b6be5b12edb3cf0337eb06ef887b427c7f47cd1 11-MONSTER-NAMING-AND-GRAPHICS-BIBLE.md
+          aafbe6a78690dc7972a6401fdd269ad4910a5705 12-KIDS-QUEST-LEARNING-IMPORT-SPEC.md
+          17d20ed9b2943161daad9dba200ae7fe14593239 13-EXECUTION-FLOW.md
+          5c5fde499fef4599b28eebcf8742e69c461d1f9d 99-IMPLEMENTATION-REVIEW-CHECKLIST.md
+          3623a14e1153c5f7ed6b6080f2ada1d598655828 scripts/battle.mjs
+          e4e6588de93e97f96406fb0c319ffd3f933b9120 scripts/brand.json
+          40d9fcc9b9c39be992bce5116a206077c34e646a scripts/build-md.mjs
+          04fd867a84dd43c3ef25f45026f64b8cf0c04326 scripts/capture.mjs
+          af9da371b2db5349bb9094df069a292486b09765 scripts/check2.mjs
+          fb8ff51ac55381534cfbf037f63993ccf0308c23 scripts/families.mjs
+          19cbb8e87aad557c88772b6c5b02b079b0fee605 scripts/forms.mjs
+          f318ab633cb7b206f3f1985d2e90f937063658dc scripts/gen-battle-md.mjs
+          1e57f9082fa3d6a23685d9867601a908ca1c759b scripts/gen-visual-briefs.mjs
+          565b556f2c9fa52b21912099122baba45a204c67 scripts/gen-wild-md.mjs
+          4477c5905216eb29abd906c4d3cc98ae2905372b scripts/items.mjs
+          858efc71a4d69db8e052257ed254f242a32a38a2 scripts/monster-name-aliases.json
+          5448455994afa43370f61e394188a3d6dab6c707 scripts/monster-visual-briefs.json
+          6684f548a09af80e02ed5859cb375a46d2ff0b6a scripts/retune.mjs
+          e5f93a89bd5106f0d0714ef17826ca7511ef8450 scripts/rewards.mjs
+          e9fedc936af96515a93653a63bb4bd90f30414dc scripts/simulate.mjs
+          7d8f1d3d71fb6ea0a4e8eef73d3eadd71969e308 scripts/types.mjs
+          460b0bdeff8405fbcb3b99b2e356286675fe404f scripts/wildEncounter.mjs
+          EOF
+          sed -i 's/^          //' /tmp/expected-blobs.txt
+          while read -r expected rel; do
+            got="$(git hash-object "$SRC/$rel")"
+            test "$got" = "$expected" || { echo "blob mismatch $rel $got $expected" >&2; exit 1; }
+          done < /tmp/expected-blobs.txt
+
+          git fetch origin "$TARGET" "$BASE"
+          git switch --detach "origin/$TARGET"
+          PARENT="$(git rev-parse HEAD)"
+          rm -rf "$ROOT/.transfer" "$ROOT/source"
+          mkdir -p "$ROOT/source"
+          cp -a "$SRC"/. "$ROOT/source/"
+          (cd "$ROOT" && find source -type f -print0 | sort -z | xargs -0 sha256sum) > "$ROOT/MANIFEST.sha256"
+          test "$(wc -l < "$ROOT/MANIFEST.sha256" | tr -d ' ')" = '32'
+          (cd "$ROOT" && sha256sum -c MANIFEST.sha256)
+
+          {
+            echo '# FINAL-CORRECTED files absent from current design paths'
+            echo
+            echo 'Path comparison rule: each baseline relative path is checked against `design/<relative-path>` on `rebuild/canonical-governance`.'
+            echo
+            while IFS= read -r rel; do
+              if ! git cat-file -e "origin/$BASE:design/$rel" 2>/dev/null; then printf -- '- `%s`\n' "$rel"; fi
+            done < <(cd "$ROOT/source" && find . -type f | sed 's#^./##' | sort)
+          } > "$ROOT/CURRENT-DESIGN-MISSING.md"
+
+          cat > "$ROOT/README.md" <<'EOF'
+          # FINAL-CORRECTED Baseline
+
+          ## Purpose
+          This directory preserves the exact source payload of `mana-evo-terra-FINAL-CORRECTED` as a historical pre-change BASELINE.
+
+          **This baseline is NOT the CURRENT canonical specification.**
+
+          ## Preservation rules
+          - Files under `source/` are preserved without editorial modification.
+          - Do not mechanically restore CURRENT behavior from this baseline.
+          - Do not resolve product decisions such as 238/239 inside this baseline.
+          - Integrity metadata is kept outside `source/`.
+
+          ## Integrity records
+          - `source/`: exact archive source payload
+          - `MANIFEST.sha256`: SHA-256 for all 32 preserved source files
+          - `CURRENT-DESIGN-MISSING.md`: baseline paths absent from current `design/` path space
+
+          ## Rescue status
+          **COMPLETED**
+          - Preserved original source files: **32 / 32**
+          - SHA-256 manifest entries: **32 / 32**
+          - Git blob SHA mismatches: **0**
+          - SHA-256 mismatches: **0**
+          - `.transfer` staging files remaining: **0**
+          - `src/**`, `tests/**`, `design/current/**`: **unchanged**
+          - CURRENT promotion: **none**
+          - 238/239 product decision: **not performed by W-001**
+          EOF
+          sed -i 's/^          //' "$ROOT/README.md"
+
+          cat > design/rebuild/handoffs/W-001-FINAL-CORRECTED-baseline-rescue.md <<'EOF'
+          # W-001 Worker Handoff / Report
+
+          ## Work item
+          - ID: W-001
+          - Title: FINAL-CORRECTED原本救出・baseline化
+          - Branch: `rebuild/w-001-final-corrected-baseline`
+          - Base: `rebuild/canonical-governance`
+
+          ## WORKER-REPORT
+          ### Status
+          **COMPLETED**
+
+          ### Completed
+          - exact archive payloadを完全展開し、原本ファイル数32を確認。
+          - 原本32ファイルを `design/baseline/FINAL-CORRECTED/source/` に無改変で保存。
+          - 32ファイルすべてのGit blob SHAを原本local `git hash-object` と照合し、不一致0件を確認。
+          - 全32ファイルのSHA-256を `MANIFEST.sha256` に記録し、不一致0件を確認。
+          - current `design/` pathとの比較を `CURRENT-DESIGN-MISSING.md` に記録。
+          - `.transfer/` を最終Treeから完全削除。
+          - READMEをBLOCKEDからCOMPLETEDへ更新。
+          - `src/**`, `tests/**`, `design/current/**` は変更していない。
+
+          ### Evidence
+          - source files: **32 / 32**
+          - manifest entries: **32 / 32**
+          - Git blob SHA mismatches: **0**
+          - SHA-256 mismatches: **0**
+          - `.transfer` remaining: **0**
+          - exact compressed payload SHA-256: `28d84b67e1e8754f8c7c7ae91537897c7d9f36dcb3b0e795d85b82e02d5a6757`
+
+          ### BLOCKED DECISION
+          - なし。
+
+          ### Suggested next work item
+          - W-001 acceptanceを満たしたため、司令塔判断でW-002へ進行可能。
+          EOF
+          sed -i 's/^          //' design/rebuild/handoffs/W-001-FINAL-CORRECTED-baseline-rescue.md
+
+          test "$(find "$ROOT/source" -type f | wc -l | tr -d ' ')" = '32'
+          test ! -e "$ROOT/.transfer"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A "$ROOT" design/rebuild/handoffs/W-001-FINAL-CORRECTED-baseline-rescue.md
+          if git diff --cached --name-only | grep -Eq '^(src/|tests/|design/current/)'; then exit 1; fi
+          test "$(git ls-files "$ROOT/source" | wc -l | tr -d ' ')" = '32'
+          while read -r expected rel; do test "$(git hash-object "$ROOT/source/$rel")" = "$expected"; done < /tmp/expected-blobs.txt
+          TREE="$(git write-tree)"
+          COMMIT="$(printf '%s\n' 'docs: complete W-001 exact FINAL-CORRECTED baseline' | git commit-tree "$TREE" -p "$PARENT")"
+          git push origin "$COMMIT:refs/heads/$TARGET"
+          echo "final_commit=$COMMIT" >> "$GITHUB_STEP_SUMMARY"
