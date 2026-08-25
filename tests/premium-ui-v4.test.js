@@ -3,7 +3,8 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 
 const app = fs.readFileSync('src/App.jsx', 'utf8')
-const screens = fs.readFileSync('src/game/GameScreens.jsx', 'utf8')
+const adventure = fs.readFileSync('src/game/screens/AdventureScreen.jsx', 'utf8')
+const monsterScreen = fs.readFileSync('src/game/screens/MonsterScreen.jsx', 'utf8')
 const monster = fs.readFileSync('src/game/PlaceholderMonster.jsx', 'utf8')
 const main = fs.readFileSync('src/main.jsx', 'utf8')
 const css = fs.readFileSync('src/premium-ui-v4.css', 'utf8')
@@ -23,17 +24,17 @@ test('premium CSS loads after runtime CSS so it can be the visual authority', ()
 })
 
 test('adventure is rendered as a premium world map with large encounter art', () => {
-  assert.ok(screens.includes('premium-world-map'))
-  assert.ok(screens.includes('encounter-art'))
+  assert.ok(adventure.includes('premium-world-map'))
+  assert.ok(adventure.includes('encounter-art'))
   assert.ok(css.includes('.world-area-route:before'))
   assert.ok(css.includes('.zone-grid:before'))
 })
 
 test('monster team uses showcase cards and large selected art', () => {
-  assert.ok(screens.includes('monster-hq-hero'))
-  assert.ok(screens.includes('team-showcase'))
-  assert.ok(screens.includes('showcase />'))
-  assert.ok(screens.includes('size={178}'))
+  assert.ok(monsterScreen.includes('monster-hq-hero'))
+  assert.ok(monsterScreen.includes('team-showcase'))
+  assert.ok(monsterScreen.includes('showcase />'))
+  assert.ok(monsterScreen.includes('size={178}'))
   assert.ok(monster.includes('requestedSize'))
 })
 
