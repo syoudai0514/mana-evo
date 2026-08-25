@@ -43,18 +43,17 @@ test('W-207 canonical identity wins over later runtime drift, including m236', (
   assert.equal(JSON.stringify([RUNTIME_SPECIES, RUNTIME_MOVES, RUNTIME_STAGES]).includes('ソラリオン'), false)
 })
 
-test('W-207 exposes normalized descriptions while tolerating both Phase 2 shard shapes', () => {
+test('W-114 normalized descriptions expose the same lossless schema across shards', () => {
   assert.equal(Object.keys(RUNTIME_MONSTER_DESCRIPTIONS).length, 238)
 
-  const phase2W110Shape = monsterDescriptionOf('m001')
-  assert.equal(typeof phase2W110Shape.familyConcept, 'string')
-  assert.equal(typeof phase2W110Shape.personalityArcContext, 'string')
-  assert.equal(phase2W110Shape.personalityArc, null)
-
-  const phase2W111Shape = monsterDescriptionOf('m081')
-  assert.equal(typeof phase2W111Shape.familyConcept, 'string')
-  assert.equal(typeof phase2W111Shape.personalityArc, 'object')
-  assert.equal(phase2W111Shape.personalityArcContext, null)
+  for (const id of ['m001', 'm081', 'm161', 'm238']) {
+    const description = monsterDescriptionOf(id)
+    assert.equal(typeof description.familyConcept, 'string')
+    assert.equal(typeof description.personalityArc, 'object')
+    assert.equal(Array.isArray(description.personalityArc), false)
+    assert.equal(typeof description.personalityArcContext, 'string')
+    assert.equal(typeof description.description, 'string')
+  }
 })
 
 test('W-207 runtime art resolution never promotes CANDIDATE or PLACEHOLDER', () => {
