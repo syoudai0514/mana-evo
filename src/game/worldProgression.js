@@ -62,6 +62,145 @@ export const WORLD_AREA_META = Object.freeze([
   }
 ])
 
+export const MAIN_ADVENTURE_AREAS = Object.freeze([1, 2, 3, 4])
+export const ROUTE_CLEAR_TUNING_DEFAULT = 2
+export const AREA_BOSS_REQUIREMENT = Object.freeze({ minPoints: 12, minUniqueSkills: 2 })
+
+function positiveInt(value) {
+  return Math.max(0, Math.floor(Number(value) || 0))
+}
+
+function mainArea(value) {
+  const area = positiveInt(value)
+  return MAIN_ADVENTURE_AREAS.includes(area) ? area : null
+}
+
+function uniqueStrings(values) {
+  return [...new Set((Array.isArray(values) ? values : []).map((value) => String(value || '')).filter(Boolean))]
+}
+
+function bossStageId(area) {
+  return `a${area}-boss`
+}
+
+function clearedStageSet(game) {
+  return new Set(Array.isArray(game?.stagesCleared) ? game.stagesCleared : [])
+}
+
+function emptyAreaBossProgress() {
+  return { points: 0, uniqueSkillIds: [], appliedEventIds: [] }
+}
+
+export function areaBossProgressFor(game, area) {
+  const normalizedArea = mainArea(area)
+  if (!normalizedArea) return emptyAreaBossProgress()
+  const raw = game?.areaBossProgress?.[normalizedArea] || game?.areaBossProgress?.[String(normalizedArea)] || {}
+  return {
+    points: positiveInt(raw.points),
+    uniqueSkillIds: uniqueStrings(raw.uniqueSkillIds),
+    appliedEventIds: uniqueStrings(raw.appliedEventIds)
+  }
+}
+
+export function areaBossEligibility(game, area) {
+  const normalizedArea = mainArea(area)
+  if (!normalizedArea) {
+    return {
+      eligible: false,
+      area: Number(area) || 0,
+      points: 0,
+      uniqueSkillCount: 0,
+      requiredPoints: AREA_BOSS_REQUIREMENT.minPoints,
+      requiredUniqueSkills: AREA_BOSS_REQUIREMENT.minUniqueSkills,
+      missingPoints: AREA_BOSS_REQUIREMENT.minPoints,
+      missingUniqueSkills: AREA_BOSS_REQUIREMENT.minUniqueSkills
+    }
+  }
+  const progress = areaBossProgressFor(game, normalizedArea)
+  const uniqueSkillCount = progress.uniqueSkillIds.length
+  return {
+    eligible: progress.points >= AREA_BOSS_REQUIREMENT.minPoints && uniqueSkillCount >= AREA_BOSS_REQUIREMENT.minUniqueSkills,
+    area: normalizedArea,
+    points: progress.points,
+    uniqueSkillCount,
+    requiredPoints: AREA_BOSS_REQUIREMENT.minPoints,
+    requiredUniqueSkills: AREA_BOSS_REQUIREMENT.minUniqueSkills,
+    missingPoints: Math.max(0, AREA_BOSS_REQUIREMENT.minPoints - progress.points),
+    missingUniqueSkills: Math.max(0, AREA_BOSS_REQUIREMENT.minUniqueSkills - uniqueSkillCount)
+  }
+}
+
+export function applyAreaBossProgressEvent(game, {
+  id,
+  area,
+  points = 0,
+  skillId = null,
+  skillIds = []
+} = {}) {
+  const normalizedArea = mainArea(area)
+  if (!normalizedArea) return { ok: false, game, reason: 'INVALID_AREA' }
+  const eventId = String(id || '')
+  if (!eventId) return { ok: false, game, reason: 'MISSING_EVENT_ID' }
+
+  const current = areaBossProgressFor(game, normalizedArea)
+  if (current.appliedEventIds.includes(eventId)) {
+    return { ok: true, game, changed: false, progress: current, eligibility: areaBossEligibility(game, normalizedArea) }
+  }
+
+  const next = structuredClone(game || {})
+  next.areaBossProgress ||= {}
+  const nextSkills = uniqueStrings([...current.uniqueSkillIds, skillId, ...(Array.isArray(skillIds) ? skillIds : [])])
+  next.areaBossProgress[normalizedArea] = {
+    points: current.points + positiveInt(points),
+    uniqueSkillIds: nextSkills,
+    appliedEventIds: [...current.appliedEventIds, eventId]
+  }
+  return {
+    ok: true,
+    game: next,
+    changed: true,
+    progress: areaBossProgressFor(next, normalizedArea),
+    eligibility: areaBossEligibility(next, normalizedArea)
+  }
+}
+
+export function isAdventureAreaUnlocked(game, area, { exUnlocked = null } = {}) {
+  const normalized = positiveInt(area)
+  if (normalized === 1) return true
+  if (normalized >= 2 && normalized <= 4) return clearedStageSet(game).has(bossStageId(normalized - 1))
+  if (normalized !== 5) return false
+
+  // CURRENT preserves the existing all-main-bosses EX rule only as a continuity default.
+  // A future canonical EX decision can override this without changing Area1-4 progression.
+  if (typeof exUnlocked === 'boolean') return exUnlocked
+  const cleared = clearedStageSet(game)
+  return MAIN_ADVENTURE_AREAS.every((main) => cleared.has(bossStageId(main)))
+}
+
+export function applyFirstBossClear(game, area) {
+  const normalizedArea = mainArea(area)
+  if (!normalizedArea) return { ok: false, game, reason: 'INVALID_AREA' }
+
+  const id = bossStageId(normalizedArea)
+  const cleared = clearedStageSet(game)
+  const eligibility = areaBossEligibility(game, normalizedArea)
+  // A persisted first-clear marker is authoritative for idempotency and legacy-save compatibility.
+  // Do not require newly introduced boss-progress state to re-validate an already cleared boss.
+  if (cleared.has(id)) {
+    return { ok: true, game, firstClear: false, unlockedArea: null, eligibility }
+  }
+  if (!eligibility.eligible) return { ok: false, game, reason: 'BOSS_NOT_ELIGIBLE', eligibility }
+
+  const next = structuredClone(game || {})
+  next.stagesCleared = [...cleared, id]
+  next.areaBossProgress ||= {}
+  const unlockedArea = normalizedArea < 4 ? normalizedArea + 1 : null
+  if (unlockedArea && !next.areaBossProgress[unlockedArea]) {
+    next.areaBossProgress[unlockedArea] = emptyAreaBossProgress()
+  }
+  return { ok: true, game: next, firstClear: true, unlockedArea, eligibility }
+}
+
 function numberOf(species) {
   const parsed = Number.parseInt(String(species?.no || '').replace(/\D/g, ''), 10)
   return Number.isFinite(parsed) ? parsed : 0
@@ -72,8 +211,7 @@ function adventureAreaForStage(stage, species) {
   const sourceArea = Math.max(1, Number(stage?.area) || 1)
   const formStage = Math.max(1, Number(species?.stage) || 1)
   const isFinalEvolution = formStage > 1 && !species?.evolution
-  // 当初方針: エリア1/2の通常野生は進化前中心。
-  // A1系列の第2形態はA3奥地、A2系列の第2形態はA4奥地へ送る。
+  // Continuity tuning only: source area stays untouched while later wild placement can differ.
   if (stage?.kind === 'wild' && formStage >= 2 && !isFinalEvolution) {
     if (sourceArea === 1) return 3
     if (sourceArea === 2) return 4
@@ -115,7 +253,7 @@ export function enrichStage(stage, species) {
     zoneIcon: zone.icon,
     zoneIndex,
     zoneGatePreviousId: zoneIndex > 0 ? meta.zones[zoneIndex - 1]?.id || null : null,
-    zoneGateMinClears: zoneIndex > 0 ? 2 : 0,
+    zoneGateMinClears: zoneIndex > 0 ? ROUTE_CLEAR_TUNING_DEFAULT : 0,
     minEnemyLevel: zone.minLevel,
     maxEnemyLevel: zone.maxLevel,
     levelLabel: `Lv.${zone.minLevel}〜${zone.maxLevel}`,
@@ -123,24 +261,102 @@ export function enrichStage(stage, species) {
     advancedEvolutionWild: isFirstEvolvedForm
   }
 
-  // 冒険エリアの解放条件は、制作上のareaではなく実際の配置先で決める。
-  if (stage.kind === 'wild' && meta.area !== Number(stage.area) && meta.area > 1 && meta.area <= 4) next.areaGateBossId = `a${meta.area - 1}-boss`
+  if (stage.kind === 'wild' && meta.area !== Number(stage.area) && meta.area > 1 && meta.area <= 4) {
+    next.areaGateBossId = bossStageId(meta.area - 1)
+  }
 
-  // 第2形態の初回入手は自力進化。所有ではなく「自分で進化した記録」で奥地野生を解禁する。
   if (isFirstEvolvedForm) next.requiresEvolutionDiscoverySpeciesId = species.id
 
-  // 最終進化形は通常野生では出さない。単段階種(stage=1)は例外。
   if (stage.kind === 'wild' && isFinalEvolution) {
     next.hidden = true
     next.captureDisabled = true
     next.finalEvolutionOnly = true
   }
 
-  // ストーリー進行を大量収集チェックから切り離す。
-  if (stage.kind === 'boss' && meta.area <= 4) next.minAreaClears = 5
+  if (stage.kind === 'boss' && meta.area <= 4) {
+    next.requiresAreaBossProgress = true
+    next.bossProgressArea = meta.area
+    next.bossProgressRequirement = AREA_BOSS_REQUIREMENT
+  }
   return next
 }
 
+function stagesClearedInZone(game, stages, area, zoneId) {
+  const cleared = clearedStageSet(game)
+  return new Set((stages || [])
+    .filter((stage) => stage?.kind === 'wild')
+    .filter((stage) => Number(stage.adventureArea || stage.area) === Number(area))
+    .filter((stage) => stage.zoneId === zoneId)
+    .filter((stage) => cleared.has(stage.id))
+    .map((stage) => stage.id)).size
+}
+
+export function adventureZoneProgress(game, stages, area, zoneId, { exUnlocked = null } = {}) {
+  const numericArea = positiveInt(area)
+  const meta = WORLD_AREA_META.find((entry) => entry.area === numericArea)
+  if (!meta) return { unlocked: false, clears: 0, required: 0, remaining: 0, previousZoneName: null, reason: 'UNKNOWN_AREA' }
+  if (!isAdventureAreaUnlocked(game, numericArea, { exUnlocked })) {
+    return { unlocked: false, clears: 0, required: 0, remaining: 0, previousZoneName: null, reason: 'AREA_LOCKED' }
+  }
+  const index = meta.zones.findIndex((zone) => zone.id === zoneId)
+  if (index < 0) return { unlocked: false, clears: 0, required: 0, remaining: 0, previousZoneName: null, reason: 'UNKNOWN_ZONE' }
+  if (numericArea === 5 || index === 0) return { unlocked: true, clears: 0, required: 0, remaining: 0, previousZoneName: null, reason: null }
+
+  const previous = meta.zones[index - 1]
+  const required = ROUTE_CLEAR_TUNING_DEFAULT
+  const clears = stagesClearedInZone(game, stages, numericArea, previous.id)
+  return {
+    unlocked: clears >= required,
+    clears,
+    required,
+    remaining: Math.max(0, required - clears),
+    previousZoneName: previous.name,
+    reason: clears >= required ? null : 'ROUTE_PROGRESS'
+  }
+}
+
+export function worldStageAvailability(game, stage, stages, { exUnlocked = null } = {}) {
+  if (!stage || stage.hidden) return { unlocked: false, reason: 'HIDDEN_STAGE' }
+  const area = positiveInt(stage.adventureArea || stage.area)
+  if (!isAdventureAreaUnlocked(game, area, { exUnlocked })) return { unlocked: false, reason: 'AREA_LOCKED' }
+
+  if (stage.zoneId) {
+    const zone = adventureZoneProgress(game, stages, area, stage.zoneId, { exUnlocked })
+    if (!zone.unlocked) return { unlocked: false, reason: zone.reason || 'ZONE_LOCKED', zone }
+  }
+  if (stage.requiresEvolutionDiscoverySpeciesId && !game?.evolutionDiscoveries?.[stage.requiresEvolutionDiscoverySpeciesId]) {
+    return { unlocked: false, reason: 'EVOLUTION_DISCOVERY_REQUIRED' }
+  }
+  if (stage.kind === 'boss' && area <= 4) {
+    const eligibility = areaBossEligibility(game, area)
+    if (!eligibility.eligible) return { unlocked: false, reason: 'BOSS_LEARNING_PROGRESS_REQUIRED', eligibility }
+  }
+  return { unlocked: true, reason: null }
+}
+
+export function persistedAdventureLocation(game) {
+  const area = positiveInt(game?.adventureLocation?.area)
+  const meta = WORLD_AREA_META.find((entry) => entry.area === area)
+  const zoneId = String(game?.adventureLocation?.zoneId || '')
+  if (!meta || !meta.zones.some((zone) => zone.id === zoneId)) return null
+  return { area, zoneId }
+}
+
+export function setAdventureLocation(game, location, stages, { exUnlocked = null } = {}) {
+  const area = positiveInt(location?.area)
+  const zoneId = String(location?.zoneId || '')
+  const progress = adventureZoneProgress(game, stages, area, zoneId, { exUnlocked })
+  if (!progress.unlocked) return { ok: false, game, reason: progress.reason || 'LOCATION_LOCKED' }
+  const next = structuredClone(game || {})
+  next.adventureLocation = { area, zoneId }
+  return { ok: true, game: next, location: next.adventureLocation }
+}
+
+export function clampEnemyLevelToWorldBand(stage, candidateLevel) {
+  const min = Math.max(1, positiveInt(stage?.minEnemyLevel) || 1)
+  const max = Math.max(min, positiveInt(stage?.maxEnemyLevel) || min)
+  return Math.max(min, Math.min(max, Math.max(1, positiveInt(candidateLevel) || min)))
+}
 
 function encounterHash(stageId, day) {
   let hash = 2166136261
