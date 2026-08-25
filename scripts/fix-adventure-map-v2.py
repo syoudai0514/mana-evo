@@ -28,3 +28,11 @@ replace_once(
     "  const areaWild = STAGES.filter((stage) => stage.area === 1 && stage.kind === 'wild')",
     "  const areaWild = STAGES.filter((stage) => (stage.adventureArea || stage.area) === 1 && stage.kind === 'wild')"
 )
+
+# The new level floor can change which deterministic enemy turn hits. The refund test is about
+# loss/refund idempotence, not a particular RNG seed, so find a deterministic seed that produces a loss.
+replace_once(
+    'tests/game.test.js',
+    """  const battle = structuredClone(started.battle)\n  battle.partyHp[battle.activeInstanceId] = 1\n  const result = useMove(started.game, battle, 'm004-stable')\n  assert.equal(result.battle.status, 'lost')\n  assert.equal(result.battle.ticketRefunded, true)\n  assert.equal(availableTicketCount(result.game, day), 1)\n  const cleared = clearFinishedBattle(result.game, { today: day })\n""",
+    """  let result = null\n  for (let seed = 0; seed < 200 && !result; seed += 1) {\n    const battle = structuredClone(started.battle)\n    battle.partyHp[battle.activeInstanceId] = 1\n    battle.rngSeed = `loss-refund-${seed}`\n    const candidate = useMove(started.game, battle, 'm004-stable')\n    if (candidate.battle.status === 'lost') result = candidate\n  }\n  assert.ok(result, 'a deterministic enemy-hit seed should produce a loss')\n  assert.equal(result.battle.ticketRefunded, true)\n  assert.equal(availableTicketCount(result.game, day), 1)\n  const cleared = clearFinishedBattle(result.game, { today: day })\n"""
+)
