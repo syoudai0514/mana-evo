@@ -10,18 +10,13 @@ const DESCRIPTION_FILES = [
   'monsters/descriptions-081-160.json',
   'monsters/descriptions-161-238.json'
 ]
-const MANIFEST_FILE = path.join(CURRENT, 'monster-asset-manifest.json')
 const ACTIVE_IDS = Array.from({ length: 238 }, (_, index) => `m${String(index + 1).padStart(3, '0')}`)
 const ACTIVE_ID_SET = new Set(ACTIVE_IDS)
-const ART_STATES = new Set(['FORMAL', 'CANDIDATE', 'PLACEHOLDER'])
+const ART_STATES = ['FORMAL', 'CANDIDATE', 'PLACEHOLDER']
+const ART_STATE_SET = new Set(ART_STATES)
 
-function readJson(filePath) {
-  return JSON.parse(fs.readFileSync(filePath, 'utf8'))
-}
-
-function sortedIds(ids) {
-  return [...ids].sort((a, b) => a.localeCompare(b))
-}
+const readJson = (filePath) => JSON.parse(fs.readFileSync(filePath, 'utf8'))
+const sortedIds = (ids) => [...ids].sort((a, b) => a.localeCompare(b))
 
 function assertExactActiveIds(label, ids) {
   const actual = sortedIds(ids)
@@ -32,8 +27,7 @@ function assertExactActiveIds(label, ids) {
 
 function familyCode(value) {
   const numeric = Number(String(value).replace(/^F/i, ''))
-  if (!Number.isInteger(numeric) || numeric < 1) return null
-  return `F${String(numeric).padStart(3, '0')}`
+  return Number.isInteger(numeric) && numeric > 0 ? `F${String(numeric).padStart(3, '0')}` : null
 }
 
 function hasApprovalEvidence(value) {
@@ -56,8 +50,7 @@ function expandIdSelector(selector) {
 function publicAssetExists(assetPath) {
   if (typeof assetPath !== 'string' || !assetPath.trim()) return false
   if (/^(https?:|data:|blob:)/.test(assetPath)) return true
-  const relative = assetPath.replace(/^\/+/, '')
-  return fs.existsSync(path.join(ROOT, 'public', relative))
+  return fs.existsSync(path.join(ROOT, 'public', assetPath.replace(/^\/+/, '')))
 }
 
 function replaceCanonicalName(value, oldName, newName) {
@@ -65,29 +58,23 @@ function replaceCanonicalName(value, oldName, newName) {
   return value.split(oldName).join(newName)
 }
 
-if (!fs.existsSync(OUT)) {
-  throw new Error('runtimeMaster.generated.js must be generated before monster finalization')
-}
+if (!fs.existsSync(OUT)) throw new Error('runtimeMaster.generated.js must be generated before monster finalization')
+const baseRuntime = await import(`${pathToFileURL(OUT).href}?w207=${Date.now()}`)
 
-const runtimeUrl = `${pathToFileURL(OUT).href}?w207=${Date.now()}`
-const baseRuntime = await import(runtimeUrl)
+// W-114 may not be merged yet. Normalize the two accepted Phase 2 shard shapes
+// without synthesizing missing lore: W-110 familyConcept/personalityArcContext and
+// W-111/W-112 concept/personalityArc.
 const descriptionsRaw = DESCRIPTION_FILES.flatMap((relativePath) => readJson(path.join(CURRENT, relativePath)))
-
 assertExactActiveIds('Description shards', descriptionsRaw.map((entry) => entry.speciesId))
-if (new Set(descriptionsRaw.map((entry) => entry.speciesId)).size !== ACTIVE_IDS.length) {
-  throw new Error('Description shards contain duplicate speciesId values')
-}
+if (new Set(descriptionsRaw.map((entry) => entry.speciesId)).size !== 238) throw new Error('Duplicate description speciesId')
 
 const descriptions = {}
 for (const entry of descriptionsRaw) {
-  const speciesId = entry.speciesId
   const no = Number(entry.no)
-  if (speciesId !== `m${String(no).padStart(3, '0')}`) {
-    throw new Error(`Description number/id mismatch: ${speciesId} / ${entry.no}`)
-  }
-  descriptions[speciesId] = {
+  if (entry.speciesId !== `m${String(no).padStart(3, '0')}`) throw new Error(`Description number/id mismatch: ${entry.speciesId}`)
+  descriptions[entry.speciesId] = {
     no,
-    speciesId,
+    speciesId: entry.speciesId,
     name: entry.name,
     familyNo: Number(entry.familyNo),
     stage: Number(entry.stage),
@@ -102,15 +89,9 @@ for (const entry of descriptionsRaw) {
     silhouette: entry.silhouette ?? null
   }
 }
+if (descriptions.m236?.name !== 'ホシラディア') throw new Error(`Canonical m236 must be ホシラディア, got ${descriptions.m236?.name ?? 'missing'}`)
 
-if (descriptions.m236?.name !== 'ホシラディア') {
-  throw new Error(`Canonical m236 must be ホシラディア, got ${descriptions.m236?.name ?? 'missing'}`)
-}
-
-const runtimeSpeciesIds = Object.keys(baseRuntime.RUNTIME_SPECIES || {})
-assertExactActiveIds('Generated runtime species', runtimeSpeciesIds)
-if (runtimeSpeciesIds.includes('m239')) throw new Error('m239 must not enter the active runtime registry')
-
+assertExactActiveIds('Generated runtime species', Object.keys(baseRuntime.RUNTIME_SPECIES || {}))
 const familyNames = new Map()
 for (const description of Object.values(descriptions)) {
   const code = familyCode(description.familyNo)
@@ -124,64 +105,49 @@ for (const speciesId of ACTIVE_IDS) {
   const monster = species[speciesId]
   const description = descriptions[speciesId]
   if (!monster || !description) throw new Error(`Missing active monster identity: ${speciesId}`)
-  if (String(monster.no).padStart(3, '0') !== String(description.no).padStart(3, '0')) {
-    throw new Error(`Runtime/description No mismatch for ${speciesId}`)
-  }
-  if (familyCode(monster.familyNo) !== familyCode(description.familyNo)) {
-    throw new Error(`Runtime/description family mismatch for ${speciesId}`)
-  }
-  if (Number(monster.stage) !== Number(description.stage)) {
-    throw new Error(`Runtime/description stage mismatch for ${speciesId}`)
-  }
+  if (String(monster.no).padStart(3, '0') !== String(description.no).padStart(3, '0')) throw new Error(`Runtime/description No mismatch for ${speciesId}`)
+  if (familyCode(monster.familyNo) !== familyCode(description.familyNo)) throw new Error(`Runtime/description family mismatch for ${speciesId}`)
+  if (Number(monster.stage) !== description.stage) throw new Error(`Runtime/description stage mismatch for ${speciesId}`)
 
   const oldName = monster.name
   const canonicalName = description.name
   if (oldName !== canonicalName) nameCorrections.set(speciesId, { oldName, canonicalName })
   monster.name = canonicalName
-  const canonicalFamilyName = familyNames.get(familyCode(description.familyNo))?.name
-  if (canonicalFamilyName) monster.family = canonicalFamilyName
-
-  // Runtime artwork is resolved only through the canonical manifest. The older
-  // generated guessed WebP path is deliberately removed here.
+  monster.family = familyNames.get(familyCode(description.familyNo))?.name || monster.family
   delete monster.officialImageUrl
 }
 
 const moves = structuredClone(baseRuntime.RUNTIME_MOVES)
-for (const [speciesId, correction] of nameCorrections) {
+for (const [speciesId, { oldName, canonicalName }] of nameCorrections) {
   for (const [moveId, move] of Object.entries(moves)) {
-    if (!moveId.startsWith(`${speciesId}-`)) continue
-    move.name = replaceCanonicalName(move.name, correction.oldName, correction.canonicalName)
+    if (moveId.startsWith(`${speciesId}-`)) move.name = replaceCanonicalName(move.name, oldName, canonicalName)
   }
 }
-
 const stages = structuredClone(baseRuntime.RUNTIME_STAGES)
 for (const stage of stages) {
   const correction = nameCorrections.get(stage.enemySpeciesId)
-  if (!correction) continue
-  stage.label = replaceCanonicalName(stage.label, correction.oldName, correction.canonicalName)
+  if (correction) stage.label = replaceCanonicalName(stage.label, correction.oldName, correction.canonicalName)
 }
 
-const manifest = readJson(MANIFEST_FILE)
-if (manifest?.canonicalScope?.firstId !== 'm001' || manifest?.canonicalScope?.lastId !== 'm238' || Number(manifest?.canonicalScope?.speciesCount) !== 238) {
+const manifest = readJson(path.join(CURRENT, 'monster-asset-manifest.json'))
+const scope = manifest?.canonicalScope || {}
+if (scope.firstId !== 'm001' || scope.lastId !== 'm238' || Number(scope.speciesCount) !== 238) {
   throw new Error('Monster asset manifest canonical scope must be exactly m001-m238')
 }
-if (!Array.isArray(manifest.excluded) || !manifest.excluded.includes('m239')) {
-  throw new Error('Monster asset manifest must explicitly exclude m239')
+if (!Array.isArray(scope.excludedReferenceIds) || !scope.excludedReferenceIds.includes('m239')) {
+  throw new Error('Monster asset manifest canonicalScope.excludedReferenceIds must include m239')
 }
-
-const manifestAssets = manifest.assets || {}
-assertExactActiveIds('Monster asset manifest', Object.keys(manifestAssets))
+assertExactActiveIds('Monster asset manifest', Object.keys(manifest.assets || {}))
 
 const candidateAssetById = new Map()
 for (const preference of manifest.candidatePreference || []) {
-  const selectedIds = expandIdSelector(preference.ids)
-  for (const speciesId of selectedIds) {
-    if (!ACTIVE_ID_SET.has(speciesId)) throw new Error(`Candidate preference is outside active scope: ${speciesId}`)
+  for (const speciesId of expandIdSelector(preference.ids)) {
+    if (!ACTIVE_ID_SET.has(speciesId)) throw new Error(`Candidate preference outside active scope: ${speciesId}`)
     const candidateAsset = String(preference.candidateAsset || '').replaceAll('{speciesId}', speciesId)
-    if (!candidateAsset) throw new Error(`Candidate preference is missing an asset path: ${preference.ids}`)
+    if (!candidateAsset) throw new Error(`Candidate asset path missing: ${preference.ids}`)
     const existing = candidateAssetById.get(speciesId)
-    if (existing && existing !== candidateAsset) throw new Error(`Conflicting candidate asset paths for ${speciesId}`)
-    if (!publicAssetExists(candidateAsset)) throw new Error(`Candidate asset is missing from repository: ${speciesId} -> ${candidateAsset}`)
+    if (existing && existing !== candidateAsset) throw new Error(`Conflicting candidate assets for ${speciesId}`)
+    if (!publicAssetExists(candidateAsset)) throw new Error(`Candidate asset missing: ${speciesId} -> ${candidateAsset}`)
     candidateAssetById.set(speciesId, candidateAsset)
   }
 }
@@ -189,56 +155,39 @@ for (const preference of manifest.candidatePreference || []) {
 const monsterAssets = {}
 const counts = { FORMAL: 0, CANDIDATE: 0, PLACEHOLDER: 0 }
 for (const speciesId of ACTIVE_IDS) {
-  const source = manifestAssets[speciesId] || {}
-  const state = source.state
-  if (!ART_STATES.has(state)) throw new Error(`Unknown art state for ${speciesId}: ${state}`)
-  counts[state] += 1
-
+  const source = manifest.assets[speciesId] || {}
+  if (!ART_STATE_SET.has(source.state)) throw new Error(`Unknown art state for ${speciesId}: ${source.state}`)
+  counts[source.state] += 1
   const formalAsset = source.formalAsset ?? null
   const approvalEvidence = source.approvalEvidence ?? null
   const formalAssetExists = formalAsset ? publicAssetExists(formalAsset) : false
   const candidateAsset = candidateAssetById.get(speciesId) ?? null
   const candidateAssetExists = candidateAsset ? publicAssetExists(candidateAsset) : false
 
-  if (state === 'FORMAL') {
+  if (source.state === 'FORMAL') {
     if (!formalAsset) throw new Error(`FORMAL asset path missing for ${speciesId}`)
     if (!hasApprovalEvidence(approvalEvidence)) throw new Error(`FORMAL approval evidence missing for ${speciesId}`)
     if (!formalAssetExists) throw new Error(`FORMAL asset file missing for ${speciesId}: ${formalAsset}`)
   }
-
-  monsterAssets[speciesId] = {
-    speciesId,
-    state,
-    formalAsset,
-    approvalEvidence,
-    formalAssetExists,
-    candidateAsset,
-    candidateAssetExists
-  }
+  monsterAssets[speciesId] = { speciesId, state: source.state, formalAsset, approvalEvidence, formalAssetExists, candidateAsset, candidateAssetExists }
 }
-
 for (const state of ART_STATES) {
   const declared = Number(manifest?.counts?.[state])
-  if (Number.isFinite(declared) && declared !== counts[state]) {
-    throw new Error(`Manifest ${state} count mismatch: declared ${declared}, actual ${counts[state]}`)
-  }
+  if (Number.isFinite(declared) && declared !== counts[state]) throw new Error(`Manifest ${state} count mismatch: declared ${declared}, actual ${counts[state]}`)
 }
 
 const runtimeMeta = {
   ...baseRuntime.RUNTIME_META,
   monsterCanonical: {
-    activeSpeciesCount: ACTIVE_IDS.length,
-    descriptionCount: Object.keys(descriptions).length,
+    activeSpeciesCount: 238,
+    descriptionCount: 238,
     excludedSpeciesIds: ['m239'],
     assetCounts: counts,
     nameCorrections: Object.fromEntries(nameCorrections)
   }
 }
-
 if (species.m236?.name !== 'ホシラディア') throw new Error('m236 runtime identity normalization failed')
-if (JSON.stringify([species, moves, stages]).includes('ソラリオン')) {
-  throw new Error('Unapproved m236 name drift remains in generated runtime')
-}
+if (JSON.stringify([species, moves, stages]).includes('ソラリオン')) throw new Error('Unapproved m236 name drift remains in generated runtime')
 
 const output = `// AUTO-GENERATED by scripts/generate-runtime-master.mjs + scripts/finalize-monster-runtime.mjs. DO NOT EDIT.\n` +
   `export const RUNTIME_META = ${JSON.stringify(runtimeMeta, null, 2)}\n\n` +
@@ -248,6 +197,5 @@ const output = `// AUTO-GENERATED by scripts/generate-runtime-master.mjs + scrip
   `export const RUNTIME_STAGES = ${JSON.stringify(stages, null, 2)}\n\n` +
   `export const RUNTIME_MONSTER_DESCRIPTIONS = ${JSON.stringify(descriptions, null, 2)}\n\n` +
   `export const RUNTIME_MONSTER_ASSETS = ${JSON.stringify(monsterAssets, null, 2)}\n`
-
 fs.writeFileSync(OUT, output)
-console.log(`Finalized canonical monster runtime: ${ACTIVE_IDS.length} active / FORMAL ${counts.FORMAL} / CANDIDATE ${counts.CANDIDATE} / PLACEHOLDER ${counts.PLACEHOLDER}`)
+console.log(`Finalized canonical monster runtime: 238 active / FORMAL ${counts.FORMAL} / CANDIDATE ${counts.CANDIDATE} / PLACEHOLDER ${counts.PLACEHOLDER}`)
