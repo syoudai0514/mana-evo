@@ -156,12 +156,12 @@ test('burst duration also advances on voluntary party switch', () => {
 })
 
 test('child-facing UI exposes throwing a ring as an explicit action and how-to has no stale fixed stages', () => {
-  const screens = fs.readFileSync(new URL('../src/game/GameScreens.jsx', import.meta.url), 'utf8')
+  const capture = fs.readFileSync(new URL('../src/game/screens/CapturePanel.jsx', import.meta.url), 'utf8')
   const howto = fs.readFileSync(new URL('../src/HowToPlay.jsx', import.meta.url), 'utf8')
-  assert.match(screens, /「わ」を なげる！/)
-  assert.match(screens, /meta\.label}を なげる/)
-  assert.match(screens, /HPを はんぶんいかに/)
-  assert.match(screens, /「わ」は なげられない バトル/)
+  assert.match(capture, /「わ」を なげる！/)
+  assert.match(capture, /meta\.label}を なげる/)
+  assert.match(capture, /HPを はんぶんいかに/)
+  assert.match(capture, /「わ」は なげられない バトル/)
   assert.match(howto, /「わ」を なげよう！/)
   assert.match(howto, /held_item_levelup/)
   assert.doesNotMatch(howto, /1-5 ひかりいわば|1-6 きずなのよみち/)
