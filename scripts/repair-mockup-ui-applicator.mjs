@@ -17,5 +17,16 @@ const designReplacement = "append('design/00-README.md', '\\n\\n## UIビジュ�
 if (!source.includes(designBlock)) throw new Error('design index applicator block not found')
 source = source.replace(designBlock, designReplacement)
 
+const compatibilityReplacements = [
+  ['<small>がくねん・せってい</small>', '<small>学年・先取り・むずかしさ・つくよみちゃん設定</small>'],
+  ['<header className="game-topbar">', '<header>'],
+  ['.game-topbar{', 'header{'],
+  ["onClick={() => go('adventure')}", "onClick={()=>go('adventure')}"]
+]
+for (const [before, after] of compatibilityReplacements) {
+  if (!source.includes(before)) throw new Error('compatibility repair target not found: ' + before)
+  source = source.replace(before, after)
+}
+
 fs.writeFileSync(path, source)
-console.log('Repaired mockup applicator templates and design index update')
+console.log('Repaired mockup applicator and preserved existing UI contracts')
