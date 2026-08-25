@@ -43,3 +43,9 @@ test('structural refactor leaves domain engines owned by their existing modules'
     assert.ok(!source.includes('function evolveInstance'))
   }
 })
+
+test('split UI owners do not promote combatRoleV2 audit metadata into runtime decisions', () => {
+  for (const source of [facade, adventure, battle, capture, monster, dex, evolution]) {
+    assert.equal(source.includes('combatRoleV2'), false)
+  }
+})
