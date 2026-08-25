@@ -49,7 +49,7 @@ test('HowTo explains canonical exploration, capture and self-evolution boundarie
   assert.match(howto, /4つの ほしが 1こずつ ひかって/)
 
   assert.match(howto, /いしを 1こ つかうと シンカ/)
-  assert.match(howto, /もちものを もたせる → そのあと ほんとうに レベルアップすると シンカ/)
+  assert.match(howto, /「モンスター」で もたせる → そのあと ほんとうに レベルアップすると シンカ/)
   assert.match(howto, /じぶんで シンカさせた すがたは きろくされる/)
   assert.doesNotMatch(howto, /シンカしても そのまま もっている/)
 })
