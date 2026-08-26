@@ -14,10 +14,15 @@ Status: **HISTORICAL / NUMBERING INDEX — NOT LIVE PROGRESS AUTHORITY**
 2. `design/rebuild/DECISION-LOG.md`
 3. `design/current/00-START-HERE.md`
 4. 現在PhaseのWork Item計画文書
-5. 対象Work Itemのbranch / PR /成果物 / Acceptance / review gate
-6. 必要に応じて直前のCommander Review / Final Review
+5. 現在のbase branch HEADと、そのPhaseに関係するopen / merged PR・branch状態
+6. 対象Work Itemの実成果物 / Acceptance / review gate / 必要なユーザー承認
+7. 必要に応じて直前のCommander Review / Final Review
 
 このファイルの古いStatus表記や履歴だけを根拠に、Work Itemを開始・完了・次へ進行してはいけない。
+
+**現在地は最大のWork Item番号、最新PR、Workerの「完了」文言ではなく、Acceptanceを満たした最後のgateで決める。**
+
+たとえば、Work Itemが実画像candidateを要求しているのにgeneration packetしか存在しない場合、そのWork Itemは設計部分が進んでいてもproduction完了ではない。必要能力を持たないWorkerが作成した代替資料を、実成果物として読み替えてはいけない。
 
 ## Phase 1 / 1.5 — baseline rescue / audits
 
@@ -85,8 +90,10 @@ Work Items:
 
 **Do not record a copied "current W-xxx" status here.** Phase 4 progresses frequently; the current gate must be read from the Phase 4 plan plus the actual current Work Item branch/output/review evidence.
 
+Phase 4では特に、`generation packet / review doc`、`実candidate画像`、`ユーザー目視承認`、`FORMAL promotion` を別gateとして扱う。前段の資料があることを理由に後段まで完了したと扱わない。
+
 ## Worker rule
 
 Workerは1チャットにつき原則1 Work Item。隣接項目まで勝手に実装しない。仕様判断は `DECISION-LOG.md` とCURRENTに従い、根拠がなければ `BLOCKED DECISION` として司令塔へ返す。
 
-司令塔はWork Item番号だけで作業を推測せず、必ず現在Phase計画の当該Work Item定義・Acceptance・所有範囲を読む。
+司令塔はWork Item番号だけで作業を推測せず、必ず現在Phase計画の当該Work Item定義・Acceptance・所有範囲・必要実行能力を読む。
