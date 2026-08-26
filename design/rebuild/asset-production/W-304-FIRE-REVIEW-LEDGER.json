@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 2,
+  "workItem": "W-304",
+  "attribute": "fire",
+  "status": "ART_READY_INGESTION_BLOCKED",
+  "sourceBaseCommit": "b2f4face6ff1b332449df7c4ebbcc45b7211b186",
+  "branch": "rebuild/w-304-fire-attribute-production",
+  "scope": {
+    "ownerWorkItem": "W-304",
+    "familyCount": 4,
+    "speciesCount": 12,
+    "familyNos": [2, 19, 20, 72],
+    "speciesIds": ["m004", "m005", "m006", "m055", "m056", "m057", "m058", "m059", "m060", "m211", "m212", "m213"],
+    "excludedReferenceIds": ["m239"]
+  },
+  "summary": {
+    "realImageGeneratedSpecies": 12,
+    "candidateSafeExportPreparedSpecies": 12,
+    "visualQaPassSpecies": 12,
+    "localIngestionRehearsalSpecies": 12,
+    "repositoryCandidateIngestedSpecies": 0,
+    "formalPromotedSpecies": 0
+  },
+  "qa": {
+    "familyContinuity": "PASS",
+    "stageProgression": "PASS",
+    "sameAttributeDuplication": "PASS",
+    "smallSizeReadability": "PASS",
+    "cropBackgroundTextCompliance": "PASS",
+    "originality": "PASS_WITHOUT_SPECIFIC_IP_REFERENCE",
+    "webpSignatureAndSize": "PASS",
+    "localCandidateIngestionSemantics": "PASS",
+    "repositoryBinaryUpload": "BLOCKED_CAPABILITY"
+  },
+  "antiDuplicationMatrix": [
+    {
+      "familyNo": 2,
+      "speciesIds": ["m004", "m005", "m006"],
+      "motif": "子獣と炎のたてがみ",
+      "bodyPlan": "grounded mobile child-beast lineage",
+      "signatureFeature": "localized flame tail developing into protective mane",
+      "palette": "orange/red fur + charcoal accents + cream underside",
+      "material": "soft fur + localized emissive flame",
+      "silhouette": "compact beast -> larger forward stance -> broad mane guardian",
+      "finalRole": "calm protective fire-mane guardian"
+    },
+    {
+      "familyNo": 19,
+      "speciesIds": ["m055", "m056", "m057"],
+      "motif": "マグマと火山",
+      "bodyPlan": "non-avian volcanic mass; magma-core to basalt-heavy body",
+      "signatureFeature": "basalt shell with glowing magma fissures and dorsal volcanic mass",
+      "palette": "black basalt + orange-red magma fissures",
+      "material": "rough basalt + molten magma",
+      "silhouette": "round magma core -> heavy rock body -> massive volcanic guardian",
+      "finalRole": "volcanic mass / seismic guardian"
+    },
+    {
+      "familyNo": 20,
+      "speciesIds": ["m058", "m059", "m060"],
+      "motif": "ろうそくと灯台",
+      "bodyPlan": "wax-and-lantern construct; no animal ears/horns/wings/tail",
+      "signatureFeature": "protected central flame chamber and hood",
+      "palette": "ivory wax + amber light + warm brown structural trim",
+      "material": "matte wax + translucent amber glass/light chamber",
+      "silhouette": "small wick-body -> vertical lantern body -> tripod lighthouse guardian",
+      "finalRole": "stable beacon / cave-guide lighthouse"
+    },
+    {
+      "familyNo": 72,
+      "speciesIds": ["m211", "m212", "m213"],
+      "motif": "不死鳥と再生",
+      "bodyPlan": "avian lineage with wings; no beast/quadruped template",
+      "signatureFeature": "burning feather tips developing into broad rebirth wings/tail",
+      "palette": "gold/yellow flame + charcoal ash + cream body",
+      "material": "feather + ash + localized emissive flame",
+      "silhouette": "small fledgling -> stronger winged bird -> broad-wing majestic sky form",
+      "finalRole": "rebirth sky guardian"
+    }
+  ],
+  "repositoryIngestionBlocker": {
+    "type": "REPOSITORY_BINARY_UPLOAD_BRIDGE",
+    "detail": "The available GitHub connector can create Git blobs from supplied base64 text, but this runtime has no direct local-file-to-GitHub binary upload bridge. Candidate-safe WebP binaries exist locally, and W-302 candidate-ingestion semantics were executed/validated locally for all 12, including previous-candidate SHA-256/archive behavior for m004-m006. Repository candidate files/provenance are not claimed as ingested.",
+    "effect": "W-304 is ART READY but does not satisfy repository candidate-ingestion Acceptance."
+  },
+  "formalPromotionPerformed": false,
+  "rows": [
+    {"speciesId":"m004","familyNo":2,"name":"ヒノポ","stage":1,"type":"fire","disposition":"REFINE","visualState":"ART_READY_QA_PASS","bytes":47086,"localExportSha256":"6c568fc3c49be243dde5881475e305a90e3105c060a6ed913a386d2125c43654","previousRepositoryCandidateSha256":"15530dbb6a70a9581257a3ed52c50ee245a6a90cc7c1cb08b0f65c58bc676526","candidateIngested":false},
+    {"speciesId":"m005","familyNo":2,"name":"メラガミ","stage":2,"type":"fire","disposition":"REFINE","visualState":"ART_READY_QA_PASS","bytes":54988,"localExportSha256":"c7465f6ae60459e580e3323ba2ac408cf7f2f14fce97fdf49184821a42d56a47","previousRepositoryCandidateSha256":"fc8253d4beac883c331dfbaa3d636426dc22df32323310af559e72e22cedbf56","candidateIngested":false},
+    {"speciesId":"m006","familyNo":2,"name":"グレンドウ","stage":3,"type":"fire","disposition":"REFINE","visualState":"ART_READY_QA_PASS","bytes":69818,"localExportSha256":"94a4ee6833420c8e781373d8f2654b0db632cf98b2c0e1e5372e604154033c3f","previousRepositoryCandidateSha256":"fb0759065d88fb5bc03470454301498e86ec54efb505d48fa6ae5dafa4e7b6af","candidateIngested":false},
+    {"speciesId":"m055","familyNo":19,"name":"マグポコ","stage":1,"type":"fire","disposition":"REGENERATE","visualState":"ART_READY_QA_PASS","bytes":53666,"localExportSha256":"ea52f55c328a49dc0b2da7853856d67e55c6d2e008845ab8e610f063a1d5ede3","candidateIngested":false},
+    {"speciesId":"m056","familyNo":19,"name":"ヨウガン","stage":2,"type":"fire","disposition":"REGENERATE","visualState":"ART_READY_QA_PASS","bytes":59896,"localExportSha256":"f6bf8231deb244837d964ad238ad6af95ebe886723ae9a4c3a762ad2ff8d75eb","candidateIngested":false},
+    {"speciesId":"m057","familyNo":19,"name":"カザングド","stage":3,"type":"fire","disposition":"REGENERATE","visualState":"ART_READY_QA_PASS","bytes":74448,"localExportSha256":"d7f4eaaf4a661cd5c54e0bda17bc4a155d3094f3c29d4ca95a6a4f305374fd08","candidateIngested":false},
+    {"speciesId":"m058","familyNo":20,"name":"ロウソッコ","stage":1,"type":"fire","disposition":"REGENERATE","visualState":"ART_READY_QA_PASS","bytes":27134,"localExportSha256":"2a842e271d022292836b97cfbde1e108610c3d854b4d77f56279399695ff23c8","candidateIngested":false},
+    {"speciesId":"m059","familyNo":20,"name":"トモシビ","stage":2,"type":"fire","disposition":"REGENERATE","visualState":"ART_READY_QA_PASS","bytes":20010,"localExportSha256":"dfa8fcf391873b83261fb4723b054f9c63d6e24d9d73f6513042fd8c585263f9","candidateIngested":false},
+    {"speciesId":"m060","familyNo":20,"name":"アカリガルド","stage":3,"type":"fire","disposition":"REGENERATE","visualState":"ART_READY_QA_PASS","bytes":31786,"localExportSha256":"51522e5b5a2bbe42fb2013fb24cb604f72f92e40fcd8284ccd6d8a5383c7a4b5","candidateIngested":false},
+    {"speciesId":"m211","familyNo":72,"name":"ヒノトリコ","stage":1,"type":"fire","disposition":"REGENERATE","visualState":"ART_READY_QA_PASS","bytes":54910,"localExportSha256":"b146cea7ede3e07a38a03a06e2cf589bd0e78c5a8063c0251e84b9fd67af6fb7","candidateIngested":false},
+    {"speciesId":"m212","familyNo":72,"name":"レンカドリ","stage":2,"type":"fire","disposition":"REGENERATE","visualState":"ART_READY_QA_PASS","bytes":58828,"localExportSha256":"e5031004edc0d6b2adf7d8a320ac817fdb604693dd47ce815d7fe07eef946f17","candidateIngested":false},
+    {"speciesId":"m213","familyNo":72,"name":"フェニクロス","stage":3,"type":"fire","disposition":"REGENERATE","visualState":"ART_READY_QA_PASS","bytes":91322,"localExportSha256":"6456041d68012211821df9f0c8d44a58474b14e343be5b120a5de8ccca7e2fe3","candidateIngested":false}
+  ]
+}
