@@ -45,6 +45,28 @@ If shell `git push` is unavailable but authenticated `@GitHub` object operations
 
 This GitHub-object fallback is transport only. It must not simulate W-302 candidate ingestion, archive semantics, provenance, or FORMAL promotion.
 
+### 3.1 Binary hash validation — do not compare different hash domains
+
+ART READY SHA-256 and Git blob object ID are different values and must never be compared directly.
+
+Use these checks separately:
+
+- `ART READY checksum` = SHA-256 of the raw WebP file bytes.
+- `Git blob SHA` = Git object ID for the raw WebP bytes. In the current SHA-1 repository this is the value produced by `git hash-object <file>` and by GitHub `create_blob` when `encoding=base64` receives the exact file bytes.
+
+For GitHub-object transport, validate each file in this order:
+1. compute local raw-file SHA-256 and retain it for ART READY provenance;
+2. compute local Git blob ID with `git hash-object <file>`;
+3. base64-encode the exact raw bytes with no text conversion, newline insertion into the decoded payload, or UTF-8 round trip;
+4. call GitHub `create_blob` with `encoding=base64`;
+5. compare the returned Git blob SHA only with the local `git hash-object` result;
+6. do not compare the returned Git blob SHA with the raw-file SHA-256;
+7. after tree/commit/ref publication, checkout/fetch the branch normally and recompute SHA-256 from the staged WebP file; that staged SHA-256 must equal the original ART READY SHA-256.
+
+If the returned Git blob SHA differs from `git hash-object <file>`, treat it as an encoding/byte-preservation problem for that file and diagnose before attaching the blob to a tree. Do not classify the whole attribute as blocked until the exact base64/raw-byte path has been checked.
+
+A recommended deterministic base64 path is to read the file as bytes and encode directly (for example Python `base64.b64encode(open(path, "rb").read()).decode("ascii")`) rather than passing binary content through a text shell variable or text decoder.
+
 ## 4. ART READY gate
 
 For W-303..W-320, `ART READY` requires all of the following for the complete attribute scope:
