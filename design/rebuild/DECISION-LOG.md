@@ -138,3 +138,14 @@
 - Decision: キャラ説明は新規創作から始めずbaseline visual briefsを救出・正式化する。active 238についてfamily continuityを維持し、既存生成画像は候補として全件監査、合格を正式化、NGのみ再生成する。
 - Art rules: 5〜8歳向け、2〜4頭身中心、全身、透明/白背景、小表示で識別、同系列は顔/配色/象徴部位の最低2要素を継承、既存IP模倣禁止。
 - Tests/acceptance: 238 identity mapping / family continuity / asset manifest / formal-vs-placeholder contract。
+
+## D-015 司令塔交代・進捗復元・実成果物gate
+- Status: CONFIRMED
+- Baseline: Worker handoffと古い `WORK-QUEUE.md` の状態表記だけでは、司令塔交代時に再建全体の意図・現在gate・実成果物の有無を復元できず、最新会話やWorker完了報告へ過度に依存する余地があった。
+- Later design: PR #80で `REBUILD-START-HERE.md` に司令塔復元プロトコルを追加し、`WORK-QUEUE.md` をライブ進捗正本から履歴/番号索引へ再分類、`HANDOFF-TEMPLATE.md` をWorker専用と明確化した。
+- Runtime: 影響なし。
+- Evidence of approval: 2026-08-26 ユーザーが司令塔引き継ぎ不足を指摘し、既存ガバナンス資料の確認・誤り修正を明示依頼。PR #80および後続レビュー。
+- Decision: 司令塔交代時は新しい固定handoff正本を増やさず、`REBUILD-START-HERE.md` → `DECISION-LOG.md` → CURRENT → 現在Phase計画 → base branch / PR / branch / 実成果物 → Acceptance/review gate の順で現在地を復元する。現在地は最大Work Item番号やWorkerの完了文言ではなく、Acceptanceを満たした最後のgateで判定する。必須成果物に画像・バイナリ・実機確認・デプロイ等がある場合は、担当能力を着手前に確認し、能力不足の設計資料・prompt・generation packetを実成果物の代替として完了扱いしない。
+- Reason: 最新会話だけによる計画変更、古い進捗コピーの陳腐化、設計完了と実装/実画像完了の混同、能力不足Workerへの誤委任を防止するため。
+- Affected areas: 全Work Item governance / commander handoff / Worker handoff。プロダクト仕様・runtimeには影響しない。
+- Tests required: governance review。実際の各Work Itemでは、そのWork Item固有Acceptanceに必要な実成果物・テスト・目視確認を別途要求する。
