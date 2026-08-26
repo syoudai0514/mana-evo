@@ -172,3 +172,27 @@ These families may share rendering finish and light behavior. They must not shar
 This file does not promote any asset.
 
 W-303..W-320 produce/review CANDIDATE art only. Cross-attribute QA occurs later. FORMAL promotion remains gated by explicit approval evidence and the later formal-approval work item.
+
+## 15. Attribute purity and type-readability gate
+
+Attribute-first production means **one Work Item produces and reviews only the CURRENT species owned by that one attribute**.
+
+For W-303..W-320:
+- derive the exact species/family set from `PHASE-4-ATTRIBUTE-QUEUE.json`;
+- do not include another attribute's generated candidates in the owning Work Item's production/review board;
+- do not use unrelated cross-attribute candidates as if they were alternatives for the current Work Item;
+- cross-attribute comparisons belong to W-321 or to a separately labelled reference-only panel and must never be counted as this attribute's candidate output.
+
+Every candidate must pass **both** sides of the attribute-first goal:
+1. **type readability** — at small game size, the primary visual read must still be the assigned CURRENT type;
+2. **within-type differentiation** — unrelated families of that type must remain clearly different in anatomy, silhouette, material, motif, motion and role.
+
+Diversity is not permission to drift into another type. When a CURRENT motif naturally overlaps another type, the assigned type must remain dominant through body/material/signature-feature treatment rather than through aura or color alone. Examples include fire+volcano reading as FIRE rather than ROCK, fire+bird reading as FIRE rather than FLYING, or fire+lamp reading as FIRE rather than LIGHT/ELECTRIC.
+
+Before an attribute batch is accepted, review the complete owner scope side-by-side and confirm:
+- every displayed production candidate belongs to the owner attribute;
+- every species reads as the owner attribute without depending only on labels;
+- no unrelated family pair collapses into the same template;
+- family diversity does not weaken attribute identity.
+
+If a candidate visually reads primarily as another type, mark that species/family `REGENERATE`; do not accept it merely because its metadata type is correct.
