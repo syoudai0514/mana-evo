@@ -1,10 +1,11 @@
 # W-304 Fire Attribute Production
 
-Status: **ART READY / INGESTION BLOCKED**  
+Status: **ART READY / ATTRIBUTE-PURITY RE-QA PASS / INGESTION PENDING**  
 Work Item: `W-304`  
 Attribute: `fire`  
 Branch: `rebuild/w-304-fire-attribute-production`  
-Base: `rebuild/canonical-governance` @ `b2f4face6ff1b332449df7c4ebbcc45b7211b186`
+Canonical governance: `884078badb3909f13021f2f729e2459aba13e73b`  
+Canonical sync merge: `7d59b2f9793a77a27154b5263edd6e98fa744e9d`
 
 ## Scope
 
@@ -15,58 +16,67 @@ Base: `rebuild/canonical-governance` @ `b2f4face6ff1b332449df7c4ebbcc45b7211b186
 - F020: m058 → m059 → m060
 - F072: m211 → m212 → m213
 
-Total: 4 families / 12 species. `m239` remains excluded. No other attribute scope was entered.
+Total: 4 families / 12 species. `m239` remains excluded. No non-fire species is counted or displayed as W-304 candidate output.
 
-## Reference discipline
+## Latest common-rule application
 
-CURRENT identity and descriptions were used first. F002 existing CURRENT candidates were treated as REFINE input. 0822 material remained historical reference only. W-303 user-approved real images were used only as a quality anchor for rendering quality, detail density, lighting, material finish, small-size readability and full-body crop/presentation; no W-303 character anatomy, face, eye, ear, horn, limb or silhouette was copied.
+The W-304 branch was merged with `rebuild/canonical-governance` HEAD `884078badb3909f13021f2f729e2459aba13e73b` before this re-QA. The new `Attribute purity and type-readability gate` in `PHASE-4-STYLE-LOCK.md` is therefore authoritative for this review.
+
+The complete 12-species fire owner scope was re-reviewed side-by-side. The gate was applied independently from metadata labels: each candidate must visually read FIRE at small game size from body/material/signature structure, while the four fire families must remain distinct in anatomy, silhouette, material, motion and role.
+
+### Re-QA result
+
+| Family | Result | Fire-primary rationale | Action |
+|---|---|---|---|
+| F002 | **PASS** | flame mane/tail are integrated into the child-beast body language; warm fur/charcoal distribution and developed mane keep FIRE dominant | keep existing generated candidate set |
+| F019 | **PASS** | glowing magma fissures and molten mass are structural material, not an added aura; the read remains FIRE rather than ROCK | keep existing generated candidate set |
+| F020 | **REGENERATE → PASS** | previous candidate read first as lamp/mechanical construct and depended too much on a small flame; new version makes combustion chamber, melted wax, charred wick and red-hot material the body itself | regenerate m058-m060 only |
+| F072 | **PASS** | flame is integrated into feather edges/plumage and rebirth silhouette; FIRE remains primary rather than generic FLYING | keep existing generated candidate set |
+
+No other family was regenerated under this rule update.
 
 ## Attribute anti-duplication matrix
 
 | Family | Body plan | Signature feature | Palette/material | Silhouette / motion | Final role |
 |---|---|---|---|---|---|
 | F002 | grounded mobile child-beast | localized flame tail → protective mane | orange/red fur + charcoal + cream; fur/flame | compact beast → broad mane guardian | calm protector |
-| F019 | non-avian volcanic mass | basalt shell + magma fissures + dorsal volcanic mass | black basalt + orange-red magma | round core → heavy volcanic mass | seismic volcanic guardian |
-| F020 | wax/lantern construct | protected central flame chamber + hood | ivory wax + amber glass/light | wick body → vertical lantern → tripod lighthouse | stable cave beacon |
-| F072 | avian rebirth line | burning feather tips → broad wings/tail | gold/yellow + charcoal ash + cream | fledgling → broad sky silhouette | rebirth sky guardian |
+| F019 | non-avian volcanic mass | basalt shell + magma fissures + dorsal volcanic mass | black basalt + orange-red magma | round molten core → heavy volcanic mass | seismic volcanic guardian |
+| F020 | wax-combustion beacon construct | protected internal flame chamber + charred wick + molten wax | amber/orange red-hot wax + charred brown/black + limited ivory | low wick body → vertical combustion lantern → tripod lighthouse mass | stable fire beacon |
+| F072 | avian rebirth line | burning feather tips → broad flame-feather wings/tail | gold/yellow flame + charcoal ash + cream | fledgling → stronger bird → broad-wing final | rebirth sky guardian |
 
-The four families are separated by anatomy, silhouette, material, motion and VFX location rather than recolor/aura swaps.
+The four families are separated by anatomy, silhouette, material, motion and fire-expression location rather than recolor or aura swaps.
 
-## Generation disposition
+## F020 regeneration rule response
 
-- F002: **REFINE** — child-beast lineage retained; fire localized to signature features; final reads as protection rather than anger.
-- F019: **REGENERATE** — rebuilt from magma/volcano CURRENT identity. One prior generation attempt hit third-party-similarity screening; that attempt was discarded and the body plan/prompt direction was materially changed before regeneration.
-- F020: **REGENERATE** — built directly from candle/lighthouse identity as a wax/glass light-bearing construct rather than animal anatomy.
-- F072: **REGENERATE** — avian rebirth lineage; gold/charcoal/cream distribution separates it from F002.
+The earlier F020 concept was not discarded because of naming or lore. It failed only the new visual gate. The replacement preserves CURRENT `ろうそくと灯台` identity but changes how FIRE is perceived:
 
-## Art-ready QA
+- m058: low semi-molten wax body centered on a large protected combustion core;
+- m059: taller body with a developed amber combustion chamber and charred wick/chimney structure;
+- m060: stable tripod beacon/lighthouse body with a large internal furnace as the dominant mass/read.
 
-All 12 final local exports:
-- actual 512×512 WebP candidate-safe images;
-- transparent background;
-- full body;
-- no baked name / number / attribute label / UI / frame / scenery;
-- strictly below 1,000,000 bytes;
-- family continuity PASS;
-- stage progression PASS;
-- same-fire anti-duplication PASS;
-- small-size readability PASS;
-- originality review PASS with no specific existing IP/franchise/character references.
+Animal ears, horns, wings, tail, muzzle and generic mascot anatomy are not used. Fire is expressed through combustion, soot, charring, melting, translucent heated wax and internal incandescence rather than a detached aura.
 
-Per-species bytes and SHA-256 are recorded in `W-304-FIRE-REVIEW-LEDGER.json`.
+## Re-QA acceptance state
 
-## Candidate ingestion gate
+- owner scope exactly once: **PASS — 12/12**
+- only fire candidates in W-304 review set: **PASS**
+- attribute purity / type readability: **PASS — 12/12 after F020 regeneration**
+- family differentiation inside fire: **PASS**
+- family continuity: **PASS**
+- stage progression: **PASS**
+- small-size readability: **PASS**
+- crop/background/text compliance: **PASS**
+- originality / no specific-IP reference: **PASS**
+- m239 exclusion: **PASS**
 
-W-302 `candidate-ingestion.mjs` semantics were executed and validated locally for all 12 candidate-safe exports. For m004-m006, the existing repository candidates were reconstructed byte-for-byte from GitHub base64 reads and their SHA-256 values were verified before local archive/replacement rehearsal. m239 fail-closed behavior also passed.
+## Candidate ingestion state
 
-However, this runtime has no direct local-binary → GitHub repository upload bridge. Therefore the generated WebP files and corresponding ingestion provenance cannot be faithfully placed into the W-304 branch from this environment. No repository ingestion is simulated or fabricated.
+This re-QA update does not claim repository candidate ingestion that has not been materialized on the branch. W-302 ingestion semantics remain the required next step for all 12 WebP candidates, including archive/provenance preservation for existing m004-m006 candidates.
 
-Current gate:
-- real image generation: **12 / 12**
-- visual QA: **12 / 12 PASS**
-- candidate-safe export: **12 / 12**
-- local W-302 ingestion rehearsal: **12 / 12 PASS**
-- repository candidate ingestion: **0 / 12 — BLOCKED CAPABILITY**
+- real candidate images in W-304 working set: **12 / 12**
+- candidates regenerated because of the new purity gate: **3 / 12 (m058-m060 only)**
+- attribute-purity re-QA: **12 / 12 PASS**
+- repository candidate ingestion: **0 / 12 at this checkpoint**
 - FORMAL promotion: **0**
 - W-321/W-322: **NOT STARTED**
 - main merge: **NOT PERFORMED**
