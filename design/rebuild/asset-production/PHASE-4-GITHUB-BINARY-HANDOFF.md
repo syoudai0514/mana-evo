@@ -18,17 +18,19 @@ The user should only need to send a short comment such as "W-304 ART READY。ing
 
 Each attribute Work Item W-303..W-320 uses its own existing attribute-production branch.
 
-Before repository candidate ingestion, ART READY source binaries are staged on that branch under:
+Preferred direct-binary staging path:
 
 `design/rebuild/asset-production/art-ready/W-30X/mNNN.webp`
 
 where `W-30X` is the owning Work Item and `mNNN` must be a species owned by that Work Item according to `PHASE-4-ATTRIBUTE-QUEUE.json`.
 
+When connector payload limits prevent a single binary blob from being transmitted safely, use the chunked transport fallback defined in section 3.2 instead of requiring user ZIP transfer.
+
 Do not stage another attribute's species. Do not stage m239.
 
 ## 3. Publishing ART READY binaries
 
-After real-image generation, visual QA, candidate-safe WebP export and local SHA-256 are complete, the art owner must publish the actual per-ID WebP binaries to its attribute branch before reporting ART READY.
+After real-image generation, visual QA, candidate-safe WebP export and local SHA-256 are complete, the art owner must publish the actual per-ID WebP bytes, either directly or through the deterministic chunked transport fallback, to its attribute branch before reporting GitHub handoff complete.
 
 Preferred path when a normal checkout has authenticated push:
 - write the WebP files to the staging directory;
@@ -67,6 +69,44 @@ If the returned Git blob SHA differs from `git hash-object <file>`, treat it as 
 
 A recommended deterministic base64 path is to read the file as bytes and encode directly (for example Python `base64.b64encode(open(path, "rb").read()).decode("ascii")`) rather than passing binary content through a text shell variable or text decoder.
 
+### 3.2 Connector payload-limit fallback — chunked GitHub transport
+
+If a direct `create_blob(encoding=base64)` attempt fails hash validation because the connector/request path truncates or drops part of a long payload, do not keep retrying the same large payload and do not ask the user to move ZIP files manually.
+
+Use deterministic chunked text transport instead.
+
+For each species `mNNN`:
+1. read the exact raw WebP bytes locally;
+2. compute and retain raw byte length and SHA-256;
+3. base64-encode the complete raw file with no line wrapping;
+4. split that ASCII base64 string into ordered chunks of **at most 32768 characters** each;
+5. publish each chunk as a UTF-8 text file under:
+   `design/rebuild/asset-production/art-ready-transport/W-30X/mNNN/part-0001.b64`, `part-0002.b64`, ...;
+6. publish `design/rebuild/asset-production/art-ready-transport/W-30X/mNNN/manifest.json` containing at minimum:
+   - `speciesId`
+   - `encoding: "base64-chunks"`
+   - `chunkCharsMax: 32768`
+   - ordered `parts`
+   - `rawBytes`
+   - `rawSha256`
+   - `originalFilename: "mNNN.webp"`;
+7. after publication, refetch/checkout the branch, concatenate the listed parts in manifest order with **no inserted whitespace/newlines**, base64-decode them to a temporary `mNNN.webp`, and verify:
+   - decoded byte length == `rawBytes`;
+   - decoded SHA-256 == `rawSha256`;
+   - RIFF/WEBP signature valid;
+   - file size < 1,000,000 bytes;
+8. only after successful reconstruction verification may the species be counted as GitHub handoff complete.
+
+The chunk files are transport artifacts, not candidate assets. The Binary Ingestion Work must reconstruct temporary raw WebPs from the chunk transport before calling the unchanged W-302 `candidate-ingestion.mjs`.
+
+The ingestion Work must not feed `.b64` parts directly to `candidate-ingestion.mjs` and must not reinterpret the chunk transport as candidate/provenance semantics.
+
+After successful candidate ingestion and repository validation, remove both temporary direct staging under `art-ready/W-30X/` (if any) and chunked transport under `art-ready-transport/W-30X/` from the final attribute branch tree.
+
+For a Work Item, direct WebP staging and chunked transport may coexist per species, but each species must have exactly one verified source path chosen for ingestion. Prefer direct WebP when valid; otherwise use verified chunk reconstruction.
+
+A connector payload-limit failure is a transport limitation, not an image-generation failure. Status may be `ART READY / GITHUB HANDOFF COMPLETE` when all species are verifiably reconstructable from GitHub chunk transport even if no direct `mNNN.webp` staging path exists yet.
+
 ## 4. ART READY gate
 
 For W-303..W-320, `ART READY` requires all of the following for the complete attribute scope:
@@ -75,13 +115,13 @@ For W-303..W-320, `ART READY` requires all of the following for the complete att
 - candidate-safe WebP prepared;
 - file size below 1,000,000 bytes;
 - local SHA-256 recorded;
-- actual WebP binary published to the attribute branch staging path;
-- staging checksum verified against the locally recorded checksum;
+- actual WebP bytes made recoverable from the attribute branch, either as direct WebP staging or verified chunk transport;
+- reconstructed/staged checksum verified against the locally recorded checksum;
 - review ledger/result updated.
 
 A local-only ZIP/package is optional convenience output, not the handoff contract and not required for the user to transfer.
 
-If images exist only inside a chat/runtime and are not reachable from GitHub, status is `ART READY LOCAL / GITHUB HANDOFF BLOCKED`, not the normal `ART READY` handoff state.
+If images exist only inside a chat/runtime and are not recoverable from GitHub, status is `ART READY LOCAL / GITHUB HANDOFF BLOCKED`, not the normal `ART READY` handoff state.
 
 ## 5. Binary ingestion Work
 
@@ -90,13 +130,13 @@ The ingestion Work does not ask the user for ZIP re-attachment.
 For a requested Work Item:
 1. fetch the owning attribute-production branch from GitHub;
 2. confirm the exact scope from `PHASE-4-ATTRIBUTE-QUEUE.json`;
-3. read source WebPs from `design/rebuild/asset-production/art-ready/W-30X/`;
-4. verify WebP / size / checksum / species ownership;
-5. run the existing W-302 `candidate-ingestion.mjs` from the real checkout;
+3. for each species, prefer a verified direct source WebP from `design/rebuild/asset-production/art-ready/W-30X/`; if absent, reconstruct a temporary WebP from the verified `art-ready-transport/W-30X/mNNN/manifest.json` + ordered chunk parts;
+4. verify WebP / size / checksum / species ownership on the reconstructed or direct raw file;
+5. run the existing W-302 `candidate-ingestion.mjs` from the real checkout using that raw WebP as `--source`;
 6. for replacements, preserve required old candidate archive and old/new provenance semantics;
 7. validate repository target binaries and checksums;
 8. update ledger/provenance from actual ingestion results;
-9. remove the temporary `art-ready/W-30X/` staging files after successful ingestion;
+9. remove the temporary `art-ready/W-30X/` and/or `art-ready-transport/W-30X/` staging files after successful ingestion;
 10. commit/publish the resulting attribute branch and update its PR.
 
 Do not replace the script with manual Git-object construction.
@@ -107,7 +147,7 @@ Shell GitHub authentication failure is not a reason to make the user shuttle fil
 
 If local checkout/script execution can create a correct commit but shell push is unavailable, an authenticated GitHub connector may publish the already-created result only when it can preserve the exact resulting tree. Otherwise record `INGESTION EXECUTED / PUBLISH BLOCKED` and preserve a deterministic commit/bundle for a later authenticated publisher.
 
-For ART READY binary handoff itself, authenticated GitHub blob/tree/commit/ref operations are explicitly allowed because they only make already-generated source binaries reachable by the ingestion checkout.
+For ART READY binary handoff itself, authenticated GitHub blob/tree/commit/ref operations or the chunked text transport fallback are explicitly allowed because they only make already-generated source bytes reachable by the ingestion checkout.
 
 ## 7. Separation of gates
 
@@ -118,10 +158,10 @@ Keep these states separate:
 - cross-attribute QA;
 - FORMAL promotion.
 
-Staging a WebP under `art-ready/W-30X/` does not make it a repository CANDIDATE. Only W-302 candidate ingestion into the canonical candidate target/provenance flow does that.
+Staging or reconstructing a WebP through `art-ready` / `art-ready-transport` does not make it a repository CANDIDATE. Only W-302 candidate ingestion into the canonical candidate target/provenance flow does that.
 
 FORMAL remains a later explicit approval gate.
 
 ## 8. Cleanup
 
-Temporary ART READY staging paths should not remain in the final attribute PR tree after successful candidate ingestion. Delete the staging files in the ingestion completion commit after all target binaries, archive/provenance, checksums and validation pass.
+Temporary ART READY staging paths should not remain in the final attribute PR tree after successful candidate ingestion. Delete direct staging and chunked transport files in the ingestion completion commit after all target binaries, archive/provenance, checksums and validation pass.
