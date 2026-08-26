@@ -34,6 +34,22 @@ Outputs:
 
 A mixed-type family fails closed with `BLOCKED`-style error semantics instead of being split.
 
+## GitHub-native ART READY handoff
+
+For W-303..W-320, do not require the user to manually download/re-upload ZIP files between chats or Works.
+
+Use `design/rebuild/asset-production/PHASE-4-GITHUB-BINARY-HANDOFF.md` as the transport/handoff protocol.
+
+Required flow:
+- the attribute art owner publishes the actual ART READY WebP binaries to its own attribute-production branch under `design/rebuild/asset-production/art-ready/W-30X/`;
+- the ingestion Work fetches that branch through normal Git checkout;
+- the WebPs from that staging path become `--source` inputs to the existing `candidate-ingestion.mjs`;
+- after successful ingestion/validation, the temporary staging files are removed from the final branch tree.
+
+If shell `git push` is unavailable to the art owner but authenticated GitHub blob/tree/commit/ref operations are available, those operations may be used only to transport already-generated ART READY binaries to the staging path. They must not emulate candidate ingestion, archive/provenance semantics, or FORMAL promotion.
+
+A local-only ZIP is optional convenience output and is not the normal handoff contract.
+
 ## Candidate ingestion
 
 Dry-run first:
