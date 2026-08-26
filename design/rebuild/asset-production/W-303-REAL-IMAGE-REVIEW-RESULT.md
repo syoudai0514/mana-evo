@@ -1,6 +1,6 @@
-# W-303 Grass — Real Image Review Result
+# W-303 Grass — Real Image / Art Ready Result
 
-Status: **REPRESENTATIVE REAL-IMAGE USER REVIEW PASSED / CANDIDATE INGESTION PENDING**
+Status: **ART READY / INGESTION BLOCKED**
 
 Work Item: `W-303`  
 Attribute: `grass`  
@@ -10,66 +10,56 @@ Branch: `rebuild/w-303-grass-attribute-production`
 
 - latest canonical base consumed: `b2f4face6ff1b332449df7c4ebbcc45b7211b186`
 - W-303 sync merge commit: `81401197710b4d34db132b39a0b2b7806b92fdce`
-- post-sync state: branch ahead of `rebuild/canonical-governance`, behind=0
-- sync CI: PASS
+- branch remains behind=0 from `rebuild/canonical-governance`
 
-## User real-image review gate
+## Representative real-image review
 
-The user directly reviewed generated real images, not generation packets, and explicitly approved all three representative grass families.
+The user directly reviewed real generated images and explicitly approved:
 
-| family | species | production disposition | real-image user result |
-|---|---|---|---|
-| F001 | m001 モコハ → m002 ワカバネ → m003 ジュランガ | REFINE | **APPROVED** |
-| F028 | m082 ツルリン → m083 ジャングリ → m084 ミドリヴァイン | REGENERATE | **APPROVED after regeneration** |
-| F029 | m085 サボテニョ → m086 ハナトゲ → m087 カクタリア | REGENERATE | **APPROVED** |
+- F001: m001 → m002 → m003
+- F028: m082 → m083 → m084, after correcting the earlier literal-gate/scenery final into a proper monster
+- F029: m085 → m086 → m087
 
-F028 correction history is important evidence: an earlier m084 direction read as a literal forest gate/scenery rather than a monster and was rejected. The accepted direction keeps an explicit monster body and expresses path/arch identity through the controlled vine span and negative space.
+These 9 species remain approved as real-image direction and candidate-safe export.
 
-## Candidate-safe export preparation
+## Remaining grass production
 
-After the user review gate, clean per-ID WebP exports were prepared from the approved real-image direction for technical candidate ingestion. These are **candidate-stage exports only**, never FORMAL approval.
+The remaining families were produced without another user design gate, per instruction:
 
-Local export checks completed:
+- F014: m040 → m041 → m042
+- F046: m134 → m135 → m136
+- F080: m235
 
-- 512×512 WebP
-- full body readable
-- transparent/clean background treatment
-- no name / number / type label / UI / frame baked into the candidate crop
-- every file strictly below 1,000,000 bytes
-- RIFF/WEBP format used
+Visual QA used CURRENT + `PHASE-4-STYLE-LOCK.md` + the existing W-303 anti-duplication matrix. Family-role separation remains:
 
-| species | bytes | sha256 of prepared export |
-|---|---:|---|
-| m001 | 38,504 | `7155656d37ec2541fc97adfacb99c74368fe0be5ffdf90080aab86f97431b041` |
-| m002 | 53,540 | `f6772e39647f1ba8e78ed9386e52d058bdacb4c255c5f2c95c1a572661d28ac4` |
-| m003 | 52,434 | `d3c94c46b180e1354ddfabd5c7f6701a3ad60e23dcd7f553746b01a957b29be0` |
-| m082 | 56,534 | `6de588fc3674bff146a6d8b363e22a92a4fcdb3d943dabe18c19eac4741d711a` |
-| m083 | 64,168 | `e11f68157b54b4ec22e7c0faa74c6801fc5bfd30a517f924c087ff9b312caee7` |
-| m084 | 60,802 | `bb9b10c4bffb93b996b271380cb93fcdbcf195bda209a4fb46af423447d51dea` |
-| m085 | 36,554 | `09082fa6609b7ffd378d748cfba1392a651956c741b8a78320c3c03997169448` |
-| m086 | 44,700 | `d4f423580b7a665f998d464329e2660c6a671375753eaeafb1dabff872dd6a36` |
-| m087 | 55,818 | `f59cb06267582741b720ace74feca397aaf25dd79a1f7e0b5dadd3cb7f720780` |
+- F001 = horizontal defensive mass
+- F014 = walking root + flower
+- F028 = hanging / arcing vine line
+- F029 = succulent + radial bloom
+- F046 = vertical ancient habitat tree
+- F080 = monumental axial world tree
 
-These hashes identify the prepared local exports; they are **not repository-ingestion checksums until W-302 candidate ingestion actually writes the binaries and provenance into the branch**.
+## Candidate-safe export state
+
+All 16 W-303 species now have local 512x512 WebP exports, all strictly below 1,000,000 bytes. Per-ID exports use clean white background and exclude baked name/ID/type/UI/frame content.
+
+Full checksum table is recorded in `W-303-ART-READY-RESULT.md` and `W-303-GRASS-REVIEW-LEDGER.json`.
 
 ## Gate separation
 
-- generation packet: complete for all grass families
-- real image generation: **performed** for representative F001/F028/F029
-- user visual approval: **passed** for all 9 representative species
-- candidate-safe per-ID export preparation: **performed locally** for the 9 approved species
-- candidate ingestion: **NOT YET COMPLETED**
-- FORMAL promotion: **NOT PERFORMED**
-- `monster-asset-manifest.json` FORMAL mutation: **NONE**
-- gameplay/runtime mutation: **NONE**
-- W-304 and later work items: **NOT STARTED**
+- real image generation: **16 / 16**
+- visual QA: **16 / 16 PASS**
+- candidate-safe export: **16 / 16**
+- local SHA-256: **16 / 16**
+- repository candidate ingestion: **0 / 16**
+- FORMAL promotion: **0**
 
-## Current technical blocker
+Repository ingestion remains blocked only because the current environment cannot faithfully place these generated binaries into a repository checkout and execute W-302 `candidate-ingestion.mjs`, including archive/provenance behavior for m001-m003. No ingestion is simulated and no provenance/checksum is fabricated.
 
-The available GitHub write connector can create UTF-8 files and Git objects, but this run does not have a reliable mounted-file-to-GitHub binary upload action for the generated WebP files. Candidate ingestion must preserve the W-302 binary/archive/provenance semantics; therefore the prepared images are not falsely claimed as ingested and existing m001-m003 repository candidates are not overwritten.
+## Current W-303 state
 
-This is a **binary repository-write capability boundary at the ingestion step**, not an image-generation failure and not a user-review failure.
+**ART READY / INGESTION BLOCKED** — not COMPLETE.
 
-## Current W-303 Acceptance state
+The remaining Acceptance gate is repository candidate ingestion for all 16 species, archive/provenance for existing candidates, repository checksums, and final repository-state validation.
 
-**PARTIAL.** The representative real-image user review gate has passed. The next unmet gate is repository-safe candidate ingestion of these 9 approved per-ID WebP exports, including archive/provenance preservation for existing m001-m003, followed by small-size/crop/continuity/duplicate verification. Only after that gate should the remaining grass families proceed through production.
+No FORMAL promotion. No main merge. W-304+ and W-321/W-322 remain not started.
