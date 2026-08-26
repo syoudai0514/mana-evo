@@ -115,7 +115,7 @@
 - Baseline: Area1〜4、最終形通常wild不可等の原則。
 - Later explicit direction: UDE-005「自分で育てて進化させる体験」を強化するworld/zone方向。
 - Decision: `area`（原データ分類）と冒険配置レイヤを分離。入口/中盤/奥地。第2形態の初回入手は自力進化、自力進化後のみ後半wild解禁。`evolutionDiscoveries`で自力進化を別記録。最終形は通常wild捕獲不可。過去areaへ戻り育成差を実感できる。
-- TUNING default: 現行 zone Lv帯（A1 5–22 / A2 18–38 / A3 32–58 / A4 50–80 / EX 70–100）やzone clear数はplaytest用暫定値。プロダクト正本ではなくbalance tuningとして調整可。
+- Tuning default: 現行 zone Lv帯（A1 5–22 / A2 18–38 / A3 32–58 / A4 50–80 / EX 70–100）やzone clear数はplaytest用暫定値。プロダクト正本ではなくbalance tuningとして調整可。
 - Tests required: discovery gate / final wild ban / location persist / level clamp / return-to-old-area advantage。
 
 ## D-012 ボス再戦
