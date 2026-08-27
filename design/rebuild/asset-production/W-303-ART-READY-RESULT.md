@@ -1,6 +1,6 @@
 # W-303 Grass — ART READY Result
 
-Status: **ART READY / INGESTION BLOCKED**
+Status: **CANDIDATE INGESTION COMPLETE / FORMAL 0**
 
 Work Item: `W-303`  
 Attribute: `grass`  
@@ -23,8 +23,10 @@ Exactly 6 grass families / 16 species owned by W-303:
 
 - Representative real-image user review: PASS for F001 / F028 / F029 (9 species).
 - Remaining real-image production: completed for F014 / F046 / F080 (7 species) without an additional user gate, per instruction.
-- All 16 species now have candidate-safe local WebP exports.
-- Candidate ingestion into the repository: **0 / 16** because repository checkout / binary-ingestion execution capability is unavailable in this environment.
+- All 16 species have candidate-safe WebP exports and GitHub-native ART READY staging verification.
+- Candidate ingestion into the repository: **16 / 16** through `scripts/monster-art/candidate-ingestion.mjs`.
+- Existing candidates `m001-m003` were archived and replaced through the same tooling: **3 / 3**.
+- Candidate provenance records: **16 / 16**.
 - FORMAL promotion: **0**.
 
 ## Visual QA
@@ -72,28 +74,20 @@ Checks completed for all 16 local exports:
 | m136 | 41,548 | `4ae00e01f9879be90c2f62c412f5eddc1fbcec77ba6182eb8e98189827f155ed` |
 | m235 | 33,298 | `a5c1defafa948bba4e46bfa1548a1ec72dfb09a165279c9c3225827fb8afb95d` |
 
-These are **local export checksums only**. They are not repository-ingestion checksums until W-302 `candidate-ingestion.mjs` runs on an actual checkout and writes candidate files / archive / provenance.
+These checksums are now verified both from the attached ART READY bundle and from the GitHub-staged source files used by the actual W-302 candidate-ingestion run.
 
-## Ingestion blocker
+## Candidate-ingestion evidence
 
-`BLOCKED CAPABILITY` is limited to the repository candidate-ingestion stage. Image generation and art preparation are complete.
+The GitHub-staged raw WebPs were verified 16/16 after a fresh branch checkout, then ingested with the canonical `scripts/monster-art/candidate-ingestion.mjs`.
 
-The missing capability is an execution environment that can:
-
-1. checkout `rebuild/w-303-grass-attribute-production`;
-2. place the 16 WebP binaries on disk;
-3. execute W-302 `candidate-ingestion.mjs` for all 16 species;
-4. archive existing m001-m003 candidates;
-5. record old/new checksums and provenance without bypassing the script semantics.
-
-No ingestion is simulated. Existing repository binaries/provenance remain untouched.
+- `m001-m003`: prior candidates archived by the tooling before replacement; old/new SHA-256 are recorded in their provenance events.
+- all 16: `public/monsters/mNNN.webp` created or replaced from the verified staged source, with source provenance recorded under `candidate-provenance/`.
+- staging cleanup occurs only after final candidate/archive/provenance/checksum validation.
 
 ## Acceptance state
 
-**W-303 is not COMPLETE.**
+**W-303 awaits final repository-state validation and staging cleanup.**
 
-Current state is **ART READY / INGESTION BLOCKED**.
-
-The only remaining W-303 gate is repository candidate ingestion + archive/provenance/repository-checksum verification for all 16 species, followed by final repository-state validation.
+Current state is **CANDIDATE INGESTION COMPLETE / FORMAL 0**.
 
 No FORMAL promotion. No main merge. W-304+ and W-321/W-322 not started.

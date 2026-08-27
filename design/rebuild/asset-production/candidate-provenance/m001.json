@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "speciesId": "m001",
+  "events": [
+    {
+      "timestamp": "2026-08-27T03:36:28.830Z",
+      "sourceLabel": "W-303 ART READY GitHub handoff (attached bundle 7955039af8d3b168a5369fc7ebfd443a1f5b6aac34a0d0f5b5be2f4941c9d878)",
+      "previous": {
+        "repositoryPath": "public/monsters/m001.webp",
+        "sha256": "4a2562c23a7b2570e957e258fba5712f7bda702d8646fbc26aafd8ce6b8c37b9",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m001/4a2562c23a7b2570e957e258fba5712f7bda702d8646fbc26aafd8ce6b8c37b9.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m001.webp",
+        "sha256": "7155656d37ec2541fc97adfacb99c74368fe0be5ffdf90080aab86f97431b041",
+        "bytes": 38504
+      },
+      "manifestStateBefore": "CANDIDATE",
+      "formalPromotion": false
+    }
+  ]
+}
