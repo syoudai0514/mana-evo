@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "workItem": "W-304",
   "attribute": "fire",
-  "status": "ART_READY_INGESTION_BLOCKED",
+  "status": "CANDIDATE_INGESTION_COMPLETE",
   "sourceBaseCommit": "b2f4face6ff1b332449df7c4ebbcc45b7211b186",
   "branch": "rebuild/w-304-fire-attribute-production",
   "scope": {
@@ -18,7 +18,7 @@
     "candidateSafeExportPreparedSpecies": 12,
     "visualQaPassSpecies": 12,
     "localIngestionRehearsalSpecies": 12,
-    "repositoryCandidateIngestedSpecies": 0,
+    "repositoryCandidateIngestedSpecies": 12,
     "formalPromotedSpecies": 0
   },
   "qa": {
@@ -30,7 +30,7 @@
     "originality": "PASS_WITHOUT_SPECIFIC_IP_REFERENCE",
     "webpSignatureAndSize": "PASS",
     "localCandidateIngestionSemantics": "PASS",
-    "repositoryBinaryUpload": "BLOCKED_CAPABILITY"
+    "repositoryBinaryUpload": "PASS"
   },
   "antiDuplicationMatrix": [
     {
@@ -78,24 +78,28 @@
       "finalRole": "rebirth sky guardian"
     }
   ],
-  "repositoryIngestionBlocker": {
-    "type": "REPOSITORY_BINARY_UPLOAD_BRIDGE",
-    "detail": "The available GitHub connector can create Git blobs from supplied base64 text, but this runtime has no direct local-file-to-GitHub binary upload bridge. Candidate-safe WebP binaries exist locally, and W-302 candidate-ingestion semantics were executed/validated locally for all 12, including previous-candidate SHA-256/archive behavior for m004-m006. Repository candidate files/provenance are not claimed as ingested.",
-    "effect": "W-304 is ART READY but does not satisfy repository candidate-ingestion Acceptance."
+  "repositoryIngestionBlocker": null,
+  "candidateIngestionEvidence": {
+    "tool": "scripts/monster-art/candidate-ingestion.mjs",
+    "source": "verified GitHub ART READY staging from attached handoff bundle sha256=b496e32fd0eca2b8f78c3f05700c7388f2996305916f8bf95f13132576aa70ef",
+    "ingestedSpecies": 12,
+    "replacementArchives": 3,
+    "provenanceRecords": 12,
+    "formalPromotion": false
   },
   "formalPromotionPerformed": false,
   "rows": [
-    {"speciesId":"m004","familyNo":2,"name":"ヒノポ","stage":1,"type":"fire","disposition":"REFINE","visualState":"ART_READY_QA_PASS","bytes":47086,"localExportSha256":"6c568fc3c49be243dde5881475e305a90e3105c060a6ed913a386d2125c43654","previousRepositoryCandidateSha256":"15530dbb6a70a9581257a3ed52c50ee245a6a90cc7c1cb08b0f65c58bc676526","candidateIngested":false},
-    {"speciesId":"m005","familyNo":2,"name":"メラガミ","stage":2,"type":"fire","disposition":"REFINE","visualState":"ART_READY_QA_PASS","bytes":54988,"localExportSha256":"c7465f6ae60459e580e3323ba2ac408cf7f2f14fce97fdf49184821a42d56a47","previousRepositoryCandidateSha256":"fc8253d4beac883c331dfbaa3d636426dc22df32323310af559e72e22cedbf56","candidateIngested":false},
-    {"speciesId":"m006","familyNo":2,"name":"グレンドウ","stage":3,"type":"fire","disposition":"REFINE","visualState":"ART_READY_QA_PASS","bytes":69818,"localExportSha256":"94a4ee6833420c8e781373d8f2654b0db632cf98b2c0e1e5372e604154033c3f","previousRepositoryCandidateSha256":"fb0759065d88fb5bc03470454301498e86ec54efb505d48fa6ae5dafa4e7b6af","candidateIngested":false},
-    {"speciesId":"m055","familyNo":19,"name":"マグポコ","stage":1,"type":"fire","disposition":"REGENERATE","visualState":"ART_READY_QA_PASS","bytes":53666,"localExportSha256":"ea52f55c328a49dc0b2da7853856d67e55c6d2e008845ab8e610f063a1d5ede3","candidateIngested":false},
-    {"speciesId":"m056","familyNo":19,"name":"ヨウガン","stage":2,"type":"fire","disposition":"REGENERATE","visualState":"ART_READY_QA_PASS","bytes":59896,"localExportSha256":"f6bf8231deb244837d964ad238ad6af95ebe886723ae9a4c3a762ad2ff8d75eb","candidateIngested":false},
-    {"speciesId":"m057","familyNo":19,"name":"カザングド","stage":3,"type":"fire","disposition":"REGENERATE","visualState":"ART_READY_QA_PASS","bytes":74448,"localExportSha256":"d7f4eaaf4a661cd5c54e0bda17bc4a155d3094f3c29d4ca95a6a4f305374fd08","candidateIngested":false},
-    {"speciesId":"m058","familyNo":20,"name":"ロウソッコ","stage":1,"type":"fire","disposition":"REGENERATE","visualState":"ART_READY_QA_PASS","bytes":27134,"localExportSha256":"2a842e271d022292836b97cfbde1e108610c3d854b4d77f56279399695ff23c8","candidateIngested":false},
-    {"speciesId":"m059","familyNo":20,"name":"トモシビ","stage":2,"type":"fire","disposition":"REGENERATE","visualState":"ART_READY_QA_PASS","bytes":20010,"localExportSha256":"dfa8fcf391873b83261fb4723b054f9c63d6e24d9d73f6513042fd8c585263f9","candidateIngested":false},
-    {"speciesId":"m060","familyNo":20,"name":"アカリガルド","stage":3,"type":"fire","disposition":"REGENERATE","visualState":"ART_READY_QA_PASS","bytes":31786,"localExportSha256":"51522e5b5a2bbe42fb2013fb24cb604f72f92e40fcd8284ccd6d8a5383c7a4b5","candidateIngested":false},
-    {"speciesId":"m211","familyNo":72,"name":"ヒノトリコ","stage":1,"type":"fire","disposition":"REGENERATE","visualState":"ART_READY_QA_PASS","bytes":54910,"localExportSha256":"b146cea7ede3e07a38a03a06e2cf589bd0e78c5a8063c0251e84b9fd67af6fb7","candidateIngested":false},
-    {"speciesId":"m212","familyNo":72,"name":"レンカドリ","stage":2,"type":"fire","disposition":"REGENERATE","visualState":"ART_READY_QA_PASS","bytes":58828,"localExportSha256":"e5031004edc0d6b2adf7d8a320ac817fdb604693dd47ce815d7fe07eef946f17","candidateIngested":false},
-    {"speciesId":"m213","familyNo":72,"name":"フェニクロス","stage":3,"type":"fire","disposition":"REGENERATE","visualState":"ART_READY_QA_PASS","bytes":91322,"localExportSha256":"6456041d68012211821df9f0c8d44a58474b14e343be5b120a5de8ccca7e2fe3","candidateIngested":false}
+    {"speciesId":"m004","familyNo":2,"name":"ヒノポ","stage":1,"type":"fire","disposition":"REFINE","visualState":"ART_READY_QA_PASS","bytes":148868,"localExportSha256":"e7370f61737c2139187d48b0195c7c84865a1c71352760ad342226f6b4d88794","previousRepositoryCandidateSha256":"15530dbb6a70a9581257a3ed52c50ee245a6a90cc7c1cb08b0f65c58bc676526","candidateIngested":true},
+    {"speciesId":"m005","familyNo":2,"name":"メラガミ","stage":2,"type":"fire","disposition":"REFINE","visualState":"ART_READY_QA_PASS","bytes":157092,"localExportSha256":"6006961d581410b387a5af049cda9099a3a8982872cca0bef4198708aa113dc3","previousRepositoryCandidateSha256":"fc8253d4beac883c331dfbaa3d636426dc22df32323310af559e72e22cedbf56","candidateIngested":true},
+    {"speciesId":"m006","familyNo":2,"name":"グレンドウ","stage":3,"type":"fire","disposition":"REFINE","visualState":"ART_READY_QA_PASS","bytes":159734,"localExportSha256":"2bc39baebda89f387b57d522ffa618c444d0ccb1501e014edfbc736402163991","previousRepositoryCandidateSha256":"fb0759065d88fb5bc03470454301498e86ec54efb505d48fa6ae5dafa4e7b6af","candidateIngested":true},
+    {"speciesId":"m055","familyNo":19,"name":"マグポコ","stage":1,"type":"fire","disposition":"REGENERATE","visualState":"ART_READY_QA_PASS","bytes":151452,"localExportSha256":"b3172206e1f1a2cb228d0c23f597f0af50c238dc94d737372e25dbeced8225dd","candidateIngested":true},
+    {"speciesId":"m056","familyNo":19,"name":"ヨウガン","stage":2,"type":"fire","disposition":"REGENERATE","visualState":"ART_READY_QA_PASS","bytes":198522,"localExportSha256":"4864b93737466517180dbae73a2fad38ea61b006d00d5501a51ca52d42b77941","candidateIngested":true},
+    {"speciesId":"m057","familyNo":19,"name":"カザングド","stage":3,"type":"fire","disposition":"REGENERATE","visualState":"ART_READY_QA_PASS","bytes":195066,"localExportSha256":"b700369d316f5eb336b348bc1a4d71e3aacd54325f00444aed1e4cd730761bd5","candidateIngested":true},
+    {"speciesId":"m058","familyNo":20,"name":"ロウソッコ","stage":1,"type":"fire","disposition":"REGENERATE","visualState":"ART_READY_QA_PASS","bytes":99368,"localExportSha256":"74cf8fb8f0ebd6321323250d683a2f89641c53efac6ea0ec9a6cdac76df9b764","candidateIngested":true},
+    {"speciesId":"m059","familyNo":20,"name":"トモシビ","stage":2,"type":"fire","disposition":"REGENERATE","visualState":"ART_READY_QA_PASS","bytes":162026,"localExportSha256":"91fe52a09a425a221fc4668423988c693a98bef9510f6de8850006704150a30e","candidateIngested":true},
+    {"speciesId":"m060","familyNo":20,"name":"アカリガルド","stage":3,"type":"fire","disposition":"REGENERATE","visualState":"ART_READY_QA_PASS","bytes":200608,"localExportSha256":"2658f12552a89527b04dfe913a0ce2216523173bdb8e4ec9ddcc5d65d928215b","candidateIngested":true},
+    {"speciesId":"m211","familyNo":72,"name":"ヒノトリコ","stage":1,"type":"fire","disposition":"REGENERATE","visualState":"ART_READY_QA_PASS","bytes":146914,"localExportSha256":"b6b6db53c407f698ab01ef5f59a9fd92099fa111de3fee51c04c4bc49effd5c2","candidateIngested":true},
+    {"speciesId":"m212","familyNo":72,"name":"レンカドリ","stage":2,"type":"fire","disposition":"REGENERATE","visualState":"ART_READY_QA_PASS","bytes":172656,"localExportSha256":"c6a29cc028ba0db9d57c6c46d699ba65097f0171920bf255ea4c2f72a823f626","candidateIngested":true},
+    {"speciesId":"m213","familyNo":72,"name":"フェニクロス","stage":3,"type":"fire","disposition":"REGENERATE","visualState":"ART_READY_QA_PASS","bytes":152480,"localExportSha256":"5832f802ef80fae73dbde009828db91b112d92c2701efd6d0f8d1ce1f54a3851","candidateIngested":true}
   ]
 }

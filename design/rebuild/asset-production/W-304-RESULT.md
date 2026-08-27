@@ -1,6 +1,6 @@
 # W-304 Result
 
-Status: **ART READY / INGESTION BLOCKED**
+Status: **CANDIDATE INGESTION COMPLETE / FORMAL 0**
 
 - Work Item: W-304
 - Attribute: fire
@@ -9,8 +9,11 @@ Status: **ART READY / INGESTION BLOCKED**
 - Real candidate images generated: 12
 - Candidate-safe WebP exports: 12
 - Visual QA PASS: 12
-- Repository candidate ingestion: 0 / 12
-- Blocker: repository binary upload bridge unavailable in this runtime
+- GitHub binary handoff and fresh refetch: 12 / 12 PASS
+- Repository candidate ingestion: 12 / 12 via `scripts/monster-art/candidate-ingestion.mjs`
+- Existing m004-m006 candidate archive/replacement: 3 / 3 PASS
+- Candidate provenance and public candidates: 12 / 12 PASS
+- Staging cleanup: pending final validation
 - FORMAL promotion: 0
 - W-321/W-322: NOT STARTED
 - main merge: NOT PERFORMED
