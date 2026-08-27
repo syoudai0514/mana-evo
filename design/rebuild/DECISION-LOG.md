@@ -149,3 +149,14 @@
 - Reason: 最新会話だけによる計画変更、古い進捗コピーの陳腐化、設計完了と実装/実画像完了の混同、能力不足Workerへの誤委任を防止するため。
 - Affected areas: 全Work Item governance / commander handoff / Worker handoff。プロダクト仕様・runtimeには影響しない。
 - Tests required: governance review。実際の各Work Itemでは、そのWork Item固有Acceptanceに必要な実成果物・テスト・目視確認を別途要求する。
+
+## D-016 CANDIDATE monster art の段階的production公開
+- Status: CONFIRMED_CHANGE / USER-DECISION
+- Baseline / prior CURRENT: D-014および `design/current/09-MONSTER-MASTER-ART-SPEC.md` は、通常child-facing runtimeではFORMAL artのみを解決し、CANDIDATEは明示review toolingだけでpreviewする契約としていた。
+- Later runtime/release: W-303 / W-304 / W-305でQA・binary handoff・candidate ingestionを通過した実画像49体を、explicit candidate-art overlayとしてplaytest previewへ載せ、その後productionへ公開した。release evidenceは `design/rebuild/release/PRODUCTION-CANDIDATE-ART-ROLLOUT.md`。
+- Evidence of approval: 2026-08-27 ユーザー明示「もう本番であげて、キャラを徐々に増やすでいい」。
+- Decision: 全238体のFORMAL完了をproduction公開条件にしない。Phase 4のvisual QA、candidate-safe WebP、binary handoff/refetch、candidate ingestion、provenance/checksum等のcandidate gateを満たしたspecies / Work Itemは、ユーザーが承認したproduction candidate-art rolloutの対象として段階的に通常ゲームへ表示してよい。これはFORMAL promotionではなく、manifestのstateをFORMALへ偽装してはならない。productionで表示するCANDIDATEは、検証済みscopeを明示的に列挙・追跡できるoverlay/allowlist等で管理し、ファイル存在やspecies番号範囲から推測して自動昇格しない。m239は引き続き除外する。
+- Supersedes: D-014 / `09-MONSTER-MASTER-ART-SPEC.md` の「CANDIDATEはnormal gameplayへ出さない」というruntime eligibility制限のみを、この明示的な段階公開運用の範囲で置換する。FORMALの意味、W-321 cross-attribute QA、W-322 explicit FORMAL approval、originality/family continuity、asset QA・handoff・ingestion・provenanceの各gateは置換しない。
+- Reason: 完成済みの実画像を使って実際のゲームを早期にplaytestし、以後も完成した属性から価値を本番へ届けつつ、FORMAL承認とproduction visibilityを混同しないため。
+- Affected areas: monster-art runtime resolution / production release / Phase 4 candidate rollout。monster identity、active scope、FORMAL approval semanticsには影響しない。
+- Tests required: production-visible candidate allowlistのexact scope / no implicit promotion / m239 absent / candidate asset existence+integrity / runtime fallback / FORMAL count/state不変 / build + child-flow smoke test。
