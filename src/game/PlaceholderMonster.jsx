@@ -2,10 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { speciesOf, typeLabel } from './content.js'
 import { fallbackMonsterArt, resolveMonsterArt } from './monsterArt.js'
 import { monsterSpriteFrame } from './monsterSprite.js'
-
-// Preview-branch-only switch. This branch is for hands-on playtesting with
-// CANDIDATE artwork and does not promote or reinterpret any asset as FORMAL.
-const CANDIDATE_ART_PLAYTEST = true
+import { resolvePlaytestCandidateArt } from './playtestCandidateArt.js'
 
 function legacySpriteStyle(frame, size) {
   return {
@@ -32,8 +29,11 @@ export function MonsterArt({ speciesId, stage = null, excited = false, compact =
   const size = requestedSize || (compact ? 50 : 124)
   const legacyFrame = monsterSpriteFrame(speciesId)
   const runtimeArt = useMemo(() => resolveMonsterArt(speciesId, 'runtime'), [speciesId])
-  const reviewArt = useMemo(() => resolveMonsterArt(speciesId, 'review'), [speciesId])
-  const art = CANDIDATE_ART_PLAYTEST ? reviewArt : runtimeArt
+
+  // PLAYTEST-ONLY: PR #84 explicitly overlays only the verified W-303/W-304/W-305
+  // candidate WebPs. CURRENT manifest semantics remain untouched and FORMAL stays 0.
+  const playtestArt = useMemo(() => resolvePlaytestCandidateArt(speciesId), [speciesId])
+  const art = playtestArt || runtimeArt
   const [failedArtSrc, setFailedArtSrc] = useState(null)
   const playableImageUrl = (art.isFormal || art.isCandidatePreview) && art.src && failedArtSrc !== art.src
     ? resolvePublicAsset(art.src)
