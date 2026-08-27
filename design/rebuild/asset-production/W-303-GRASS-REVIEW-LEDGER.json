@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 4,
+  "workItem": "W-303",
+  "attribute": "grass",
+  "status": "CANDIDATE_INGESTION_COMPLETE",
+  "sourceBaseCommit": "b2f4face6ff1b332449df7c4ebbcc45b7211b186",
+  "branchSyncCommit": "bd2883c1e969cd792f7cfbb6d79565c4dedc718d",
+  "scope": {
+    "ownerWorkItem": "W-303",
+    "familyCount": 6,
+    "speciesCount": 16,
+    "familyNos": [1, 14, 28, 29, 46, 80],
+    "speciesIds": ["m001","m002","m003","m040","m041","m042","m082","m083","m084","m085","m086","m087","m134","m135","m136","m235"],
+    "excludedReferenceIds": ["m239"]
+  },
+  "summary": {
+    "familyDisposition": {"KEEP": 0, "REFINE": 1, "REGENERATE": 5, "BLOCKED": 0},
+    "speciesDisposition": {"KEEP": 0, "REFINE": 3, "REGENERATE": 13, "BLOCKED": 0},
+    "realImageGeneratedSpecies": 16,
+    "candidateSafeExportPreparedSpecies": 16,
+    "visualQaPassSpecies": 16,
+    "candidateIngestedSpecies": 16,
+    "formalPromotedSpecies": 0
+  },
+  "representativeUserReview": {
+    "passedSpecies": ["m001","m002","m003","m082","m083","m084","m085","m086","m087"],
+    "families": ["F001","F028","F029"],
+    "result": "PASS"
+  },
+  "remainingProduction": {
+    "generatedSpecies": ["m040","m041","m042","m134","m135","m136","m235"],
+    "families": ["F014","F046","F080"],
+    "visualQa": "PASS",
+    "smallSizeReadability": "PASS",
+    "cropBackgroundTextCompliance": "PASS",
+    "familyContinuity": "PASS",
+    "stageProgression": "PASS_OR_NOT_APPLICABLE_SINGLE_STAGE",
+    "grassAntiDuplication": "PASS"
+  },
+  "candidateIngestionPerformed": true,
+  "repositoryIngestionBlocker": null,
+  "candidateIngestionEvidence": {
+    "tool": "scripts/monster-art/candidate-ingestion.mjs",
+    "source": "verified GitHub ART READY staging from attached bundle sha256=7955039af8d3b168a5369fc7ebfd443a1f5b6aac34a0d0f5b5be2f4941c9d878",
+    "ingestedSpecies": 16,
+    "replacementArchives": 3,
+    "provenanceRecords": 16,
+    "formalPromotion": false
+  },
+  "formalPromotionPerformed": false,
+  "reviewGate": "CANDIDATE_INGESTION_COMPLETE__FORMAL_0",
+  "artReadyEvidence": "design/rebuild/asset-production/W-303-ART-READY-RESULT.md",
+  "rows": [
+    {"speciesId":"m001","familyNo":1,"name":"モコハ","stage":1,"disposition":"REFINE","visualState":"USER_APPROVED_ART_READY","bytes":38504,"localExportSha256":"7155656d37ec2541fc97adfacb99c74368fe0be5ffdf90080aab86f97431b041","candidateIngested":true},
+    {"speciesId":"m002","familyNo":1,"name":"ワカバネ","stage":2,"disposition":"REFINE","visualState":"USER_APPROVED_ART_READY","bytes":53540,"localExportSha256":"f6772e39647f1ba8e78ed9386e52d058bdacb4c255c5f2c95c1a572661d28ac4","candidateIngested":true},
+    {"speciesId":"m003","familyNo":1,"name":"ジュランガ","stage":3,"disposition":"REFINE","visualState":"USER_APPROVED_ART_READY","bytes":52434,"localExportSha256":"d3c94c46b180e1354ddfabd5c7f6701a3ad60e23dcd7f553746b01a957b29be0","candidateIngested":true},
+    {"speciesId":"m040","familyNo":14,"name":"ネッコロ","stage":1,"disposition":"REGENERATE","visualState":"ART_READY_QA_PASS","bytes":16216,"localExportSha256":"ca43770168ac4f1b8630f34566d8010cb574fd98a3105faf51191983fd551e57","candidateIngested":true},
+    {"speciesId":"m041","familyNo":14,"name":"ハナコロ","stage":2,"disposition":"REGENERATE","visualState":"ART_READY_QA_PASS","bytes":19482,"localExportSha256":"b953e108a9935bddcf0ee4279e53a740305b8a30739ad1963682efe372ea3fe5","candidateIngested":true},
+    {"speciesId":"m042","familyNo":14,"name":"ハルミドリ","stage":3,"disposition":"REGENERATE","visualState":"ART_READY_QA_PASS","bytes":34694,"localExportSha256":"8ae7e762c467f817c99e91c3c645fba8d05bfcc648fd9d1c141d1e25c351a6db","candidateIngested":true},
+    {"speciesId":"m082","familyNo":28,"name":"ツルリン","stage":1,"disposition":"REGENERATE","visualState":"USER_APPROVED_ART_READY","bytes":56534,"localExportSha256":"6de588fc3674bff146a6d8b363e22a92a4fcdb3d943dabe18c19eac4741d711a","candidateIngested":true},
+    {"speciesId":"m083","familyNo":28,"name":"ジャングリ","stage":2,"disposition":"REGENERATE","visualState":"USER_APPROVED_ART_READY","bytes":64168,"localExportSha256":"e11f68157b54b4ec22e7c0faa74c6801fc5bfd30a517f924c087ff9b312caee7","candidateIngested":true},
+    {"speciesId":"m084","familyNo":28,"name":"ミドリヴァイン","stage":3,"disposition":"REGENERATE","visualState":"USER_APPROVED_ART_READY","bytes":60802,"localExportSha256":"bb9b10c4bffb93b996b271380cb93fcdbcf195bda209a4fb46af423447d51dea","candidateIngested":true},
+    {"speciesId":"m085","familyNo":29,"name":"サボテニョ","stage":1,"disposition":"REGENERATE","visualState":"USER_APPROVED_ART_READY","bytes":36554,"localExportSha256":"09082fa6609b7ffd378d748cfba1392a651956c741b8a78320c3c03997169448","candidateIngested":true},
+    {"speciesId":"m086","familyNo":29,"name":"ハナトゲ","stage":2,"disposition":"REGENERATE","visualState":"USER_APPROVED_ART_READY","bytes":44700,"localExportSha256":"d4f423580b7a665f998d464329e2660c6a671375753eaeafb1dabff872dd6a36","candidateIngested":true},
+    {"speciesId":"m087","familyNo":29,"name":"カクタリア","stage":3,"disposition":"REGENERATE","visualState":"USER_APPROVED_ART_READY","bytes":55818,"localExportSha256":"f59cb06267582741b720ace74feca397aaf25dd79a1f7e0b5dadd3cb7f720780","candidateIngested":true},
+    {"speciesId":"m134","familyNo":46,"name":"モリノコ","stage":1,"disposition":"REGENERATE","visualState":"ART_READY_QA_PASS","bytes":19320,"localExportSha256":"cb5adcaf135a26e2bf018b0f3a59b7a0c017d770be92f38efd1b4836a0a4c1e9","candidateIngested":true},
+    {"speciesId":"m135","familyNo":46,"name":"ジュモクン","stage":2,"disposition":"REGENERATE","visualState":"ART_READY_QA_PASS","bytes":22938,"localExportSha256":"4334c2d95043a4d26636027179dfc6b40af86704b216a91ce946b98641e9c551","candidateIngested":true},
+    {"speciesId":"m136","familyNo":46,"name":"センジュガ","stage":3,"disposition":"REGENERATE","visualState":"ART_READY_QA_PASS","bytes":41548,"localExportSha256":"4ae00e01f9879be90c2f62c412f5eddc1fbcec77ba6182eb8e98189827f155ed","candidateIngested":true},
+    {"speciesId":"m235","familyNo":80,"name":"ユグドラシア","stage":1,"disposition":"REGENERATE","visualState":"ART_READY_QA_PASS","bytes":33298,"localExportSha256":"a5c1defafa948bba4e46bfa1548a1ec72dfb09a165279c9c3225827fb8afb95d","candidateIngested":true}
+  ]
+}
