@@ -1,0 +1,12 @@
+{
+  "speciesId": "m001",
+  "encoding": "base64-chunks",
+  "chunkCharsMax": 32768,
+  "parts": [
+    "part-0001.b64",
+    "part-0002.b64"
+  ],
+  "rawBytes": 38504,
+  "rawSha256": "7155656d37ec2541fc97adfacb99c74368fe0be5ffdf90080aab86f97431b041",
+  "originalFilename": "m001.webp"
+}
