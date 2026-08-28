@@ -12,7 +12,7 @@ const revisions = JSON.parse(fs.readFileSync(path.join(root, 'public/monster-ass
 const canonicalArt = JSON.parse(fs.readFileSync(path.join(root, 'design/current/monster-asset-manifest.json'), 'utf8'))
 const sw = fs.readFileSync(path.join(root, 'public/sw.js'), 'utf8')
 const main = fs.readFileSync(path.join(root, 'src/main.jsx'), 'utf8')
-const canonicalUrl = 'https://syoudai0514.github.io/mana-evo/'
+const canonicalUrl = 'https://mana-evo.vercel.app/'
 
 function publicAsset(relativePath) {
   return path.join(root, 'public', relativePath)
@@ -38,12 +38,13 @@ test('PWA icons have the required PNG dimensions', () => {
   assert.deepEqual(pngDimensions(publicAsset('icons/icon-512.png')), [512, 512])
 })
 
-test('manifest is pinned to the full canonical GitHub Pages app URL', () => {
+test('manifest and metadata are pinned to the Vercel production canonical URL', () => {
   for (const key of ['id', 'start_url', 'scope']) assert.equal(manifest[key], canonicalUrl)
-  assert.match(index, /rel="canonical" href="https:\/\/syoudai0514\.github\.io\/mana-evo\/"/)
-  assert.match(index, /property="og:url" content="https:\/\/syoudai0514\.github\.io\/mana-evo\/"/)
-  assert.match(main, /CANONICAL_PATH = '\/mana-evo\/'/)
-  assert.match(main, /location\.replace/)
+  assert.match(index, /rel="canonical" href="https:\/\/mana-evo\.vercel\.app\/"/)
+  assert.match(index, /property="og:url" content="https:\/\/mana-evo\.vercel\.app\/"/)
+  assert.doesNotMatch(index, /syoudai0514\.github\.io\/mana-evo/)
+  assert.doesNotMatch(main, /CANONICAL_PATH/)
+  assert.doesNotMatch(main, /location\.replace/)
 })
 
 test('service worker precache only references existing public assets', () => {
@@ -51,7 +52,7 @@ test('service worker precache only references existing public assets', () => {
     const relativePath = match[1]
     assert.ok(fs.existsSync(publicAsset(relativePath)), `service worker precache asset is missing: ${relativePath}`)
   }
-  assert.match(sw, /CACHE_NAME = `\$\{CACHE_PREFIX\}v9`/)
+  assert.match(sw, /CACHE_NAME = `\$\{CACHE_PREFIX\}v10`/)
   assert.match(sw, /monster-asset-revisions\.json/)
   assert.match(sw, /icons\/apple-touch-icon\.png/)
 })
