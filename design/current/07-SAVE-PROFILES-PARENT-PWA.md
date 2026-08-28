@@ -217,7 +217,9 @@ Account password and local Parent PIN are separate concepts.
 
 Cloud saves carry revision identity. A write based on an older revision must not silently overwrite a newer device's progress.
 
-If cloud advanced while local also has unsynced changes, treat it as a conflict. Before destructive overwrite/pull/restore boundaries, preserve a backup according to the backup contract.
+Stable player profiles are independent conflict domains inside the family snapshot. If cloud advanced while local also has unsynced changes, and the changed profile IDs are disjoint, ManaEvo may deterministically merge each profile's **learning + game + learning-to-game reward bridge** slice and commit the merged snapshot against the current cloud revision. This allows, for example, one device to advance a parent profile while another device advances a child profile without creating a false household conflict.
+
+If the **same stable profile** changed differently on both devices, or a registry/schema change cannot be proven compatible, stop and surface an adult conflict decision rather than guessing. Before destructive overwrite/pull/restore boundaries, preserve a backup according to the backup contract.
 
 Silent last-write-wins that can destroy another device's progress is prohibited.
 
@@ -471,7 +473,8 @@ W-107 owns platform/save/hosting boundaries and does not redefine other domain r
 - [ ] browser bundle contains no secret/service-role credential;
 - [ ] full learning + game + reward bridge round-trips through cloud;
 - [ ] fresh device adopts existing cloud state;
-- [ ] local/cloud divergent edits surface a conflict rather than silent overwrite;
+- [ ] disjoint edits to different stable profiles merge without losing either profile;
+- [ ] divergent edits to the same stable profile surface a conflict rather than silent overwrite;
 - [ ] session persists/refreshes correctly;
 - [ ] email confirmation and password recovery return to Vercel production for production flows.
 
