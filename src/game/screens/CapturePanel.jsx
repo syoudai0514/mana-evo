@@ -154,7 +154,7 @@ export function CapturePanel({ game, battle, captureDisabled = false, onCapture,
     setSelectedBall(recommended)
   }, [battle.battleId, battle.captureAttempts, recommended, selectedBall])
 
-  const focusedTailStyle = { marginBottom: '72px' }
+  const focusedTailStyle = { marginBottom: '88px' }
 
   if (captureDisabled) {
     return <section ref={panelRef} style={focusedTailStyle} className="battle-tools capture-panel" role="dialog" aria-label="つかまえる"><strong>👑 このバトルでは GETできないよ</strong><p>ボールは なげられない バトルだよ。たおして すすもう！</p><button className="secondary" onClick={onCancel}>バトルへ もどる</button></section>
