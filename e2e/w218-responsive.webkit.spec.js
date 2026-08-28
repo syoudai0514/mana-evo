@@ -5,7 +5,7 @@ import { isStageUnlocked, startBattle, xpToNext } from '../src/game/engine.js'
 import { dayNumber } from '../src/kids-quest-study/engine/srs.js'
 import { todayKey } from '../src/kids-quest-study/engine/storage.js'
 
-const PORTRAIT_WIDTHS = [390, 375]
+const PORTRAIT_WIDTHS = [430, 390, 375]
 
 function learningSave(coreDone = true) {
   return {
@@ -135,7 +135,7 @@ for (const width of PORTRAIT_WIDTHS) {
     await expectFirstDecisionVisible(page, page.locator('.move-grid button').first())
     await expectNoHorizontalOverflow(page)
 
-    const capture = page.getByRole('button', { name: /わを なげる/ })
+    const capture = page.getByRole('button', { name: /ボールを なげる/ })
     await expectFirstDecisionVisible(page, capture)
     await capture.click()
     await expectFirstDecisionVisible(page, page.locator('.capture-main-cta'))
@@ -146,14 +146,41 @@ for (const width of PORTRAIT_WIDTHS) {
     await page.setViewportSize({ width, height: 844 })
     await installSave(page, battleGameAtHalfHp({ rainbow: true, nearEvolution: true }))
     await page.goto('/')
-    await page.getByRole('button', { name: /わを なげる/ }).click()
-    const rainbow = page.locator('.capture-item-grid').getByRole('button', { name: /にじのわ/ })
+    await page.getByRole('button', { name: /ボールを なげる/ }).click()
+    const rainbow = page.locator('.capture-item-grid').getByRole('button', { name: /にじボール/ })
     await rainbow.click()
-    await page.getByRole('button', { name: /にじのわを なげる！/ }).click()
+    await page.getByRole('button', { name: /にじボールを なげる！/ }).click()
 
     const evolution = page.getByRole('dialog', { name: 'シンカ！' })
-    await expect(evolution).toBeVisible()
+    await expect(evolution).toBeVisible({ timeout: 9000 })
     await expectFirstDecisionVisible(page, evolution.getByRole('button', { name: 'つづける！' }))
     await expectNoHorizontalOverflow(page)
   })
 }
+
+test('iPhone WebKit keeps a separate scroll position for each top-level destination', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await installSave(page, createGameState(), { coreDone: false })
+  await page.goto('/')
+
+  const nav = page.getByRole('navigation', { name: 'メインメニュー' })
+  await page.evaluate(() => window.scrollTo(0, Math.min(document.body.scrollHeight - window.innerHeight, 360)))
+  const homeY = await page.evaluate(() => window.scrollY)
+  expect(homeY).toBeGreaterThan(40)
+
+  await nav.getByRole('button', { name: /まなぶ/ }).click()
+  await expect(page.locator('.study-hub')).toBeVisible()
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(20)
+
+  await page.evaluate(() => window.scrollTo(0, Math.min(document.body.scrollHeight - window.innerHeight, 240)))
+  const studyY = await page.evaluate(() => window.scrollY)
+  expect(studyY).toBeGreaterThan(20)
+
+  await nav.getByRole('button', { name: /ホーム/ }).click()
+  await expect(page.locator('.home-screen')).toBeVisible()
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(homeY - 30)
+
+  await nav.getByRole('button', { name: /まなぶ/ }).click()
+  await expect(page.locator('.study-hub')).toBeVisible()
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(studyY - 30)
+})

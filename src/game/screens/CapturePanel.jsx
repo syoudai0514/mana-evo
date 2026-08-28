@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { CAPTURE_CONFIG } from '../content.js'
 import { MAX_CAPTURE_ATTEMPTS, canAttemptCapture, captureChance } from '../engine.js'
 import { CAPTURE_ITEM_IDS } from '../progression.js'
+import { captureDisplayOf } from '../captureDisplay.js'
+import PlaceholderMonster from '../PlaceholderMonster.jsx'
 
 const CAPTURE_META = CAPTURE_CONFIG
 
@@ -16,8 +18,30 @@ function StarCue({ count, max = 5 }) {
   return <span className="capture-ease-stars" aria-label={`つかまえやすさ ${count}/${max}`}>{Array.from({ length: max }, (_, index) => index < count ? '★' : '☆').join('')}</span>
 }
 
-export function CapturePresentation({ sequence, onComplete, intervalMs = 480 }) {
+export function CaptureBallIcon({ itemType = 'star', compact = false }) {
+  const display = captureDisplayOf(itemType)
+  return <span className={`capture-ball-icon capture-ball-icon--${display.theme}${compact ? ' compact' : ''}`} aria-hidden="true">
+    <span className="capture-ball-shine" />
+    <span className="capture-ball-band" />
+    <span className="capture-ball-core">◆</span>
+  </span>
+}
+
+function frameDuration(type, defaultInterval) {
+  if (type === 'throw') return 680
+  if (type === 'impact') return 460
+  if (type === 'ring_closed') return 620
+  if (type === 'caught') return 920
+  if (type === 'ring_scatter' || type === 'escaped') return 760
+  return defaultInterval
+}
+
+export function CapturePresentation({ sequence, onComplete, intervalMs = 520 }) {
   const frames = Array.isArray(sequence?.frames) ? sequence.frames : []
+  const visualFrames = useMemo(
+    () => frames.length ? [{ type: 'throw' }, { type: 'impact' }, ...frames] : [],
+    [sequence?.id, frames]
+  )
   const [frameIndex, setFrameIndex] = useState(0)
 
   useEffect(() => {
@@ -25,52 +49,74 @@ export function CapturePresentation({ sequence, onComplete, intervalMs = 480 }) 
   }, [sequence?.id])
 
   useEffect(() => {
-    if (!frames.length) return undefined
+    if (!visualFrames.length) return undefined
+    const current = visualFrames[Math.min(frameIndex, visualFrames.length - 1)] || {}
     const timer = setTimeout(() => {
-      if (frameIndex < frames.length - 1) setFrameIndex((index) => index + 1)
+      if (frameIndex < visualFrames.length - 1) setFrameIndex((index) => index + 1)
       else onComplete?.()
-    }, intervalMs)
+    }, frameDuration(current.type, intervalMs))
     return () => clearTimeout(timer)
-  }, [frameIndex, frames.length, intervalMs, onComplete])
+  }, [frameIndex, visualFrames, intervalMs, onComplete])
 
-  if (!frames.length) return null
-  const frame = frames[Math.min(frameIndex, frames.length - 1)] || {}
+  if (!visualFrames.length) return null
+  const frame = visualFrames[Math.min(frameIndex, visualFrames.length - 1)] || {}
   const successSequence = frames.some((entry) => entry?.type === 'ring_closed' || entry?.type === 'caught')
   const highestStarFrame = frames.reduce((max, entry) => entry?.type === 'stars' ? Math.max(max, Number(entry.lit) || 0) : max, 0)
-  const rawLit = frame.type === 'stars'
-    ? Number(frame.lit) || 0
-    : Number(frame.lit) || (successSequence ? 4 : highestStarFrame)
-  // Even if malformed persisted presentation data is encountered, a failed
-  // sequence must never visually impersonate four completed stars.
-  const lit = Math.max(0, Math.min(successSequence ? 4 : 3, rawLit))
-  const message = frame.type === 'ring_closed' ? '4つ ひかった！ 「わ」が とじた！'
-    : frame.type === 'caught' ? 'ゲット！'
-      : frame.type === 'ring_scatter' ? `${lit}つ ひかったところで 「わ」が ほどけた…`
-        : frame.type === 'escaped' ? 'おしい！ バトルは つづくよ。'
-          : `${lit}つめの ほしが ひかった！`
+  let lit = 0
+  if (frame.type === 'stars') lit = Number(frame.lit) || 0
+  else if (frame.type === 'ring_closed' || frame.type === 'caught') lit = 4
+  else if (frame.type === 'ring_scatter' || frame.type === 'escaped') lit = highestStarFrame
+  // A failed sequence must never visually impersonate four completed stars.
+  lit = Math.max(0, Math.min(successSequence ? 4 : 3, lit))
+
+  const display = captureDisplayOf(sequence?.itemType)
+  const message = frame.type === 'throw' ? `${display.label}を なげた！`
+    : frame.type === 'impact' ? 'ヒット！ ボールが ひかる…'
+      : frame.type === 'ring_closed' ? '4つ そろった！'
+        : frame.type === 'caught' ? 'ゲット！'
+          : frame.type === 'ring_scatter' ? 'あとすこし！ ひかりが ほどけた…'
+            : frame.type === 'escaped' ? 'ボールから とびだした！'
+              : `${Math.max(1, lit)}つめの ほしが ひかった！`
+
+  const stateClass = frame.type === 'throw' ? 'is-throwing'
+    : frame.type === 'impact' ? 'is-impact'
+      : frame.type === 'caught' ? 'is-caught'
+        : frame.type === 'ring_scatter' || frame.type === 'escaped' ? 'is-escaped'
+          : frame.type === 'ring_closed' ? 'is-sealed'
+            : 'is-waiting'
 
   return <div className="evolution-overlay capture-sequence-overlay" role="dialog" aria-modal="true" aria-label="捕獲演出">
-    <section className="evolution-celebration-card" data-testid="capture-sequence" data-frame-type={frame.type || 'stars'} data-lit-stars={lit} aria-live="polite">
-      <p className="evolution-kicker">⭕ 「わ」が ひかる！</p>
-      <div className="capture-stars" aria-label={`4つのうち ${lit}つ点灯`}>
-        {Array.from({ length: 4 }, (_, index) => <span key={index}>{index < lit ? '★' : '☆'}</span>)}
+    <section className={`evolution-celebration-card capture-cinematic ${stateClass}`} data-testid="capture-sequence" data-frame-type={frame.type || 'stars'} data-lit-stars={lit} aria-live="polite">
+      <p className="evolution-kicker">GET CHANCE</p>
+      <div className="capture-cinematic-stage">
+        <div className="capture-target">
+          {sequence?.speciesId && <PlaceholderMonster speciesId={sequence.speciesId} size={148} />}
+        </div>
+        <div className="capture-energy" aria-hidden="true" />
+        <div className="capture-ball-flight"><CaptureBallIcon itemType={sequence?.itemType} /></div>
+        <div className="capture-stars" aria-label={`4つのうち ${lit}つ点灯`}>
+          {Array.from({ length: 4 }, (_, index) => <span key={index} className={index < lit ? 'lit' : ''}>★</span>)}
+        </div>
       </div>
       <h2>{message}</h2>
+      <p className="capture-cinematic-note">{frame.type === 'caught' ? `${display.label}が しっかり とじた！` : frame.type === 'escaped' || frame.type === 'ring_scatter' ? 'バトルは まだ つづくよ' : '4つ ひかったら GET！'}</p>
     </section>
   </div>
 }
 
 export function CapturePanel({ game, battle, captureDisabled = false, onCapture, onCancel }) {
-  const [selectedRing, setSelectedRing] = useState(null)
+  const [selectedBall, setSelectedBall] = useState(null)
   const captureHpReady = battle.enemy.hp > 0 && battle.enemy.hp / battle.enemy.maxHp <= 0.5
   const captureAttemptsLeft = Math.max(0, MAX_CAPTURE_ATTEMPTS - (battle.captureAttempts || 0))
   const options = CAPTURE_ITEM_IDS.map((id) => {
     const meta = CAPTURE_META[id]
+    const display = captureDisplayOf(id)
     const ready = !captureDisabled && canAttemptCapture(game, battle, id)
     const chance = captureChance(battle, id)
     return {
       id,
       meta,
+      display,
       ready,
       chance,
       owned: game.captureItems?.[id] || 0,
@@ -78,24 +124,24 @@ export function CapturePanel({ game, battle, captureDisabled = false, onCapture,
     }
   })
   const recommended = [...options].filter((option) => option.ready).sort((a, b) => b.chance - a.chance)[0]?.id || null
-  const selected = options.find((option) => option.id === selectedRing && option.ready) || null
+  const selected = options.find((option) => option.id === selectedBall && option.ready) || null
 
   useEffect(() => {
-    if (selectedRing && options.some((option) => option.id === selectedRing && option.ready)) return
-    setSelectedRing(recommended)
-  }, [battle.battleId, battle.captureAttempts, recommended, selectedRing])
+    if (selectedBall && options.some((option) => option.id === selectedBall && option.ready)) return
+    setSelectedBall(recommended)
+  }, [battle.battleId, battle.captureAttempts, recommended, selectedBall])
 
   if (captureDisabled) {
-    return <section className="battle-tools capture-panel" role="dialog" aria-label="つかまえる"><strong>👑 このバトルでは GETできないよ</strong><p>「わ」は なげられない バトルだよ。たおして すすもう！</p><button className="secondary" onClick={onCancel}>バトルへ もどる</button></section>
+    return <section className="battle-tools capture-panel" role="dialog" aria-label="つかまえる"><strong>👑 このバトルでは GETできないよ</strong><p>ボールは なげられない バトルだよ。たおして すすもう！</p><button className="secondary" onClick={onCancel}>バトルへ もどる</button></section>
   }
 
-  return <section className={`battle-tools capture-panel ${captureHpReady ? 'capture-open' : 'capture-locked'}`} role="dialog" aria-label="どの「わ」をつかう？">
-    <div className={'capture-main-cta ' + (captureHpReady && captureAttemptsLeft > 0 ? 'ready' : 'locked')}><span>⭕</span><strong>どの「わ」を つかう？</strong><small>のこり {captureAttemptsLeft}かい</small></div>
-    <h2>{captureAttemptsLeft <= 0 ? '「わ」は 3かい なげたよ' : captureHpReady ? '⭐ つかう「わ」を えらぼう！' : '🔒 HPを はんぶんいかに！'}</h2>
-    <p>{captureAttemptsLeft <= 0 ? 'このバトルでは もう「わ」を なげられないよ。' : captureHpReady ? '★と「おすすめ！」を みて えらぼう。' : `あいての HPを ${Math.floor(battle.enemy.maxHp / 2)} いかまで へらそう。いまは ${battle.enemy.hp}。`}</p>
+  return <section className={`battle-tools capture-panel ${captureHpReady ? 'capture-open' : 'capture-locked'}`} role="dialog" aria-label="どのボールをつかう？">
+    <div className={'capture-main-cta ' + (captureHpReady && captureAttemptsLeft > 0 ? 'ready' : 'locked')}><CaptureBallIcon itemType={selected?.id || recommended || 'star'} compact /><div><strong>どのボールを つかう？</strong><small>のこり {captureAttemptsLeft}かい</small></div></div>
+    <h2>{captureAttemptsLeft <= 0 ? 'ボールは 3かい なげたよ' : captureHpReady ? 'ボールを えらぼう！' : '🔒 HPを はんぶんいかに！'}</h2>
+    <p>{captureAttemptsLeft <= 0 ? 'このバトルでは もう ボールを なげられないよ。' : captureHpReady ? '★と「おすすめ！」を みて えらぼう。' : `あいての HPを ${Math.floor(battle.enemy.maxHp / 2)} いかまで へらそう。いまは ${battle.enemy.hp}。`}</p>
 
     <div className="capture-item-grid">{options.map((option) => {
-      const isSelected = option.id === selectedRing
+      const isSelected = option.id === selectedBall
       const isRecommended = option.id === recommended
       return <button
         key={option.id}
@@ -103,21 +149,21 @@ export function CapturePanel({ game, battle, captureDisabled = false, onCapture,
         className={`${option.ready ? 'capture-ready' : ''} ${isSelected ? 'selected' : ''} ${isRecommended ? 'recommended' : ''}`.trim()}
         disabled={!option.ready}
         aria-pressed={isSelected}
-        onClick={() => setSelectedRing(option.id)}
+        onClick={() => setSelectedBall(option.id)}
       >
-        <strong>{option.meta.icon} {option.meta.label}</strong>
-        <StarCue count={option.stars} />
-        <small>もってる：{option.owned}こ {isRecommended && option.ready ? '　おすすめ！' : ''}</small>
+        <CaptureBallIcon itemType={option.id} compact />
+        <span className="capture-item-copy"><strong>{option.display.label}</strong><StarCue count={option.stars} /><small>もってる：{option.owned}こ</small></span>
+        {isRecommended && option.ready && <b className="capture-recommended-badge">おすすめ！</b>}
       </button>
     })}</div>
 
     <details className="capture-details">
       <summary>くわしい かくりつ</summary>
-      {options.map((option) => <p key={option.id}>{option.meta.icon} {option.meta.label}：{Math.round(option.chance * 100)}%</p>)}
+      {options.map((option) => <p key={option.id}>{option.display.label}：{Math.round(option.chance * 100)}%</p>)}
     </details>
 
-    <div className="battle-action-row">
-      <button className="primary" disabled={!selected} onClick={() => selected && onCapture(selected.id)}>{selected ? `${selected.meta.label}を なげる！` : '「わ」を えらんでね'}</button>
+    <div className="battle-action-row capture-actions">
+      <button className="primary" disabled={!selected} onClick={() => selected && onCapture(selected.id)}>{selected ? `${selected.display.label}を なげる！` : 'ボールを えらんでね'}</button>
       <button className="secondary" onClick={onCancel}>バトルへ もどる</button>
     </div>
   </section>

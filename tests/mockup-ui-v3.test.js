@@ -35,7 +35,7 @@ test('adventure UI exposes world route, daily five and recommendation meaning', 
 
 test('battle capture and evolution keep focused canonical actions visible', () => {
   assert.ok(capture.includes('capture-main-cta'))
-  assert.ok(capture.includes('どの「わ」を つかう？'))
+  assert.ok(capture.includes('どのボールを つかう？'))
   assert.ok(battle.includes('EvolutionCelebration'))
   assert.ok(!battle.includes('✨ いま シンカする！'))
   assert.ok(monster.includes('シンカの ほうほう'))

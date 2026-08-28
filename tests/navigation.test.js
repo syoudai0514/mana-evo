@@ -28,7 +28,16 @@ test('focused and active-battle states do not compete with top navigation', () =
   }
   assert.equal(shouldShowTopLevelNavigation('adventure'), true)
   assert.equal(shouldShowTopLevelNavigation('adventure', { activeBattle: true }), false)
-  assert.match(app, /shouldShowTopLevelNavigation\(view,\{activeBattle:!!game\.activeBattle\}\)/)
+  assert.match(app, /shouldShowTopLevelNavigation\(view,\{activeBattle\}\)/)
+})
+
+test('each top-level destination owns scroll position and focused flows start at top', () => {
+  assert.match(app, /scrollByViewRef = useRef\(Object\.create\(null\)\)/)
+  assert.match(app, /isTopLevelChildView\(view\) && !activeBattle/)
+  assert.match(app, /scrollByViewRef\.current\[view\] \|\| 0/)
+  assert.match(app, /window\.scrollTo\(\{ top: target, left: 0, behavior: 'auto' \}\)/)
+  assert.match(app, /scrollByViewRef\.current\[view\] = window\.scrollY/)
+  assert.match(app, /\[view, activeBattle\]/)
 })
 
 test('bottom adventure navigation always opens the adventure map', () => {

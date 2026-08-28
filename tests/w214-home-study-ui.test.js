@@ -31,6 +31,6 @@ test('W-214 Study puts required learning before progressive optional modes', () 
 test('W-214 Study removes implementation wording and states canonical extra-learning rewards', () => {
   for (const stale of ['Kids Quest 学習エンジン', '学習エンジン', '3もん中2もん', 'ticket+1']) assert.ok(!study.includes(stale), stale)
   assert.ok(study.includes('1もん クリアするたび 🎫チケット+1 と 🧭たんさくポイント+1'))
-  assert.ok(study.includes('ついかの せいかいが 3こ たまるたび ⭐ほしのわ+1'))
+  assert.ok(study.includes('ついかの せいかいが 3こ たまるたび ほしボール+1'))
   assert.ok(study.includes('⚡ ついかチャレンジ（3もん）'))
 })

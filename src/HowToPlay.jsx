@@ -8,7 +8,7 @@ import './how-to-play.css'
 const HELP_TOPICS = [
   { id: 'learning', icon: '📚', title: 'まなび と チケット', summary: 'きょうの まなびと ごほうび' },
   { id: 'adventure', icon: '🗺️', title: 'ぼうけん と たんさく', summary: 'バトルへ いく・シンカアイテムを さがす' },
-  { id: 'capture', icon: '⭐', title: 'バトル と GET', summary: 'HPを へらして「わ」を なげる' },
+  { id: 'capture', icon: '✨', title: 'バトル と GET', summary: 'HPを へらして ボールを なげる' },
   { id: 'evolution', icon: '🌱', title: 'そだてる・シンカ', summary: 'じぶんで そだてて シンカする' },
   { id: 'special', icon: '🔷', title: 'とくべつな すがた', summary: 'ギガシンカ と キョダイバースト' }
 ]
@@ -107,9 +107,9 @@ export default function HowToPlay({ game, today, goHome, goAdventure, goMonsters
       {topic === 'learning' && <section className="howto-section">
         <TopicHeader icon="📚" kicker="まず まなぶ" title="まなび と チケット" />
         <div className="howto-reward-grid">
-          <article><strong>きょうの 5タスク</strong><p>5つ ぜんぶ おわると、はじめの 1かいだけ チケット3まい・ほしのわ3こ・たんさくポイント2ポイントを もらえるよ。きょうの まなびが おわるまで、あたらしい バトルは はじめられないよ。</p></article>
+          <article><strong>きょうの 5タスク</strong><p>5つ ぜんぶ おわると、はじめの 1かいだけ チケット3まい・ほしボール3こ・たんさくポイント2ポイントを もらえるよ。きょうの まなびが おわるまで、あたらしい バトルは はじめられないよ。</p></article>
           <article><strong>ついかの もんだい</strong><p>ついかの もんだいは、1もん クリアするたびに チケット1まい と たんさくポイント1ポイント。なんもんでも ちょうせんできるよ。</p></article>
-          <article><strong>もっと せいかい</strong><p>ついかの まなびで せいかいが 3こ たまるごとに、ほしのわ1こ。じゆうべんきょうは、ちょくせつ チケットを ふやさないよ。</p></article>
+          <article><strong>もっと せいかい</strong><p>ついかの まなびで せいかいが 3こ たまるごとに、ほしボール1こ。じゆうべんきょうは、ちょくせつ チケットを ふやさないよ。</p></article>
         </div>
         <button className="primary howto-monster-button" onClick={goStudy}>📚 まなびへ いく！</button>
       </section>}
@@ -125,17 +125,17 @@ export default function HowToPlay({ game, today, goHome, goAdventure, goMonsters
       </section>}
 
       {topic === 'capture' && <section className="howto-section">
-        <TopicHeader icon="⭐" kicker="HPを はんぶんまで へらそう" title="バトル と GET" />
+        <TopicHeader icon="✨" kicker="HPを はんぶんまで へらそう" title="バトル と GET" />
         <p>バトルを はじめると、チケットを 1まい あずけるよ。かつか GETできたら その1まいを つかい、まけたり バトルを やめたりしたときは もどってくるよ。</p>
         <div className="howto-reward-grid">
-          <article><strong>① HPが はんぶんいか</strong><p>GETできる あいては、HPが はんぶんいかに なると「わ」を なげられるよ。</p></article>
-          <article><strong>② 「わ」を なげよう！</strong><p>「わ」を なげられるのは、1つの バトルで さいだい 3かいまで。</p></article>
-          <article><strong>⭐ ほしのわ</strong><p>きほんの つかまえやすさ。</p></article>
-          <article><strong>⚪ ぎんのわ</strong><p>ほしのわの 1.2ばい つかまえやすいよ。</p></article>
-          <article><strong>🟡 きんのわ</strong><p>ほしのわの 1.5ばい つかまえやすいよ。</p></article>
-          <article><strong>🌈 にじのわ</strong><p>つかえば かならず GETできる とくべつな「わ」だよ。</p></article>
+          <article><strong>① HPが はんぶんいか</strong><p>GETできる あいては、HPが はんぶんいかに なると ボールを なげられるよ。</p></article>
+          <article><strong>② ボールを なげよう！</strong><p>ボールを なげられるのは、1つの バトルで さいだい 3かいまで。</p></article>
+          <article><strong>🔵 ほしボール</strong><p>きほんの つかまえやすさ。</p></article>
+          <article><strong>⚪ ぎんボール</strong><p>ほしボールの 1.2ばい つかまえやすいよ。</p></article>
+          <article><strong>🟡 きんボール</strong><p>ほしボールの 1.5ばい つかまえやすいよ。</p></article>
+          <article><strong>✨ にじボール</strong><p>つかえば かならず GETできる とくべつな ボールだよ。</p></article>
         </div>
-        <p><strong>4つの ほしが 1こずつ ひかって、4つ ぜんぶ そろったら GET！</strong> 4つ そろう まえに とまることも あるよ。</p>
+        <p><strong>ボールを なげる → モンスターを つつむ → 4つの ほしが 1こずつ ひかる。</strong> 4つ ぜんぶ そろったら GET！ そろう まえに とびだすことも あるよ。</p>
         <button className="primary howto-monster-button" onClick={goAdventure}>⚔️ バトルを さがす！</button>
       </section>}
 

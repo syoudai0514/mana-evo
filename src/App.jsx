@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { availableTicketCount } from './game/progression.js'
 import { applyLearningQueues } from './game/sharedRuntime.js'
 import { GAME_SAVE_EVENT, loadGameForProfile, saveGameForProfile } from './game/saveStore.js'
@@ -7,7 +7,7 @@ import { levelsUntilEvolution } from './game/engine.js'
 import PlaceholderMonster from './game/PlaceholderMonster.jsx'
 import { AdventureFlow, MonsterScreen } from './game/GameScreens.jsx'
 import AppNavigation from './navigation/AppNavigation.jsx'
-import { isFocusedAppView, shouldShowTopLevelNavigation } from './navigation/viewOwnership.js'
+import { isFocusedAppView, isTopLevelChildView, shouldShowTopLevelNavigation } from './navigation/viewOwnership.js'
 import HowToPlay from './HowToPlay.jsx'
 import ParentGate from './parent/ParentGate.jsx'
 
@@ -27,11 +27,11 @@ import { setSfxEnabled, unlockSfx, sfx } from './kids-quest-study/engine/sfx.js'
 
 function StatusBar({ game, today }) {
   const tickets = availableTicketCount(game, today)
-  const starRings = game.captureItems?.star || 0
+  const starBalls = game.captureItems?.star || 0
   return <div className="status-bar resource-bar" aria-label="もちもの">
     <span className="resource-pill ticket" title="バトルチケット：ぼうけんで1まい使う"><i>🎫</i><strong>{tickets}</strong><small>チケット</small></span>
     <span className="resource-pill mana" title="マナ：まなびでたまる成長のちから"><i>💎</i><strong>{game.mana}</strong><small>マナ</small></span>
-    <span className="resource-pill star" title="ほしのわ：モンスターをGETするときに使う"><i>⭐</i><strong>{starRings}</strong><small>ほしのわ</small></span>
+    <span className="resource-pill star" title="ほしボール：モンスターをGETするときに使う"><i className="mini-capture-ball" aria-hidden="true"/><strong>{starBalls}</strong><small>ほしボール</small></span>
   </div>
 }
 
@@ -72,7 +72,7 @@ function Home({ learning, game, go, today }) {
       <div className="mock-panel-title"><span>🧭</span><h2>いまの じょうきょう</h2></div>
       <div className="home-status-grid">
         <div><span>つかえるチケット</span><strong>🎫 {ticketCount}<small>まい</small></strong></div>
-        <div className="location-cell"><span>いまのぼうけん</span><strong>エリア{currentAreaNo}・{currentZone?.name}</strong><small>{currentArea?.levelLabel}</small></div>
+        <div className="location-cell"><span>いまのぼうけん</span><strong><b>エリア{currentAreaNo}</b><em>・</em><b>{currentZone?.name}</b></strong><small>{currentArea?.levelLabel}</small></div>
       </div>
       {nextEvolution && <div className="evolution-mini-goal"><strong>{evolutionLeft === 0 ? '✨ つぎのシンカ：いま ' + nextEvolution.name + ' にシンカできる！' : evolutionLeft != null ? '✨ つぎのシンカ：あと ' + evolutionLeft + 'Lvで ' + nextEvolution.name : '✨ つぎのシンカ：' + nextEvolution.name}</strong></div>}
     </section>
@@ -103,7 +103,7 @@ function StudyHub({ learning, dispatch, onStartTask, go }) {
 
     {!daily.coreDone ? <section className="study-section"><h2>🚀 きょうの ミッション</h2><p className="kid-note">あと {remaining.length}きょうか。すきな じゅんばんで えらべるよ。</p><div className="study-task-grid">{remaining.map((task,index)=>{const dom=DOMAIN_BY_ID[task.domainId];return <button key={task.uid} className="study-task" onClick={()=>startCore(task,index)}><span>{dom?.emoji}</span><strong>{domainName(dom,learning.grade)}</strong><small>{task.questionCount}もん</small>{index===0&&<b>つぎ</b>}</button>})}</div></section> : <section className="study-section complete"><h2>🎉 きょうの ミッション クリア！</h2><p>バトルをあそべるよ。もっと まなびたいときは、ついかチャレンジや ほかの まなびへ。</p></section>}
 
-    {daily.coreDone && <section className="study-section"><h2>🎫 もっとバトルしたい</h2><p className="kid-note">1もん クリアするたび 🎫チケット+1 と 🧭たんさくポイント+1。ついかの せいかいが 3こ たまるたび ⭐ほしのわ+1！</p><button className="primary huge" onClick={()=>onStartTask(buildExtraTask(daily.extraIndex,learning.grade))}>⚡ ついかチャレンジ（3もん）</button></section>}
+    {daily.coreDone && <section className="study-section"><h2>🎫 もっとバトルしたい</h2><p className="kid-note">1もん クリアするたび 🎫チケット+1 と 🧭たんさくポイント+1。ついかの せいかいが 3こ たまるたび ほしボール+1！</p><button className="primary huge" onClick={()=>onStartTask(buildExtraTask(daily.extraIndex,learning.grade))}>⚡ ついかチャレンジ（3もん）</button></section>}
     {daily.coreDone && daily.okawariIndex<OKAWARI_MAX && <section className="study-section"><h2>🍭 おかわり</h2><button className="secondary huge" onClick={()=>onStartTask(buildOkawariTask(daily.okawariIndex,learning.grade))}>もう1タスク べんきょうする（あと {OKAWARI_MAX-daily.okawariIndex}）</button></section>}
 
     <details className="study-secondary-modes">
@@ -128,6 +128,7 @@ export default function App() {
   const gameProfileRef = useRef(initialProfileId)
   const [view, setView] = useState(initialGame.activeBattle ? 'adventure' : 'home')
   const [activeTask, setActiveTask] = useState(null)
+  const scrollByViewRef = useRef(Object.create(null))
   const today = dayNumber()
 
   useEffect(() => {
@@ -138,6 +139,7 @@ export default function App() {
       gameProfileRef.current = profileId
       setGame(next)
       setActiveTask(null)
+      scrollByViewRef.current = Object.create(null)
       setView(next.activeBattle ? 'adventure' : 'home')
       return
     }
@@ -150,6 +152,7 @@ export default function App() {
       const next = loadGameForProfile(profileId)
       setGame(next)
       setActiveTask(null)
+      scrollByViewRef.current = Object.create(null)
       setView(next.activeBattle ? 'adventure' : 'home')
     }
     window.addEventListener(GAME_SAVE_EVENT, reloadImportedGame)
@@ -181,10 +184,28 @@ export default function App() {
     if (signals.length) learningDispatch({type:'ACK_PROGRESSION_SIGNALS',ids:signals.map((signal)=>signal.id)})
   },[learning.pendingGameRewards,learning.pendingProgressionSignals,learning.activeProfileId,learningDispatch,today])
 
+  const activeBattle = !!game.activeBattle
+
+  // Every top-level destination owns its own scroll position. Focused flows start
+  // at the top and never overwrite the stored position of the screen underneath.
+  useLayoutEffect(() => {
+    const target = isTopLevelChildView(view) && !activeBattle
+      ? scrollByViewRef.current[view] || 0
+      : 0
+    window.scrollTo({ top: target, left: 0, behavior: 'auto' })
+  }, [view, activeBattle])
+
+  useEffect(() => {
+    if (!isTopLevelChildView(view) || activeBattle) return undefined
+    const remember = () => { scrollByViewRef.current[view] = window.scrollY }
+    window.addEventListener('scroll', remember, { passive: true })
+    return () => window.removeEventListener('scroll', remember)
+  }, [view, activeBattle])
+
   const startTask=(task)=>{setActiveTask(task);setView('activity')}
   const dailyCompleted=learning.daily?.coreDone===true
   const focusView=isFocusedAppView(view)
-  const showTopLevelNavigation=shouldShowTopLevelNavigation(view,{activeBattle:!!game.activeBattle})
+  const showTopLevelNavigation=shouldShowTopLevelNavigation(view,{activeBattle})
 
   return <div className={`app-shell${focusView?' app-shell--focus':''}`}>
     {!focusView && <header className="game-header"><div className="logo"><span className="logo-gem">◆</span><b>マナ</b><strong>エボ</strong><small>まなびが、進化になる。</small></div><StatusBar game={game} today={today}/></header>}
