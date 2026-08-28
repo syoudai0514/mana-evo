@@ -66,3 +66,27 @@ test('shared Supabase schema is auth-owned and does not grant anon access', () =
   assert.doesNotMatch(sql, /grant[^;]+to anon/i)
   assert.match(sql, /primary key \(user_id, app_id, slot_id\)/i)
 })
+
+test('cloud snapshot includes the learning-to-game reward bridge in the same revision', () => {
+  const source = fs.readFileSync(new URL('../src/platform/cloudSnapshot.js', import.meta.url), 'utf8')
+  assert.match(source, /exportLearningRewardEnvelope\(\)/)
+  assert.match(source, /learningRewardEnvelope:/)
+  assert.match(source, /importLearningRewardEnvelope\(payload\.learningRewardEnvelope\)/)
+})
+
+test('player switching test fixtures conflicts and backup restore are behind Parent PIN', () => {
+  const shell = fs.readFileSync(new URL('../src/platform/CloudAccountShell.jsx', import.meta.url), 'utf8')
+  const gate = fs.readFileSync(new URL('../src/platform/AdultCloudControls.jsx', import.meta.url), 'utf8')
+  assert.match(shell, /<AdultCloudControls>/)
+  assert.match(gate, /PARENT_PIN_KEY/)
+  assert.match(gate, /保護者専用/)
+  assert.doesNotMatch(shell, /cloud-test-banner[^\n]+onClick=\{stopTest\}/)
+})
+
+test('browser cloud client never embeds a Supabase secret or service-role credential', () => {
+  const client = fs.readFileSync(new URL('../src/platform/sharedSupabaseRest.js', import.meta.url), 'utf8')
+  const publicConfig = fs.readFileSync(new URL('../src/platform/sharedSupabasePublicConfig.js', import.meta.url), 'utf8')
+  assert.doesNotMatch(client, /service[_-]?role/i)
+  assert.doesNotMatch(client, /sb_secret_/i)
+  assert.doesNotMatch(publicConfig, /sb_secret_/i)
+})
