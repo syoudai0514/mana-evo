@@ -1,459 +1,531 @@
-# ManaEvo CURRENT — Save / Profiles / Parent / PWA
+# ManaEvo CURRENT — Save / Profiles / Parent / Cloud / PWA
 
-Status: **CURRENT canonical candidate (W-107)**  
-Phase: Rebuild Phase 2 / canonicalization  
-Scope: Save ownership, profiles, Parent controls, Kids Quest isolation/import, migrations, GitHub Pages/PWA, monster-asset cache/versioning
+Status: **CURRENT normative contract (W-107 + D-018 + D-019 normalization)**  
+Phase: Rebuild / platform normalization  
+Scope: save ownership, profiles, Parent controls, Kids Quest isolation/import, cloud persistence, backups, migrations, test-mode isolation, Vercel production/PWA, monster-asset cache/versioning
 
 ## 0. Authority and scope
 
-This document is the CURRENT platform contract for ManaEvo save/profile/Parent/PWA behavior.
+This document is the CURRENT platform contract for ManaEvo save/profile/Parent/cloud/PWA behavior.
 
 Authority order follows `REBUILD-START-HERE.md` and `design/rebuild/DECISION-LOG.md`:
 
-1. explicit user decisions
-2. exact `design/baseline/FINAL-CORRECTED/source/`
-3. later changes with confirmed approval
-4. CURRENT canonical documents
-5. data master
-6. runtime implementation
-7. review/completion history
+1. explicit user decisions;
+2. exact `design/baseline/FINAL-CORRECTED/source/`;
+3. approved later changes;
+4. CURRENT canonical documents;
+5. data master;
+6. runtime implementation;
+7. review/completion history.
 
-Primary evidence for this document:
+This normalization incorporates the later explicit decisions in **D-018** (shared account/cloud save/test data) and **D-019** (Vercel as the sole production canonical host). Those decisions supersede the earlier W-107 GitHub Pages/local-only assumptions where they conflict.
 
-- `design/baseline/FINAL-CORRECTED/source/10-BRAND-AND-REPOSITORY-SPEC.md`
-- `design/baseline/FINAL-CORRECTED/source/12-KIDS-QUEST-LEARNING-IMPORT-SPEC.md`
-- `design/baseline/FINAL-CORRECTED/source/13-EXECUTION-FLOW.md`
-- `design/baseline/FINAL-CORRECTED/source/99-IMPLEMENTATION-REVIEW-CHECKLIST.md`
-- `design/rebuild/DECISION-LOG.md` D-001, D-002, D-005, D-013, D-014
-- `design/rebuild/audit/ui-architecture-audit.md`
-
-Runtime files named later in this document are **observations only**. They do not outrank the evidence above.
-
-W-107 is documentation/canonicalization only. It does **not** modify deployment, runtime, `src/**`, `tests/**`, the exact baseline, or another Work Item's output.
+Runtime files named later are implementation evidence. They do not outrank the contract.
 
 ---
 
-## 1. Application boundary: ManaEvo and Kids Quest are separate apps
+## 1. Application boundary: ManaEvo and Kids Quest remain separate apps
 
-ManaEvo and Kids Quest must coexist as independent applications.
+ManaEvo and Kids Quest are independent applications and save domains.
 
 | Concern | ManaEvo | Kids Quest |
 |---|---|---|
 | Repository | `syoudai0514/mana-evo` | `syoudai0514/kids-quest` |
-| Write authority | ManaEvo writes only here | **read-only source** from ManaEvo work |
-| Production path | `/mana-evo/` | `/kids-quest/` |
-| Normal save writes | ManaEvo-owned namespace only | ManaEvo must not write |
-| IndexedDB | ManaEvo-owned stores/databases only | ManaEvo must not modify/delete |
-| Cache Storage | ManaEvo-owned cache names only | ManaEvo must not modify/delete |
-| Service Worker | scope limited to ManaEvo path | independent Kids Quest scope |
+| Write authority | ManaEvo writes only ManaEvo-owned local/cloud state | read-only source from ManaEvo work |
+| Production authority | Vercel ManaEvo project | independently owned by Kids Quest |
+| Normal save writes | ManaEvo-owned namespace + ManaEvo `app_id` cloud rows | ManaEvo must not write |
+| IndexedDB/localStorage | ManaEvo-owned keys/stores only | ManaEvo must not modify/delete |
+| Cache Storage/SW | ManaEvo Vercel origin and ManaEvo cache prefix | independent Kids Quest scope |
 | Progress relationship | optional one-way import | source remains unchanged |
 
-A shared GitHub Pages origin does not make the two apps one save domain. No reset, migration, cache cleanup, Service Worker activation, or backup operation in ManaEvo may mutate Kids Quest state.
+The apps no longer need to share a production origin. Isolation is a data-ownership rule, not a pathname trick.
 
-The following are prohibited:
+ManaEvo must never:
 
-- using a Kids Quest localStorage key or IndexedDB store as ManaEvo's normal write target
-- deleting or rewriting Kids Quest data during ManaEvo reset/migration
-- deleting Kids Quest caches during ManaEvo Service Worker activation
-- widening ManaEvo Service Worker scope to cover `/kids-quest/`
-- live two-way synchronization between the apps
-- importing Kids Quest game-specific monster/battle state without a separately approved safe mapping
+- use a Kids Quest localStorage key or IndexedDB store as its normal write target;
+- delete or rewrite Kids Quest data during reset/migration;
+- delete Kids Quest caches;
+- create a Service Worker intended to control Kids Quest;
+- create live two-way synchronization between the apps without a later explicit decision;
+- automatically import Kids Quest game-specific monster/battle state without an approved mapping.
 
 ---
 
-## 2. Save ownership model
+## 2. Identity and save ownership model
 
-### 2.1 Top-level ownership
+### 2.1 Auth account and player profile are different identities
 
-ManaEvo save data is organized around a **profile registry + active profile + per-profile learning/game state**.
+A Supabase Auth account is the **family/parent account** used to access shared cloud persistence. A player profile is an in-app ManaEvo identity such as a parent or child.
 
-The implementation may choose the physical envelope layout, but it must preserve these logical ownership boundaries:
+One Auth account may own multiple stable ManaEvo player profiles. Creating another child profile does not require another Auth user.
 
-### Application/device-level ManaEvo state
+A player profile must have a stable ID independent of display name. Display-name changes, if later supported, must not create a new save identity or orphan game/learning data.
 
-This level owns only information that is not one child's learning/game progress, including:
+### 2.2 Device-local state
 
-- profile registry / stable profile IDs
-- active profile selection
-- save-format and migration metadata
-- one-way Kids Quest import marker/version metadata
-- Parent gate/PIN lock metadata
-- ManaEvo cache/schema/version metadata needed for safe loading/updating
+The following are device/application concerns rather than shared player progression:
 
-Parent PIN is a local guard against child mis-operation, not a child progression value. It must not be used as a key that mixes or selects learning/game data.
+- which player profile this device normally opens;
+- Parent gate/PIN metadata;
+- local cache/offline metadata;
+- local cloud-sync metadata needed for conflict detection;
+- TEST-mode marker and exact pre-test return snapshot.
 
-### Per-profile learning state
+**Current player selection is device-local authority.** Selecting one profile on an iPad must not switch the active player on another device.
 
-Learning state follows the Kids Quest learning source-of-truth boundary in D-005 and `12-KIDS-QUEST-LEARNING-IMPORT-SPEC.md`. At minimum the profile relationship must preserve the source schema's ownership for:
+Parent PIN is a local guard against child mis-operation. It is not a cloud account password and must not be used as a player save key.
 
-- current/selectable grade and ahead-learning progression
-- learning mastery / unit progress
-- SRS / review state / mistake tracking
-- star-trial / promotion-related learning state
-- English learning progress
-- streak/history/daily learning state
-- learning settings carried by the imported Kids Quest schema
+### 2.3 Per-profile learning state
 
-ManaEvo must not redesign these structures merely to simplify profile storage.
+Learning state remains governed by the Kids Quest learning source-of-truth boundary in D-005. Cloud/local persistence must preserve the profile relationship for at least:
 
-### Per-profile game state
+- current/selectable grade and ahead-learning progression;
+- learning mastery / unit progress;
+- SRS / review / mistake tracking;
+- star-trial and promotion-related learning state;
+- English learning progress;
+- streak/history/daily learning state;
+- applicable learning settings.
 
-All game progression belongs to the same child profile identity as that child's learning state. This includes, as applicable under the other CURRENT game documents:
+ManaEvo must not redesign learning semantics merely to simplify persistence.
 
-- tickets and ticket lifecycle state
-- team / box / caught/dex progress
-- XP / levels / individual monster state
-- items / rings / evolution resources
-- world/adventure location and progression
-- boss/progression state
-- evolution discoveries
-- active encounter/battle continuation state
-- other game progression owned by that child
+### 2.4 Per-profile game state
 
-W-107 does not redefine those domain rules; it defines **ownership**. A game state from profile A must never be silently paired with learning state from profile B.
+Game progression belongs to the same stable profile identity as that profile's learning state. It includes, as owned by the other CURRENT game contracts:
 
-### 2.2 Stable profile identity
+- tickets and ticket lifecycle state;
+- team / BOX / caught / dex progress;
+- individual monster identity, species, level, XP and held-item state;
+- capture/evolution resources and other items;
+- world/adventure location and progression;
+- boss/progression state;
+- evolution discoveries;
+- active encounter/battle continuation state;
+- other game progression owned by that player.
 
-A profile must have a stable ID independent of its display name.
+A game state from profile A must never be silently paired with learning state from profile B.
 
-Changing a displayed name, if supported by a later approved flow, must not create a new save identity or orphan the game envelope. No implementation may use the child's display name as the primary save key.
+### 2.5 Learning-to-game bridge
+
+Unconsumed/processed learning-to-game reward bridge state is part of the recoverable ManaEvo snapshot. Changing devices must not lose pending reward state or allow the same reward to be granted again.
 
 ---
 
 ## 3. Profile switching contract
 
-Profile creation/switching is an adult-controlled operation through Parent.
+Profile creation/switching is Parent-controlled.
 
-When switching from profile A to profile B:
+When switching A → B:
 
-1. persist/normalize the outgoing profile A learning state;
-2. persist/normalize the outgoing profile A game state;
-3. change the active profile ID;
-4. load profile B learning state;
-5. load profile B game state using the **same profile B ID**;
-6. continue with no data copied between A and B unless an explicit import/create operation requires it.
+1. persist/normalize A learning state;
+2. persist/normalize A game state;
+3. change the **device-local** selected profile;
+4. load B learning state;
+5. load B game state using the same stable B ID;
+6. copy nothing between A and B unless an explicit import/create operation requires it.
 
 Required invariants:
 
-- switching A → B → A restores A's own learning and game progress;
-- switching profiles does not duplicate tickets, XP, items, rewards, mastery, or profiles;
-- a new profile begins from the approved fresh learning/game defaults rather than cloning the active child's progress;
-- profile switching does not rewrite or delete Kids Quest source data;
-- migration/import code must preserve stable profile IDs once created.
+- A → B → A restores A's own learning and game progress;
+- switching does not duplicate tickets, XP, items, rewards, mastery or profiles;
+- a new profile starts from approved fresh defaults, not a clone of the active player;
+- switching never writes to Kids Quest source data;
+- migration/import preserves stable profile IDs once created.
 
-Profile deletion/rename policy is not defined by W-107 and must not be invented as part of implementing this contract.
+Profile deletion/rename product policy remains unresolved unless separately approved.
 
 ---
 
 ## 4. Parent gate and adult-only ownership
 
-### 4.1 Parent is a focused adult-only state
+Parent is a focused adult-only state. Existing child gameplay must not directly mutate Parent-owned controls.
 
-The Parent screen is not a normal child gameplay screen. Entry must pass an adult gate/PIN before adult-controlled settings can be changed.
+Adult-only controls include:
 
-The PIN exists to prevent accidental child changes on the device. The exact recovery challenge or visual treatment is an implementation detail unless a higher-authority source specifies it; runtime behavior alone does not create a permanent product rule.
+- grade/current learning-grade controls within Kids Quest rules;
+- ahead-learning controls;
+- difficulty;
+- audio/TTS settings owned by Parent;
+- profile creation/selection/switching;
+- cloud conflict resolution;
+- TEST-mode entry/exit;
+- backup creation/restore/import;
+- account logout and other destructive account/save actions.
 
-### 4.2 Controls owned by Parent
+Email/password sign-in may be offered on a fresh device so the family can recover its cloud save, but mutation of Parent-owned player/test/restore controls remains behind the local Parent gate.
 
-The following are adult-only controls and must not be directly mutable from the normal child flow:
-
-- **grade**: current learning grade selection within permitted bounds
-- **ahead learning**: unlock/lower selectable grade range and related advance-learning control already defined by Kids Quest learning rules
-- **difficulty**: normal/hard or equivalent Kids Quest learning-mode control
-- **audio**: TTS/read-aloud, voice choice/download behavior, speech speed/volume, SFX and other imported learning audio settings
-- **profile**: create/select/switch child profile
-- **backup**: export/import ManaEvo learning/game progress
-
-The learning semantics of grade/ahead/difficulty/audio remain governed by the Kids Quest learning source schema and behavior. ManaEvo may change the shell/branding, but must not silently redefine those learning rules.
-
-Child screens may show read-only consequences such as the current grade or audio result, but may not expose unrestricted mutation of these Parent-owned settings.
-
-### 4.3 Backup ownership
-
-Backup/export/import is Parent-only.
-
-A ManaEvo backup must preserve enough version/profile identity to restore learning and game state without pairing the wrong child's data. Combined backup formats must keep learning and game profile relationships intact.
-
-Backup/import is not a route for writing back into Kids Quest. It writes only ManaEvo-owned storage.
-
-The Parent PIN itself is app/device lock metadata, separate from per-profile learning/game progress. The baseline does not require PIN cloud transfer or PIN recovery through a progress backup; implementations must not invent such behavior as a requirement of W-107.
+The exact adult-check puzzle is an implementation detail unless a higher-authority decision fixes it.
 
 ---
 
-## 5. Optional Kids Quest progress import
+## 5. Cloud persistence contract
 
-Kids Quest progress import is **optional, one-way, read-only, and compatibility-gated**.
+### 5.1 Backend boundary
 
-If compatible existing Kids Quest learning data is detected and import is offered/performed, the operation must satisfy all of the following:
+ManaEvo uses the generic personal-app Supabase backend created under D-018, separate from Family Ops.
 
-1. read Kids Quest source data only;
-2. copy compatible data into ManaEvo-owned storage;
-3. record a ManaEvo-side import marker/version;
-4. be idempotent — repeating the same import must not duplicate state or rewards;
-5. never delete/update the Kids Quest source;
-6. stop synchronizing after import — the two apps progress independently;
-7. import only schema-compatible learning/profile/settings data;
-8. do not automatically import Kids Quest monster/battle/game state without an approved mapping.
+The generic backend may be shared by future personal apps, but data must be partitioned by application identity. ManaEvo uses:
 
-Preferred compatible learning data from the baseline specification includes:
+- `app_id = mana-evo`;
+- its own save slot(s)/payload contract;
+- the signed-in Auth user's `auth.uid()` as ownership boundary.
 
-- profile identity/name where safely compatible
-- grade / selectable grade progression
-- learning mastery
-- SRS/review state
-- English progress
-- streak/history where compatible
-- relevant learning settings
+No browser bundle may contain a Supabase secret/service-role credential. Browser-safe project configuration is not authorization; RLS plus the signed-in JWT is the access boundary.
 
-Import must not create side-effect rewards merely because old progress is being loaded. Running import/migration repeatedly must not create double XP, tickets, items, mastery records, or profiles.
+All exposed save/backup tables must have RLS. An authenticated user may read/write only rows whose `user_id` equals `(select auth.uid())`. Anonymous table access is not permitted.
 
-The trigger UX for optional import is not fixed by W-107. Whatever UX is used, the data-direction and idempotency rules above are mandatory.
+### 5.2 Complete versioned snapshot
+
+Cloud save is a recoverable, versioned ManaEvo snapshot, not a progress summary.
+
+A cloud revision must preserve enough information to restore:
+
+- profile registry;
+- all included per-profile learning state;
+- the matching game envelope;
+- learning-to-game reward bridge state;
+- save schema/content version metadata.
+
+The device-local selected profile is **not** cloud authority and must not be allowed to make devices fight over which player is currently open.
+
+### 5.3 Local storage role
+
+ManaEvo local storage remains required as:
+
+- fast local runtime state;
+- offline continuity/cache;
+- temporary unsynced work;
+- source for exact TEST-mode return state.
+
+Cloud persistence is the cross-device durable layer. A temporary network/Auth failure must not erase already-valid local progress.
+
+### 5.4 Session persistence and recovery
+
+Normal cloud authentication is parent/family **email + password**.
+
+After successful sign-in, the browser session may persist/refresh so every app launch does not require a password. Password recovery and email-confirmation flows use Supabase Auth and must return to the canonical Vercel production origin for production use.
+
+Account password and local Parent PIN are separate concepts.
+
+### 5.5 First-device / fresh-device behavior
+
+- cloud empty + valid local progress: upload may initialize cloud;
+- genuinely fresh local device + existing cloud: download/adopt cloud state;
+- both sides contain divergent meaningful progress without trusted common revision: do not guess—surface an adult conflict decision.
+
+### 5.6 Concurrency and revision guard
+
+Cloud saves carry revision identity. A write based on an older revision must not silently overwrite a newer device's progress.
+
+If cloud advanced while local also has unsynced changes, treat it as a conflict. Before destructive overwrite/pull/restore boundaries, preserve a backup according to the backup contract.
+
+Silent last-write-wins that can destroy another device's progress is prohibited.
 
 ---
 
-## 6. Save migrations and idempotency
+## 6. Backup, restore and migrations
 
-### 6.1 Version every persisted schema that can evolve
+### 6.1 Backup ownership
 
-ManaEvo save envelopes and import formats must carry an explicit format/schema version or equivalent migration discriminator.
+Backup/restore is Parent-only.
 
-A load path must be able to distinguish:
+ManaEvo supports cloud backup history in addition to any manual export/import compatibility flow. Backups must preserve profile identity and learning/game pairing.
 
-- current ManaEvo format;
-- known older ManaEvo format(s);
-- compatible one-way Kids Quest source data;
-- unsupported/invalid input.
+At minimum, backups should exist around destructive boundaries such as:
 
-### 6.2 Migration rules
+- manual backup request;
+- conflict overwrite/pull;
+- restore;
+- future destructive migrations.
+
+Automatic periodic snapshots may be retained where storage limits permit.
+
+A restore must first preserve the current cloud state when practical, then restore the chosen version without writing to Kids Quest.
+
+### 6.2 Version every persisted schema that can evolve
+
+ManaEvo save envelopes/imports/cloud payloads must carry an explicit schema/format version or equivalent migration discriminator.
+
+A load path must distinguish current format, supported older ManaEvo formats, compatible one-way Kids Quest source data, and unsupported/invalid input.
+
+### 6.3 Migration invariants
 
 A migration must:
 
 - preserve valid existing progress;
-- preserve stable profile/monster/learning IDs where the canonical model requires stability;
-- map legacy single-profile data to one profile deterministically, once;
-- avoid granting gameplay rewards merely as a consequence of migration;
-- write only ManaEvo-owned storage;
-- leave Kids Quest storage/cache unchanged;
-- produce the same logical CURRENT state if safely run again on already-migrated data.
+- preserve stable profile/monster/learning IDs;
+- map legacy single-profile data deterministically once;
+- avoid granting gameplay rewards merely because migration ran;
+- write only ManaEvo-owned storage/cloud rows;
+- leave Kids Quest unchanged;
+- be idempotent when rerun on already-migrated state.
 
-Idempotency means, concretely:
+Concretely: no duplicate profiles, tickets, monsters, items, rewards, mastery/SRS records or import bonus.
 
-- no duplicate profiles;
-- no duplicate tickets/lots/reservations;
-- no duplicate caught monsters/items/rewards;
-- no duplicate mastery/SRS records;
-- no repeated import bonus;
-- no repeated legacy-to-current conversion.
+### 6.4 Future monster/content expansion
 
-The implementation should normalize/migrate first, then persist the CURRENT representation. Existing runtime migration code is evidence of implementation progress, not permission to weaken these invariants.
+Species/monster identity must be stable-ID based, not array-position based.
+
+Adding new species to a later content version must not require old saves to contain explicit false entries for every future species. New IDs absent from an old save may naturally appear as unseen/unowned after content upgrade.
+
+If an existing ID is removed, merged or remapped, use an explicit versioned migration rather than changing historical meaning silently.
 
 ---
 
-## 7. Official hosting authority: GitHub Pages
+## 7. TEST-mode isolation
 
-The official ManaEvo production host is **GitHub Pages**.
+TEST data is not a normal family profile and must never become normal cloud progress.
+
+Entering TEST mode must:
+
+1. capture the exact current real local learning/game/reward/device-selection state;
+2. persist a TEST marker and return snapshot locally;
+3. pause cloud autosync;
+4. load a deterministic fixture;
+5. display a persistent visible TEST indicator.
+
+Exiting TEST mode restores the exact pre-test local state and clears the TEST marker/return snapshot only after restoration succeeds.
+
+Initial required fixtures:
+
+- **all-open**: all active species viewable/owned as needed for broad UI/game checking, current areas/stages/resources available;
+- **stage1-evolution-ready**: every current first-stage source with a valid next transition prepared immediately before its real evolution trigger;
+- **stage2-final-evolution-ready**: every current second-stage source with a valid final transition prepared immediately before its real trigger.
+
+Fixtures should derive from CURRENT species/evolution masters, not a stale manually copied list, so additions/transition changes are reflected automatically.
+
+TEST writes must never reach `app_saves` or backup history as real progress.
+
+---
+
+## 8. Optional Kids Quest progress import
+
+Kids Quest import remains **optional, one-way, read-only and compatibility-gated**.
+
+A valid import must:
+
+1. read Kids Quest source data only;
+2. copy compatible data into ManaEvo-owned state;
+3. record an import marker/version;
+4. be idempotent;
+5. never delete/update Kids Quest source;
+6. stop synchronizing after import;
+7. import only compatible learning/profile/settings data;
+8. not auto-import Kids Quest monster/battle/game state without an approved mapping.
+
+Loading/importing old learning progress must not mint side-effect rewards merely because the data was imported.
+
+---
+
+## 9. Official hosting authority: Vercel
+
+Under D-019, the official and only ManaEvo production canonical host is **Vercel**.
 
 Canonical production URL:
 
-`https://syoudai0514.github.io/mana-evo/`
+`https://mana-evo.vercel.app/`
 
-Production base path:
+Production base path / PWA scope root:
 
-`/mana-evo/`
+`/`
 
-Required hosting invariants:
+Responsibility split:
 
-- production Vite build base resolves to `/mana-evo/`;
-- router/navigation, if a router is used, respects that base;
-- JS/CSS chunks, dynamic imports, icons, fonts, audio and monster images resolve under the ManaEvo base rather than assuming `/`;
-- canonical/OG metadata points to the GitHub Pages URL;
-- manifest `id`, `start_url`, and `scope` identify the independent ManaEvo app and remain inside `/mana-evo/`;
-- Service Worker registration URL and scope remain inside `/mana-evo/`;
-- Kids Quest `/kids-quest/` is not redirected, replaced, stopped, or brought under ManaEvo's Service Worker.
+- **GitHub** — source code, PRs and CI;
+- **Vercel** — ManaEvo production and PR Preview deployments;
+- **Supabase** — Auth, DB, Cloud Save and backup storage.
 
-Local development may use a tool-specific local root, but the production artifact must be correct when built for `/mana-evo/`.
+Required production-hosting invariants:
+
+- production Vite build resolves from root `/`;
+- JS/CSS chunks, dynamic imports, icons, fonts, audio and monster images resolve correctly from the Vercel production origin;
+- canonical/OG metadata is exactly the stable Vercel production URL, never a Preview URL;
+- PWA manifest `id`, `start_url` and `scope` identify `https://mana-evo.vercel.app/`;
+- Service Worker registration/scope is owned by the ManaEvo Vercel production origin;
+- production code does not depend on the historical `/mana-evo/` GitHub Pages base;
+- GitHub Pages main-push production deployment is not part of the release path.
+
+Vercel Preview deployments are review/test environments, not canonical production identity. A Preview URL must never be written into canonical metadata, PWA identity or durable product contracts.
 
 ---
 
-## 8. PWA / manifest / Service Worker / offline contract
+## 10. Supabase Auth URL authority
 
-### 8.1 Manifest
+For production authentication:
 
-ManaEvo must ship an independent PWA manifest with:
+- Supabase Auth **Site URL** points to `https://mana-evo.vercel.app/`;
+- production email-confirmation/password-recovery redirects return to that origin;
+- Vercel Preview redirect URLs may be added only when an Auth flow must be tested on a Preview;
+- historical GitHub Pages URLs are not a production Auth return target.
 
-- ManaEvo branding (`マナエボ` / `ManaEvo`);
+A Preview host may be temporary or protected; therefore Preview allowance does not make it canonical.
+
+---
+
+## 11. PWA / manifest / Service Worker / offline contract
+
+### 11.1 Manifest
+
+ManaEvo ships an independent PWA manifest with:
+
+- ManaEvo branding;
 - ManaEvo-unique app identity;
-- `start_url` and `scope` for the canonical `/mana-evo/` app;
-- installable icons including required Apple/PWA icon assets used by the shipped HTML;
-- no Kids Quest app identity or scope reuse.
+- canonical Vercel `id/start_url/scope`;
+- installable Apple/PWA icons;
+- no Kids Quest identity reuse.
 
-### 8.2 Service Worker ownership
+### 11.2 Service Worker ownership
 
 The ManaEvo Service Worker must:
 
-- register from the ManaEvo base;
-- control only the ManaEvo scope;
-- ignore same-origin requests outside its app path;
+- register from the Vercel ManaEvo production origin;
 - use ManaEvo-owned cache names/prefixes;
 - delete only obsolete ManaEvo-owned caches during cleanup;
-- never delete or rewrite Kids Quest caches.
+- not manipulate Kids Quest storage/cache;
+- support update discovery without origin-wide cache deletion.
 
-### 8.3 Offline expectation
+### 11.3 Offline expectation
 
-After a successful online install/visit sufficient to populate the required app shell, the PWA must be able to launch the ManaEvo shell offline and serve the assets intentionally covered by its offline strategy.
+After a successful online visit sufficient to populate the required shell, the installed ManaEvo PWA should launch its previously valid shell offline and serve assets intentionally covered by its offline strategy.
 
-Offline fallback must stay within ManaEvo's app boundary. An offline failure must not fall through to or hijack Kids Quest paths.
+### 11.4 Update expectation
 
-### 8.4 Update expectation
+The update strategy must preserve both:
 
-A new ManaEvo deployment must be discoverable by installed PWAs. Updating the Service Worker/app shell must not require origin-wide cache deletion.
+- **freshness** — installed clients can receive a newly deployed production version;
+- **offline continuity** — a previously valid cached app remains usable when network access is unavailable.
 
-The update strategy must preserve both properties:
-
-- **freshness after deployment**: installed clients can receive the newly deployed ManaEvo version;
-- **offline continuity**: a previously valid cached app remains usable when the network is unavailable.
-
-Opening `/kids-quest/` and `/mana-evo/` in separate tabs must not make either app's Service Worker/cache/storage corrupt the other.
+A canonical-origin change must bump/invalidate the ManaEvo app-shell cache as needed so an old installation does not remain permanently pinned to obsolete metadata/assets.
 
 ---
 
-## 9. Formal monster asset cache/versioning contract
+## 12. Formal monster asset cache/versioning contract
 
-This section defines the PWA-side requirement only. Monster identity/status/art approval belongs to W-109 and its asset manifest; W-107 does not approve images.
+This section defines PWA caching only. Monster identity/status/art approval belongs to W-109/D-014/D-016.
 
-Phase 1.5 identified a concrete risk: current runtime uses cache-first behavior for `/monsters/`. Replacing an image at the same URL can therefore leave an installed PWA showing the old cached image.
+Every FORMAL monster asset consumed by the PWA must have explicit revision identity (digest, versioned URL, manifest revision or equivalent).
 
-CURRENT requirement:
+When an approved FORMAL asset changes, either its effective cache identity changes or the Service Worker deterministically invalidates the changed asset.
 
-1. every formal monster asset consumed by the PWA must have an explicit revision identity — for example a content digest, asset revision, versioned filename/URL, or equivalent manifest revision;
-2. when an approved formal asset changes, either its effective cache key/URL changes **or** the Service Worker deterministically invalidates that changed asset;
-3. merely overwriting bytes at the same cache-first URL without an invalidation/version rule is not acceptable;
-4. candidate/placeholder/formal states must not share a cache identity in a way that lets an old placeholder/candidate permanently mask the later formal asset;
-5. release/update verification must prove that an already-installed PWA receives the new formal art after the app update while still retaining a valid offline fallback;
-6. monster cache cleanup remains ManaEvo-owned and must not touch Kids Quest caches.
+Merely overwriting bytes at an immutable cache-first URL without invalidation is not acceptable.
 
-W-109's monster asset manifest should supply the asset identity/status/revision data. W-107 consumes that data for caching/update behavior; it does not duplicate or edit W-109's output.
+Candidate/placeholder/formal states must not share cache identity in a way that lets an older candidate/placeholder permanently mask the later FORMAL asset. Production-visible CANDIDATE behavior remains governed by D-016 and does not itself promote the asset to FORMAL.
 
-The exact technique (hashed filename, revision query, manifest digest, targeted cache eviction, or equivalent) is an implementation choice as long as these invariants hold.
+Offline mode may fall back to a previously valid cached asset when network access is unavailable, while an online update must be able to obtain the newest approved FORMAL revision.
 
 ---
 
-## 10. Vercel status
+## 13. Current implementation observations
 
-Vercel is **not** the current hosting authority for ManaEvo.
+These observations are useful for locating reusable implementation and are not independent specification authority.
 
-Existing Vercel URLs, configuration, review notes, or previous deployment records are historical/supporting evidence only. They must not override:
-
-- the GitHub Pages canonical URL;
-- the `/mana-evo/` production base;
-- the GitHub Pages deployment workflow;
-- PWA manifest/SW identity tied to the GitHub Pages app.
-
-Current repository evidence includes a `vercel.json` with Vercel Git deployment disabled. W-107 does not delete historical Vercel references; it classifies them as non-authoritative for CURRENT hosting.
-
----
-
-## 11. Current runtime observations / implementation deltas
-
-These observations help a later implementation worker locate existing reusable behavior. They are not the reason the rules above are canonical.
-
-| Area | Current observation | Canonical assessment |
+| Area | Current direction | Canonical assessment |
 |---|---|---|
-| Learning save | `src/kids-quest-study/engine/storage.js` writes a ManaEvo-specific learning key and has versioned export/import | useful foundation; must continue Kids Quest isolation/idempotency |
-| Profiles | `src/kids-quest-study/state/GameContext.jsx` stores profile snapshots and switches by stable profile ID | direction aligns with per-profile learning ownership |
-| Game save | `src/game/saveStore.js` stores a `gameByProfile` envelope and migrates an older game format | direction aligns; migration must remain idempotent and profile-safe |
-| Parent gate | `src/parent/ParentGate.jsx` currently uses a device-local 4-digit PIN plus an adult check | gate/PIN direction aligns; exact arithmetic recovery challenge is not promoted to product canonical by runtime alone |
-| Parent controls | current Parent UI owns grade/ahead/difficulty/audio/profile/backup controls | aligns with W-107 ownership; learning semantics remain Kids Quest-authoritative |
-| GitHub Pages base | Pages workflow builds with `VITE_BASE_PATH=/mana-evo/` | aligns with canonical production base |
-| Manifest | current manifest pins `id/start_url/scope` to the GitHub Pages app URL | aligns with hosting/PWA contract |
-| Service Worker | current SW uses a ManaEvo cache prefix and ignores paths outside its base | aligns with isolation contract |
-| Monster images | current SW caches `monsters/` cache-first | **follow-up implementation must add/verify formal asset revision invalidation contract** |
-| Vercel | current `vercel.json` disables Git deployment | consistent with Vercel being historical/non-authoritative |
+| Learning save | ManaEvo-specific versioned learning storage/export | reusable; preserve Kids Quest semantics |
+| Game save | `gameByProfile` envelope | aligns with stable profile ownership |
+| Reward bridge | persisted learning→game envelope | must be included in cloud revision |
+| Profiles | stable profile snapshots | aligns; selected device profile stays local |
+| Parent gate | local 4-digit PIN + adult check | valid local safety boundary |
+| Cloud | generic Supabase `app_id=mana-evo` + revisioned snapshot | D-018 direction |
+| Backup | manual/destructive-boundary cloud snapshots | D-018 direction |
+| TEST | local-only exact return snapshot and fixtures | D-018 direction |
+| Hosting | Vercel stable production domain + Preview deployments | D-019 production authority |
+| GitHub Pages | historical hosting path only; main auto-deploy retired | not production authority |
+| Manifest/SW | canonical Vercel root identity / ManaEvo cache prefix | D-019 direction |
+| Monster cache | FORMAL revision identity + candidate network-first behavior | must preserve W-109/D-016 semantics |
 
-A dedicated Kids Quest legacy-progress import path must not be claimed complete merely because ManaEvo backup import exists. The implementation phase must verify the baseline one-way source-read contract explicitly before acceptance.
-
----
-
-## 12. Cross-document interfaces
-
-W-107 owns platform/save boundaries and references other Work Items without editing them:
-
-- **W-101 / Learning & rewards**: learning semantics and reward bridge; W-107 stores the learning state per profile without redefining it.
-- **W-102 / Battle & tickets**: active battle/ticket lifecycle belongs to the profile's game state; W-107 ensures persistence/isolation only.
-- **W-103 / Capture**: caught/duplicate outcomes belong to profile game state; capture rules are not redefined here.
-- **W-104 / Evolution**: item/evolution state belongs to profile game state; evolution rules are not redefined here.
-- **W-105 / World**: adventure location/progression belongs to profile game state; world rules are not redefined here.
-- **W-106 / UI contract**: Parent is a focused adult-only screen; W-107 defines its data/control ownership.
-- **W-108 / Acceptance contract**: should turn the invariants below into behavioral tests.
-- **W-109 / Monster art**: provides formal asset identity/status/revision input consumed by W-107 cache/update behavior.
+A dedicated Kids Quest legacy-progress import path must not be claimed complete merely because ManaEvo backup import exists.
 
 ---
 
-## 13. Behavioral acceptance for later implementation
+## 14. Cross-document interfaces
 
-A later implementation can claim W-107 platform alignment only when all applicable checks below pass:
+W-107 owns platform/save/hosting boundaries and does not redefine other domain rules:
+
+- **W-101 / Learning & rewards** — learning semantics and reward bridge;
+- **W-102 / Battle & tickets** — active battle/ticket lifecycle persisted per profile;
+- **W-103 / Capture** — capture/duplicate settlement state persisted per profile;
+- **W-104 / Evolution** — item/evolution state persisted per profile;
+- **W-105 / World** — adventure location/progression persisted per profile;
+- **W-106 / UI** — Parent remains focused adult-owned UI;
+- **W-108 / Acceptance** — behavioral acceptance machinery;
+- **W-109 / Monster art** — formal/candidate identity and revision input for PWA caching.
+
+---
+
+## 15. Behavioral acceptance
 
 ### Profiles / Parent
 
-- [ ] every learning/game save can be attributed to one stable profile ID;
-- [ ] switching A → B → A restores each child's own learning **and** game state without leakage;
-- [ ] profile switching/creation does not duplicate rewards or progress;
-- [ ] grade/ahead/difficulty/audio/profile/backup mutations are Parent-owned;
-- [ ] Parent setting mutation requires the adult gate/PIN;
-- [ ] child flow cannot silently bypass the Parent-owned controls.
+- [ ] every learning/game save is attributable to a stable profile ID;
+- [ ] switching A → B → A restores each profile's own learning and game state without leakage;
+- [ ] profile switching/creation does not duplicate progress/rewards;
+- [ ] device A selecting a player does not force device B to switch player;
+- [ ] player/test/conflict/restore controls are Parent-owned;
+- [ ] child flow cannot silently bypass Parent controls.
+
+### Cloud / Auth
+
+- [ ] signed-in user can access only own save/backup rows under RLS;
+- [ ] anonymous clients cannot read/write save/backup rows;
+- [ ] browser bundle contains no secret/service-role credential;
+- [ ] full learning + game + reward bridge round-trips through cloud;
+- [ ] fresh device adopts existing cloud state;
+- [ ] local/cloud divergent edits surface a conflict rather than silent overwrite;
+- [ ] session persists/refreshes correctly;
+- [ ] email confirmation and password recovery return to Vercel production for production flows.
+
+### TEST / backup / migrations
+
+- [ ] TEST mode performs no cloud write;
+- [ ] exiting TEST restores exact pre-test state;
+- [ ] all-active fixture follows current active species master;
+- [ ] stage1/stage2 fixtures follow current evolution transitions;
+- [ ] backup restore preserves correct profile learning/game pairing;
+- [ ] destructive restore/overwrite retains a recoverable pre-change backup;
+- [ ] migrations are versioned/idempotent and preserve stable IDs;
+- [ ] later species additions do not corrupt old saves.
 
 ### Kids Quest isolation/import
 
-- [ ] normal ManaEvo operation writes only ManaEvo-owned storage;
-- [ ] ManaEvo reset/delete leaves Kids Quest localStorage/IndexedDB/cache unchanged;
-- [ ] optional Kids Quest import reads source only and copies only compatible progress;
-- [ ] the same import can run twice without duplication;
-- [ ] no live sync begins after import;
-- [ ] old Kids Quest monster/battle state is not auto-imported without an approved mapping.
-
-### Migrations / backup
-
-- [ ] CURRENT and supported legacy formats are version-discriminated;
-- [ ] running migration twice produces the same logical CURRENT result;
-- [ ] legacy migration does not duplicate profile/ticket/XP/item/mastery data;
-- [ ] backup restore keeps learning/game state paired with the correct profile;
-- [ ] backup/import does not write to Kids Quest storage.
+- [ ] normal ManaEvo operation writes only ManaEvo-owned storage/backend rows;
+- [ ] ManaEvo reset/delete leaves Kids Quest data/cache unchanged;
+- [ ] optional Kids Quest import reads source only and is idempotent;
+- [ ] no live two-way sync begins after import;
+- [ ] Kids Quest monster/battle data is not auto-imported without an approved mapping.
 
 ### Hosting / PWA
 
-- [ ] official production URL is `https://syoudai0514.github.io/mana-evo/`;
-- [ ] production build works under `/mana-evo/` with no root-path asset breakage;
-- [ ] manifest `id/start_url/scope` identify ManaEvo and stay inside `/mana-evo/`;
-- [ ] Service Worker scope/cache cleanup is ManaEvo-only;
-- [ ] installed ManaEvo launches offline after required shell caching;
-- [ ] an installed client can receive a later deployment without clearing the entire origin;
-- [ ] Kids Quest `/kids-quest/` remains operational and unaffected.
+- [ ] official production URL is exactly `https://mana-evo.vercel.app/`;
+- [ ] production build works from root `/` with no `/mana-evo/` dependency;
+- [ ] canonical/OG metadata points only to Vercel production;
+- [ ] manifest `id/start_url/scope` exactly identify Vercel production;
+- [ ] GitHub Pages main auto-deployment is absent from production workflow;
+- [ ] Service Worker uses ManaEvo-owned cache identity and root production scope;
+- [ ] installed PWA can launch from a valid offline cache and later receive an update;
+- [ ] Vercel Preview URLs are never treated as canonical.
 
-### Formal monster assets
+### Monster assets
 
-- [ ] formal art has a revision identity consumed by PWA caching;
-- [ ] replacing formal art cannot remain permanently hidden behind an old cache-first response;
-- [ ] placeholder/candidate cache entries cannot mask later formal art under an unchanged immutable identity;
-- [ ] installed-PWA update verification confirms the latest approved formal asset is shown after update;
-- [ ] offline mode still has a valid previously cached asset when the network is unavailable.
-
-### Hosting authority
-
-- [ ] no Vercel URL/config is treated as CURRENT production authority;
-- [ ] GitHub Pages deployment/configuration remains the canonical production path.
+- [ ] FORMAL art has revision identity consumed by PWA caching;
+- [ ] replacing FORMAL art cannot remain hidden behind an older cache-first response;
+- [ ] candidate/placeholder cache entries cannot mask later FORMAL art;
+- [ ] production candidate rollout does not falsify FORMAL state;
+- [ ] offline fallback retains a valid previously cached asset where available.
 
 ---
 
-## 14. Non-decisions / do not invent
+## 16. Non-decisions / do not invent
 
-W-107 does not create new product rules for:
+This contract does not independently define:
 
-- profile deletion or rename UX;
-- cloud accounts/cloud synchronization;
-- encrypted/cloud PIN recovery;
-- the exact adult-check puzzle used for PIN reset;
-- a new Kids Quest ↔ ManaEvo live-sync model;
+- profile deletion/rename UX;
+- encrypted/cloud Parent-PIN recovery;
+- the exact adult-check puzzle;
+- a Kids Quest ↔ ManaEvo live-sync model;
 - automatic mapping of Kids Quest game monsters/battles into ManaEvo;
-- a specific hashed-filename technology for monster art.
+- a mandatory technology for FORMAL art revisioning beyond the required invariant;
+- a custom domain replacing `mana-evo.vercel.app`;
+- paid Vercel/Supabase upgrades.
 
-If a later implementation requires one of these as a product decision rather than a technical detail, recover approved evidence first; otherwise escalate it instead of silently inventing behavior.
+If a later implementation needs one of these as a product decision, recover or obtain explicit approval rather than inferring it from runtime.
