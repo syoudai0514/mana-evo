@@ -25,6 +25,11 @@ function servePublic() {
   return new Promise((resolve, reject) => {
     const server = http.createServer((req, res) => {
       const pathname = decodeURIComponent(new URL(req.url, 'http://127.0.0.1').pathname)
+      if (pathname === '/') {
+        res.setHeader('Content-Type', 'text/html; charset=utf-8')
+        res.end('<!doctype html><title>ManaEvo monster art audit</title>')
+        return
+      }
       const target = path.normalize(path.join(PUBLIC, pathname))
       if (!target.startsWith(PUBLIC) || !fs.existsSync(target) || fs.statSync(target).isDirectory()) {
         res.statusCode = 404
@@ -157,6 +162,7 @@ async function main() {
   const browser = await webkit.launch({ headless: true })
   try {
     const page = await browser.newPage()
+    await page.goto(origin)
     const rows = []
     for (const speciesId of IDS) rows.push(await inspect(page, origin, speciesId))
 
