@@ -3,7 +3,7 @@ import { battleXpLevelMultiplier, CAPTURE_EVOLUTION_LEVEL_BUFFER } from './balan
 import { resolveCaptureRoll, settleCaptureSuccess } from './captureDomain.js'
 import { speciesOf } from './content.js'
 import { getEvolutionTransition } from './evolutionDomain.js'
-import { consumeTicket } from './progression.js'
+import { availableTicketCount } from './progression.js'
 
 export * from './engineSharedRuntime.js'
 
@@ -15,17 +15,39 @@ function withoutRefundLog(lines = []) {
   return lines.filter((line) => !String(line).includes('チケットが 1まい もどった'))
 }
 
+function consumeExactRefundedReservation(game, battle, today) {
+  const source = battle?.ticketReservation || battle?.ticketSource
+  if (!source?.sourceLotId && !source?.id) return game
+  const sourceId = String(source.sourceLotId || source.id)
+  const earnedDay = Number(source.earnedDay)
+  const expiresDay = Number(source.expiresDay)
+  const next = structuredClone(game)
+  const index = (next.ticketGrants || []).findIndex((grant) => (
+    String(grant?.id) === sourceId &&
+    Number(grant?.earnedDay) === earnedDay &&
+    Number(grant?.expiresDay) === expiresDay &&
+    Number(grant?.count) > 0
+  ))
+  if (index >= 0) {
+    next.ticketGrants[index].count -= 1
+    if (next.ticketGrants[index].count <= 0) next.ticketGrants.splice(index, 1)
+  }
+  next.tickets = availableTicketCount(next, today)
+  return next
+}
+
 function settlePlayedLoss(result, options = {}) {
-  if (!result?.ok || result?.battle?.status !== 'lost' || !result.battle.ticketRefunded) return result
-  const consumed = consumeTicket(result.game, effectiveToday(result.battle, options))
-  if (!consumed.ok) return result
+  if (!result?.ok || result?.battle?.status !== 'lost') return result
+  const today = effectiveToday(result.battle, options)
+  const game = result.battle.ticketRefunded
+    ? consumeExactRefundedReservation(result.game, result.battle, today)
+    : structuredClone(result.game)
   const battle = structuredClone(result.battle)
   battle.ticketRefunded = false
   battle.ticketCommitted = true
   battle.ticketSettlement = 'committed'
   if (battle.ticketReservation) battle.ticketReservation.status = 'committed'
   battle.log = [...withoutRefundLog(battle.log).slice(-6), '🎫 このバトルで チケットを 1まい つかったよ。'].slice(-8)
-  const game = structuredClone(consumed.game)
   game.activeBattle = structuredClone(battle)
   return { ...result, game, battle }
 }
@@ -145,11 +167,15 @@ export function switchBattleMonster(game, battle, instanceId, options = {}) {
 }
 
 export function abandonBattle(game, options = {}) {
+  const battle = game?.activeBattle
   const result = shared.abandonBattle(game, options)
   if (!result?.ok || !result.refunded) return result
-  const consumed = consumeTicket(result.game, options?.today == null ? game?.activeBattle?.startedDay : options.today)
-  if (!consumed.ok) return result
-  return { ...result, game: consumed.game, refunded: false }
+  const today = options?.today == null ? battle?.startedDay : options.today
+  return {
+    ...result,
+    game: consumeExactRefundedReservation(result.game, battle, today),
+    refunded: false
+  }
 }
 
 export function canAttemptCapture(game, battle, itemType = 'star') {
