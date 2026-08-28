@@ -6,6 +6,19 @@ export const DEVICE_PROFILE_KEY = 'manaevo:device-profile:v1'
 export const TEST_MODE_KEY = 'manaevo:test-mode:v1'
 export const TEST_RETURN_KEY = 'manaevo:test-return:v1'
 
+const PREEXISTING_LOCAL_SAVE_KEYS = Object.freeze([
+  'mana-evo:kids-quest-learning:v2',
+  'mana-evo-save-v2',
+  'mana-evo-save-v1'
+])
+
+const FRESH_DEVICE_AT_BOOT = (() => {
+  try {
+    if (!globalThis.localStorage) return false
+    return !PREEXISTING_LOCAL_SAVE_KEYS.some((key) => globalThis.localStorage.getItem(key) != null)
+  } catch { return false }
+})()
+
 function canonical(value) {
   if (Array.isArray(value)) return value.map(canonical)
   if (value && typeof value === 'object') {
@@ -50,10 +63,13 @@ export function syncMetaKey(userId) {
   return `${CLOUD_SYNC_META_PREFIX}${String(userId || '')}`
 }
 
-export function decideSync({ localHash, meta = null, cloud = null }) {
+export function decideSync({ localHash, meta = null, cloud = null, freshDevice = FRESH_DEVICE_AT_BOOT }) {
   if (!cloud) return { action: 'push-new' }
   const cloudHash = payloadHash(cloud.payload)
-  if (!meta) return localHash === cloudHash ? { action: 'adopt', cloudHash } : { action: 'conflict', cloudHash }
+  if (!meta) {
+    if (localHash === cloudHash) return { action: 'adopt', cloudHash }
+    return freshDevice ? { action: 'pull', cloudHash } : { action: 'conflict', cloudHash }
+  }
   const revision = Number(meta.revision) || 0
   const cloudRevision = Number(cloud.revision) || 0
   if (cloudRevision === revision) {
