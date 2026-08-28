@@ -91,7 +91,9 @@ export function BattleView({ game, setGame, onExitToMap, goStudy }) {
     if (Array.isArray(frames) && frames.length) {
       setCaptureSequence({
         id: `${result.battle?.battleId || result.battle?.stageId || 'capture'}:${result.battle?.captureAttempts || 0}`,
-        frames
+        frames,
+        itemType,
+        speciesId: battle.enemy.speciesId
       })
     }
     enqueueEvolutions(result.evolutionsByInstance, result.game)
@@ -154,45 +156,58 @@ export function BattleView({ game, setGame, onExitToMap, goStudy }) {
     <EvolutionCelebration reveal={activeEvolutionReveal} onClose={() => setEvolutionQueue((queue) => queue.slice(1))} />
     <CapturePresentation sequence={captureSequence} onComplete={() => setCaptureSequence(null)} />
 
-    <div className="battle-head"><button className="back" disabled={!!captureSequence || duplicatePending} onClick={exit}>{finished ? '← マップ' : '✕ やめる'}</button><strong>{stage?.zoneName ? `${stage.zoneName}｜${stage.label}` : stage?.label}</strong><span>TURN {battle.turn}</span></div>
+    <div className="battle-head">
+      <button className="back" disabled={!!captureSequence || duplicatePending} onClick={exit}>{finished ? '← マップ' : '✕ やめる'}</button>
+      <div className="battle-head-title"><small>{stage?.zoneName || 'ぼうけん'}</small><strong>{stage?.label}</strong></div>
+      <span>TURN <b>{battle.turn}</b></span>
+    </div>
     {battle.challenge && <div className="challenge-banner">🔥 チャレンジモード：いまの強さで再調整</div>}
     {battle.bossTelegraphed && !finished && <div className="boss-warning"><strong>⚠️ つぎに おおわざ！</strong><span>まもるなら いま！</span></div>}
     {battle.playerSpecial && <div className={`special-active ${battle.playerSpecial.type}`}><strong>{battle.playerSpecial.type === 'giga' ? '🔷 ギガシンカ中！' : '💥 キョダイバースト中！'}</strong>{battle.playerSpecial.type === 'burst' && <span>あと {battle.playerSpecial.turnsLeft}ターン</span>}</div>}
 
-    <section className="battle-arena-v2">
+    <section className="battle-arena-v2" aria-label="バトルフィールド">
+      <div className="battle-arena-glow enemy-glow" aria-hidden="true" />
+      <div className="battle-arena-glow player-glow" aria-hidden="true" />
       <div className="fighter enemy-fighter">
-        <div className="fighter-info"><strong>No.{enemySpecies.no} {enemySpecies.name}</strong><span>Lv.{battle.enemy.level}</span><TypePills types={enemySpecies.types} /><HpBar value={battle.enemy.hp} max={battle.enemy.maxHp} /><small>HP {battle.enemy.hp}/{battle.enemy.maxHp}</small></div>
-        <PlaceholderMonster speciesId={battle.enemy.speciesId} />
+        <div className="fighter-info"><div className="fighter-name"><strong>{enemySpecies.name}</strong><span>Lv.{battle.enemy.level}</span></div><TypePills types={enemySpecies.types} /><HpBar value={battle.enemy.hp} max={battle.enemy.maxHp} /><small>HP {battle.enemy.hp}/{battle.enemy.maxHp}</small></div>
+        <div className="fighter-art"><PlaceholderMonster speciesId={battle.enemy.speciesId} size={140} /></div>
       </div>
+      <div className="battle-versus" aria-hidden="true">VS</div>
       <div className="fighter player-fighter">
-        <PlaceholderMonster speciesId={active.speciesId} />
-        <div className="fighter-info"><strong>No.{playerSpecies.no} {playerSpecies.name}</strong><span>Lv.{active.level}</span><TypePills types={playerSpecies.types} /><HpBar value={playerHp} max={playerMax} /><small>HP {playerHp}/{playerMax}</small></div>
+        <div className="fighter-art"><PlaceholderMonster speciesId={active.speciesId} size={140} /></div>
+        <div className="fighter-info"><div className="fighter-name"><strong>{playerSpecies.name}</strong><span>Lv.{active.level}</span></div><TypePills types={playerSpecies.types} /><HpBar value={playerHp} max={playerMax} /><small>HP {playerHp}/{playerMax}</small></div>
       </div>
     </section>
 
-    <section className="battle-log">{battle.log.slice(-5).map((line, i) => <p key={`${line}-${i}`}>{line}</p>)}</section>
+    <section className="battle-log"><span className="battle-log-label">BATTLE LOG</span>{battle.log.slice(-2).map((line, i) => <p key={`${line}-${i}`}>{line}</p>)}</section>
 
-    {showNormalCommands && <>
+    {showNormalCommands && <section className="battle-command-deck">
+      <div className="battle-command-title"><div><small>YOUR TURN</small><strong>どうする？</strong></div>{captureEligible && <span className="get-ready-badge">✨ GETできる！</span>}</div>
       <section className="move-grid">
         {battleMoves.map((moveId) => {
           const move = moveOf(moveId)
           const factor = move.effect?.type === 'damage' ? typeEffectiveness(move.type, enemySpecies.types) : 1
-          return <button key={moveId} className={move.role === 'burst' ? 'burst-move' : move.role === 'heal' ? 'heal-move' : ''} onClick={() => act(moveId)}>
-            <strong>{move.name}</strong>
+          const moveClasses = [
+            move.role === 'burst' ? 'burst-move' : '',
+            move.role === 'heal' ? 'heal-move' : '',
+            move.effect?.type === 'damage' && factor >= 2 ? 'recommended-move' : '',
+            move.effect?.type === 'damage' && factor === 0 ? 'ineffective-move' : ''
+          ].filter(Boolean).join(' ')
+          return <button key={moveId} className={moveClasses} data-move-type={move.type} onClick={() => act(moveId)}>
+            <div className="move-name-row"><strong>{move.name}</strong>{move.effect?.type === 'damage' && <em className={`effect effect-${String(factor).replace('.', '-')}`}>{effectivenessLabel(factor)}</em>}</div>
             <span>{typeLabel(move.type)}　{move.effect?.type === 'heal' ? 'HP 20%かいふく' : `威力 ${move.power}`}　命中 {move.accuracy}</span>
-            {move.effect?.type === 'damage' && <em className={`effect effect-${String(factor).replace('.', '-')}`}>{effectivenessLabel(factor)}</em>}
-            <small>{move.role === 'heal' ? '1バトル1かい' : move.role === 'coverage' ? '相性をねらう技' : move.role === 'finisher' ? '大きな一撃' : move.role === 'burst' ? 'バーストせんよう！' : ''}</small>
+            <small>{move.role === 'heal' ? '1バトル1かい' : move.role === 'coverage' ? '相性をねらう技' : move.role === 'finisher' ? '大きな一撃' : move.role === 'burst' ? 'バーストせんよう！' : factor >= 2 ? 'いま こうかばつぐん！' : ''}</small>
           </button>
         })}
       </section>
       <div className="battle-action-row">
         <button className={`protect-action ${battle.bossTelegraphed ? 'recommended' : ''}`} disabled={!canUseProtect(battle)} onClick={protect}>🛡️ まもる<small>{canUseProtect(battle) ? 'ダメージを ふせぐ' : 'れんぞくでは つかえない'}</small></button>
         {game.team.some((id) => id !== battle.activeInstanceId && (battle.partyHp?.[id] || 0) > 0) && <button className="secondary" onClick={() => setSwitchOpen(true)}>🔁 こうたい<small>なかまを えらぶ</small></button>}
-        {captureEligible && <button className="capture-main-cta ready" onClick={() => setCaptureOpen(true)}>⭕ わを なげる<small>HPは はんぶんいか！</small></button>}
+        {captureEligible && <button className="capture-main-cta ready" onClick={() => setCaptureOpen(true)}><span className="mini-capture-ball" aria-hidden="true"/>ボールを なげる<small>HPは はんぶんいか！</small></button>}
         {!battle.specialUsed && special.giga.activatable && <button className="giga-action" onClick={() => specialAct('giga')}>🔷 ギガシンカ<small>このバトル中 ぜんのうりょく×1.35</small></button>}
         {!battle.specialUsed && special.burst.activatable && <button className="burst-action" onClick={() => specialAct('burst')}>💥 キョダイバースト<small>3ターン・HP×2 / こうげき×1.2</small></button>}
       </div>
-    </>}
+    </section>}
 
     {!finished && !forcedSwitch && captureOpen && !captureSequence && <CapturePanel game={game} battle={battle} captureDisabled={stage?.captureDisabled} onCapture={capture} onCancel={() => setCaptureOpen(false)} />}
 
