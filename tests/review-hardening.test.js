@@ -155,16 +155,16 @@ test('burst duration also advances on voluntary party switch', () => {
   assert.equal(switched.battle.playerSpecial.turnsLeft, 2)
 })
 
-test('child-facing UI exposes focused ring selection and how-to has no stale fixed stages', () => {
+test('child-facing UI exposes focused ball selection and how-to has no stale fixed stages', () => {
   const capture = fs.readFileSync(new URL('../src/game/screens/CapturePanel.jsx', import.meta.url), 'utf8')
   const howto = fs.readFileSync(new URL('../src/HowToPlay.jsx', import.meta.url), 'utf8')
-  assert.match(capture, /どの「わ」を つかう？/)
-  assert.match(capture, /meta\.label}を なげる/)
+  assert.match(capture, /どのボールを つかう？/)
+  assert.match(capture, /selected\.display\.label}を なげる/)
   assert.match(capture, /おすすめ！/)
   assert.match(capture, /くわしい かくりつ/)
   assert.match(capture, /HPを はんぶんいかに/)
-  assert.match(capture, /「わ」は なげられない バトル/)
-  assert.match(howto, /「わ」を なげよう！/)
+  assert.match(capture, /ボールは なげられない バトル/)
+  assert.match(howto, /ボールを なげよう！/)
   assert.match(howto, /held_item_levelup/)
   assert.doesNotMatch(howto, /1-5 ひかりいわば|1-6 きずなのよみち/)
   assert.doesNotMatch(howto, /まだ じゅんびちゅう|いまは まだ つかえない/)
