@@ -17,6 +17,7 @@
     "preview": "vite preview",
     "test": "node --test tests/*.test.js",
     "test:e2e": "playwright test",
+    "audit:monster-art": "node scripts/monster-art/visual-audit.mjs",
     "verify:release": "node scripts/release-readiness.mjs",
     "check": "npm test && npm run build && npm run verify:release"
   },
