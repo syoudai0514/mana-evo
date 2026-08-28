@@ -175,7 +175,7 @@ test('iPhone WebKit keeps a separate scroll position for scrollable top-level de
   expect(studyY).toBeGreaterThan(20)
 
   await nav.getByRole('button', { name: /モンスター/ }).click()
-  await expect(page.locator('.monster-screen')).toBeVisible()
+  await expect(page.locator('.monster-screen-v2')).toBeVisible()
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(20)
   await page.evaluate(() => window.scrollTo(0, Math.min(document.body.scrollHeight - window.innerHeight, 320)))
   const monsterY = await page.evaluate(() => window.scrollY)
@@ -186,6 +186,6 @@ test('iPhone WebKit keeps a separate scroll position for scrollable top-level de
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(studyY - 30)
 
   await nav.getByRole('button', { name: /モンスター/ }).click()
-  await expect(page.locator('.monster-screen')).toBeVisible()
+  await expect(page.locator('.monster-screen-v2')).toBeVisible()
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(monsterY - 30)
 })
