@@ -4,6 +4,7 @@ import fs from 'node:fs'
 
 const battle = fs.readFileSync('src/game/screens/BattleScreen.jsx', 'utf8')
 const capture = fs.readFileSync('src/game/screens/CapturePanel.jsx', 'utf8')
+const display = fs.readFileSync('src/game/captureDisplay.js', 'utf8')
 
 test('W-216 uses the active Kids Quest day representation and no legacy day helper', () => {
   assert.ok(battle.includes("../../kids-quest-study/engine/srs.js"))
@@ -20,13 +21,30 @@ test('W-216 capture UI consumes domain presentation frames without a UI reroll',
   assert.ok(!capture.includes('Math.random'))
 })
 
+test('W-216 capture presentation is one ball throw then containment suspense, not repeated throws', () => {
+  assert.ok(capture.includes("[{ type: 'throw' }, { type: 'impact' }, ...frames]"))
+  assert.ok(capture.includes('capture-ball-flight'))
+  assert.ok(capture.includes('capture-cinematic-stage'))
+  assert.ok(capture.includes('CaptureBallIcon'))
+  assert.ok(battle.includes('itemType,'))
+  assert.ok(battle.includes('speciesId: battle.enemy.speciesId'))
+  assert.equal((capture.match(/type: 'throw'/g) || []).length, 1)
+})
+
 test('W-216 keeps star/Japanese/recommendation primary and exact percentage secondary', () => {
   assert.ok(capture.includes('capture-ease-stars'))
   assert.ok(capture.includes('おすすめ！'))
   assert.ok(capture.includes('<details className="capture-details">'))
   assert.ok(capture.includes('くわしい かくりつ'))
-  assert.ok(capture.includes('setSelectedRing(option.id)'))
+  assert.ok(capture.includes('setSelectedBall(option.id)'))
   assert.ok(capture.includes('onCapture(selected.id)'))
+})
+
+test('child-facing capture tools are balls while stable domain item ids stay unchanged', () => {
+  for (const label of ['ほしボール', 'ぎんボール', 'きんボール', 'にじボール']) assert.ok(display.includes(label), label)
+  for (const id of ['star', 'silver', 'gold', 'rainbow']) assert.ok(display.includes(`${id}:`), id)
+  assert.ok(capture.includes('どのボールを つかう？'))
+  assert.ok(battle.includes('ボールを なげる'))
 })
 
 test('W-216 first capture copy keeps the new instance in BOX without claiming automatic team insertion', () => {
