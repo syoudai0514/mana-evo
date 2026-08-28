@@ -5,7 +5,7 @@
  * without visually translating controls out of normal document flow.
  */
 @media (min-width:391px) and (max-width:430px){
-  .battle-screen-v2 .battle-arena-v2{
-    min-height:318px;
+  .app-shell .battle-screen-v2 .battle-arena-v2{
+    min-height:316px;
   }
 }
