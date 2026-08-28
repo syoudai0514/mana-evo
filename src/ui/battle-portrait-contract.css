@@ -1,0 +1,11 @@
+/* Battle portrait boundary contract.
+ * 375/390px are handled by premium-ui-v4.css. The 391-430px band keeps
+ * the full-size command deck while slightly compacting the cinematic arena,
+ * preserving the first 44px action tap surface inside an 844px iPhone viewport
+ * without visually translating controls out of normal document flow.
+ */
+@media (min-width:391px) and (max-width:430px){
+  .app-shell .battle-screen-v2 .battle-arena-v2{
+    min-height:316px;
+  }
+}

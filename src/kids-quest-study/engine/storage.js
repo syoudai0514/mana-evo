@@ -1,12 +1,22 @@
 import { exportGameEnvelope, importGameEnvelope } from '../../game/saveStore.js'
 
 const KEY = 'mana-evo:kids-quest-learning:v2'
+export const LOCAL_SAVE_CHANGED_EVENT = 'manaevo:local-save-changed'
+
+function emitLocalSaveChanged(source = 'learning') {
+  if (typeof globalThis.dispatchEvent !== 'function' || typeof globalThis.CustomEvent !== 'function') return
+  try { globalThis.dispatchEvent(new CustomEvent(LOCAL_SAVE_CHANGED_EVENT, { detail: { source } })) } catch {}
+}
 
 export function loadState() {
   try { const raw = localStorage.getItem(KEY); return raw ? JSON.parse(raw) : null } catch { return null }
 }
-export function saveState(state) { try { localStorage.setItem(KEY, JSON.stringify(state)) } catch {} }
-export function clearState() { try { localStorage.removeItem(KEY) } catch {} }
+export function saveState(state) {
+  try { localStorage.setItem(KEY, JSON.stringify(state)); emitLocalSaveChanged('learning') } catch {}
+}
+export function clearState() {
+  try { localStorage.removeItem(KEY); emitLocalSaveChanged('learning-clear') } catch {}
+}
 export const EXPORT_MARKER = 'mana-evo-learning-save'
 export function serializeForExport(state) {
   return JSON.stringify({

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { CAPTURE_CONFIG } from '../content.js'
 import { MAX_CAPTURE_ATTEMPTS, canAttemptCapture, captureChance } from '../engine.js'
 import { CAPTURE_ITEM_IDS } from '../progression.js'
@@ -29,7 +29,7 @@ export function CaptureBallIcon({ itemType = 'star', compact = false }) {
 
 function frameDuration(type, defaultInterval) {
   if (type === 'throw') return 680
-  if (type === 'impact') return 460
+  if (type === 'impact') return 760
   if (type === 'ring_closed') return 620
   if (type === 'caught') return 920
   if (type === 'ring_scatter' || type === 'escaped') return 760
@@ -78,12 +78,13 @@ export function CapturePresentation({ sequence, onComplete, intervalMs = 520 }) 
             : frame.type === 'escaped' ? 'ボールから とびだした！'
               : `${Math.max(1, lit)}つめの ほしが ひかった！`
 
-  const stateClass = frame.type === 'throw' ? 'is-throwing'
+  const phaseClass = frame.type === 'throw' ? 'is-throwing'
     : frame.type === 'impact' ? 'is-impact'
       : frame.type === 'caught' ? 'is-caught'
         : frame.type === 'ring_scatter' || frame.type === 'escaped' ? 'is-escaped'
           : frame.type === 'ring_closed' ? 'is-sealed'
             : 'is-waiting'
+  const stateClass = `${frame.type === 'throw' ? '' : 'has-impact'} ${phaseClass}`.trim()
 
   return <div className="evolution-overlay capture-sequence-overlay" role="dialog" aria-modal="true" aria-label="捕獲演出">
     <section className={`evolution-celebration-card capture-cinematic ${stateClass}`} data-testid="capture-sequence" data-frame-type={frame.type || 'stars'} data-lit-stars={lit} aria-live="polite">
@@ -106,6 +107,7 @@ export function CapturePresentation({ sequence, onComplete, intervalMs = 520 }) 
 
 export function CapturePanel({ game, battle, captureDisabled = false, onCapture, onCancel }) {
   const [selectedBall, setSelectedBall] = useState(null)
+  const panelRef = useRef(null)
   const captureHpReady = battle.enemy.hp > 0 && battle.enemy.hp / battle.enemy.maxHp <= 0.5
   const captureAttemptsLeft = Math.max(0, MAX_CAPTURE_ATTEMPTS - (battle.captureAttempts || 0))
   const options = CAPTURE_ITEM_IDS.map((id) => {
@@ -127,15 +129,37 @@ export function CapturePanel({ game, battle, captureDisabled = false, onCapture,
   const selected = options.find((option) => option.id === selectedBall && option.ready) || null
 
   useEffect(() => {
+    // Capture selection is a focused sub-flow inside the battle document. WebKit
+    // can settle scrollIntoView at the bottom edge while the preceding battle
+    // layout is being replaced, leaving the first tap surface clipped by a few
+    // pixels. Reposition once after layout and once after the mount settles so
+    // the decision starts below the safe top edge on every supported phone.
+    let frame = 0
+    let timer = 0
+    const positionPanel = () => {
+      const panel = panelRef.current
+      if (!panel) return
+      const top = panel.getBoundingClientRect().top + window.scrollY - 12
+      window.scrollTo({ top: Math.max(0, top), left: 0, behavior: 'auto' })
+    }
+    frame = window.requestAnimationFrame(positionPanel)
+    timer = window.setTimeout(positionPanel, 80)
+    return () => {
+      window.cancelAnimationFrame(frame)
+      window.clearTimeout(timer)
+    }
+  }, [])
+
+  useEffect(() => {
     if (selectedBall && options.some((option) => option.id === selectedBall && option.ready)) return
     setSelectedBall(recommended)
   }, [battle.battleId, battle.captureAttempts, recommended, selectedBall])
 
   if (captureDisabled) {
-    return <section className="battle-tools capture-panel" role="dialog" aria-label="つかまえる"><strong>👑 このバトルでは GETできないよ</strong><p>ボールは なげられない バトルだよ。たおして すすもう！</p><button className="secondary" onClick={onCancel}>バトルへ もどる</button></section>
+    return <section ref={panelRef} className="battle-tools capture-panel" role="dialog" aria-label="つかまえる"><strong>👑 このバトルでは GETできないよ</strong><p>ボールは なげられない バトルだよ。たおして すすもう！</p><button className="secondary" onClick={onCancel}>バトルへ もどる</button></section>
   }
 
-  return <section className={`battle-tools capture-panel ${captureHpReady ? 'capture-open' : 'capture-locked'}`} role="dialog" aria-label="どのボールをつかう？">
+  return <section ref={panelRef} className={`battle-tools capture-panel ${captureHpReady ? 'capture-open' : 'capture-locked'}`} role="dialog" aria-label="どのボールをつかう？">
     <div className={'capture-main-cta ' + (captureHpReady && captureAttemptsLeft > 0 ? 'ready' : 'locked')}><CaptureBallIcon itemType={selected?.id || recommended || 'star'} compact /><div><strong>どのボールを つかう？</strong><small>のこり {captureAttemptsLeft}かい</small></div></div>
     <h2>{captureAttemptsLeft <= 0 ? 'ボールは 3かい なげたよ' : captureHpReady ? 'ボールを えらぼう！' : '🔒 HPを はんぶんいかに！'}</h2>
     <p>{captureAttemptsLeft <= 0 ? 'このバトルでは もう ボールを なげられないよ。' : captureHpReady ? '★と「おすすめ！」を みて えらぼう。' : `あいての HPを ${Math.floor(battle.enemy.maxHp / 2)} いかまで へらそう。いまは ${battle.enemy.hp}。`}</p>

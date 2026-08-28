@@ -138,7 +138,9 @@ for (const width of PORTRAIT_WIDTHS) {
     const capture = page.getByRole('button', { name: /ボールを なげる/ })
     await expectFirstDecisionVisible(page, capture)
     await capture.click()
-    await expectFirstDecisionVisible(page, page.locator('.capture-main-cta'))
+    const capturePanel = page.getByRole('dialog', { name: 'どのボールをつかう？' })
+    await expect(capturePanel).toBeVisible()
+    await expectFirstDecisionVisible(page, capturePanel.locator('.capture-main-cta'))
     await expectNoHorizontalOverflow(page)
   })
 
@@ -158,29 +160,34 @@ for (const width of PORTRAIT_WIDTHS) {
   })
 }
 
-test('iPhone WebKit keeps a separate scroll position for each top-level destination', async ({ page }) => {
+test('iPhone WebKit keeps a separate scroll position for scrollable top-level destinations', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await installSave(page, createGameState(), { coreDone: false })
   await page.goto('/')
 
   const nav = page.getByRole('navigation', { name: 'メインメニュー' })
-  await page.evaluate(() => window.scrollTo(0, Math.min(document.body.scrollHeight - window.innerHeight, 360)))
-  const homeY = await page.evaluate(() => window.scrollY)
-  expect(homeY).toBeGreaterThan(40)
 
+  // Home is intentionally compact and may fit entirely in one viewport. Use
+  // destinations that are genuinely scrollable to prove independent memory.
   await nav.getByRole('button', { name: /まなぶ/ }).click()
   await expect(page.locator('.study-hub')).toBeVisible()
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(20)
-
   await page.evaluate(() => window.scrollTo(0, Math.min(document.body.scrollHeight - window.innerHeight, 240)))
   const studyY = await page.evaluate(() => window.scrollY)
   expect(studyY).toBeGreaterThan(20)
 
-  await nav.getByRole('button', { name: /ホーム/ }).click()
-  await expect(page.locator('.home-screen')).toBeVisible()
-  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(homeY - 30)
+  await nav.getByRole('button', { name: /モンスター/ }).click()
+  await expect(page.locator('.monster-screen-v2')).toBeVisible()
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(20)
+  await page.evaluate(() => window.scrollTo(0, Math.min(document.body.scrollHeight - window.innerHeight, 320)))
+  const monsterY = await page.evaluate(() => window.scrollY)
+  expect(monsterY).toBeGreaterThan(20)
 
   await nav.getByRole('button', { name: /まなぶ/ }).click()
   await expect(page.locator('.study-hub')).toBeVisible()
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(studyY - 30)
+
+  await nav.getByRole('button', { name: /モンスター/ }).click()
+  await expect(page.locator('.monster-screen-v2')).toBeVisible()
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(monsterY - 30)
 })

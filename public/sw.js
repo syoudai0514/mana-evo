@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'manaevo-pwa-'
-const CACHE_NAME = `${CACHE_PREFIX}v9`
+const CACHE_NAME = `${CACHE_PREFIX}v10`
 const BASE_URL = new URL('./', self.location.href).href
 const BASE_PATH = new URL(BASE_URL).pathname
 const MONSTER_REVISION_URL = new URL('monster-asset-revisions.json', BASE_URL).href
