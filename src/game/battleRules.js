@@ -1,7 +1,7 @@
-export const STAB_MULTIPLIER = 1.5
+export const STAB_MULTIPLIER = 1.25
 export const CRITICAL_CHANCE = 1 / 16
-export const CRITICAL_MULTIPLIER = 1.5
-export const DAMAGE_RANDOM_MIN = 0.90
+export const CRITICAL_MULTIPLIER = 1.35
+export const DAMAGE_RANDOM_MIN = 0.92
 export const DAMAGE_RANDOM_MAX = 1.00
 
 export const BATTLE_STATUS = Object.freeze({

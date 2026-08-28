@@ -8,7 +8,7 @@ import {
   recordAdditionalLearningAnswer,
   releaseHeldLearningRewards
 } from '../src/kids-quest-study/state/learningRewardPolicy.js'
-import { deriveLearningRewardRuntime } from '../src/kids-quest-study/state/learningRewardRuntime.js'
+import { deriveLearningRewardRuntime, EXTRA_CORRECT_PER_BATTLE_TICKET } from '../src/kids-quest-study/state/learningRewardRuntime.js'
 import {
   applyLearningGameReward,
   applyLearningGameRewards,
@@ -116,18 +116,22 @@ test('daily core transition emits canonical reward exactly once plus exploration
   assert.equal(duplicate.pendingProgressionSignals.length, 2)
 })
 
-test('each cleared extra question pays one ticket and one exploration point with no 2-of-3 gate', () => {
+test('five correct extra questions pay one battle ticket while every correct extra still pays exploration', () => {
+  assert.equal(EXTRA_CORRECT_PER_BATTLE_TICKET, 5)
   const state = learningState()
   let runtime = {}
-  runtime = deriveLearningRewardRuntime(runtime, state, state, extraAnswer('q1', true))
-  runtime = deriveLearningRewardRuntime(runtime, state, state, extraAnswer('q2', false))
-  runtime = deriveLearningRewardRuntime(runtime, state, state, extraAnswer('q3', true))
+  for (let index = 1; index <= 4; index += 1) runtime = deriveLearningRewardRuntime(runtime, state, state, extraAnswer(`q${index}`, true))
+  assert.equal(runtime.pendingGameRewards.filter((reward) => reward.ticketDelta > 0).length, 0)
 
-  const tickets = runtime.pendingGameRewards.filter((reward) => reward.kind === 'extra-question-clear')
+  runtime = deriveLearningRewardRuntime(runtime, state, state, extraAnswer('q5', true))
+  const tickets = runtime.pendingGameRewards.filter((reward) => reward.kind === 'extra-learning-ticket')
   const explore = runtime.pendingProgressionSignals.filter((signal) => signal.kind === 'extra-question-clear')
-  assert.equal(tickets.length, 2)
-  assert.equal(tickets.reduce((sum, reward) => sum + reward.ticketDelta, 0), 2)
-  assert.equal(explore.reduce((sum, signal) => sum + signal.explorationPointDelta, 0), 2)
+  assert.equal(tickets.length, 1)
+  assert.equal(tickets[0].ticketDelta, 1)
+  assert.equal(explore.reduce((sum, signal) => sum + signal.explorationPointDelta, 0), 5)
+
+  runtime = deriveLearningRewardRuntime(runtime, state, state, extraAnswer('wrong', false))
+  assert.equal(runtime.pendingGameRewards.filter((reward) => reward.kind === 'extra-learning-ticket').length, 1)
 })
 
 test('every three correct additional-learning answers emits star +1 with a persisted counter', () => {
@@ -140,7 +144,6 @@ test('every three correct additional-learning answers emits star +1 with a persi
   assert.equal(starRewards[0].captureItemDelta.star, 1)
 
   const reloaded = JSON.parse(JSON.stringify(runtime))
-  for (const id of ['d', 'e', 'f']) reloaded.pendingGameRewards = reloaded.pendingGameRewards || []
   let continued = reloaded
   for (const id of ['d', 'e', 'f']) continued = deriveLearningRewardRuntime(continued, state, state, extraAnswer(id, true))
   assert.equal(continued.learningRewardMeta.additionalCorrectTotal, 6)

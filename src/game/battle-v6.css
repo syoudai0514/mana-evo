@@ -1,0 +1,83 @@
+.battle-screen-v2 .battle-turn-cue-v6 {
+  position: sticky;
+  top: calc(env(safe-area-inset-top, 0px) + 6px);
+  z-index: 12;
+  margin: 8px auto;
+  width: min(92%, 520px);
+  padding: 10px 14px;
+  border-radius: 18px;
+  text-align: center;
+  font-weight: 900;
+  letter-spacing: .02em;
+  background: rgba(8, 41, 78, .94);
+  color: white;
+  box-shadow: 0 8px 22px rgba(4, 28, 54, .24);
+}
+
+.battle-screen-v2 .battle-command-deck.is-resolving {
+  opacity: .72;
+  pointer-events: none;
+}
+
+.battle-screen-v2 .fighter-art.v6-player-lunge {
+  animation: v6-player-lunge .42s cubic-bezier(.2,.8,.2,1);
+}
+
+.battle-screen-v2 .fighter-art.v6-enemy-lunge {
+  animation: v6-enemy-lunge .42s cubic-bezier(.2,.8,.2,1);
+}
+
+.battle-screen-v2 .fighter-art.v6-hit {
+  animation: v6-hit .48s ease-out;
+}
+
+.battle-screen-v2 .fighter-art.v6-fainted {
+  animation: v6-faint .72s ease-in forwards;
+}
+
+.battle-screen-v2 .post-ko-capture-card {
+  border: 2px solid rgba(255, 179, 0, .55);
+  box-shadow: 0 12px 28px rgba(31, 85, 136, .14);
+}
+
+.battle-screen-v2 .post-ko-capture-card .capture-main-cta {
+  width: 100%;
+  min-height: 58px;
+  margin-top: 10px;
+}
+
+@keyframes v6-player-lunge {
+  0% { transform: translate(0, 0) scale(1); }
+  45% { transform: translate(32px, -10px) scale(1.10); }
+  70% { transform: translate(42px, -5px) scale(1.05); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+@keyframes v6-enemy-lunge {
+  0% { transform: translate(0, 0) scale(1); }
+  45% { transform: translate(-32px, 10px) scale(1.10); }
+  70% { transform: translate(-42px, 5px) scale(1.05); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+@keyframes v6-hit {
+  0%, 100% { transform: translateX(0); filter: brightness(1); }
+  18% { transform: translateX(-9px); filter: brightness(1.45); }
+  36% { transform: translateX(9px); }
+  54% { transform: translateX(-6px); }
+  72% { transform: translateX(5px); }
+}
+
+@keyframes v6-faint {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(18px) scale(.88); opacity: .38; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .battle-screen-v2 .fighter-art.v6-player-lunge,
+  .battle-screen-v2 .fighter-art.v6-enemy-lunge,
+  .battle-screen-v2 .fighter-art.v6-hit,
+  .battle-screen-v2 .fighter-art.v6-fainted {
+    animation-duration: .01ms;
+  }
+}

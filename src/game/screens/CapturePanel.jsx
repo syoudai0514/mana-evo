@@ -9,8 +9,6 @@ const CAPTURE_META = CAPTURE_CONFIG
 
 function starRating(chance, guaranteed = false) {
   if (guaranteed) return 5
-  // Display-only child cue. CURRENT intentionally does not freeze the numeric
-  // thresholds behind the five-step wording as a product probability rule.
   return Math.max(1, Math.min(5, Math.ceil(Math.max(0, Math.min(1, chance)) * 5)))
 }
 
@@ -38,16 +36,10 @@ function frameDuration(type, defaultInterval) {
 
 export function CapturePresentation({ sequence, onComplete, intervalMs = 520 }) {
   const frames = Array.isArray(sequence?.frames) ? sequence.frames : []
-  const visualFrames = useMemo(
-    () => frames.length ? [{ type: 'throw' }, { type: 'impact' }, ...frames] : [],
-    [sequence?.id, frames]
-  )
+  const visualFrames = useMemo(() => frames.length ? [{ type: 'throw' }, { type: 'impact' }, ...frames] : [], [sequence?.id, frames])
   const [frameIndex, setFrameIndex] = useState(0)
 
-  useEffect(() => {
-    setFrameIndex(0)
-  }, [sequence?.id])
-
+  useEffect(() => { setFrameIndex(0) }, [sequence?.id])
   useEffect(() => {
     if (!visualFrames.length) return undefined
     const current = visualFrames[Math.min(frameIndex, visualFrames.length - 1)] || {}
@@ -66,7 +58,6 @@ export function CapturePresentation({ sequence, onComplete, intervalMs = 520 }) 
   if (frame.type === 'stars') lit = Number(frame.lit) || 0
   else if (frame.type === 'ring_closed' || frame.type === 'caught') lit = 4
   else if (frame.type === 'ring_scatter' || frame.type === 'escaped') lit = highestStarFrame
-  // A failed sequence must never visually impersonate four completed stars.
   lit = Math.max(0, Math.min(successSequence ? 4 : 3, lit))
 
   const display = captureDisplayOf(sequence?.itemType)
@@ -90,17 +81,13 @@ export function CapturePresentation({ sequence, onComplete, intervalMs = 520 }) 
     <section className={`evolution-celebration-card capture-cinematic ${stateClass}`} data-testid="capture-sequence" data-frame-type={frame.type || 'stars'} data-lit-stars={lit} aria-live="polite">
       <p className="evolution-kicker">GET CHANCE</p>
       <div className="capture-cinematic-stage">
-        <div className="capture-target">
-          {sequence?.speciesId && <PlaceholderMonster speciesId={sequence.speciesId} size={148} />}
-        </div>
+        <div className="capture-target">{sequence?.speciesId && <PlaceholderMonster speciesId={sequence.speciesId} size={148} />}</div>
         <div className="capture-energy" aria-hidden="true" />
         <div className="capture-ball-flight"><CaptureBallIcon itemType={sequence?.itemType} /></div>
-        <div className="capture-stars" aria-label={`4つのうち ${lit}つ点灯`}>
-          {Array.from({ length: 4 }, (_, index) => <span key={index} className={index < lit ? 'lit' : ''}>★</span>)}
-        </div>
+        <div className="capture-stars" aria-label={`4つのうち ${lit}つ点灯`}>{Array.from({ length: 4 }, (_, index) => <span key={index} className={index < lit ? 'lit' : ''}>★</span>)}</div>
       </div>
       <h2>{message}</h2>
-      <p className="capture-cinematic-note">{frame.type === 'caught' ? `${display.label}が しっかり とじた！` : frame.type === 'escaped' || frame.type === 'ring_scatter' ? 'バトルは まだ つづくよ' : '4つ ひかったら GET！'}</p>
+      <p className="capture-cinematic-note">{frame.type === 'caught' ? `${display.label}が しっかり とじた！` : frame.type === 'escaped' || frame.type === 'ring_scatter' ? 'GETチャンスは まだ つづくよ' : '4つ ひかったら GET！'}</p>
     </section>
   </div>
 }
@@ -108,32 +95,20 @@ export function CapturePresentation({ sequence, onComplete, intervalMs = 520 }) 
 export function CapturePanel({ game, battle, captureDisabled = false, onCapture, onCancel }) {
   const [selectedBall, setSelectedBall] = useState(null)
   const panelRef = useRef(null)
-  const captureHpReady = battle.enemy.hp > 0 && battle.enemy.hp / battle.enemy.maxHp <= 0.5
+  const defeatedCapture = battle.status === 'won' && battle.postKoCaptureAvailable && Number(battle.enemy.hp) <= 0
+  const captureHpReady = defeatedCapture || (battle.enemy.hp > 0 && battle.enemy.hp / battle.enemy.maxHp <= 0.5)
   const captureAttemptsLeft = Math.max(0, MAX_CAPTURE_ATTEMPTS - (battle.captureAttempts || 0))
   const options = CAPTURE_ITEM_IDS.map((id) => {
     const meta = CAPTURE_META[id]
     const display = captureDisplayOf(id)
     const ready = !captureDisabled && canAttemptCapture(game, battle, id)
     const chance = captureChance(battle, id)
-    return {
-      id,
-      meta,
-      display,
-      ready,
-      chance,
-      owned: game.captureItems?.[id] || 0,
-      stars: starRating(chance, !!meta.guaranteed)
-    }
+    return { id, meta, display, ready, chance, owned: game.captureItems?.[id] || 0, stars: starRating(chance, !!meta.guaranteed) }
   })
   const recommended = [...options].filter((option) => option.ready).sort((a, b) => b.chance - a.chance)[0]?.id || null
   const selected = options.find((option) => option.id === selectedBall && option.ready) || null
 
   useEffect(() => {
-    // Capture selection is a focused sub-flow inside the battle document. WebKit
-    // can settle scrollIntoView at the bottom edge while the preceding battle
-    // layout is being replaced, leaving the first tap surface clipped by a few
-    // pixels. Reposition once after layout and once after the mount settles so
-    // the decision starts below the safe top edge on every supported phone.
     let frame = 0
     let timer = 0
     const positionPanel = () => {
@@ -144,10 +119,7 @@ export function CapturePanel({ game, battle, captureDisabled = false, onCapture,
     }
     frame = window.requestAnimationFrame(positionPanel)
     timer = window.setTimeout(positionPanel, 80)
-    return () => {
-      window.cancelAnimationFrame(frame)
-      window.clearTimeout(timer)
-    }
+    return () => { window.cancelAnimationFrame(frame); window.clearTimeout(timer) }
   }, [])
 
   useEffect(() => {
@@ -161,34 +133,24 @@ export function CapturePanel({ game, battle, captureDisabled = false, onCapture,
 
   return <section ref={panelRef} className={`battle-tools capture-panel ${captureHpReady ? 'capture-open' : 'capture-locked'}`} role="dialog" aria-label="どのボールをつかう？">
     <div className={'capture-main-cta ' + (captureHpReady && captureAttemptsLeft > 0 ? 'ready' : 'locked')}><CaptureBallIcon itemType={selected?.id || recommended || 'star'} compact /><div><strong>どのボールを つかう？</strong><small>のこり {captureAttemptsLeft}かい</small></div></div>
-    <h2>{captureAttemptsLeft <= 0 ? 'ボールは 3かい なげたよ' : captureHpReady ? 'ボールを えらぼう！' : '🔒 HPを はんぶんいかに！'}</h2>
-    <p>{captureAttemptsLeft <= 0 ? 'このバトルでは もう ボールを なげられないよ。' : captureHpReady ? '★と「おすすめ！」を みて えらぼう。' : `あいての HPを ${Math.floor(battle.enemy.maxHp / 2)} いかまで へらそう。いまは ${battle.enemy.hp}。`}</p>
+    <h2>{captureAttemptsLeft <= 0 ? 'ボールは 3かい なげたよ' : defeatedCapture ? 'たおしたあとも GETチャンス！' : captureHpReady ? 'ボールを えらぼう！' : '🔒 HPを はんぶんいかに！'}</h2>
+    <p>{captureAttemptsLeft <= 0 ? 'このバトルでは もう ボールを なげられないよ。' : defeatedCapture ? 'あいては もう こうげきしてこないよ。ボールを えらんで GETをねらおう。' : captureHpReady ? '★と「おすすめ！」を みて えらぼう。' : `あいての HPを ${Math.floor(battle.enemy.maxHp / 2)} いかまで へらそう。いまは ${battle.enemy.hp}。`}</p>
 
     <div className="capture-item-grid">{options.map((option) => {
       const isSelected = option.id === selectedBall
       const isRecommended = option.id === recommended
-      return <button
-        key={option.id}
-        type="button"
-        className={`${option.ready ? 'capture-ready' : ''} ${isSelected ? 'selected' : ''} ${isRecommended ? 'recommended' : ''}`.trim()}
-        disabled={!option.ready}
-        aria-pressed={isSelected}
-        onClick={() => setSelectedBall(option.id)}
-      >
+      return <button key={option.id} type="button" className={`${option.ready ? 'capture-ready' : ''} ${isSelected ? 'selected' : ''} ${isRecommended ? 'recommended' : ''}`.trim()} disabled={!option.ready} aria-pressed={isSelected} onClick={() => setSelectedBall(option.id)}>
         <CaptureBallIcon itemType={option.id} compact />
         <span className="capture-item-copy"><strong>{option.display.label}</strong><StarCue count={option.stars} /><small>もってる：{option.owned}こ</small></span>
         {isRecommended && option.ready && <b className="capture-recommended-badge">おすすめ！</b>}
       </button>
     })}</div>
 
-    <details className="capture-details">
-      <summary>くわしい かくりつ</summary>
-      {options.map((option) => <p key={option.id}>{option.display.label}：{Math.round(option.chance * 100)}%</p>)}
-    </details>
+    <details className="capture-details"><summary>くわしい かくりつ</summary>{options.map((option) => <p key={option.id}>{option.display.label}：{Math.round(option.chance * 100)}%</p>)}</details>
 
     <div className="battle-action-row capture-actions">
       <button className="primary" disabled={!selected} onClick={() => selected && onCapture(selected.id)}>{selected ? `${selected.display.label}を なげる！` : 'ボールを えらんでね'}</button>
-      <button className="secondary" onClick={onCancel}>バトルへ もどる</button>
+      <button className="secondary" onClick={onCancel}>{defeatedCapture ? 'GETを やめる' : 'バトルへ もどる'}</button>
     </div>
   </section>
 }
