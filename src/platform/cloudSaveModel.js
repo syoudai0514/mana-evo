@@ -18,8 +18,15 @@ export function stableStringify(value) {
   return JSON.stringify(canonical(value))
 }
 
+function semanticPayload(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return value
+  if (!('capturedAt' in value)) return value
+  const { capturedAt: _capturedAt, ...semantic } = value
+  return semantic
+}
+
 export function payloadHash(value) {
-  const text = stableStringify(value)
+  const text = stableStringify(semanticPayload(value))
   let hash = 2166136261
   for (let i = 0; i < text.length; i += 1) {
     hash ^= text.charCodeAt(i)
