@@ -16,7 +16,7 @@ create table if not exists public.app_saves (
 );
 
 alter table public.app_saves enable row level security;
-
+revoke all privileges on table public.app_saves from anon;
 grant select, insert, update, delete on public.app_saves to authenticated;
 
 create policy "app_saves_select_own"
@@ -59,7 +59,7 @@ create index if not exists app_save_backups_owner_app_created_idx
   on public.app_save_backups (user_id, app_id, slot_id, created_at desc);
 
 alter table public.app_save_backups enable row level security;
-
+revoke all privileges on table public.app_save_backups from anon;
 grant select, insert, delete on public.app_save_backups to authenticated;
 
 create policy "app_save_backups_select_own"
