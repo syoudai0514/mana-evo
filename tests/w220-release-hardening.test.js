@@ -7,10 +7,10 @@ import { buildProductionReachability, verifySourceContracts } from '../scripts/r
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
-test('W-220 source release contracts keep Pages/PWA isolated and installable', () => {
+test('W-220 source release contracts keep Vercel-root PWA isolated and installable', () => {
   const report = verifySourceContracts({ root })
-  assert.equal(report.canonicalUrl, 'https://syoudai0514.github.io/mana-evo/')
-  assert.equal(report.appBase, '/mana-evo/')
+  assert.equal(report.canonicalUrl, 'https://mana-evo.vercel.app/')
+  assert.equal(report.appBase, '/')
   assert.deepEqual(report.artCounts, { FORMAL: 0, CANDIDATE: 20, PLACEHOLDER: 218 })
 })
 
@@ -23,11 +23,12 @@ test('production reachability keeps save-compatibility sprite v3 but proves v1 d
   assert.equal(fs.existsSync(path.join(root, 'src/game/manaevo-monsters-v1.webp')), false)
 })
 
-test('GitHub Pages deep-entry fallback is ManaEvo-only and preserves query/hash', () => {
+test('Vercel deep-entry fallback returns to root and preserves query/hash', () => {
   const fallback = fs.readFileSync(path.join(root, 'public/404.html'), 'utf8')
-  assert.match(fallback, /const APP_BASE = '\/mana-evo\/'/)
-  assert.match(fallback, /pathname\.startsWith\(APP_BASE\)/)
-  assert.match(fallback, /\$\{APP_BASE\}\$\{window\.location\.search\}\$\{window\.location\.hash\}/)
+  assert.match(fallback, /const APP_ROOT = '\/'/)
+  assert.match(fallback, /pathname !== APP_ROOT/)
+  assert.match(fallback, /\$\{APP_ROOT\}\$\{window\.location\.search\}\$\{window\.location\.hash\}/)
+  assert.doesNotMatch(fallback, /\/mana-evo\//)
   assert.doesNotMatch(fallback, /kids-quest/)
 })
 
