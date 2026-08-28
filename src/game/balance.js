@@ -3,6 +3,15 @@ export const MAX_MONSTER_LEVEL = 100
 export const NORMAL_REPEAT_CAP = 1.10
 export const NORMAL_REPEAT_MASTERY_FLOOR = 0.70
 
+// Evolution pacing V5 keeps the reviewed stage reward values as the encounter
+// reward pool, then applies these multipliers when XP is settled to monsters.
+// The active battler receives 40% of the legacy pool; teammates receive 40% of
+// that active amount. This preserves learning-earned play opportunities without
+// letting a long first-day session evolve an entire three-monster party at once.
+export const BATTLE_XP_GLOBAL_MULTIPLIER = 0.40
+export const BATTLE_XP_TEAMMATE_MULTIPLIER = 0.40
+export const CAPTURE_EVOLUTION_LEVEL_BUFFER = 5
+
 export const NORMAL_DIFFICULTY = Object.freeze({
   weak: { targetMultiplier: 0.82, label: 'いけそう', xp: 90 },
   normal: { targetMultiplier: 0.92, label: 'いけそう', xp: 110 },
