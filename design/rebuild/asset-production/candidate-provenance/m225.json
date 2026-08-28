@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "speciesId": "m225",
+  "events": [
+    {
+      "timestamp": "2026-08-27T12:47:30.058Z",
+      "sourceLabel": "W-308 ART READY GitHub handoff (attached bundle sha256=dfe1452d45ede90e85b9a1b42b6f411100fe0d16b045b2ba8829e3b80a41f1db)",
+      "previous": null,
+      "candidate": {
+        "repositoryPath": "public/monsters/m225.webp",
+        "sha256": "9129fe6c07664e349b751b87e6675f883dfe5ac1e86f9a953f86ab54bc41462b",
+        "bytes": 274256
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    }
+  ]
+}
