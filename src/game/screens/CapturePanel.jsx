@@ -29,7 +29,7 @@ export function CaptureBallIcon({ itemType = 'star', compact = false }) {
 
 function frameDuration(type, defaultInterval) {
   if (type === 'throw') return 680
-  if (type === 'impact') return 460
+  if (type === 'impact') return 760
   if (type === 'ring_closed') return 620
   if (type === 'caught') return 920
   if (type === 'ring_scatter' || type === 'escaped') return 760
@@ -78,12 +78,13 @@ export function CapturePresentation({ sequence, onComplete, intervalMs = 520 }) 
             : frame.type === 'escaped' ? 'ボールから とびだした！'
               : `${Math.max(1, lit)}つめの ほしが ひかった！`
 
-  const stateClass = frame.type === 'throw' ? 'is-throwing'
+  const phaseClass = frame.type === 'throw' ? 'is-throwing'
     : frame.type === 'impact' ? 'is-impact'
       : frame.type === 'caught' ? 'is-caught'
         : frame.type === 'ring_scatter' || frame.type === 'escaped' ? 'is-escaped'
           : frame.type === 'ring_closed' ? 'is-sealed'
             : 'is-waiting'
+  const stateClass = `${frame.type === 'throw' ? '' : 'has-impact'} ${phaseClass}`.trim()
 
   return <div className="evolution-overlay capture-sequence-overlay" role="dialog" aria-modal="true" aria-label="捕獲演出">
     <section className={`evolution-celebration-card capture-cinematic ${stateClass}`} data-testid="capture-sequence" data-frame-type={frame.type || 'stars'} data-lit-stars={lit} aria-live="polite">
