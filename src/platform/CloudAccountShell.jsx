@@ -53,6 +53,7 @@ export default function CloudAccountShell({ children }) {
   const [conflict, setConflict] = useState(null)
   const [backups, setBackups] = useState([])
   const [busy, setBusy] = useState(false)
+  const [parentScreenOpen, setParentScreenOpen] = useState(false)
   const syncTimer = useRef(null)
   const testMode = getTestMode()
   const config = cloudConfig()
@@ -158,6 +159,15 @@ export default function CloudAccountShell({ children }) {
   }, [])
 
   useEffect(() => {
+    const root = document.getElementById('root') || document.body
+    const updateParentScreen = () => setParentScreenOpen(!!document.querySelector('.parent-screen'))
+    updateParentScreen()
+    const observer = new MutationObserver(updateParentScreen)
+    observer.observe(root, { childList: true, subtree: true })
+    return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
     const onSave = () => scheduleSync()
     const onOnline = () => syncNow({ quiet: true }).catch(() => {})
     window.addEventListener(LOCAL_SAVE_EVENT, onSave)
@@ -251,12 +261,15 @@ export default function CloudAccountShell({ children }) {
     endTestMode(); window.location.reload()
   }
 
+  const needsCloudAttention = !!conflict || status.includes('エラー') || status.includes('選んで')
+  const showAccountFab = !session || recoveryMode || parentScreenOpen || needsCloudAttention
+
   return <>
     {children}
     {testMode && <div className="cloud-test-banner"><strong>🧪 TEST：{testMode.label}</strong><button onClick={() => setOpen(true)}>テスト管理</button></div>}
-    <button className="cloud-account-fab" aria-label="アカウントとクラウド保存" onClick={() => setOpen(true)}>
-      <span>{testMode ? '🧪' : session ? '☁️' : '👤'}</span><small>{profileInfo.profiles?.[profileInfo.activeProfileId]?.name || 'アカウント'}</small>
-    </button>
+    {showAccountFab && <button className={`cloud-account-fab${needsCloudAttention ? ' warn' : ''}`} aria-label="アカウントとクラウド保存" onClick={() => setOpen(true)}>
+      <span>{needsCloudAttention ? '⚠️' : testMode ? '🧪' : session ? '☁️' : '👤'}</span><small>{needsCloudAttention ? '保存確認' : parentScreenOpen ? 'クラウド' : profileInfo.profiles?.[profileInfo.activeProfileId]?.name || 'ログイン'}</small>
+    </button>}
 
     {open && <div className="cloud-modal-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) setOpen(false) }}>
       <section className="cloud-modal" role="dialog" aria-modal="true" aria-label="アカウントとクラウド保存">
