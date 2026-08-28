@@ -35,13 +35,14 @@ export function payloadHash(value) {
   return (hash >>> 0).toString(16).padStart(8, '0')
 }
 
-export function makeCloudPayload({ learning, gameEnvelope, capturedAt = new Date().toISOString() }) {
+export function makeCloudPayload({ learning, gameEnvelope, learningRewardEnvelope = null, capturedAt = new Date().toISOString() }) {
   return {
     appId: CLOUD_APP_ID,
     saveSchemaVersion: CLOUD_SAVE_SCHEMA_VERSION,
     capturedAt,
     learning,
-    gameEnvelope
+    gameEnvelope,
+    learningRewardEnvelope
   }
 }
 
