@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "speciesId": "m238",
+  "events": [
+    {
+      "timestamp": "2026-08-28T01:41:43.563Z",
+      "sourceLabel": "W-311 ART READY ZIP W-311-art-ready(1).zip",
+      "previous": null,
+      "candidate": {
+        "repositoryPath": "public/monsters/m238.webp",
+        "sha256": "863d2205ee9af480cf23a2d81ba1629ee1aae19cc3814796078e70eb319d6163",
+        "bytes": 47690
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    }
+  ]
+}
