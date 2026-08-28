@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "speciesId": "m072",
+  "events": [
+    {
+      "timestamp": "2026-08-28T10:53:54.562Z",
+      "sourceLabel": "W-306 approved-for-candidate-review",
+      "previous": null,
+      "candidate": {
+        "repositoryPath": "public/monsters/m072.webp",
+        "sha256": "38ecda957c91b017e5740e4565a32fe9f6dade4835d2c139bb2e1edf6fdf65f2",
+        "bytes": 25564
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    }
+  ]
+}

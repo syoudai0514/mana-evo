@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "speciesId": "m178",
+  "events": [
+    {
+      "timestamp": "2026-08-28T10:53:54.592Z",
+      "sourceLabel": "W-306 approved-for-candidate-review",
+      "previous": null,
+      "candidate": {
+        "repositoryPath": "public/monsters/m178.webp",
+        "sha256": "51127c043b281096be081c366b95181ead16ec7eaecfb4d360fab4dc3a8762d8",
+        "bytes": 15712
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    }
+  ]
+}

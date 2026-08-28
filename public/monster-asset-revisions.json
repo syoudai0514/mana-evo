@@ -1,0 +1,722 @@
+{
+  "schemaVersion": 1,
+  "sourceSchemaVersion": 1,
+  "sourcePath": "design/current/monster-asset-manifest.json",
+  "assets": {
+    "m001": {
+      "state": "CANDIDATE"
+    },
+    "m002": {
+      "state": "CANDIDATE"
+    },
+    "m003": {
+      "state": "CANDIDATE"
+    },
+    "m004": {
+      "state": "CANDIDATE"
+    },
+    "m005": {
+      "state": "CANDIDATE"
+    },
+    "m006": {
+      "state": "CANDIDATE"
+    },
+    "m007": {
+      "state": "CANDIDATE"
+    },
+    "m008": {
+      "state": "CANDIDATE"
+    },
+    "m009": {
+      "state": "CANDIDATE"
+    },
+    "m010": {
+      "state": "CANDIDATE"
+    },
+    "m011": {
+      "state": "CANDIDATE"
+    },
+    "m012": {
+      "state": "CANDIDATE"
+    },
+    "m013": {
+      "state": "CANDIDATE"
+    },
+    "m014": {
+      "state": "CANDIDATE"
+    },
+    "m015": {
+      "state": "CANDIDATE"
+    },
+    "m016": {
+      "state": "CANDIDATE"
+    },
+    "m017": {
+      "state": "CANDIDATE"
+    },
+    "m018": {
+      "state": "CANDIDATE"
+    },
+    "m019": {
+      "state": "CANDIDATE"
+    },
+    "m020": {
+      "state": "CANDIDATE"
+    },
+    "m021": {
+      "state": "PLACEHOLDER"
+    },
+    "m022": {
+      "state": "PLACEHOLDER"
+    },
+    "m023": {
+      "state": "PLACEHOLDER"
+    },
+    "m024": {
+      "state": "PLACEHOLDER"
+    },
+    "m025": {
+      "state": "PLACEHOLDER"
+    },
+    "m026": {
+      "state": "PLACEHOLDER"
+    },
+    "m027": {
+      "state": "PLACEHOLDER"
+    },
+    "m028": {
+      "state": "PLACEHOLDER"
+    },
+    "m029": {
+      "state": "PLACEHOLDER"
+    },
+    "m030": {
+      "state": "PLACEHOLDER"
+    },
+    "m031": {
+      "state": "PLACEHOLDER"
+    },
+    "m032": {
+      "state": "PLACEHOLDER"
+    },
+    "m033": {
+      "state": "PLACEHOLDER"
+    },
+    "m034": {
+      "state": "PLACEHOLDER"
+    },
+    "m035": {
+      "state": "PLACEHOLDER"
+    },
+    "m036": {
+      "state": "PLACEHOLDER"
+    },
+    "m037": {
+      "state": "PLACEHOLDER"
+    },
+    "m038": {
+      "state": "PLACEHOLDER"
+    },
+    "m039": {
+      "state": "PLACEHOLDER"
+    },
+    "m040": {
+      "state": "PLACEHOLDER"
+    },
+    "m041": {
+      "state": "PLACEHOLDER"
+    },
+    "m042": {
+      "state": "PLACEHOLDER"
+    },
+    "m043": {
+      "state": "PLACEHOLDER"
+    },
+    "m044": {
+      "state": "PLACEHOLDER"
+    },
+    "m045": {
+      "state": "PLACEHOLDER"
+    },
+    "m046": {
+      "state": "PLACEHOLDER"
+    },
+    "m047": {
+      "state": "PLACEHOLDER"
+    },
+    "m048": {
+      "state": "PLACEHOLDER"
+    },
+    "m049": {
+      "state": "PLACEHOLDER"
+    },
+    "m050": {
+      "state": "PLACEHOLDER"
+    },
+    "m051": {
+      "state": "PLACEHOLDER"
+    },
+    "m052": {
+      "state": "PLACEHOLDER"
+    },
+    "m053": {
+      "state": "PLACEHOLDER"
+    },
+    "m054": {
+      "state": "PLACEHOLDER"
+    },
+    "m055": {
+      "state": "PLACEHOLDER"
+    },
+    "m056": {
+      "state": "PLACEHOLDER"
+    },
+    "m057": {
+      "state": "PLACEHOLDER"
+    },
+    "m058": {
+      "state": "PLACEHOLDER"
+    },
+    "m059": {
+      "state": "PLACEHOLDER"
+    },
+    "m060": {
+      "state": "PLACEHOLDER"
+    },
+    "m061": {
+      "state": "PLACEHOLDER"
+    },
+    "m062": {
+      "state": "PLACEHOLDER"
+    },
+    "m063": {
+      "state": "PLACEHOLDER"
+    },
+    "m064": {
+      "state": "PLACEHOLDER"
+    },
+    "m065": {
+      "state": "PLACEHOLDER"
+    },
+    "m066": {
+      "state": "PLACEHOLDER"
+    },
+    "m067": {
+      "state": "PLACEHOLDER"
+    },
+    "m068": {
+      "state": "PLACEHOLDER"
+    },
+    "m069": {
+      "state": "PLACEHOLDER"
+    },
+    "m070": {
+      "state": "PLACEHOLDER"
+    },
+    "m071": {
+      "state": "PLACEHOLDER"
+    },
+    "m072": {
+      "state": "PLACEHOLDER"
+    },
+    "m073": {
+      "state": "PLACEHOLDER"
+    },
+    "m074": {
+      "state": "PLACEHOLDER"
+    },
+    "m075": {
+      "state": "PLACEHOLDER"
+    },
+    "m076": {
+      "state": "PLACEHOLDER"
+    },
+    "m077": {
+      "state": "PLACEHOLDER"
+    },
+    "m078": {
+      "state": "PLACEHOLDER"
+    },
+    "m079": {
+      "state": "PLACEHOLDER"
+    },
+    "m080": {
+      "state": "PLACEHOLDER"
+    },
+    "m081": {
+      "state": "PLACEHOLDER"
+    },
+    "m082": {
+      "state": "PLACEHOLDER"
+    },
+    "m083": {
+      "state": "PLACEHOLDER"
+    },
+    "m084": {
+      "state": "PLACEHOLDER"
+    },
+    "m085": {
+      "state": "PLACEHOLDER"
+    },
+    "m086": {
+      "state": "PLACEHOLDER"
+    },
+    "m087": {
+      "state": "PLACEHOLDER"
+    },
+    "m088": {
+      "state": "PLACEHOLDER"
+    },
+    "m089": {
+      "state": "PLACEHOLDER"
+    },
+    "m090": {
+      "state": "PLACEHOLDER"
+    },
+    "m091": {
+      "state": "PLACEHOLDER"
+    },
+    "m092": {
+      "state": "PLACEHOLDER"
+    },
+    "m093": {
+      "state": "PLACEHOLDER"
+    },
+    "m094": {
+      "state": "PLACEHOLDER"
+    },
+    "m095": {
+      "state": "PLACEHOLDER"
+    },
+    "m096": {
+      "state": "PLACEHOLDER"
+    },
+    "m097": {
+      "state": "PLACEHOLDER"
+    },
+    "m098": {
+      "state": "PLACEHOLDER"
+    },
+    "m099": {
+      "state": "PLACEHOLDER"
+    },
+    "m100": {
+      "state": "PLACEHOLDER"
+    },
+    "m101": {
+      "state": "PLACEHOLDER"
+    },
+    "m102": {
+      "state": "PLACEHOLDER"
+    },
+    "m103": {
+      "state": "PLACEHOLDER"
+    },
+    "m104": {
+      "state": "PLACEHOLDER"
+    },
+    "m105": {
+      "state": "PLACEHOLDER"
+    },
+    "m106": {
+      "state": "PLACEHOLDER"
+    },
+    "m107": {
+      "state": "PLACEHOLDER"
+    },
+    "m108": {
+      "state": "PLACEHOLDER"
+    },
+    "m109": {
+      "state": "PLACEHOLDER"
+    },
+    "m110": {
+      "state": "PLACEHOLDER"
+    },
+    "m111": {
+      "state": "PLACEHOLDER"
+    },
+    "m112": {
+      "state": "PLACEHOLDER"
+    },
+    "m113": {
+      "state": "PLACEHOLDER"
+    },
+    "m114": {
+      "state": "PLACEHOLDER"
+    },
+    "m115": {
+      "state": "PLACEHOLDER"
+    },
+    "m116": {
+      "state": "PLACEHOLDER"
+    },
+    "m117": {
+      "state": "PLACEHOLDER"
+    },
+    "m118": {
+      "state": "PLACEHOLDER"
+    },
+    "m119": {
+      "state": "PLACEHOLDER"
+    },
+    "m120": {
+      "state": "PLACEHOLDER"
+    },
+    "m121": {
+      "state": "PLACEHOLDER"
+    },
+    "m122": {
+      "state": "PLACEHOLDER"
+    },
+    "m123": {
+      "state": "PLACEHOLDER"
+    },
+    "m124": {
+      "state": "PLACEHOLDER"
+    },
+    "m125": {
+      "state": "PLACEHOLDER"
+    },
+    "m126": {
+      "state": "PLACEHOLDER"
+    },
+    "m127": {
+      "state": "PLACEHOLDER"
+    },
+    "m128": {
+      "state": "PLACEHOLDER"
+    },
+    "m129": {
+      "state": "PLACEHOLDER"
+    },
+    "m130": {
+      "state": "PLACEHOLDER"
+    },
+    "m131": {
+      "state": "PLACEHOLDER"
+    },
+    "m132": {
+      "state": "PLACEHOLDER"
+    },
+    "m133": {
+      "state": "PLACEHOLDER"
+    },
+    "m134": {
+      "state": "PLACEHOLDER"
+    },
+    "m135": {
+      "state": "PLACEHOLDER"
+    },
+    "m136": {
+      "state": "PLACEHOLDER"
+    },
+    "m137": {
+      "state": "PLACEHOLDER"
+    },
+    "m138": {
+      "state": "PLACEHOLDER"
+    },
+    "m139": {
+      "state": "PLACEHOLDER"
+    },
+    "m140": {
+      "state": "PLACEHOLDER"
+    },
+    "m141": {
+      "state": "PLACEHOLDER"
+    },
+    "m142": {
+      "state": "PLACEHOLDER"
+    },
+    "m143": {
+      "state": "PLACEHOLDER"
+    },
+    "m144": {
+      "state": "PLACEHOLDER"
+    },
+    "m145": {
+      "state": "PLACEHOLDER"
+    },
+    "m146": {
+      "state": "PLACEHOLDER"
+    },
+    "m147": {
+      "state": "PLACEHOLDER"
+    },
+    "m148": {
+      "state": "PLACEHOLDER"
+    },
+    "m149": {
+      "state": "PLACEHOLDER"
+    },
+    "m150": {
+      "state": "PLACEHOLDER"
+    },
+    "m151": {
+      "state": "PLACEHOLDER"
+    },
+    "m152": {
+      "state": "PLACEHOLDER"
+    },
+    "m153": {
+      "state": "PLACEHOLDER"
+    },
+    "m154": {
+      "state": "PLACEHOLDER"
+    },
+    "m155": {
+      "state": "PLACEHOLDER"
+    },
+    "m156": {
+      "state": "PLACEHOLDER"
+    },
+    "m157": {
+      "state": "PLACEHOLDER"
+    },
+    "m158": {
+      "state": "PLACEHOLDER"
+    },
+    "m159": {
+      "state": "PLACEHOLDER"
+    },
+    "m160": {
+      "state": "PLACEHOLDER"
+    },
+    "m161": {
+      "state": "PLACEHOLDER"
+    },
+    "m162": {
+      "state": "PLACEHOLDER"
+    },
+    "m163": {
+      "state": "PLACEHOLDER"
+    },
+    "m164": {
+      "state": "PLACEHOLDER"
+    },
+    "m165": {
+      "state": "PLACEHOLDER"
+    },
+    "m166": {
+      "state": "PLACEHOLDER"
+    },
+    "m167": {
+      "state": "PLACEHOLDER"
+    },
+    "m168": {
+      "state": "PLACEHOLDER"
+    },
+    "m169": {
+      "state": "PLACEHOLDER"
+    },
+    "m170": {
+      "state": "PLACEHOLDER"
+    },
+    "m171": {
+      "state": "PLACEHOLDER"
+    },
+    "m172": {
+      "state": "PLACEHOLDER"
+    },
+    "m173": {
+      "state": "PLACEHOLDER"
+    },
+    "m174": {
+      "state": "PLACEHOLDER"
+    },
+    "m175": {
+      "state": "PLACEHOLDER"
+    },
+    "m176": {
+      "state": "PLACEHOLDER"
+    },
+    "m177": {
+      "state": "PLACEHOLDER"
+    },
+    "m178": {
+      "state": "PLACEHOLDER"
+    },
+    "m179": {
+      "state": "PLACEHOLDER"
+    },
+    "m180": {
+      "state": "PLACEHOLDER"
+    },
+    "m181": {
+      "state": "PLACEHOLDER"
+    },
+    "m182": {
+      "state": "PLACEHOLDER"
+    },
+    "m183": {
+      "state": "PLACEHOLDER"
+    },
+    "m184": {
+      "state": "PLACEHOLDER"
+    },
+    "m185": {
+      "state": "PLACEHOLDER"
+    },
+    "m186": {
+      "state": "PLACEHOLDER"
+    },
+    "m187": {
+      "state": "PLACEHOLDER"
+    },
+    "m188": {
+      "state": "PLACEHOLDER"
+    },
+    "m189": {
+      "state": "PLACEHOLDER"
+    },
+    "m190": {
+      "state": "PLACEHOLDER"
+    },
+    "m191": {
+      "state": "PLACEHOLDER"
+    },
+    "m192": {
+      "state": "PLACEHOLDER"
+    },
+    "m193": {
+      "state": "PLACEHOLDER"
+    },
+    "m194": {
+      "state": "PLACEHOLDER"
+    },
+    "m195": {
+      "state": "PLACEHOLDER"
+    },
+    "m196": {
+      "state": "PLACEHOLDER"
+    },
+    "m197": {
+      "state": "PLACEHOLDER"
+    },
+    "m198": {
+      "state": "PLACEHOLDER"
+    },
+    "m199": {
+      "state": "PLACEHOLDER"
+    },
+    "m200": {
+      "state": "PLACEHOLDER"
+    },
+    "m201": {
+      "state": "PLACEHOLDER"
+    },
+    "m202": {
+      "state": "PLACEHOLDER"
+    },
+    "m203": {
+      "state": "PLACEHOLDER"
+    },
+    "m204": {
+      "state": "PLACEHOLDER"
+    },
+    "m205": {
+      "state": "PLACEHOLDER"
+    },
+    "m206": {
+      "state": "PLACEHOLDER"
+    },
+    "m207": {
+      "state": "PLACEHOLDER"
+    },
+    "m208": {
+      "state": "PLACEHOLDER"
+    },
+    "m209": {
+      "state": "PLACEHOLDER"
+    },
+    "m210": {
+      "state": "PLACEHOLDER"
+    },
+    "m211": {
+      "state": "PLACEHOLDER"
+    },
+    "m212": {
+      "state": "PLACEHOLDER"
+    },
+    "m213": {
+      "state": "PLACEHOLDER"
+    },
+    "m214": {
+      "state": "PLACEHOLDER"
+    },
+    "m215": {
+      "state": "PLACEHOLDER"
+    },
+    "m216": {
+      "state": "PLACEHOLDER"
+    },
+    "m217": {
+      "state": "PLACEHOLDER"
+    },
+    "m218": {
+      "state": "PLACEHOLDER"
+    },
+    "m219": {
+      "state": "PLACEHOLDER"
+    },
+    "m220": {
+      "state": "PLACEHOLDER"
+    },
+    "m221": {
+      "state": "PLACEHOLDER"
+    },
+    "m222": {
+      "state": "PLACEHOLDER"
+    },
+    "m223": {
+      "state": "PLACEHOLDER"
+    },
+    "m224": {
+      "state": "PLACEHOLDER"
+    },
+    "m225": {
+      "state": "PLACEHOLDER"
+    },
+    "m226": {
+      "state": "PLACEHOLDER"
+    },
+    "m227": {
+      "state": "PLACEHOLDER"
+    },
+    "m228": {
+      "state": "PLACEHOLDER"
+    },
+    "m229": {
+      "state": "PLACEHOLDER"
+    },
+    "m230": {
+      "state": "PLACEHOLDER"
+    },
+    "m231": {
+      "state": "PLACEHOLDER"
+    },
+    "m232": {
+      "state": "PLACEHOLDER"
+    },
+    "m233": {
+      "state": "PLACEHOLDER"
+    },
+    "m234": {
+      "state": "PLACEHOLDER"
+    },
+    "m235": {
+      "state": "PLACEHOLDER"
+    },
+    "m236": {
+      "state": "PLACEHOLDER"
+    },
+    "m237": {
+      "state": "PLACEHOLDER"
+    },
+    "m238": {
+      "state": "PLACEHOLDER"
+    }
+  },
+  "formalByUrl": {}
+}
