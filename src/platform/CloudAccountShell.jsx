@@ -23,7 +23,7 @@ import {
   applyCloudPayload,
   switchDeviceProfile
 } from './cloudSnapshot.js'
-import { decideSync, payloadHash, syncMetaKey } from './cloudSaveModel.js'
+import { decideSync, payloadHash, payloadPartHashes, syncMetaKey } from './cloudSaveModel.js'
 import AdultCloudControls from './AdultCloudControls.jsx'
 
 const LOCAL_SAVE_EVENT = 'manaevo:local-save-changed'
@@ -60,7 +60,12 @@ export default function CloudAccountShell({ children }) {
 
   const setMeta = useCallback((userId, row) => {
     const hash = payloadHash(row.payload)
-    writeJson(syncMetaKey(userId), { revision: Number(row.revision) || 0, hash, syncedAt: Date.now() })
+    writeJson(syncMetaKey(userId), {
+      revision: Number(row.revision) || 0,
+      hash,
+      parts: payloadPartHashes(row.payload),
+      syncedAt: Date.now()
+    })
     return hash
   }, [])
 
@@ -94,7 +99,7 @@ export default function CloudAccountShell({ children }) {
     const localHash = payloadHash(localPayload)
     const cloud = await fetchMainSave()
     const meta = readJson(syncMetaKey(valid.user.id))
-    const decision = decideSync({ localHash, meta, cloud })
+    const decision = decideSync({ localHash, localPayload, meta, cloud })
 
     if (decision.action === 'push-new') {
       const row = await insertMainSave(localPayload)
@@ -113,6 +118,16 @@ export default function CloudAccountShell({ children }) {
       if (!row) throw new Error('別の端末で更新されました。もう一度同期してください')
       setMeta(valid.user.id, row)
       setStatus('クラウド同期済み')
+      return
+    }
+    if (decision.action === 'merge') {
+      await maybeBackupCloud(cloud)
+      const row = await updateMainSave(decision.payload, cloud.revision)
+      if (!row) throw new Error('統合中に別の端末で更新されました。もう一度同期してください')
+      setMeta(valid.user.id, row)
+      setStatus('別プレイヤーの変更を安全に統合')
+      applyCloudPayload(row.payload)
+      window.location.reload()
       return
     }
     if (decision.action === 'pull') {
@@ -255,7 +270,7 @@ export default function CloudAccountShell({ children }) {
         {!session ? <div className="cloud-card"><h3>☁️ 保護者アカウント</h3><label>メールアドレス<input type="email" autoCapitalize="none" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)}/></label><label>パスワード<input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)}/></label><div className="cloud-actions"><button disabled={busy || !config.configured || !email || !password} onClick={doSignIn}>ログイン</button><button className="secondary" disabled={busy || !config.configured || !email || password.length < 8} onClick={doSignUp}>新規登録</button></div><button className="cloud-link" disabled={busy || !config.configured || !email} onClick={doReset}>パスワードを忘れた</button><small>一度ログインした端末はセッションを保持します。</small></div> : <div className="cloud-card"><div className="cloud-row"><div><h3>👤 {sessionLabel(session)}</h3><small>共通アカウント</small></div><span>☁️</span></div><button disabled={busy || !!testMode} onClick={() => run(() => syncNow())}>☁️ 今すぐ同期</button></div>}
 
         <AdultCloudControls>
-          {session && conflict && <div className="cloud-card cloud-conflict"><h3>⚠️ iPhone/iPadの両方に変更があります</h3><p>自動で上書きせず止めました。残したい方を選んでください。上書き前のクラウドデータはバックアップします。</p><button disabled={busy} onClick={chooseCloud}>☁️ クラウド側を使う</button><button className="secondary" disabled={busy} onClick={chooseLocal}>📱 この端末側を使う</button></div>}
+          {session && conflict && <div className="cloud-card cloud-conflict"><h3>⚠️ iPhone/iPadの同じプレイヤーに両方の変更があります</h3><p>別プレイヤー同士なら自動統合します。同じプレイヤーを両端末で変更した場合だけ、自動で上書きせず止めます。残したい方を選んでください。</p><button disabled={busy} onClick={chooseCloud}>☁️ クラウド側を使う</button><button className="secondary" disabled={busy} onClick={chooseLocal}>📱 この端末側を使う</button></div>}
 
           <div className="cloud-card"><h3>👨‍👩‍👧 プレイヤー</h3><p>この端末で開く人だけを切り替えます。他の端末の選択は変わりません。</p><div className="cloud-profile-list">{Object.entries(profileInfo.profiles || {}).map(([id, profile]) => <button key={id} className={id === profileInfo.activeProfileId ? 'active' : ''} onClick={() => switchProfile(id)}>{id === profileInfo.activeProfileId ? '✓ ' : ''}{profile.name || id}</button>)}</div><small>パパ・まさき・ウタノなどのプロフィール追加は保護者メニューからできます。</small></div>
 
