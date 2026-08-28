@@ -20,11 +20,15 @@ Both tables enable RLS and require `(select auth.uid()) = user_id`. `anon` privi
 
 Production/dev builds run `scripts/fetch-shared-cloud-config.mjs` before Vite. It calls the shared project's `public-client-config` bootstrap Edge Function using a non-secret application bootstrap header and writes a generated `.env.local` containing only the browser-safe project URL/anonymous key. `.env.local` is ignored by git.
 
-This keeps project secrets out of the repository while allowing the same static build model to work for Vercel and GitHub Pages. The generated browser key is not authorization by itself; RLS plus the signed-in user's JWT controls table access.
+The production browser origin is `https://mana-evo.vercel.app/`. Vercel Preview deployments use the same browser-safe Supabase project configuration for controlled testing. The generated browser key is not authorization by itself; RLS plus the signed-in user's JWT controls table access.
 
 ## Auth URLs
 
-Configure Supabase Auth Site URL / Additional Redirect URLs for every supported ManaEvo host used by confirmation and password recovery. The production host should be the Site URL; canonical/preview hosts can be additional redirects as needed.
+Supabase Auth production Site URL must be:
+
+`https://mana-evo.vercel.app/`
+
+Production confirmation/password-recovery redirects return to that origin. Vercel Preview redirect URLs may be added only when an Auth flow needs to be tested on a PR Preview. GitHub Pages is no longer a production/canonical Auth return target under D-019.
 
 Hosted Supabase projects enable email confirmation by default, so this URL configuration is required before treating signup/password recovery as rollout-complete.
 
@@ -37,3 +41,4 @@ Hosted Supabase projects enable email confirmation by default, so this URL confi
 5. Verify unauthenticated requests cannot access saves/backups.
 6. Verify email confirmation, password reset, refresh-session persistence and logout after Auth URLs are configured.
 7. Verify ManaEvo full snapshot round-trip, multi-device conflict protection, backup restore and test-mode isolation.
+8. Verify the Vercel production PWA installs/updates from the root origin and does not depend on `/mana-evo/`.
