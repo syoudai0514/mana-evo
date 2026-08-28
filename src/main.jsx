@@ -3,12 +3,14 @@ import ReactDOM from 'react-dom/client'
 import './kids-quest-study/engine/speechPacing.js'
 import App from './App.jsx'
 import { GameProvider as LearningProvider } from './kids-quest-study/state/GameContext.jsx'
+import CloudAccountShell from './platform/CloudAccountShell.jsx'
 import './kids-quest-study/styles/learning.css'
 import './styles.css'
 import './parent-controls.css'
 import './kids-quest-study/styles/trace-mobile.css'
 import './game/runtime.css'
 import './ui/iphone-playtest-refresh.css'
+import './platform/cloud-save.css'
 import './premium-ui-v4.css'
 
 const CANONICAL_HOST = 'syoudai0514.github.io'
@@ -31,8 +33,10 @@ if ('serviceWorker' in navigator) {
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <LearningProvider>
-      <App />
-    </LearningProvider>
+    <CloudAccountShell>
+      <LearningProvider>
+        <App />
+      </LearningProvider>
+    </CloudAccountShell>
   </React.StrictMode>
 )
