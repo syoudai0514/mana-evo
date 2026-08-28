@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import http from 'node:http'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { chromium } from '@playwright/test'
+import { webkit } from '@playwright/test'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const PUBLIC = path.join(ROOT, 'public')
@@ -74,9 +74,7 @@ async function inspect(page, origin, speciesId) {
     let visible = 0, solid = 0, edgeVisible = 0, edgeSolid = 0
     let weightedX = 0, weightedY = 0, alphaWeight = 0
 
-    const corners = [
-      [0, 0], [w - 1, 0], [0, h - 1], [w - 1, h - 1],
-    ]
+    const corners = [[0, 0], [w - 1, 0], [0, h - 1], [w - 1, h - 1]]
     let opaqueCornerCount = 0
     for (const [x, y] of corners) {
       const a = data[(y * w + x) * 4 + 3]
@@ -156,7 +154,7 @@ async function main() {
     : path.join(ROOT, 'design/rebuild/asset-production/visual-audit/visual-audit.json')
 
   const { server, origin } = await servePublic()
-  const browser = await chromium.launch({ headless: true })
+  const browser = await webkit.launch({ headless: true })
   try {
     const page = await browser.newPage()
     const rows = []
