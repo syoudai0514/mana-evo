@@ -55,19 +55,17 @@ export async function signInWithPassword(email, password) {
 }
 
 export async function signUpWithPassword(email, password, redirectTo = null) {
-  const data = await authFetch('/signup', {
-    body: {
-      email,
-      password,
-      ...(redirectTo ? { data: { app_id: CLOUD_APP_ID }, email_redirect_to: redirectTo } : { data: { app_id: CLOUD_APP_ID } })
-    }
+  const suffix = redirectTo ? `?redirect_to=${encodeURIComponent(redirectTo)}` : ''
+  const data = await authFetch(`/signup${suffix}`, {
+    body: { email, password, data: { app_id: CLOUD_APP_ID } }
   })
   if (data?.access_token) storeSession(data)
   return data
 }
 
 export async function requestPasswordReset(email, redirectTo) {
-  return authFetch('/recover', { body: { email, redirect_to: redirectTo } })
+  const suffix = redirectTo ? `?redirect_to=${encodeURIComponent(redirectTo)}` : ''
+  return authFetch(`/recover${suffix}`, { body: { email } })
 }
 
 export async function updatePassword(password) {
