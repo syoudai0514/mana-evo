@@ -109,17 +109,17 @@ function pendingDuplicateGame() {
 }
 
 async function openCapture(page) {
-  const captureButton = page.getByRole('button', { name: /わを なげる/ })
+  const captureButton = page.getByRole('button', { name: /ボールを なげる/ })
   await expect(captureButton).toBeVisible()
   await captureButton.click()
 }
 
 async function throwRainbow(page) {
   await openCapture(page)
-  const rainbow = page.locator('.capture-item-grid').getByRole('button', { name: /にじのわ/ })
+  const rainbow = page.locator('.capture-item-grid').getByRole('button', { name: /にじボール/ })
   await expect(rainbow).toBeEnabled()
   await rainbow.click()
-  await page.getByRole('button', { name: /にじのわを なげる！/ }).click()
+  await page.getByRole('button', { name: /にじボールを なげる！/ }).click()
 }
 
 test('iPhone WebKit keeps capture focused and hidden until enemy HP is eligible', async ({ page }) => {
@@ -135,16 +135,20 @@ test('iPhone WebKit keeps capture focused and hidden until enemy HP is eligible'
   await expect(battleButtons.first()).toBeEnabled()
   await battleButtons.first().click()
 
-  await expect(page.getByRole('button', { name: /わを なげる/ })).toHaveCount(0)
-  await expect(page.getByRole('dialog', { name: 'どの「わ」をつかう？' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: /ボールを なげる/ })).toHaveCount(0)
+  await expect(page.getByRole('dialog', { name: 'どのボールをつかう？' })).toHaveCount(0)
 })
 
-test('iPhone WebKit plays the canonical four-star success sequence before GET', async ({ page }) => {
+test('iPhone WebKit plays one throw, impact, then canonical four-star success sequence before GET', async ({ page }) => {
   await installSave(page, battleGameAtHalfHp({ rainbow: true }))
   await page.goto('/')
   await throwRainbow(page)
 
   const sequence = page.getByTestId('capture-sequence')
+  await expect(sequence).toHaveAttribute('data-frame-type', 'throw')
+  await expect(sequence).toHaveAttribute('data-lit-stars', '0')
+  await expect(sequence).toHaveAttribute('data-frame-type', 'impact')
+  await expect(sequence).toHaveAttribute('data-lit-stars', '0')
   await expect(sequence).toHaveAttribute('data-lit-stars', '1')
   await expect(sequence).toHaveAttribute('data-lit-stars', '2')
   await expect(sequence).toHaveAttribute('data-lit-stars', '3')
@@ -158,9 +162,9 @@ test('iPhone WebKit failed capture never displays four completed stars', async (
   await page.goto('/')
   await openCapture(page)
 
-  const star = page.locator('.capture-item-grid').getByRole('button', { name: /ほしのわ/ })
+  const star = page.locator('.capture-item-grid').getByRole('button', { name: /ほしボール/ })
   await star.click()
-  const throwButton = page.getByRole('button', { name: /ほしのわを なげる！/ })
+  const throwButton = page.getByRole('button', { name: /ほしボールを なげる！/ })
   await expect(throwButton).toBeEnabled()
 
   const root = page.locator('html')
@@ -172,6 +176,8 @@ test('iPhone WebKit failed capture never displays four completed stars', async (
   await expect(root).toHaveAttribute('data-w216-forced-capture-roll', 'used')
   await root.evaluate((element) => { delete element.dataset.w216CaptureRoll })
 
+  await expect(sequence).toHaveAttribute('data-frame-type', 'throw')
+  await expect(sequence).toHaveAttribute('data-frame-type', 'impact')
   await expect(sequence).toHaveAttribute('data-lit-stars', '1')
   await expect(sequence).not.toHaveAttribute('data-lit-stars', '4')
   await expect(sequence).toHaveAttribute('data-frame-type', 'ring_scatter')
