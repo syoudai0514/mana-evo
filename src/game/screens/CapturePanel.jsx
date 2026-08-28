@@ -131,9 +131,8 @@ export function CapturePanel({ game, battle, captureDisabled = false, onCapture,
   useEffect(() => {
     // Capture selection is a focused sub-flow inside the battle document. WebKit
     // can settle scrollIntoView at the bottom edge while the preceding battle
-    // layout is being replaced, leaving the first tap surface clipped by a few
-    // pixels. Reposition once after layout and once after the mount settles so
-    // the decision starts below the safe top edge on every supported phone.
+    // layout is being replaced. The panel reserves a small tail below itself so
+    // this explicit positioning always has enough scroll range on portrait phones.
     let frame = 0
     let timer = 0
     const positionPanel = () => {
@@ -155,11 +154,13 @@ export function CapturePanel({ game, battle, captureDisabled = false, onCapture,
     setSelectedBall(recommended)
   }, [battle.battleId, battle.captureAttempts, recommended, selectedBall])
 
+  const focusedTailStyle = { marginBottom: '72px' }
+
   if (captureDisabled) {
-    return <section ref={panelRef} className="battle-tools capture-panel" role="dialog" aria-label="つかまえる"><strong>👑 このバトルでは GETできないよ</strong><p>ボールは なげられない バトルだよ。たおして すすもう！</p><button className="secondary" onClick={onCancel}>バトルへ もどる</button></section>
+    return <section ref={panelRef} style={focusedTailStyle} className="battle-tools capture-panel" role="dialog" aria-label="つかまえる"><strong>👑 このバトルでは GETできないよ</strong><p>ボールは なげられない バトルだよ。たおして すすもう！</p><button className="secondary" onClick={onCancel}>バトルへ もどる</button></section>
   }
 
-  return <section ref={panelRef} className={`battle-tools capture-panel ${captureHpReady ? 'capture-open' : 'capture-locked'}`} role="dialog" aria-label="どのボールをつかう？">
+  return <section ref={panelRef} style={focusedTailStyle} className={`battle-tools capture-panel ${captureHpReady ? 'capture-open' : 'capture-locked'}`} role="dialog" aria-label="どのボールをつかう？">
     <div className={'capture-main-cta ' + (captureHpReady && captureAttemptsLeft > 0 ? 'ready' : 'locked')}><CaptureBallIcon itemType={selected?.id || recommended || 'star'} compact /><div><strong>どのボールを つかう？</strong><small>のこり {captureAttemptsLeft}かい</small></div></div>
     <h2>{captureAttemptsLeft <= 0 ? 'ボールは 3かい なげたよ' : captureHpReady ? 'ボールを えらぼう！' : '🔒 HPを はんぶんいかに！'}</h2>
     <p>{captureAttemptsLeft <= 0 ? 'このバトルでは もう ボールを なげられないよ。' : captureHpReady ? '★と「おすすめ！」を みて えらぼう。' : `あいての HPを ${Math.floor(battle.enemy.maxHp / 2)} いかまで へらそう。いまは ${battle.enemy.hp}。`}</p>
