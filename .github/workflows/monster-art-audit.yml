@@ -1,0 +1,44 @@
+name: Monster Art Visual Audit
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'public/monsters/**'
+      - 'scripts/monster-art/**'
+      - 'design/current/monster-asset-manifest.json'
+      - '.github/workflows/monster-art-audit.yml'
+      - 'package.json'
+      - 'package-lock.json'
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install dependencies
+        run: npm ci
+      - name: Install WebKit
+        run: npx playwright install --with-deps webkit
+      - name: Audit monster artwork
+        run: npm run audit:monster-art -- --output=artifacts/monster-art-visual-audit.json
+      - name: Build review contact sheets
+        run: npm run review:monster-art
+      - name: Upload visual audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: monster-art-visual-audit
+          path: artifacts/monster-art-visual-audit.json
+          if-no-files-found: error
+      - name: Upload visual review sheets
+        uses: actions/upload-artifact@v4
+        with:
+          name: monster-art-contact-sheets
+          path: artifacts/monster-art-contact-sheets/**
+          if-no-files-found: error
