@@ -4,6 +4,7 @@ export const GAME_SAVE_KEY = 'mana-evo-save-v2'
 export const LEGACY_GAME_SAVE_KEY = 'mana-evo-save-v1'
 export const GAME_SAVE_FORMAT_VERSION = 2
 export const GAME_SAVE_EVENT = 'manaevo:game-save-imported'
+export const LOCAL_SAVE_CHANGED_EVENT = 'manaevo:local-save-changed'
 
 function profileIdOf(value, fallback = 'child-1') {
   const id = value == null ? '' : String(value).trim()
@@ -19,9 +20,15 @@ function readJson(key) {
   }
 }
 
+function emitLocalSaveChanged(source = 'game') {
+  if (typeof globalThis.dispatchEvent !== 'function' || typeof globalThis.CustomEvent !== 'function') return
+  try { globalThis.dispatchEvent(new CustomEvent(LOCAL_SAVE_CHANGED_EVENT, { detail: { source } })) } catch {}
+}
+
 function writeEnvelope(envelope, { emit = false } = {}) {
   try {
     globalThis.localStorage?.setItem(GAME_SAVE_KEY, JSON.stringify(envelope))
+    emitLocalSaveChanged('game')
     if (emit && typeof globalThis.dispatchEvent === 'function' && typeof globalThis.CustomEvent === 'function') {
       globalThis.dispatchEvent(new CustomEvent(GAME_SAVE_EVENT))
     }
