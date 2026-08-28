@@ -24,6 +24,7 @@ import {
   switchDeviceProfile
 } from './cloudSnapshot.js'
 import { decideSync, payloadHash, syncMetaKey } from './cloudSaveModel.js'
+import AdultCloudControls from './AdultCloudControls.jsx'
 
 const LOCAL_SAVE_EVENT = 'manaevo:local-save-changed'
 const DAILY_BACKUP_KEY = 'manaevo:cloud-daily-backup:v1'
@@ -237,7 +238,7 @@ export default function CloudAccountShell({ children }) {
 
   return <>
     {children}
-    {testMode && <div className="cloud-test-banner"><strong>🧪 TEST：{testMode.label}</strong><button onClick={stopTest}>テスト終了</button></div>}
+    {testMode && <div className="cloud-test-banner"><strong>🧪 TEST：{testMode.label}</strong><button onClick={() => setOpen(true)}>テスト管理</button></div>}
     <button className="cloud-account-fab" aria-label="アカウントとクラウド保存" onClick={() => setOpen(true)}>
       <span>{testMode ? '🧪' : session ? '☁️' : '👤'}</span><small>{profileInfo.profiles?.[profileInfo.activeProfileId]?.name || 'アカウント'}</small>
     </button>
@@ -251,17 +252,17 @@ export default function CloudAccountShell({ children }) {
 
         {recoveryMode && <div className="cloud-card"><h3>🔑 新しいパスワード</h3><input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="新しいパスワード"/><button disabled={busy || newPassword.length < 8} onClick={doUpdatePassword}>パスワードを変更</button></div>}
 
-        {!session ? <div className="cloud-card"><h3>☁️ 保護者アカウント</h3><label>メールアドレス<input type="email" autoCapitalize="none" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)}/></label><label>パスワード<input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)}/></label><div className="cloud-actions"><button disabled={busy || !config.configured || !email || !password} onClick={doSignIn}>ログイン</button><button className="secondary" disabled={busy || !config.configured || !email || password.length < 8} onClick={doSignUp}>新規登録</button></div><button className="cloud-link" disabled={busy || !config.configured || !email} onClick={doReset}>パスワードを忘れた</button><small>一度ログインした端末はセッションを保持します。</small></div> : <>
-          <div className="cloud-card"><div className="cloud-row"><div><h3>👤 {sessionLabel(session)}</h3><small>共通アカウント</small></div><button className="secondary" disabled={busy} onClick={doSignOut}>ログアウト</button></div><button disabled={busy || !!testMode} onClick={() => run(() => syncNow())}>☁️ 今すぐ同期</button></div>
+        {!session ? <div className="cloud-card"><h3>☁️ 保護者アカウント</h3><label>メールアドレス<input type="email" autoCapitalize="none" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)}/></label><label>パスワード<input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)}/></label><div className="cloud-actions"><button disabled={busy || !config.configured || !email || !password} onClick={doSignIn}>ログイン</button><button className="secondary" disabled={busy || !config.configured || !email || password.length < 8} onClick={doSignUp}>新規登録</button></div><button className="cloud-link" disabled={busy || !config.configured || !email} onClick={doReset}>パスワードを忘れた</button><small>一度ログインした端末はセッションを保持します。</small></div> : <div className="cloud-card"><div className="cloud-row"><div><h3>👤 {sessionLabel(session)}</h3><small>共通アカウント</small></div><span>☁️</span></div><button disabled={busy || !!testMode} onClick={() => run(() => syncNow())}>☁️ 今すぐ同期</button></div>}
 
-          {conflict && <div className="cloud-card cloud-conflict"><h3>⚠️ iPhone/iPadの両方に変更があります</h3><p>自動で上書きせず止めました。残したい方を選んでください。上書き前のクラウドデータはバックアップします。</p><button disabled={busy} onClick={chooseCloud}>☁️ クラウド側を使う</button><button className="secondary" disabled={busy} onClick={chooseLocal}>📱 この端末側を使う</button></div>}
-        </>}
+        <AdultCloudControls>
+          {session && conflict && <div className="cloud-card cloud-conflict"><h3>⚠️ iPhone/iPadの両方に変更があります</h3><p>自動で上書きせず止めました。残したい方を選んでください。上書き前のクラウドデータはバックアップします。</p><button disabled={busy} onClick={chooseCloud}>☁️ クラウド側を使う</button><button className="secondary" disabled={busy} onClick={chooseLocal}>📱 この端末側を使う</button></div>}
 
-        <div className="cloud-card"><h3>👨‍👩‍👧 プレイヤー</h3><p>この端末で開く人だけを切り替えます。他の端末の選択は変わりません。</p><div className="cloud-profile-list">{Object.entries(profileInfo.profiles || {}).map(([id, profile]) => <button key={id} className={id === profileInfo.activeProfileId ? 'active' : ''} onClick={() => switchProfile(id)}>{id === profileInfo.activeProfileId ? '✓ ' : ''}{profile.name || id}</button>)}</div><small>パパ・まさき・ウタノなどのプロフィール追加は保護者メニューからできます。</small></div>
+          <div className="cloud-card"><h3>👨‍👩‍👧 プレイヤー</h3><p>この端末で開く人だけを切り替えます。他の端末の選択は変わりません。</p><div className="cloud-profile-list">{Object.entries(profileInfo.profiles || {}).map(([id, profile]) => <button key={id} className={id === profileInfo.activeProfileId ? 'active' : ''} onClick={() => switchProfile(id)}>{id === profileInfo.activeProfileId ? '✓ ' : ''}{profile.name || id}</button>)}</div><small>パパ・まさき・ウタノなどのプロフィール追加は保護者メニューからできます。</small></div>
 
-        <div className="cloud-card"><h3>🧪 テストデータ</h3>{testMode ? <><p><b>{testMode.label}</b> で確認中。実データとクラウドは変更されません。</p><button onClick={stopTest}>テストを終了して実データへ戻る</button></> : <div className="test-fixture-grid"><button onClick={() => startTest('all')}>全開放・全キャラ</button><button onClick={() => startTest('stage1')}>第1形態・進化直前</button><button onClick={() => startTest('stage2')}>第2形態・最終進化直前</button></div>}<small>進化fixtureはレベル進化/持ち物進化を次の1XP直前、石進化は必要アイテム所持にします。</small></div>
+          <div className="cloud-card"><h3>🧪 テストデータ</h3>{testMode ? <><p><b>{testMode.label}</b> で確認中。実データとクラウドは変更されません。</p><button onClick={stopTest}>テストを終了して実データへ戻る</button></> : <div className="test-fixture-grid"><button onClick={() => startTest('all')}>全開放・全キャラ</button><button onClick={() => startTest('stage1')}>第1形態・進化直前</button><button onClick={() => startTest('stage2')}>第2形態・最終進化直前</button></div>}<small>進化fixtureはレベル進化/持ち物進化を次の1XP直前、石進化は必要アイテム所持にします。</small></div>
 
-        {session && <div className="cloud-card"><div className="cloud-row"><h3>📦 バックアップ</h3><button className="secondary" disabled={busy || !!testMode} onClick={manualBackup}>今の状態を保存</button></div><p>日次の同期前・競合解決前・復元前にも自動で世代を残します。</p><div className="cloud-backups">{backups.length ? backups.map((backup) => <div key={backup.id}><span><strong>{new Date(backup.created_at).toLocaleString('ja-JP')}</strong><small>rev.{backup.revision} / {backup.reason}</small></span><button className="secondary" disabled={busy || !!testMode} onClick={() => restoreBackup(backup)}>復元</button></div>) : <small>バックアップはまだありません。</small>}</div></div>}
+          {session && <div className="cloud-card"><div className="cloud-row"><h3>📦 バックアップ</h3><button className="secondary" disabled={busy || !!testMode} onClick={manualBackup}>今の状態を保存</button></div><p>日次の同期前・競合解決前・復元前にも自動で世代を残します。</p><div className="cloud-backups">{backups.length ? backups.map((backup) => <div key={backup.id}><span><strong>{new Date(backup.created_at).toLocaleString('ja-JP')}</strong><small>rev.{backup.revision} / {backup.reason}</small></span><button className="secondary" disabled={busy || !!testMode} onClick={() => restoreBackup(backup)}>復元</button></div>) : <small>バックアップはまだありません。</small>}</div><button className="secondary" disabled={busy} onClick={doSignOut}>この端末からログアウト</button></div>}
+        </AdultCloudControls>
 
         {message && <div className="cloud-message">{message}</div>}
       </section>
