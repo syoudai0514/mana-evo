@@ -6,9 +6,9 @@ import { applyXpToInstance, isStageUnlocked, xpToNext } from '../src/game/engine
 import { getEvolutionTransition } from '../src/game/evolutionDomain.js'
 import { createGameState } from '../src/game/progression.js'
 
-test('world areas expose explicit progression bands and zones', () => {
+test('world areas expose explicit Battle V6 progression bands and zones', () => {
   assert.deepEqual(AREA_META.map((a) => [a.area, a.levelMin, a.levelMax]), [
-    [1, 5, 22], [2, 18, 38], [3, 32, 58], [4, 50, 80]
+    [1, 5, 16], [2, 14, 27], [3, 24, 40], [4, 37, 58]
   ])
   assert.ok(AREA_META.every((a) => a.zones.length === 3))
 })
