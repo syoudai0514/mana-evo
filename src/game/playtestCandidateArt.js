@@ -1,62 +1,41 @@
-// PLAYTEST-ONLY: explicit CANDIDATE artwork overlay for PR #84.
-// Do not merge this mapping into canonical runtime and do not treat these assets as FORMAL.
-// Scope is exactly W-303 + W-304 + W-305 (49 species).
-export const PLAYTEST_CANDIDATE_ART = Object.freeze({
+// Progressive production CANDIDATE artwork overlay.
+// These assets passed their Work Item candidate-ingestion gates but are NOT FORMAL.
+// Exact explicit scope: W-303/304/305/307/308/310/311/312/314/315/316/317/318/320 = 184 species.
+// W-306, W-309, W-313, W-319 and m239 are intentionally excluded.
+const PRODUCTION_CANDIDATE_SPECIES = Object.freeze([
   // W-303 grass — 16
-  m001: '/monsters/m001.webp',
-  m002: '/monsters/m002.webp',
-  m003: '/monsters/m003.webp',
-  m040: '/monsters/m040.webp',
-  m041: '/monsters/m041.webp',
-  m042: '/monsters/m042.webp',
-  m082: '/monsters/m082.webp',
-  m083: '/monsters/m083.webp',
-  m084: '/monsters/m084.webp',
-  m085: '/monsters/m085.webp',
-  m086: '/monsters/m086.webp',
-  m087: '/monsters/m087.webp',
-  m134: '/monsters/m134.webp',
-  m135: '/monsters/m135.webp',
-  m136: '/monsters/m136.webp',
-  m235: '/monsters/m235.webp',
-
+  'm001','m002','m003','m040','m041','m042','m082','m083','m084','m085','m086','m087','m134','m135','m136','m235',
   // W-304 fire — 12
-  m004: '/monsters/m004.webp',
-  m005: '/monsters/m005.webp',
-  m006: '/monsters/m006.webp',
-  m055: '/monsters/m055.webp',
-  m056: '/monsters/m056.webp',
-  m057: '/monsters/m057.webp',
-  m058: '/monsters/m058.webp',
-  m059: '/monsters/m059.webp',
-  m060: '/monsters/m060.webp',
-  m211: '/monsters/m211.webp',
-  m212: '/monsters/m212.webp',
-  m213: '/monsters/m213.webp',
-
+  'm004','m005','m006','m055','m056','m057','m058','m059','m060','m211','m212','m213',
   // W-305 water — 21
-  m007: '/monsters/m007.webp',
-  m008: '/monsters/m008.webp',
-  m009: '/monsters/m009.webp',
-  m037: '/monsters/m037.webp',
-  m038: '/monsters/m038.webp',
-  m039: '/monsters/m039.webp',
-  m073: '/monsters/m073.webp',
-  m074: '/monsters/m074.webp',
-  m075: '/monsters/m075.webp',
-  m076: '/monsters/m076.webp',
-  m077: '/monsters/m077.webp',
-  m078: '/monsters/m078.webp',
-  m128: '/monsters/m128.webp',
-  m129: '/monsters/m129.webp',
-  m130: '/monsters/m130.webp',
-  m131: '/monsters/m131.webp',
-  m132: '/monsters/m132.webp',
-  m133: '/monsters/m133.webp',
-  m214: '/monsters/m214.webp',
-  m215: '/monsters/m215.webp',
-  m216: '/monsters/m216.webp'
-})
+  'm007','m008','m009','m037','m038','m039','m073','m074','m075','m076','m077','m078','m128','m129','m130','m131','m132','m133','m214','m215','m216',
+  // W-307 normal — 17
+  'm010','m011','m012','m013','m014','m015','m100','m101','m102','m117','m118','m181','m182','m183','m232','m233','m234',
+  // W-308 flying — 12
+  'm016','m017','m018','m094','m095','m096','m172','m173','m174','m223','m224','m225',
+  // W-310 ground — 13
+  'm031','m032','m033','m061','m062','m063','m160','m161','m162','m163','m164','m165','m237',
+  // W-311 rock — 10
+  'm034','m035','m036','m064','m065','m066','m157','m158','m159','m238',
+  // W-312 steel — 12
+  'm067','m068','m069','m154','m155','m156','m196','m197','m198','m199','m200','m201',
+  // W-314 fight — 15
+  'm046','m047','m048','m088','m089','m090','m091','m092','m093','m169','m170','m171','m220','m221','m222',
+  // W-315 fairy — 11
+  'm049','m050','m051','m115','m116','m175','m176','m177','m208','m209','m210',
+  // W-316 psychic — 12
+  'm052','m053','m054','m097','m098','m099','m143','m144','m193','m194','m195','m236',
+  // W-317 ice — 12
+  'm103','m104','m105','m119','m120','m121','m122','m123','m124','m125','m126','m127',
+  // W-318 ghost — 12
+  'm109','m110','m111','m112','m113','m114','m145','m146','m147','m202','m203','m204',
+  // W-320 dragon — 9
+  'm184','m185','m186','m187','m188','m189','m190','m191','m192'
+])
+
+export const PLAYTEST_CANDIDATE_ART = Object.freeze(
+  Object.fromEntries(PRODUCTION_CANDIDATE_SPECIES.map((speciesId) => [speciesId, `/monsters/${speciesId}.webp`]))
+)
 
 export function resolvePlaytestCandidateArt(speciesId) {
   const src = PLAYTEST_CANDIDATE_ART[speciesId]
