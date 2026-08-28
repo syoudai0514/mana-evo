@@ -1,5 +1,6 @@
 import { exportGameEnvelope, importGameEnvelope } from '../game/saveStore.js'
 import { loadState, profileSnapshot, saveState } from '../kids-quest-study/engine/storage.js'
+import { exportLearningRewardEnvelope, importLearningRewardEnvelope } from '../kids-quest-study/state/learningRewardStore.js'
 import { createTestGameFixture, TEST_FIXTURE_LABELS } from './testFixtures.js'
 import {
   DEVICE_PROFILE_KEY,
@@ -60,7 +61,8 @@ export function captureCloudPayload() {
       contentVersion: learning.contentVersion ?? null,
       profiles
     },
-    gameEnvelope: exportGameEnvelope(activeId)
+    gameEnvelope: exportGameEnvelope(activeId),
+    learningRewardEnvelope: exportLearningRewardEnvelope()
   })
 }
 
@@ -69,6 +71,7 @@ export function captureExactLocalSnapshot() {
   return {
     learning: clone(learning),
     gameEnvelope: exportGameEnvelope(learning.activeProfileId || 'child-1'),
+    learningRewardEnvelope: exportLearningRewardEnvelope(),
     deviceProfileId: currentDeviceProfileId()
   }
 }
@@ -93,6 +96,7 @@ export function applyCloudPayload(payload, { preferredProfileId = currentDeviceP
   const learning = restoreLearningEnvelope(payload.learning, preferredProfileId)
   saveState(learning)
   importGameEnvelope(payload.gameEnvelope, learning.activeProfileId)
+  if (payload.learningRewardEnvelope) importLearningRewardEnvelope(payload.learningRewardEnvelope)
   writeLocal(DEVICE_PROFILE_KEY, learning.activeProfileId)
   return learning.activeProfileId
 }
@@ -146,6 +150,7 @@ export function beginTestMode(kind) {
     }
   }
   saveState(testLearning)
+  importLearningRewardEnvelope({ version: 1, byProfile: {} })
   importGameEnvelope({ formatVersion: 2, gameByProfile: { [testProfileId]: createTestGameFixture(kind) } }, testProfileId)
   writeLocal(TEST_MODE_KEY, JSON.stringify({ kind, label: TEST_FIXTURE_LABELS[kind] || kind, startedAt: Date.now() }))
   return testProfileId
@@ -158,6 +163,7 @@ export function endTestMode() {
   if (!before?.learning || !before?.gameEnvelope) throw new Error('invalid test return snapshot')
   saveState(before.learning)
   importGameEnvelope(before.gameEnvelope, before.learning.activeProfileId || 'child-1')
+  if (before.learningRewardEnvelope) importLearningRewardEnvelope(before.learningRewardEnvelope)
   if (before.deviceProfileId) writeLocal(DEVICE_PROFILE_KEY, before.deviceProfileId)
   else removeLocal(DEVICE_PROFILE_KEY)
   removeLocal(TEST_MODE_KEY)
