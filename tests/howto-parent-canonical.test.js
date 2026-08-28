@@ -23,9 +23,9 @@ test('HowTo is topic-based and explains only the CURRENT child loop', () => {
 test('HowTo explains canonical learning rewards and ticket reservation without stale thresholds', () => {
   const howto = read('src/HowToPlay.jsx')
 
-  assert.match(howto, /5つ ぜんぶ おわると、はじめの 1かいだけ チケット3まい・ほしのわ3こ・たんさくポイント2ポイント/)
+  assert.match(howto, /5つ ぜんぶ おわると、はじめの 1かいだけ チケット3まい・ほしボール3こ・たんさくポイント2ポイント/)
   assert.match(howto, /1もん クリアするたびに チケット1まい と たんさくポイント1ポイント/)
-  assert.match(howto, /せいかいが 3こ たまるごとに、ほしのわ1こ/)
+  assert.match(howto, /せいかいが 3こ たまるごとに、ほしボール1こ/)
   assert.match(howto, /じゆうべんきょうは、ちょくせつ チケットを ふやさない/)
 
   assert.match(howto, /チケットを 1まい あずける/)
@@ -43,10 +43,10 @@ test('HowTo explains canonical exploration, capture and self-evolution boundarie
 
   assert.match(howto, /HPが はんぶんいか/)
   assert.match(howto, /さいだい 3かいまで/)
-  assert.match(howto, /ほしのわの 1\.2ばい/)
-  assert.match(howto, /ほしのわの 1\.5ばい/)
-  assert.match(howto, /にじのわ[\s\S]*かならず GET/)
-  assert.match(howto, /4つの ほしが 1こずつ ひかって/)
+  assert.match(howto, /ほしボールの 1\.2ばい/)
+  assert.match(howto, /ほしボールの 1\.5ばい/)
+  assert.match(howto, /にじボール[\s\S]*かならず GET/)
+  assert.match(howto, /ボールを なげる → モンスターを つつむ → 4つの ほしが 1こずつ ひかる/)
 
   assert.match(howto, /いしを 1こ つかうと シンカ/)
   assert.match(howto, /「モンスター」で もたせる → そのあと ほんとうに レベルアップすると シンカ/)
