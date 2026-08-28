@@ -138,7 +138,9 @@ for (const width of PORTRAIT_WIDTHS) {
     const capture = page.getByRole('button', { name: /ボールを なげる/ })
     await expectFirstDecisionVisible(page, capture)
     await capture.click()
-    await expectFirstDecisionVisible(page, page.locator('.capture-main-cta'))
+    const capturePanel = page.getByRole('dialog', { name: 'どのボールをつかう？' })
+    await expect(capturePanel).toBeVisible()
+    await expectFirstDecisionVisible(page, capturePanel.locator('.capture-main-cta'))
     await expectNoHorizontalOverflow(page)
   })
 
