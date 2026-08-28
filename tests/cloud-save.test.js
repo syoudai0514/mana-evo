@@ -28,6 +28,13 @@ test('sync decision pulls only when local has no unsynced changes', () => {
   assert.equal(decideSync({ localHash: payloadHash(payload('local-change')), meta, cloud }).action, 'conflict')
 })
 
+test('fresh device adopts existing cloud save without forcing a fake local conflict', () => {
+  const cloud = { revision: 7, payload: payload('cloud-existing') }
+  const localHash = payloadHash(payload('brand-new-local-default'))
+  assert.equal(decideSync({ localHash, cloud, freshDevice: true }).action, 'pull')
+  assert.equal(decideSync({ localHash, cloud, freshDevice: false }).action, 'conflict')
+})
+
 test('sync decision pushes local change when cloud revision is unchanged', () => {
   const base = payload('base')
   const meta = { revision: 4, hash: payloadHash(base) }
