@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "speciesId": "m226",
+  "events": [
+    {
+      "timestamp": "2026-08-28T11:52:35.765Z",
+      "sourceLabel": "W-309 bug ART READY ZIP candidate review",
+      "previous": null,
+      "candidate": {
+        "repositoryPath": "public/monsters/m226.webp",
+        "sha256": "5280f2b4ebd5dc6e23c0629b59fb07fbaf66069ba0df741104121f854ba9d5eb",
+        "bytes": 164572
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    }
+  ]
+}

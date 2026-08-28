@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "speciesId": "m019",
+  "events": [
+    {
+      "timestamp": "2026-08-28T11:52:33.226Z",
+      "sourceLabel": "W-309 bug ART READY ZIP candidate review",
+      "previous": {
+        "repositoryPath": "public/monsters/m019.svg",
+        "sha256": "b04d263b17e673bfb4f0fbeb49c9fcc116029087aa356c5fa51f67b246bd648b",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m019/b04d263b17e673bfb4f0fbeb49c9fcc116029087aa356c5fa51f67b246bd648b.svg"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m019.webp",
+        "sha256": "c9c8f758e3b8d4d40f1ff89be5bd33c3b259d806bdf143b8e07dd2d472b0270d",
+        "bytes": 189798
+      },
+      "manifestStateBefore": "CANDIDATE",
+      "formalPromotion": false
+    }
+  ]
+}
