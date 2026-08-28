@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "speciesId": "m207",
+  "events": [
+    {
+      "timestamp": "2026-08-28T07:56:09.363Z",
+      "sourceLabel": "W-319 dark ART READY ZIP candidate review",
+      "previous": null,
+      "candidate": {
+        "repositoryPath": "public/monsters/m207.webp",
+        "sha256": "bf836c8e2fb60066a6823d609ffe02e25c492a4a048dafcb474e2cd1b70dd3e5",
+        "bytes": 259764
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    }
+  ]
+}
