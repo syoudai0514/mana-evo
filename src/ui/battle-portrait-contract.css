@@ -1,0 +1,10 @@
+/* Battle portrait boundary contract.
+ * 375/390px are handled by premium-ui-v4.css. The 391-430px band keeps
+ * the full-size command deck, but lifts the secondary action row just enough
+ * to preserve the first 44px tap surface inside an 844px iPhone viewport.
+ */
+@media (min-width:391px) and (max-width:430px){
+  .battle-screen-v2 .battle-action-row{
+    transform:translateY(-6px);
+  }
+}
