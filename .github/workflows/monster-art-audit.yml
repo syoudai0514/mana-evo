@@ -8,6 +8,7 @@ on:
       - 'public/monsters/**'
       - 'scripts/monster-art/**'
       - 'design/current/monster-asset-manifest.json'
+      - 'design/rebuild/asset-production/visual-audit/**'
       - '.github/workflows/monster-art-audit.yml'
       - 'package.json'
       - 'package-lock.json'
@@ -30,6 +31,8 @@ jobs:
         run: npm run audit:monster-art -- --output=artifacts/monster-art-visual-audit.json
       - name: Build review contact sheets
         run: npm run review:monster-art
+      - name: Export canonical repair briefs
+        run: node scripts/monster-art/export-repair-briefs.mjs --output=artifacts/monster-art-repair-briefs.json
       - name: Upload visual audit report
         uses: actions/upload-artifact@v4
         with:
@@ -41,4 +44,10 @@ jobs:
         with:
           name: monster-art-contact-sheets
           path: artifacts/monster-art-contact-sheets/**
+          if-no-files-found: error
+      - name: Upload canonical repair briefs
+        uses: actions/upload-artifact@v4
+        with:
+          name: monster-art-repair-briefs
+          path: artifacts/monster-art-repair-briefs.json
           if-no-files-found: error
