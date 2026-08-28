@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "speciesId": "m169",
+  "events": [
+    {
+      "timestamp": "2026-08-28T01:43:36.432Z",
+      "sourceLabel": "W-314 ART READY ZIP W-314-art-ready(1).zip 66a0464ef5c0aa36381955c506f8424a5ce181f11655b8e954a7442c23ee3309 approved-for-candidate-review",
+      "previous": null,
+      "candidate": {
+        "repositoryPath": "public/monsters/m169.webp",
+        "sha256": "a873476fb60ef9c2d91482be9adade297ade62a408a1064014c9505db9fa6a60",
+        "bytes": 33490
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    }
+  ]
+}
