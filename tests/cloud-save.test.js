@@ -7,12 +7,16 @@ import { activeSpeciesCount, createAllClearGameFixture, createEvolutionTestGameF
 import { EVOLUTION_TRANSITIONS } from '../src/game/evolutionDomain.js'
 import { SPECIES } from '../src/game/content.js'
 
-function payload(value) {
-  return makeCloudPayload({ learning: { profiles: { p1: { name: 'P1', state: { value } } } }, gameEnvelope: { formatVersion: 2, gameByProfile: {} }, capturedAt: '2026-08-28T00:00:00.000Z' })
+function payload(value, capturedAt = '2026-08-28T00:00:00.000Z') {
+  return makeCloudPayload({ learning: { profiles: { p1: { name: 'P1', state: { value } } } }, gameEnvelope: { formatVersion: 2, gameByProfile: {} }, capturedAt })
 }
 
 test('cloud payload hash is deterministic across object key order', () => {
   assert.equal(payloadHash({ b: 2, a: { y: 2, x: 1 } }), payloadHash({ a: { x: 1, y: 2 }, b: 2 }))
+})
+
+test('cloud payload hash ignores capturedAt bookkeeping time', () => {
+  assert.equal(payloadHash(payload('same', '2026-08-28T00:00:00.000Z')), payloadHash(payload('same', '2026-08-29T12:34:56.000Z')))
 })
 
 test('sync decision pulls only when local has no unsynced changes', () => {
