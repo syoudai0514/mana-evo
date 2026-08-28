@@ -1,6 +1,7 @@
 import { createLearningRewardMeta } from './learningRewardPolicy.js'
 
 export const LEARNING_REWARD_STORE_KEY = 'mana-evo:learning-reward-bridge:v1'
+export const LOCAL_SAVE_CHANGED_EVENT = 'manaevo:local-save-changed'
 
 function profileIdOf(value) {
   return String(value || 'child-1')
@@ -28,16 +29,34 @@ export function normalizeLearningRewardRuntime(value = {}) {
   }
 }
 
+function normalizeEnvelope(value) {
+  const source = value && typeof value === 'object' && value.byProfile && typeof value.byProfile === 'object'
+    ? value.byProfile
+    : {}
+  return {
+    version: 1,
+    byProfile: Object.fromEntries(Object.entries(source).map(([id, runtime]) => [profileIdOf(id), normalizeLearningRewardRuntime(runtime)]))
+  }
+}
+
 function readEnvelope() {
   try {
     const raw = globalThis.localStorage?.getItem(LEARNING_REWARD_STORE_KEY)
-    const parsed = raw ? JSON.parse(raw) : null
-    return parsed && typeof parsed === 'object' && parsed.byProfile && typeof parsed.byProfile === 'object'
-      ? parsed
-      : { version: 1, byProfile: {} }
+    return normalizeEnvelope(raw ? JSON.parse(raw) : null)
   } catch {
     return { version: 1, byProfile: {} }
   }
+}
+
+function writeEnvelope(value, { emit = true } = {}) {
+  const next = normalizeEnvelope(value)
+  try {
+    globalThis.localStorage?.setItem(LEARNING_REWARD_STORE_KEY, JSON.stringify(next))
+    if (emit && typeof globalThis.dispatchEvent === 'function' && typeof globalThis.CustomEvent === 'function') {
+      globalThis.dispatchEvent(new CustomEvent(LOCAL_SAVE_CHANGED_EVENT, { detail: { source: 'learning-reward-bridge' } }))
+    }
+  } catch {}
+  return next
 }
 
 export function loadLearningRewardRuntime(profileId = 'child-1') {
@@ -48,15 +67,22 @@ export function loadLearningRewardRuntime(profileId = 'child-1') {
 export function saveLearningRewardRuntime(profileId, runtime) {
   const id = profileIdOf(profileId)
   const envelope = readEnvelope()
-  const next = {
+  const next = writeEnvelope({
     version: 1,
     byProfile: {
       ...(envelope.byProfile || {}),
       [id]: normalizeLearningRewardRuntime(runtime)
     }
-  }
-  try { globalThis.localStorage?.setItem(LEARNING_REWARD_STORE_KEY, JSON.stringify(next)) } catch {}
+  })
   return next.byProfile[id]
+}
+
+export function exportLearningRewardEnvelope() {
+  return readEnvelope()
+}
+
+export function importLearningRewardEnvelope(value) {
+  return writeEnvelope(value)
 }
 
 export function acknowledgeLearningGameRewards(runtime, ids) {
