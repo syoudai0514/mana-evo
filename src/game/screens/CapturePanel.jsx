@@ -130,9 +130,9 @@ export function CapturePanel({ game, battle, captureDisabled = false, onCapture,
 
   useEffect(() => {
     // Capture selection is a focused sub-flow inside the battle document. WebKit
-    // can settle scrollIntoView at the bottom edge while the preceding battle
-    // layout is being replaced. The panel reserves a small tail below itself so
-    // this explicit positioning always has enough scroll range on portrait phones.
+    // can settle at the document's scroll ceiling while the preceding battle
+    // layout is being replaced. Reserve real internal height (not a collapsing
+    // outer margin) so portrait WebKit has enough scroll range for the first tap.
     let frame = 0
     let timer = 0
     const positionPanel = () => {
@@ -154,7 +154,7 @@ export function CapturePanel({ game, battle, captureDisabled = false, onCapture,
     setSelectedBall(recommended)
   }, [battle.battleId, battle.captureAttempts, recommended, selectedBall])
 
-  const focusedTailStyle = { marginBottom: '88px' }
+  const focusedTailStyle = { paddingBottom: '28px' }
 
   if (captureDisabled) {
     return <section ref={panelRef} style={focusedTailStyle} className="battle-tools capture-panel" role="dialog" aria-label="つかまえる"><strong>👑 このバトルでは GETできないよ</strong><p>ボールは なげられない バトルだよ。たおして すすもう！</p><button className="secondary" onClick={onCancel}>バトルへ もどる</button></section>
