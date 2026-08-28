@@ -129,11 +129,25 @@ export function CapturePanel({ game, battle, captureDisabled = false, onCapture,
   const selected = options.find((option) => option.id === selectedBall && option.ready) || null
 
   useEffect(() => {
-    // Capture selection is a focused sub-flow inside the battle document. The
-    // command deck it replaces can sit far below the arena on portrait phones,
-    // so keep the newly mounted decision surface in view instead of making the
-    // child hunt for it after tapping "ボールを なげる".
-    panelRef.current?.scrollIntoView({ block: 'start', behavior: 'auto' })
+    // Capture selection is a focused sub-flow inside the battle document. WebKit
+    // can settle scrollIntoView at the bottom edge while the preceding battle
+    // layout is being replaced, leaving the first tap surface clipped by a few
+    // pixels. Reposition once after layout and once after the mount settles so
+    // the decision starts below the safe top edge on every supported phone.
+    let frame = 0
+    let timer = 0
+    const positionPanel = () => {
+      const panel = panelRef.current
+      if (!panel) return
+      const top = panel.getBoundingClientRect().top + window.scrollY - 12
+      window.scrollTo({ top: Math.max(0, top), left: 0, behavior: 'auto' })
+    }
+    frame = window.requestAnimationFrame(positionPanel)
+    timer = window.setTimeout(positionPanel, 80)
+    return () => {
+      window.cancelAnimationFrame(frame)
+      window.clearTimeout(timer)
+    }
   }, [])
 
   useEffect(() => {
