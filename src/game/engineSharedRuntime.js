@@ -1,5 +1,11 @@
 import * as core from './engineCore.js'
-import { BALANCE_VERSION, battleXpForStage } from './balance.js'
+import {
+  BALANCE_VERSION,
+  BATTLE_XP_GLOBAL_MULTIPLIER,
+  BATTLE_XP_TEAMMATE_MULTIPLIER,
+  CAPTURE_EVOLUTION_LEVEL_BUFFER,
+  battleXpForStage
+} from './balance.js'
 import { EVOLUTION_ITEMS, STAGES, speciesOf } from './content.js'
 import {
   CAPTURE_BOUNDARIES,
@@ -177,6 +183,49 @@ export function applyXpToInstance(game, {
   return { ok: true, game: next, levels: gained.levels, evolution }
 }
 
+function battleXpForRecipient(baseXp, battle, instanceId) {
+  const pool = Math.max(0, Number(baseXp) || 0)
+  if (pool <= 0) return 0
+  const activeXp = Math.max(1, Math.round(pool * BATTLE_XP_GLOBAL_MULTIPLIER))
+  if (instanceId === battle?.activeInstanceId) return activeXp
+  return Math.max(1, Math.round(activeXp * BATTLE_XP_TEAMMATE_MULTIPLIER))
+}
+
+function pacedCaptureLevel(speciesId, enemyLevel) {
+  const level = Math.max(1, Math.floor(Number(enemyLevel) || 1))
+  const transition = getEvolutionTransition(speciesId)
+  if (!transition || transition.method !== 'level') return level
+  return Math.min(level, Math.max(1, transition.level - CAPTURE_EVOLUTION_LEVEL_BUFFER))
+}
+
+function applyBattleXpPacing(originalGame, result) {
+  const levelsByInstance = result?.rewards?.levelsByInstance
+  const baseXp = Math.max(0, Number(result?.rewards?.xp) || 0)
+  if (!result?.ok || !result?.game || !levelsByInstance || typeof levelsByInstance !== 'object' || baseXp <= 0) return result
+
+  const next = structuredClone(result.game)
+  const pacedLevels = {}
+  const xpByInstance = {}
+  for (const instanceId of Object.keys(levelsByInstance)) {
+    const before = originalGame?.box?.[instanceId]
+    if (!before) continue
+    const amount = battleXpForRecipient(baseXp, result.battle, instanceId)
+    const gained = core.gainXp(before, amount)
+    next.box[instanceId] = gained.monster
+    pacedLevels[instanceId] = gained.levels
+    xpByInstance[instanceId] = amount
+  }
+  return {
+    ...result,
+    game: next,
+    rewards: {
+      ...result.rewards,
+      levelsByInstance: pacedLevels,
+      xpByInstance
+    }
+  }
+}
+
 function integrateBattleXpEvolutions(originalGame, result) {
   if (!result?.ok || !result?.game || !result?.rewards?.levelsByInstance) return result
   let next = result.game
@@ -224,7 +273,7 @@ function integrateBossFirstClear(originalGame, result) {
 }
 
 export function useMove(game, battle, moveId, options = {}) {
-  const result = core.useMove(game, battle, moveId, options)
+  const result = applyBattleXpPacing(game, core.useMove(game, battle, moveId, options))
   return integrateBossFirstClear(game, integrateBattleXpEvolutions(game, result))
 }
 
@@ -324,15 +373,18 @@ function captureTeamXp(game, battle, capturedInstanceId, xp) {
   let next = game
   const levelsByInstance = {}
   const evolutionsByInstance = {}
+  const xpByInstance = {}
   const prefix = `${battle?.battleId || battle?.stageId || 'capture'}:capture-xp`
   for (const instanceId of captureBattleXpRecipients(battle?.teamAtStart || [], capturedInstanceId)) {
-    const applied = applyXpToInstance(next, { instanceId, amount: xp, operationId: `${prefix}:${instanceId}` })
+    const amount = battleXpForRecipient(xp, battle, instanceId)
+    const applied = applyXpToInstance(next, { instanceId, amount, operationId: `${prefix}:${instanceId}` })
     if (!applied.ok) continue
     next = applied.game
     levelsByInstance[instanceId] = applied.levels
+    xpByInstance[instanceId] = amount
     if (applied.evolution) evolutionsByInstance[instanceId] = applied.evolution
   }
-  return { game: next, levelsByInstance, evolutionsByInstance }
+  return { game: next, levelsByInstance, evolutionsByInstance, xpByInstance }
 }
 
 export function attemptCapture(game, battle, rolls = null, itemType = 'star', { today = null } = {}) {
@@ -390,7 +442,10 @@ export function attemptCapture(game, battle, rolls = null, itemType = 'star', { 
 
   const firstClear = !(nextGame.stagesCleared || []).includes(stage.id)
   const xp = battleXpForStage(stage)
-  const captured = core.makeMonster(battle.enemy.speciesId, battle.enemy.level)
+  const captured = core.makeMonster(
+    battle.enemy.speciesId,
+    pacedCaptureLevel(battle.enemy.speciesId, battle.enemy.level)
+  )
   const gained = captureTeamXp(nextGame, battle, captured.instanceId, xp)
   nextGame = gained.game
 
@@ -408,7 +463,8 @@ export function attemptCapture(game, battle, rolls = null, itemType = 'star', { 
   nextGame.mana = (nextGame.mana || 0) + Math.floor((Number(stage.mana) || 0) / 2)
   nextGame = recordNormalFirstClearSnapshot(nextGame, stage, battle)
   if (firstClear) nextGame.stagesCleared = [...new Set([...(nextGame.stagesCleared || []), stage.id])]
-  nextBattle.log = [...(nextBattle.log || []).slice(-4), `★★★★ 「わ」を なげた！ 4つ ひかって ゲット！ XP +${xp}`]
+  const activeXp = gained.xpByInstance?.[battle.activeInstanceId] || 0
+  nextBattle.log = [...(nextBattle.log || []).slice(-4), `★★★★ 「わ」を なげた！ 4つ ひかって ゲット！ XP +${activeXp}`]
   nextGame.activeBattle = structuredClone(nextBattle)
 
   return {
@@ -419,6 +475,7 @@ export function attemptCapture(game, battle, rolls = null, itemType = 'star', { 
     capturePresentation: resolution.presentation,
     captured,
     xp,
+    xpByInstance: gained.xpByInstance,
     levelsByInstance: gained.levelsByInstance,
     evolutionsByInstance: gained.evolutionsByInstance,
     captureSettlement: settlementResult.settlement,
