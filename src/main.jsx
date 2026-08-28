@@ -14,12 +14,6 @@ import './platform/cloud-save.css'
 import './platform/adult-cloud-controls.css'
 import './premium-ui-v4.css'
 
-const CANONICAL_HOST = 'syoudai0514.github.io'
-const CANONICAL_PATH = '/mana-evo/'
-if (window.location.hostname === CANONICAL_HOST && !window.location.pathname.startsWith(CANONICAL_PATH)) {
-  window.location.replace(`${CANONICAL_PATH}${window.location.search}${window.location.hash}`)
-}
-
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     const baseUrl = import.meta.env.BASE_URL || '/'
