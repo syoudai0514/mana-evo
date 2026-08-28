@@ -12,6 +12,7 @@ import './game/runtime.css'
 import './ui/iphone-playtest-refresh.css'
 import './platform/cloud-save.css'
 import './platform/adult-cloud-controls.css'
+import './ui/battle-portrait-contract.css'
 import './premium-ui-v4.css'
 
 if ('serviceWorker' in navigator) {
