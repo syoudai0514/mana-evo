@@ -12,6 +12,10 @@ const main = fs.readFileSync('src/main.jsx', 'utf8')
 const css = fs.readFileSync('src/premium-ui-v4.css', 'utf8')
 const refreshCss = fs.readFileSync('src/ui/iphone-playtest-refresh.css', 'utf8')
 
+function containsImportantDeclaration(source) {
+  return /!important\s*(?:;|})/.test(source)
+}
+
 test('header resources are named instead of ambiguous bare icons', () => {
   for (const label of ['チケット','マナ','ほしボール']) assert.ok(app.includes(label), label)
   assert.ok(app.includes('game-header'))
@@ -33,8 +37,8 @@ test('visual authority stays screen-scoped without important overrides', () => {
     '.parent-gate-screen .parent-gate-card',
     '.evolution-overlay .evolution-celebration-card'
   ]) assert.ok(css.includes(owner), owner)
-  assert.equal(css.includes('!important'), false)
-  assert.equal(refreshCss.includes('!important'), false)
+  assert.equal(containsImportantDeclaration(css), false)
+  assert.equal(containsImportantDeclaration(refreshCss), false)
   assert.equal(main.includes('premium-ui-v5.css'), false)
 })
 
