@@ -105,11 +105,13 @@ export default function CloudAccountShell({ children }) {
     if (decision.action === 'push-new') {
       const row = await insertMainSave(localPayload)
       setMeta(valid.user.id, row)
+      setConflict(null)
       setStatus('クラウド同期済み')
       return
     }
     if (decision.action === 'adopt' || decision.action === 'noop') {
       setMeta(valid.user.id, cloud)
+      setConflict(null)
       setStatus('クラウド同期済み')
       return
     }
@@ -118,6 +120,7 @@ export default function CloudAccountShell({ children }) {
       const row = await updateMainSave(localPayload, cloud.revision)
       if (!row) throw new Error('別の端末で更新されました。もう一度同期してください')
       setMeta(valid.user.id, row)
+      setConflict(null)
       setStatus('クラウド同期済み')
       return
     }
@@ -126,6 +129,7 @@ export default function CloudAccountShell({ children }) {
       const row = await updateMainSave(decision.payload, cloud.revision)
       if (!row) throw new Error('統合中に別の端末で更新されました。もう一度同期してください')
       setMeta(valid.user.id, row)
+      setConflict(null)
       setStatus('別プレイヤーの変更を安全に統合')
       applyCloudPayload(row.payload)
       window.location.reload()
@@ -133,14 +137,16 @@ export default function CloudAccountShell({ children }) {
     }
     if (decision.action === 'pull') {
       setMeta(valid.user.id, cloud)
+      setConflict(null)
       setStatus('別端末の最新データを取得')
       applyCloudPayload(cloud.payload)
       window.location.reload()
       return
     }
     setConflict({ cloud, localPayload })
-    setStatus('同期するデータを選んでください')
-    setOpen(true)
+    // Same-profile divergence must never interrupt a child flow. The device
+    // remains safely saved locally until an adult explicitly resolves it.
+    setStatus('同期保留・端末には保存済み')
   }, [config.configured, maybeBackupCloud, setMeta, testMode])
 
   const scheduleSync = useCallback(() => {
@@ -261,26 +267,29 @@ export default function CloudAccountShell({ children }) {
     endTestMode(); window.location.reload()
   }
 
-  const needsCloudAttention = !!conflict || status.includes('エラー') || status.includes('選んで')
-  const showAccountFab = !session || recoveryMode || parentScreenOpen || needsCloudAttention
+  const needsCloudAttention = !!conflict || status.includes('エラー') || status.includes('選んで') || status.includes('保留')
+  // Child play must stay distraction-free. Sync warnings are adult-owned and
+  // surface only on the Parent screen; recovery/login remain reachable when needed.
+  const showAccountFab = !session || recoveryMode || parentScreenOpen
+  const accountFabWarn = parentScreenOpen && needsCloudAttention
 
   return <>
     {children}
     {testMode && <div className="cloud-test-banner"><strong>🧪 TEST：{testMode.label}</strong><button onClick={() => setOpen(true)}>テスト管理</button></div>}
-    {showAccountFab && <button className={`cloud-account-fab${needsCloudAttention ? ' warn' : ''}`} aria-label="アカウントとクラウド保存" onClick={() => setOpen(true)}>
-      <span>{needsCloudAttention ? '⚠️' : testMode ? '🧪' : session ? '☁️' : '👤'}</span><small>{needsCloudAttention ? '保存確認' : parentScreenOpen ? 'クラウド' : profileInfo.profiles?.[profileInfo.activeProfileId]?.name || 'ログイン'}</small>
+    {showAccountFab && <button className={`cloud-account-fab${accountFabWarn ? ' warn' : ''}`} aria-label="アカウントとクラウド保存" onClick={() => setOpen(true)}>
+      <span>{accountFabWarn ? '⚠️' : testMode ? '🧪' : session ? '☁️' : '👤'}</span><small>{accountFabWarn ? '保存確認' : parentScreenOpen ? 'クラウド' : profileInfo.profiles?.[profileInfo.activeProfileId]?.name || 'ログイン'}</small>
     </button>}
 
     {open && <div className="cloud-modal-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) setOpen(false) }}>
       <section className="cloud-modal" role="dialog" aria-modal="true" aria-label="アカウントとクラウド保存">
         <header><div><p className="eyebrow">ACCOUNT / CLOUD SAVE</p><h2>アカウントと保存</h2></div><button className="cloud-close" onClick={() => setOpen(false)}>×</button></header>
-        <div className={`cloud-status ${status.includes('エラー') || status.includes('選んで') ? 'warn' : ''}`}><strong>{status}</strong><small>{config.configured ? '学習・モンスター・Lv・XP・BOX・冒険をまとめて保存' : '共通Supabaseを接続すると端末間同期できます'}</small></div>
+        <div className={`cloud-status ${needsCloudAttention ? 'warn' : ''}`}><strong>{status}</strong><small>{config.configured ? '学習・モンスター・Lv・XP・BOX・冒険をまとめて保存' : '共通Supabaseを接続すると端末間同期できます'}</small></div>
 
         {!config.configured && <div className="cloud-card"><strong>🔧 共通バックエンド設定待ち</strong><p>アプリ側の実装は有効です。共通SupabaseのURLとpublishable keyを設定するとクラウド機能が開始します。</p></div>}
 
         {recoveryMode && <div className="cloud-card"><h3>🔑 新しいパスワード</h3><input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="新しいパスワード"/><button disabled={busy || newPassword.length < 8} onClick={doUpdatePassword}>パスワードを変更</button></div>}
 
-        {!session ? <div className="cloud-card"><h3>☁️ 保護者アカウント</h3><label>メールアドレス<input type="email" autoCapitalize="none" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)}/></label><label>パスワード<input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)}/></label><div className="cloud-actions"><button disabled={busy || !config.configured || !email || !password} onClick={doSignIn}>ログイン</button><button className="secondary" disabled={busy || !config.configured || !email || password.length < 8} onClick={doSignUp}>新規登録</button></div><button className="cloud-link" disabled={busy || !config.configured || !email} onClick={doReset}>パスワードを忘れた</button><small>一度ログインした端末はセッションを保持します。</small></div> : <div className="cloud-card"><div className="cloud-row"><div><h3>👤 {sessionLabel(session)}</h3><small>共通アカウント</small></div><span>☁️</span></div><button disabled={busy || !!testMode} onClick={() => run(() => syncNow())}>☁️ 今すぐ同期</button></div>}
+        {!session ? <div className="cloud-card"><h3>☁️ 保護者アカウント</h3><label>メールアドレス<input type="email" autoCapitalize="none" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)}/></label><label>パスワード<input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)}/></label><div className="cloud-actions"><button disabled={busy || !config.configured || !email || !password} onClick={doSignIn}>ログイン</button><button className="secondary" disabled={busy || !config.configured || !email || password.length < 8} onClick={doSignUp}>新規登録</button></div><button className="cloud-link" disabled={busy || !config.configured || !email} onClick={doReset}>パスワードを忘れた</button><small>一度ログインした端末はセッションを保持します。</small></div> : <div className="cloud-card"><div className="cloud-row"><div><h3>👤 {sessionLabel(session)}</h3><small>共通アカウント</small></div><span>☁️</span></div>{conflict ? <p><strong>同期は保護者確認待ちです。</strong><br/><small>端末のデータは保存されています。下の「保護者専用」で残すデータを選んでください。</small></p> : <button disabled={busy || !!testMode} onClick={() => run(() => syncNow())}>☁️ 今すぐ同期</button>}</div>}
 
         <AdultCloudControls>
           {session && conflict && <div className="cloud-card cloud-conflict"><h3>⚠️ iPhone/iPadの同じプレイヤーに両方の変更があります</h3><p>別プレイヤー同士なら自動統合します。同じプレイヤーを両端末で変更した場合だけ、自動で上書きせず止めます。残したい方を選んでください。</p><button disabled={busy} onClick={chooseCloud}>☁️ クラウド側を使う</button><button className="secondary" disabled={busy} onClick={chooseLocal}>📱 この端末側を使う</button></div>}
