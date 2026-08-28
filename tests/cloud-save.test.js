@@ -2,13 +2,41 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 
-import { decideSync, makeCloudPayload, payloadHash } from '../src/platform/cloudSaveModel.js'
+import { decideSync, makeCloudPayload, payloadHash, payloadPartHashes } from '../src/platform/cloudSaveModel.js'
 import { activeSpeciesCount, createAllClearGameFixture, createEvolutionTestGameFixture } from '../src/platform/testFixtures.js'
 import { EVOLUTION_TRANSITIONS } from '../src/game/evolutionDomain.js'
 import { SPECIES } from '../src/game/content.js'
 
 function payload(value, capturedAt = '2026-08-28T00:00:00.000Z') {
   return makeCloudPayload({ learning: { profiles: { p1: { name: 'P1', state: { value } } } }, gameEnvelope: { formatVersion: 2, gameByProfile: {} }, capturedAt })
+}
+
+function householdPayload({ papa = 1, masaki = 1 } = {}) {
+  return makeCloudPayload({
+    learning: {
+      version: 4,
+      contentVersion: 16,
+      profiles: {
+        papa: { name: 'パパ', state: { score: papa } },
+        masaki: { name: 'まさき', state: { score: masaki } }
+      }
+    },
+    gameEnvelope: {
+      formatVersion: 2,
+      gameByProfile: {
+        papa: { marker: `papa-${papa}` },
+        masaki: { marker: `masaki-${masaki}` }
+      }
+    },
+    learningRewardEnvelope: {
+      version: 1,
+      byProfile: {
+        papa: { marker: `papa-${papa}` },
+        masaki: { marker: `masaki-${masaki}` }
+      }
+    },
+    capturedAt: '2026-08-28T00:00:00.000Z'
+  })
 }
 
 test('cloud payload hash is deterministic across object key order', () => {
@@ -40,6 +68,39 @@ test('sync decision pushes local change when cloud revision is unchanged', () =>
   const meta = { revision: 4, hash: payloadHash(base) }
   const cloud = { revision: 4, payload: base }
   assert.equal(decideSync({ localHash: payloadHash(payload('changed')), meta, cloud }).action, 'push')
+})
+
+test('different player changes on iPhone and iPad merge without a false household conflict', () => {
+  const base = householdPayload({ papa: 1, masaki: 1 })
+  const local = householdPayload({ papa: 2, masaki: 1 })
+  const cloudPayload = householdPayload({ papa: 1, masaki: 3 })
+  const meta = { revision: 10, hash: payloadHash(base), parts: payloadPartHashes(base) }
+  const decision = decideSync({
+    localHash: payloadHash(local),
+    localPayload: local,
+    meta,
+    cloud: { revision: 11, payload: cloudPayload }
+  })
+  assert.equal(decision.action, 'merge')
+  assert.equal(decision.payload.learning.profiles.papa.state.score, 2)
+  assert.equal(decision.payload.learning.profiles.masaki.state.score, 3)
+  assert.equal(decision.payload.gameEnvelope.gameByProfile.papa.marker, 'papa-2')
+  assert.equal(decision.payload.gameEnvelope.gameByProfile.masaki.marker, 'masaki-3')
+})
+
+test('same player changed differently on two devices still stops for explicit conflict resolution', () => {
+  const base = householdPayload({ papa: 1, masaki: 1 })
+  const local = householdPayload({ papa: 2, masaki: 1 })
+  const cloudPayload = householdPayload({ papa: 4, masaki: 1 })
+  const meta = { revision: 10, hash: payloadHash(base), parts: payloadPartHashes(base) }
+  const decision = decideSync({
+    localHash: payloadHash(local),
+    localPayload: local,
+    meta,
+    cloud: { revision: 11, payload: cloudPayload }
+  })
+  assert.equal(decision.action, 'conflict')
+  assert.deepEqual(decision.conflicts, ['papa'])
 })
 
 test('all-clear fixture exposes all active 238 species and clears all current stages', () => {
