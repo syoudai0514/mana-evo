@@ -4,8 +4,8 @@ import { fileURLToPath } from 'node:url'
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url))
 const defaultRoot = path.resolve(scriptDir, '..')
-const CANONICAL_URL = 'https://syoudai0514.github.io/mana-evo/'
-const APP_BASE = '/mana-evo/'
+const CANONICAL_URL = 'https://mana-evo.vercel.app/'
+const APP_BASE = '/'
 const TEXT_EXTENSIONS = new Set(['.js', '.jsx', '.mjs', '.cjs', '.css', '.json'])
 const RESOLVE_EXTENSIONS = ['', '.js', '.jsx', '.mjs', '.cjs', '.json', '.css']
 
@@ -118,9 +118,10 @@ function countArtStates(canonicalArt) {
 }
 
 function verify404Source(source) {
-  invariant(source.includes("const APP_BASE = '/mana-evo/'"), '404 fallback must be scoped to /mana-evo/')
-  invariant(source.includes('window.location.pathname.startsWith(APP_BASE)'), '404 fallback must guard its redirect by the ManaEvo base path')
+  invariant(source.includes("const APP_ROOT = '/'"), '404 fallback must return to the Vercel app root')
+  invariant(source.includes('window.location.pathname !== APP_ROOT'), '404 fallback must guard against a root redirect loop')
   invariant(source.includes('window.location.replace'), '404 fallback must recover deep entry to the app root')
+  invariant(!source.includes('/mana-evo/'), 'Vercel canonical fallback must not retain the GitHub Pages base path')
   invariant(!source.includes('/kids-quest/'), '404 fallback must not target Kids Quest')
 }
 
@@ -149,8 +150,10 @@ export function verifySourceContracts({ root = defaultRoot } = {}) {
 
   invariant(index.includes('href="%BASE_URL%manifest.webmanifest"'), 'index manifest reference must use Vite base URL')
   invariant(index.includes('href="%BASE_URL%icons/apple-touch-icon.png"'), 'index touch icon must use Vite base URL')
-  invariant(index.includes(`href="${CANONICAL_URL}"`), 'index canonical URL must point to GitHub Pages /mana-evo/')
-  invariant(main.includes("CANONICAL_PATH = '/mana-evo/'"), 'runtime canonical path guard must remain /mana-evo/')
+  invariant(index.includes(`href="${CANONICAL_URL}"`), 'index canonical URL must point to the Vercel production origin')
+  invariant(index.includes(`content="${CANONICAL_URL}"`), 'index OG URL must point to the Vercel production origin')
+  invariant(!index.includes('syoudai0514.github.io/mana-evo'), 'source metadata must not retain the old GitHub Pages canonical URL')
+  invariant(!main.includes("CANONICAL_PATH = '/mana-evo/'"), 'runtime must not retain the GitHub Pages path redirect')
   invariant(main.includes('updateViaCache: \'none\''), 'service worker registration must bypass HTTP cache for updates')
 
   const reachable = buildProductionReachability({ root })
@@ -192,13 +195,14 @@ export function verifyBuildArtifact({ root = defaultRoot } = {}) {
   verify404Source(fallback404)
   verifyServiceWorkerSource(sw)
 
-  invariant(index.includes(`${APP_BASE}manifest.webmanifest`), 'built index must reference manifest under /mana-evo/')
-  invariant(index.includes(`${APP_BASE}icons/icon-192.png`), 'built index must reference icon under /mana-evo/')
-  invariant(index.includes(`${APP_BASE}icons/apple-touch-icon.png`), 'built index must reference touch icon under /mana-evo/')
-  invariant(index.includes(CANONICAL_URL), 'built index must retain canonical GitHub Pages URL')
+  invariant(index.includes('/manifest.webmanifest'), 'built index must reference manifest from the Vercel root')
+  invariant(index.includes('/icons/icon-192.png'), 'built index must reference icon from the Vercel root')
+  invariant(index.includes('/icons/apple-touch-icon.png'), 'built index must reference touch icon from the Vercel root')
+  invariant(index.includes(CANONICAL_URL), 'built index must retain canonical Vercel URL')
+  invariant(!index.includes('/mana-evo/'), 'built index must not retain the GitHub Pages production base')
 
   const localRefs = [...index.matchAll(/(?:src|href)="([^"]+)"/g)].map((match) => match[1]).filter((value) => !/^(https?:|data:|#)/.test(value))
-  for (const ref of localRefs) invariant(ref.startsWith(APP_BASE), `built index local asset escaped /mana-evo/: ${ref}`)
+  for (const ref of localRefs) invariant(ref.startsWith(APP_BASE), `built index local asset escaped app root: ${ref}`)
 
   invariant(Object.keys(revisions.assets || {}).length === 238, 'generated monster revision manifest must cover m001-m238')
   invariant(Object.keys(revisions.formalByUrl || {}).length === artCounts.FORMAL, `generated FORMAL revision count must be ${artCounts.FORMAL}`)
@@ -225,7 +229,7 @@ if (invokedDirectly) {
   try {
     const report = verifyReleaseReadiness()
     console.log('W-220 release readiness PASS')
-    console.log(`GitHub Pages: ${report.source.canonicalUrl}`)
+    console.log(`Vercel production: ${report.source.canonicalUrl}`)
     console.log(`Production import graph: ${report.source.productionReachableFiles} reachable files`)
     console.log(`Monster art: FORMAL=${report.build.artCounts.FORMAL}, CANDIDATE=${report.build.artCounts.CANDIDATE}, PLACEHOLDER=${report.build.artCounts.PLACEHOLDER}`)
     console.log(`FORMAL revision entries: ${report.build.formalRevisionEntries}`)
