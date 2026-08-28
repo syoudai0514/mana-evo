@@ -3,7 +3,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 
 import { MOVES, RUNTIME_META, RUNTIME_STAGES, SPECIES, STAGES, moveOf, speciesOf } from '../src/game/content.js'
-import { buildEnemyPlan, monsterCombatPower } from '../src/game/balance.js'
+import { BALANCE_VERSION, buildEnemyPlan, monsterCombatPower } from '../src/game/balance.js'
 import {
   BURST_ATTACK_MULTIPLIER,
   BURST_HP_MULTIPLIER,
@@ -155,7 +155,7 @@ test('boss warning plus protect blocks the telegraphed big move and cannot be re
   assert.equal(repeated.reason, 'PROTECT_CONSECUTIVE')
 })
 
-test('boss first encounter snapshot locks normal rematch while challenge rescales', () => {
+test('boss first encounter snapshot locks normal rematch while challenge recalculates current power', () => {
   const day = 7300
   let game = preparedGame('m004', 35, day)
   const unlocked = unlockAreaBoss(game, 1)
@@ -170,10 +170,13 @@ test('boss first encounter snapshot locks normal rematch while challenge rescale
   const rematch = startBattle(abandoned.game, boss.id, { dailyCompleted: true, today: day })
   assert.equal(rematch.battle.enemy.balance.mode, 'boss-locked')
   assert.equal(rematch.battle.enemy.level, firstLevel)
+  const lockedReference = rematch.battle.enemy.balance.referencePower
+  const lockedTarget = rematch.battle.enemy.balance.targetPower
   abandoned = abandonBattle(rematch.game, { today: day })
   const challenge = startBattle(abandoned.game, boss.id, { dailyCompleted: true, today: day, challenge: true })
   assert.equal(challenge.battle.enemy.balance.mode, 'boss-challenge')
-  assert.ok(challenge.battle.enemy.level > firstLevel)
+  assert.ok(challenge.battle.enemy.balance.referencePower > lockedReference)
+  assert.ok(challenge.battle.enemy.balance.targetPower > lockedTarget)
 })
 
 test('giga and burst are mutually exclusive one-battle specials with reviewed multipliers', () => {
@@ -226,7 +229,7 @@ test('repeat-cap simulation gives a meaningful shorter fight after roughly +20% 
     }
     const grownGame = structuredClone(baseGame)
     grownGame.box[grownGame.activeMonsterId].level = grownLevel
-    grownGame.normalStageSnapshots[stage.id] = { stageId: stage.id, firstClearReferencePower: firstPlan.referencePower, balanceVersion: 3 }
+    grownGame.normalStageSnapshots[stage.id] = { stageId: stage.id, firstClearReferencePower: firstPlan.referencePower, balanceVersion: BALANCE_VERSION }
     const repeatPlan = buildEnemyPlan(grownGame, stage, speciesOf)
     const move = moveOf('m004-finisher')
     const beforeEnemy = { speciesId: stage.enemySpeciesId, level: firstPlan.level, statMultipliers: firstPlan.statMultipliers }
