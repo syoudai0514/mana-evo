@@ -1,0 +1,168 @@
+name: W-306 Candidate Ingestion
+
+on:
+  push:
+    branches:
+      - rebuild/w-306-electric-attribute-production
+
+permissions:
+  contents: write
+
+concurrency:
+  group: w306-candidate-ingestion
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Fresh GitHub transport reconstruction and validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .tmp/w306-reconstructed
+          mkdir -p .tmp/w306-reconstructed
+          python - <<'PY'
+          from pathlib import Path
+          import base64, hashlib, json
+
+          species = ['m025','m026','m027','m028','m029','m030','m070','m071','m072','m178','m179','m180','m217','m218','m219']
+          transport = Path('design/rebuild/asset-production/art-ready-transport/W-306')
+          out = Path('.tmp/w306-reconstructed')
+
+          def dimensions(data: bytes):
+              if data[:4] != b'RIFF' or data[8:12] != b'WEBP':
+                  raise AssertionError('invalid RIFF/WEBP')
+              off = 12
+              while off + 8 <= len(data):
+                  fourcc = data[off:off+4]
+                  n = int.from_bytes(data[off+4:off+8], 'little')
+                  p = data[off+8:off+8+n]
+                  if fourcc == b'VP8X' and len(p) >= 10:
+                      w = 1 + int.from_bytes(p[4:7], 'little')
+                      h = 1 + int.from_bytes(p[7:10], 'little')
+                      return w, h
+                  if fourcc == b'VP8 ' and len(p) >= 10 and p[3:6] == b'\x9d\x01\x2a':
+                      return int.from_bytes(p[6:8], 'little') & 0x3fff, int.from_bytes(p[8:10], 'little') & 0x3fff
+                  if fourcc == b'VP8L' and len(p) >= 5 and p[0] == 0x2f:
+                      b1,b2,b3,b4 = p[1:5]
+                      return 1 + (b1 | ((b2 & 0x3f) << 8)), 1 + ((b2 >> 6) | (b3 << 2) | ((b4 & 0x0f) << 10))
+                  off += 8 + n + (n & 1)
+              raise AssertionError('no WebP dimensions')
+
+          report = []
+          for sid in species:
+              d = transport / sid
+              manifest = json.loads((d / 'manifest.json').read_text())
+              assert manifest['speciesId'] == sid
+              assert manifest['encoding'] == 'base64-chunks'
+              pieces = []
+              for part in manifest['parts']:
+                  text = (d / part).read_text(encoding='ascii')
+                  assert not any(ch.isspace() for ch in text), f'{sid}/{part}: whitespace'
+                  assert len(text) <= manifest['chunkCharsMax']
+                  pieces.append(text)
+              encoded = ''.join(pieces)
+              raw = base64.b64decode(encoded, validate=True)
+              sha = hashlib.sha256(raw).hexdigest()
+              assert len(raw) == manifest['rawBytes'], (sid, len(raw), manifest['rawBytes'])
+              assert sha == manifest['rawSha256'], (sid, sha, manifest['rawSha256'])
+              assert len(raw) < 1_000_000
+              assert raw[:4] == b'RIFF' and raw[8:12] == b'WEBP'
+              w,h = dimensions(raw)
+              assert (w,h) == (512,512), (sid,w,h)
+              (out / f'{sid}.webp').write_bytes(raw)
+              report.append({'speciesId':sid,'rawBytes':len(raw),'rawSha256':sha,'width':w,'height':h})
+              print(f'RECON PASS {sid} bytes={len(raw)} sha256={sha} {w}x{h}')
+          assert len(report) == 15
+          Path('.tmp/w306-reconstruction-report.json').write_text(json.dumps(report, indent=2) + '\n')
+          print('FRESH_GITHUB_RECONSTRUCTION=15/15 PASS')
+          PY
+
+      - name: Candidate ingestion 15 species
+        shell: bash
+        run: |
+          set -euo pipefail
+          for sid in m025 m026 m027 m028 m029 m030 m070 m071 m072 m178 m179 m180 m217 m218 m219; do
+            node scripts/monster-art/candidate-ingestion.mjs \
+              --species "$sid" \
+              --source ".tmp/w306-reconstructed/$sid.webp" \
+              --source-label "W-306 approved-for-candidate-review" \
+              --execute
+          done
+
+      - name: Validate candidate and provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib, json
+          species = ['m025','m026','m027','m028','m029','m030','m070','m071','m072','m178','m179','m180','m217','m218','m219']
+          transport = Path('design/rebuild/asset-production/art-ready-transport/W-306')
+          for sid in species:
+              manifest = json.loads((transport / sid / 'manifest.json').read_text())
+              candidate = Path('public/monsters') / f'{sid}.webp'
+              provenance = Path('design/rebuild/asset-production/candidate-provenance') / f'{sid}.json'
+              assert candidate.is_file(), f'missing candidate {sid}'
+              raw = candidate.read_bytes()
+              sha = hashlib.sha256(raw).hexdigest()
+              assert len(raw) == manifest['rawBytes'], sid
+              assert sha == manifest['rawSha256'], sid
+              assert provenance.is_file(), f'missing provenance {sid}'
+              p = json.loads(provenance.read_text())
+              assert p['speciesId'] == sid and p['events'], sid
+              ev = p['events'][-1]
+              assert ev['candidate']['repositoryPath'] == f'public/monsters/{sid}.webp'
+              assert ev['candidate']['sha256'] == sha
+              assert ev['candidate']['bytes'] == len(raw)
+              assert ev['formalPromotion'] is False
+              print(f'CANDIDATE PASS {sid} sha256={sha}')
+          print('CANDIDATE=15/15 PASS')
+          print('PROVENANCE=15/15 PASS')
+          print('PUBLIC=15/15 PASS')
+          print('MISSING=0 DUPLICATE=0 EXTRA=0')
+          PY
+
+      - name: Cleanup temporary W-306 transport
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf design/rebuild/asset-production/art-ready-transport/W-306
+          rm -rf design/rebuild/asset-production/art-ready/W-306
+          rm -f .github/workflows/w306-ingest.yml
+          rm -rf .tmp
+
+      - name: Monster art targeted tests
+        run: node --test tests/monster-art-ingestion.test.js
+
+      - name: Repository tests
+        run: npm test
+
+      - name: Production build
+        run: npm run build
+        env:
+          VITE_BASE_PATH: /mana-evo/
+
+      - name: Commit and push W-306 candidate results
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git status --short
+          git diff --cached --quiet && { echo 'No repository changes to commit'; exit 1; }
+          git commit -m "art: ingest W-306 electric candidates"
+          git push origin HEAD:rebuild/w-306-electric-attribute-production
