@@ -59,11 +59,13 @@ for (const stage of [1, 2]) {
   })
 }
 
-test('shared Supabase schema is auth-owned and does not grant anon access', () => {
+test('shared Supabase schema is auth-owned and explicitly revokes anon access', () => {
   const sql = fs.readFileSync(new URL('../infra/shared-supabase/app-save-hub.sql', import.meta.url), 'utf8')
   assert.match(sql, /enable row level security/i)
   assert.match(sql, /auth\.uid\(\)\) = user_id/)
   assert.doesNotMatch(sql, /grant[^;]+to anon/i)
+  assert.match(sql, /revoke all privileges on table public\.app_saves from anon/i)
+  assert.match(sql, /revoke all privileges on table public\.app_save_backups from anon/i)
   assert.match(sql, /primary key \(user_id, app_id, slot_id\)/i)
 })
 
