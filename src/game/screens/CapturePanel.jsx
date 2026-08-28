@@ -153,11 +153,16 @@ export function CapturePanel({ game, battle, captureDisabled = false, onCapture,
     setSelectedBall(recommended)
   }, [battle.battleId, battle.captureAttempts, recommended, selectedBall])
 
+  // The mobile visual authority gives this panel 9px on all sides. Keeping the
+  // side/bottom spacing while trimming only the focused top inset preserves the
+  // full >=44px tap target and moves the first decision inside 430px WebKit.
+  const focusedPanelStyle = { paddingTop: '4px' }
+
   if (captureDisabled) {
-    return <section ref={panelRef} className="battle-tools capture-panel" role="dialog" aria-label="つかまえる"><strong>👑 このバトルでは GETできないよ</strong><p>ボールは なげられない バトルだよ。たおして すすもう！</p><button className="secondary" onClick={onCancel}>バトルへ もどる</button></section>
+    return <section ref={panelRef} style={focusedPanelStyle} className="battle-tools capture-panel" role="dialog" aria-label="つかまえる"><strong>👑 このバトルでは GETできないよ</strong><p>ボールは なげられない バトルだよ。たおして すすもう！</p><button className="secondary" onClick={onCancel}>バトルへ もどる</button></section>
   }
 
-  return <section ref={panelRef} className={`battle-tools capture-panel ${captureHpReady ? 'capture-open' : 'capture-locked'}`} role="dialog" aria-label="どのボールをつかう？">
+  return <section ref={panelRef} style={focusedPanelStyle} className={`battle-tools capture-panel ${captureHpReady ? 'capture-open' : 'capture-locked'}`} role="dialog" aria-label="どのボールをつかう？">
     <div className={'capture-main-cta ' + (captureHpReady && captureAttemptsLeft > 0 ? 'ready' : 'locked')}><CaptureBallIcon itemType={selected?.id || recommended || 'star'} compact /><div><strong>どのボールを つかう？</strong><small>のこり {captureAttemptsLeft}かい</small></div></div>
     <h2>{captureAttemptsLeft <= 0 ? 'ボールは 3かい なげたよ' : captureHpReady ? 'ボールを えらぼう！' : '🔒 HPを はんぶんいかに！'}</h2>
     <p>{captureAttemptsLeft <= 0 ? 'このバトルでは もう ボールを なげられないよ。' : captureHpReady ? '★と「おすすめ！」を みて えらぼう。' : `あいての HPを ${Math.floor(battle.enemy.maxHp / 2)} いかまで へらそう。いまは ${battle.enemy.hp}。`}</p>
