@@ -11,6 +11,7 @@ import './kids-quest-study/styles/trace-mobile.css'
 import './game/runtime.css'
 import './ui/iphone-playtest-refresh.css'
 import './platform/cloud-save.css'
+import './platform/adult-cloud-controls.css'
 import './premium-ui-v4.css'
 
 const CANONICAL_HOST = 'syoudai0514.github.io'
