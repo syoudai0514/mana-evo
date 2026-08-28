@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "speciesId": "m187",
+  "events": [
+    {
+      "timestamp": "2026-08-28T01:44:12.770Z",
+      "sourceLabel": "W-320 dragon ART READY ZIP W-320-art-ready(1).zip",
+      "previous": null,
+      "candidate": {
+        "repositoryPath": "public/monsters/m187.webp",
+        "sha256": "f339b4dc1260351b71764fd6362b10c7bd9ca8abcfdd5609dd4bc178eb8cf6b9",
+        "bytes": 27970
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    }
+  ]
+}

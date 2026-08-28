@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "workItem": "W-320",
+  "attribute": "dragon",
+  "status": "CANDIDATE_INGESTION_COMPLETE",
+  "sourceBaseCommit": "97e2a37cc422ab7205d35290720a15ee6151bb1b",
+  "branch": "rebuild/w-320-dragon-attribute-production",
+  "scope": {
+    "ownerWorkItem": "W-320",
+    "familyCount": 3,
+    "speciesCount": 9,
+    "familyNos": [63, 64, 65],
+    "speciesIds": ["m184", "m185", "m186", "m187", "m188", "m189", "m190", "m191", "m192"],
+    "excludedReferenceIds": ["m239"]
+  },
+  "summary": {
+    "artReadyInputSpecies": 9,
+    "binaryValidationPassSpecies": 9,
+    "githubHandoffAndFreshRefetchPassSpecies": 9,
+    "repositoryCandidateIngestedSpecies": 9,
+    "provenanceRecords": 9,
+    "replacementArchives": 0,
+    "formalPromotedSpecies": 0
+  },
+  "families": [
+    {"familyNo": 63, "speciesIds": ["m184", "m185", "m186"], "currentMotif": "子竜と虹", "currentFamilyConcept": "まだ飛べない子竜が、空の果てまで届く"},
+    {"familyNo": 64, "speciesIds": ["m187", "m188", "m189"], "currentMotif": "岩竜と大地", "currentFamilyConcept": "岩間で眠る子竜が、山ひとつを守る"},
+    {"familyNo": 65, "speciesIds": ["m190", "m191", "m192"], "currentMotif": "星竜と銀河", "currentFamilyConcept": "流れ星と飛ぶ子が、星をひとつ作れるようになる"}
+  ],
+  "candidateIngestionEvidence": {
+    "tool": "scripts/monster-art/candidate-ingestion.mjs",
+    "source": "verified GitHub ART READY staging from W-320-art-ready(1).zip sha256=aa42374cfb7e6356fcc2d218c5d11fd0d5f92b2563fdc5921ca920c746d4a443",
+    "ingestedSpecies": 9,
+    "replacementArchives": 0,
+    "provenanceRecords": 9,
+    "formalPromotion": false
+  },
+  "visualQa": "ART READY input accepted without regeneration or image modification; this ingestion work records binary and repository-state validation only.",
+  "formalPromotionPerformed": false,
+  "rows": [
+    {"speciesId":"m184","familyNo":63,"name":"ドラミィ","stage":1,"disposition":"ART_READY_INPUT","visualState":"ART_READY_INPUT_ACCEPTED_FOR_CANDIDATE_INGESTION","bytes":21498,"rawSha256":"ccbb3a69ac950cb7e79b08da60990c62b71094a6d1ed543f7779b6b732d56a95","candidateIngested":true},
+    {"speciesId":"m185","familyNo":63,"name":"ソラドラゴ","stage":2,"disposition":"ART_READY_INPUT","visualState":"ART_READY_INPUT_ACCEPTED_FOR_CANDIDATE_INGESTION","bytes":28258,"rawSha256":"b3810570d90da6d70ca1b65a9951583eae3d711207441ad56a5b7e1af26214f3","candidateIngested":true},
+    {"speciesId":"m186","familyNo":63,"name":"ニジリュウガ","stage":3,"disposition":"ART_READY_INPUT","visualState":"ART_READY_INPUT_ACCEPTED_FOR_CANDIDATE_INGESTION","bytes":40230,"rawSha256":"0207273ee81a29ae4c6da1d03430aa99783c6ba27cc0bb95fb4c64b1d91eb209","candidateIngested":true},
+    {"speciesId":"m187","familyNo":64,"name":"リュウノコ","stage":1,"disposition":"ART_READY_INPUT","visualState":"ART_READY_INPUT_ACCEPTED_FOR_CANDIDATE_INGESTION","bytes":27970,"rawSha256":"f339b4dc1260351b71764fd6362b10c7bd9ca8abcfdd5609dd4bc178eb8cf6b9","candidateIngested":true},
+    {"speciesId":"m188","familyNo":64,"name":"ガンリュウガ","stage":2,"disposition":"ART_READY_INPUT","visualState":"ART_READY_INPUT_ACCEPTED_FOR_CANDIDATE_INGESTION","bytes":35970,"rawSha256":"415e4033798566426e26f96c236c3857f01667f2aa676bf143f39f941fc94168","candidateIngested":true},
+    {"speciesId":"m189","familyNo":64,"name":"ダイチヴァルグ","stage":3,"disposition":"ART_READY_INPUT","visualState":"ART_READY_INPUT_ACCEPTED_FOR_CANDIDATE_INGESTION","bytes":51046,"rawSha256":"8850a8b0395eb1977098c8d4327917c9e00df5443d34013bf371be5072559a29","candidateIngested":true},
+    {"speciesId":"m190","familyNo":65,"name":"ホシリュウ","stage":1,"disposition":"ART_READY_INPUT","visualState":"ART_READY_INPUT_ACCEPTED_FOR_CANDIDATE_INGESTION","bytes":36296,"rawSha256":"7fd1246fc4cfdaa05126f55cd3403bd76590bac9893455b83c970b6cb535e176","candidateIngested":true},
+    {"speciesId":"m191","familyNo":65,"name":"ギンガリュウ","stage":2,"disposition":"ART_READY_INPUT","visualState":"ART_READY_INPUT_ACCEPTED_FOR_CANDIDATE_INGESTION","bytes":45278,"rawSha256":"b67c2eaf1423445a1f239c3e55485035dac6bfa0fc2bdb4a7305dcae5d86ed85","candidateIngested":true},
+    {"speciesId":"m192","familyNo":65,"name":"コスモドラグ","stage":3,"disposition":"ART_READY_INPUT","visualState":"ART_READY_INPUT_ACCEPTED_FOR_CANDIDATE_INGESTION","bytes":55312,"rawSha256":"0ba9a5883ef4bcd2d6fab41e7fa692883847d73d572c385ad4ea8cb8bd281881","candidateIngested":true}
+  ]
+}
