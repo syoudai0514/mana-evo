@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "speciesId": "m068",
+  "events": [
+    {
+      "timestamp": "2026-08-28T01:42:49.014Z",
+      "sourceLabel": "W-312 steel ART READY ZIP candidate review",
+      "previous": null,
+      "candidate": {
+        "repositoryPath": "public/monsters/m068.webp",
+        "sha256": "b2c6204e4be661924363804d57e7785d93e77c0a9e05f9de26f344b527ad719e",
+        "bytes": 79408
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    }
+  ]
+}
