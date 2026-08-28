@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { CAPTURE_CONFIG } from '../content.js'
 import { MAX_CAPTURE_ATTEMPTS, canAttemptCapture, captureChance } from '../engine.js'
 import { CAPTURE_ITEM_IDS } from '../progression.js'
@@ -128,11 +128,9 @@ export function CapturePanel({ game, battle, captureDisabled = false, onCapture,
   const recommended = [...options].filter((option) => option.ready).sort((a, b) => b.chance - a.chance)[0]?.id || null
   const selected = options.find((option) => option.id === selectedBall && option.ready) || null
 
-  useEffect(() => {
-    // Capture selection is a focused sub-flow inside the battle document. WebKit
-    // can settle at the document's scroll ceiling while the preceding battle
-    // layout is being replaced. Reserve real internal height (not a collapsing
-    // outer margin) so portrait WebKit has enough scroll range for the first tap.
+  useLayoutEffect(() => {
+    // Capture is a focused decision. Position it before paint so WebKit cannot
+    // expose a transient frame with the first 44px tap surface below the viewport.
     let frame = 0
     let timer = 0
     const positionPanel = () => {
@@ -141,6 +139,7 @@ export function CapturePanel({ game, battle, captureDisabled = false, onCapture,
       const top = panel.getBoundingClientRect().top + window.scrollY - 12
       window.scrollTo({ top: Math.max(0, top), left: 0, behavior: 'auto' })
     }
+    positionPanel()
     frame = window.requestAnimationFrame(positionPanel)
     timer = window.setTimeout(positionPanel, 80)
     return () => {
@@ -154,13 +153,11 @@ export function CapturePanel({ game, battle, captureDisabled = false, onCapture,
     setSelectedBall(recommended)
   }, [battle.battleId, battle.captureAttempts, recommended, selectedBall])
 
-  const focusedTailStyle = { paddingBottom: '28px' }
-
   if (captureDisabled) {
-    return <section ref={panelRef} style={focusedTailStyle} className="battle-tools capture-panel" role="dialog" aria-label="つかまえる"><strong>👑 このバトルでは GETできないよ</strong><p>ボールは なげられない バトルだよ。たおして すすもう！</p><button className="secondary" onClick={onCancel}>バトルへ もどる</button></section>
+    return <section ref={panelRef} className="battle-tools capture-panel" role="dialog" aria-label="つかまえる"><strong>👑 このバトルでは GETできないよ</strong><p>ボールは なげられない バトルだよ。たおして すすもう！</p><button className="secondary" onClick={onCancel}>バトルへ もどる</button></section>
   }
 
-  return <section ref={panelRef} style={focusedTailStyle} className={`battle-tools capture-panel ${captureHpReady ? 'capture-open' : 'capture-locked'}`} role="dialog" aria-label="どのボールをつかう？">
+  return <section ref={panelRef} className={`battle-tools capture-panel ${captureHpReady ? 'capture-open' : 'capture-locked'}`} role="dialog" aria-label="どのボールをつかう？">
     <div className={'capture-main-cta ' + (captureHpReady && captureAttemptsLeft > 0 ? 'ready' : 'locked')}><CaptureBallIcon itemType={selected?.id || recommended || 'star'} compact /><div><strong>どのボールを つかう？</strong><small>のこり {captureAttemptsLeft}かい</small></div></div>
     <h2>{captureAttemptsLeft <= 0 ? 'ボールは 3かい なげたよ' : captureHpReady ? 'ボールを えらぼう！' : '🔒 HPを はんぶんいかに！'}</h2>
     <p>{captureAttemptsLeft <= 0 ? 'このバトルでは もう ボールを なげられないよ。' : captureHpReady ? '★と「おすすめ！」を みて えらぼう。' : `あいての HPを ${Math.floor(battle.enemy.maxHp / 2)} いかまで へらそう。いまは ${battle.enemy.hp}。`}</p>
