@@ -2,7 +2,7 @@
 
 Status: **CURRENT approved gameplay-balance change**  
 Owner: Game Function / progression pacing  
-Decision: **D-020**  
+Approval evidence: **2026-08-28 explicit user playtest decision**  
 
 ## 1. User-visible goal
 
