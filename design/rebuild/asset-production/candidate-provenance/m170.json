@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "speciesId": "m170",
+  "events": [
+    {
+      "timestamp": "2026-08-28T01:43:36.473Z",
+      "sourceLabel": "W-314 ART READY ZIP W-314-art-ready(1).zip 66a0464ef5c0aa36381955c506f8424a5ce181f11655b8e954a7442c23ee3309 approved-for-candidate-review",
+      "previous": null,
+      "candidate": {
+        "repositoryPath": "public/monsters/m170.webp",
+        "sha256": "ea0735eb5dfff7ff122ef71883379e344c4ed77b414d64efce3370319b39cfa0",
+        "bytes": 40142
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    }
+  ]
+}
