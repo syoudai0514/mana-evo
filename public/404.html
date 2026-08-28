@@ -7,14 +7,14 @@
     <title>マナエボへ もどります</title>
     <script>
       (() => {
-        const APP_BASE = '/mana-evo/'
-        if (window.location.pathname.startsWith(APP_BASE)) {
-          window.location.replace(`${APP_BASE}${window.location.search}${window.location.hash}`)
+        const APP_ROOT = '/'
+        if (window.location.pathname !== APP_ROOT) {
+          window.location.replace(`${APP_ROOT}${window.location.search}${window.location.hash}`)
         }
       })()
     </script>
   </head>
   <body>
-    <p><a href="/mana-evo/">マナエボへ もどる</a></p>
+    <p><a href="/">マナエボへ もどる</a></p>
   </body>
 </html>
