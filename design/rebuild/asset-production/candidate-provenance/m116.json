@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "speciesId": "m116",
+  "events": [
+    {
+      "timestamp": "2026-08-28T01:43:38.086Z",
+      "sourceLabel": "W-315 ART READY ZIP: W-315-art-ready(1).zip",
+      "previous": null,
+      "candidate": {
+        "repositoryPath": "public/monsters/m116.webp",
+        "sha256": "525e01b9504981e255aba8d76817ebf67d16c241c9445332cd1aa11d3f768b75",
+        "bytes": 61672
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    }
+  ]
+}
