@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "speciesId": "m175",
+  "events": [
+    {
+      "timestamp": "2026-08-28T01:43:38.141Z",
+      "sourceLabel": "W-315 ART READY ZIP: W-315-art-ready(1).zip",
+      "previous": null,
+      "candidate": {
+        "repositoryPath": "public/monsters/m175.webp",
+        "sha256": "20852c830f6bc78de7f0761f0f9fb651024ee50ed6120b9b341a74c0ee44424c",
+        "bytes": 26376
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    }
+  ]
+}

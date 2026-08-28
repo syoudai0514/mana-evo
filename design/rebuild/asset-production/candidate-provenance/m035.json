@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "speciesId": "m035",
+  "events": [
+    {
+      "timestamp": "2026-08-28T01:41:43.104Z",
+      "sourceLabel": "W-311 ART READY ZIP W-311-art-ready(1).zip",
+      "previous": null,
+      "candidate": {
+        "repositoryPath": "public/monsters/m035.webp",
+        "sha256": "16dba27c46839f4bc16afe0fe6b8f22cb3af11b6f861a2c496afd89647951063",
+        "bytes": 35310
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    }
+  ]
+}

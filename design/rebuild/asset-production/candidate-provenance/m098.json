@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "speciesId": "m098",
+  "events": [
+    {
+      "timestamp": "2026-08-28T01:43:32.123Z",
+      "sourceLabel": "W-316 ART READY W-316-art-ready(2).zip sha256=391e3b92e697aaf70f04f9109e7c7b967d03eb7359900104ee78198e36922f1b",
+      "previous": null,
+      "candidate": {
+        "repositoryPath": "public/monsters/m098.webp",
+        "sha256": "a690c5ecd531d2208352ccbf68ba3d798d861f79afc2cfe1fb08af7ed07df5be",
+        "bytes": 48808
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    }
+  ]
+}
