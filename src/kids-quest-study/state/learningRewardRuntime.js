@@ -8,6 +8,8 @@ import {
 } from './learningRewardPolicy.js'
 import { normalizeLearningRewardRuntime } from './learningRewardStore.js'
 
+export const EXTRA_CORRECT_PER_BATTLE_TICKET = 5
+
 function statsIdFor(action = {}) {
   const domainId = String(action.domainId || '')
   const hard = String(action.question?.itemKey || action.itemKey || '').startsWith('hard:')
@@ -83,19 +85,28 @@ function deriveAnswer(runtime, previous, next, action) {
     if (action.correct === true && action.taskKind === 'extra' && next?.daily?.coreDone === true) {
       const instanceId = questionInstanceId(action)
       if (instanceId) {
-        const rewardId = `extra:${dayKey(next)}:${next.daily?.extraIndex || 0}:${instanceId}`
-        result = queueGame(result, {
-          id: rewardId,
-          ticketDelta: 1,
-          captureItemDelta: {},
-          kind: 'extra-question-clear'
-        }, true)
+        const exploreId = `extra:${dayKey(next)}:${next.daily?.extraIndex || 0}:${instanceId}:explore`
         result = queueProgression(result, {
-          id: `${rewardId}:explore`,
+          id: exploreId,
           kind: 'extra-question-clear',
           explorationPointDelta: 1,
           worldProgressDelta: 0,
           dayKey: dayKey(next)
+        }, true)
+      }
+
+      // Study must remain the main activity. Real play telemetry showed an
+      // average learning answer at ~7.8s and a battle at ~15.5s before V6
+      // animations. Paying one battle per correct answer inverted the intended
+      // time budget. Five correct extra answers now earn one battle ticket.
+      const correctTotal = Math.max(0, Number(result.learningRewardMeta.additionalCorrectTotal) || 0)
+      if (correctTotal > 0 && correctTotal % EXTRA_CORRECT_PER_BATTLE_TICKET === 0) {
+        const milestone = Math.floor(correctTotal / EXTRA_CORRECT_PER_BATTLE_TICKET)
+        result = queueGame(result, {
+          id: `extra-ticket:${milestone}`,
+          ticketDelta: 1,
+          captureItemDelta: {},
+          kind: 'extra-learning-ticket'
         }, true)
       }
     }

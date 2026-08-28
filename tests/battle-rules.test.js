@@ -21,19 +21,19 @@ import {
   wakeSleepOnDamagingHit
 } from '../src/game/battleRules.js'
 
-test('canonical damage boundaries match W-102', () => {
-  assert.equal(STAB_MULTIPLIER, 1.5)
+test('Battle V6 damage boundaries reduce burst while preserving immunity', () => {
+  assert.equal(STAB_MULTIPLIER, 1.25)
   assert.equal(CRITICAL_CHANCE, 1 / 16)
-  assert.equal(CRITICAL_MULTIPLIER, 1.5)
-  assert.equal(DAMAGE_RANDOM_MIN, 0.90)
+  assert.equal(CRITICAL_MULTIPLIER, 1.35)
+  assert.equal(DAMAGE_RANDOM_MIN, 0.92)
   assert.equal(DAMAGE_RANDOM_MAX, 1.00)
-  assert.equal(canonicalDamage({ level: 20, power: 60, attack: 40, defense: 30, stab: 1.5, type: 0, critical: 1.5, random: 1 }), 0)
+  assert.equal(canonicalDamage({ level: 20, power: 60, attack: 40, defense: 30, stab: 1.25, type: 0, critical: 1.35, random: 1 }), 0)
   const normal = canonicalDamage({ level: 20, power: 60, attack: 40, defense: 30, stab: 1, type: 1, critical: 1, random: 1 })
-  const stab = canonicalDamage({ level: 20, power: 60, attack: 40, defense: 30, stab: 1.5, type: 1, critical: 1, random: 1 })
+  const stab = canonicalDamage({ level: 20, power: 60, attack: 40, defense: 30, stab: 1.25, type: 1, critical: 1, random: 1 })
   assert.ok(stab > normal)
-  assert.equal(criticalMultiplier(0), 1.5)
+  assert.equal(criticalMultiplier(0), 1.35)
   assert.equal(criticalMultiplier(0.5), 1)
-  assert.equal(damageRandomMultiplier(0), 0.90)
+  assert.equal(damageRandomMultiplier(0), 0.92)
   assert.equal(damageRandomMultiplier(1), 1.00)
 })
 

@@ -151,11 +151,11 @@ test('vertical learning reward is exactly once and boss remains learning-gated a
   assert.equal(isStageUnlocked(routeCleared, boss), true)
 })
 
-test('one ticket reserves, survives reload semantics, refunds on abandon, and commits on victory', () => {
+test('one ticket reserves, survives reload semantics, and is spent by abandon or victory', () => {
   const firstWild = STAGES.find((stage) => stage.kind === 'wild' && !stage.hidden)
   assert.ok(firstWild)
 
-  let game = addTickets(createGameState(), 1, DAY)
+  let game = addTickets(createGameState(), 2, DAY)
   const started = startBattle(game, firstWild.id, {
     dailyCompleted: true,
     dailyDay: DAY,
@@ -163,7 +163,7 @@ test('one ticket reserves, survives reload semantics, refunds on abandon, and co
   })
   assert.equal(started.ok, true)
   assert.equal(started.battle.ticketSettlement, 'reserved')
-  assert.equal(availableTicketCount(started.game, DAY), 0)
+  assert.equal(availableTicketCount(started.game, DAY), 1)
 
   const resumed = startBattle(started.game, firstWild.id, {
     dailyCompleted: true,
@@ -173,11 +173,11 @@ test('one ticket reserves, survives reload semantics, refunds on abandon, and co
   assert.equal(resumed.ok, false)
   assert.equal(resumed.reason, 'BATTLE_ALREADY_ACTIVE')
   assert.equal(resumed.battle.battleId, started.battle.battleId)
-  assert.equal(availableTicketCount(resumed.game, DAY), 0)
+  assert.equal(availableTicketCount(resumed.game, DAY), 1)
 
   const abandoned = abandonBattle(started.game, { today: DAY })
   assert.equal(abandoned.ok, true)
-  assert.equal(abandoned.refunded, true)
+  assert.equal(abandoned.refunded, false)
   assert.equal(availableTicketCount(abandoned.game, DAY), 1)
 
   const restarted = startBattle(abandoned.game, firstWild.id, {

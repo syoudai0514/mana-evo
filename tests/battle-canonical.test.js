@@ -79,16 +79,16 @@ test('battle start reserves one FEFO lot and reload does not reserve again', () 
   assert.equal(availableTicketCount(resumed.game, DAY + 2), 1)
 })
 
-test('damage uses canonical STAB/critical/random and exact immunity zero', () => {
+test('Battle V6 damage uses reduced STAB/critical burst and exact immunity zero', () => {
   const attacker = { speciesId: 'm004', level: 20 }
   const defender = { speciesId: 'm001', level: 20 }
   const move = moveOf('m004-stable')
   const regular = damageAmount(attacker, defender, move, { criticalRoll: 1, randomRoll: 1 })
   const critical = damageAmount(attacker, defender, move, { criticalRoll: 0, randomRoll: 1 })
   const lowRoll = damageAmount(attacker, defender, move, { criticalRoll: 1, randomRoll: 0 })
-  assert.equal(regular.stab, 1.5)
-  assert.equal(critical.critical, 1.5)
-  assert.equal(lowRoll.random, 0.90)
+  assert.equal(regular.stab, 1.25)
+  assert.equal(critical.critical, 1.35)
+  assert.equal(lowRoll.random, 0.92)
   assert.ok(critical.damage > regular.damage)
   assert.ok(regular.damage >= lowRoll.damage)
 
@@ -168,24 +168,22 @@ test('win commits reservation once and stale replay cannot double reward', () =>
   assert.equal(replay.game.box[battle.activeInstanceId].xp, xpAfter)
 })
 
-test('explicit abandon refunds original lot at most once', () => {
+test('explicit abandon spends the reserved ticket and cannot settle twice', () => {
   const started = start(addTickets(createGameState(), 1, DAY))
-  const source = started.battle.ticketReservation
   const abandoned = abandonBattle(started.game, { today: DAY })
   assert.equal(abandoned.ok, true)
-  assert.equal(abandoned.refunded, true)
-  assert.equal(availableTicketCount(abandoned.game, DAY), 1)
-  assert.equal(abandoned.game.ticketGrants[0].expiresDay, source.expiresDay)
+  assert.equal(abandoned.refunded, false)
+  assert.equal(availableTicketCount(abandoned.game, DAY), 0)
   const second = abandonBattle(abandoned.game, { today: DAY })
   assert.equal(second.ok, false)
   assert.equal(second.reason, 'NO_ACTIVE_BATTLE')
-  assert.equal(availableTicketCount(second.game, DAY), 1)
+  assert.equal(availableTicketCount(second.game, DAY), 0)
 })
 
 test('old boss snapshot is replaced once and normal rematch re-locks', () => {
   const boss = STAGES.find((stage) => stage.bossRank && !stage.hidden)
   assert.ok(boss)
-  let game = addTickets(createGameState(), 1, DAY)
+  let game = addTickets(createGameState(), 2, DAY)
   game = unlockForStage(game, boss)
   game.bossBalanceSnapshots[boss.id] = {
     stageId: boss.id,
@@ -203,6 +201,7 @@ test('old boss snapshot is replaced once and normal rematch re-locks', () => {
   assert.equal(replacement.balanceVersion, BALANCE_VERSION)
   const quit = abandonBattle(first.game, { today: DAY })
   assert.equal(quit.ok, true)
+  assert.equal(availableTicketCount(quit.game, DAY), 1)
   const rematch = start(quit.game, boss.id)
   assert.equal(rematch.ok, true)
   assert.equal(rematch.battle.enemy.balance.mode, 'boss-locked')

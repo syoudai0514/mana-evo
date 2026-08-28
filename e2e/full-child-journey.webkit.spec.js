@@ -158,7 +158,7 @@ test('clean child goes Home -> Study, canonical daily completion applies once, t
   await expect(visibleDefaultEncounters).toHaveCount(5)
 })
 
-test('battle focus reserves once across reload and explicit abandon refunds the original ticket', async ({ page }) => {
+test('battle focus reserves once across reload and explicit abandon spends the original ticket', async ({ page }) => {
   await page.goto('/')
 
   const today = dayNumber()
@@ -192,12 +192,12 @@ test('battle focus reserves once across reload and explicit abandon refunds the 
   await expect(page.getByRole('navigation', { name: 'メインメニュー' })).toBeVisible()
 
   await expect.poll(async () => {
-    const refunded = await storedGame(page)
+    const settled = await storedGame(page)
     return {
-      activeBattle: refunded.activeBattle,
-      tickets: totalTicketGrantCount(refunded)
+      activeBattle: settled.activeBattle,
+      tickets: totalTicketGrantCount(settled)
     }
-  }).toEqual({ activeBattle: null, tickets: 1 })
+  }).toEqual({ activeBattle: null, tickets: 0 })
 })
 
 test('manual stone evolution is Monster-owned, modal, and records first evolution discovery', async ({ page }) => {
