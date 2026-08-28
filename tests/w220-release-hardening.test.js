@@ -32,6 +32,12 @@ test('Vercel deep-entry fallback returns to root and preserves query/hash', () =
   assert.doesNotMatch(fallback, /kids-quest/)
 })
 
+test('GitHub Pages production workflow is retired and CI no longer injects the old base path', () => {
+  assert.equal(fs.existsSync(path.join(root, '.github/workflows/pages.yml')), false)
+  const ci = fs.readFileSync(path.join(root, '.github/workflows/ci.yml'), 'utf8')
+  assert.doesNotMatch(ci, /VITE_BASE_PATH:\s*\/mana-evo\//)
+})
+
 test('service worker prunes old monster bytes only after current FORMAL bytes are cached', () => {
   const sw = fs.readFileSync(path.join(root, 'public/sw.js'), 'utf8')
   const put = sw.indexOf('await cache.put(cacheKey, response.clone())')
