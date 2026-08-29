@@ -52,16 +52,45 @@ function terminalDotGame({ withBench = false, captureReady = false } = {}) {
   return started.game
 }
 
-async function installSave(page, game, { forceCaptureFailure = false } = {}) {
+async function installSave(page, game) {
   const learning = learningSave()
-  await page.addInitScript(({ learning, game, forceCaptureFailure }) => {
+  await page.addInitScript(({ learning, game }) => {
     localStorage.setItem('mana-evo:kids-quest-learning:v2', JSON.stringify(learning))
     localStorage.setItem('mana-evo-save-v2', JSON.stringify({
       formatVersion: 2,
       gameByProfile: { 'child-1': game }
     }))
-    if (forceCaptureFailure) Math.random = () => 0.999999
-  }, { learning, game, forceCaptureFailure })
+  }, { learning, game })
+}
+
+// Use the same deterministic failure gate as capture-ring.webkit.spec.js.
+// A plain Math.random override is not enough because the public capture wrapper
+// deliberately treats null as "no caller-supplied roll" and Number(null) would
+// otherwise turn that into a guaranteed-success roll before Math.random is used.
+async function installCaptureFailureRandomGate(page) {
+  await page.addInitScript(() => {
+    const originalRandom = Math.random.bind(Math)
+    const OriginalNumber = Number
+    Math.random = () => {
+      if (document.documentElement?.dataset.w216CaptureRoll === 'fail') {
+        document.documentElement.dataset.w216ForcedCaptureRoll = 'used'
+        return 0.999999
+      }
+      return originalRandom()
+    }
+    globalThis.Number = new Proxy(OriginalNumber, {
+      apply(target, thisArg, args) {
+        if (document.documentElement?.dataset.w216CaptureRoll === 'fail' && args[0] === null) {
+          document.documentElement.dataset.w216NullRollGuard = 'used'
+          return NaN
+        }
+        return Reflect.apply(target, thisArg, args)
+      },
+      construct(target, args, newTarget) {
+        return Reflect.construct(target, args, newTarget)
+      }
+    })
+  })
 }
 
 async function expectTerminalPresentationGate(page, expectedCue) {
@@ -107,20 +136,28 @@ test('voluntary switch DOT KO keeps post-KO CTA gated until switched-turn presen
 })
 
 test('failed capture DOT KO waits for capture sequence, then turn/HP/KO presentation, then CTA', async ({ page }) => {
-  await installSave(page, terminalDotGame({ captureReady: true }), { forceCaptureFailure: true })
+  await installSave(page, terminalDotGame({ captureReady: true }))
+  await installCaptureFailureRandomGate(page)
   await page.goto('/')
 
   await page.getByRole('button', { name: /ボールを なげる/ }).click()
   const star = page.locator('.capture-item-grid').getByRole('button', { name: /ほしボール/ })
   await expect(star).toBeEnabled()
   await star.click()
-  await page.getByRole('button', { name: /ほしボールを なげる！/ }).click()
+  const throwButton = page.getByRole('button', { name: /ほしボールを なげる！/ })
+  await expect(throwButton).toBeEnabled()
+
+  const root = page.locator('html')
+  await root.evaluate((element) => { element.dataset.w216CaptureRoll = 'fail' })
+  await throwButton.click()
 
   const captureSequence = page.getByTestId('capture-sequence')
   const cue = page.locator('.battle-turn-cue-v6')
   const postKoCapture = page.getByRole('button', { name: /ボールを なげる！/ })
 
   await expect(captureSequence).toBeVisible()
+  await expect(root).toHaveAttribute('data-w216-forced-capture-roll', 'used')
+  await root.evaluate((element) => { delete element.dataset.w216CaptureRoll })
   await expect(postKoCapture).toHaveCount(0)
   const diagnosticAtCaptureStart = await failedCaptureDiagnostic(page)
 
