@@ -145,3 +145,10 @@ For every product change:
 8. only then merge/deploy.
 
 Never recover current product behavior from "the newest document" alone. Recover it from authority + approval + CURRENT + actual GitHub state.
+
+## 9. Current commander assignment
+
+- 2026-08-29: the user explicitly reassigned ManaEvo commander / Reviewer responsibility away from the previous commander chat to a successor commander.
+- The previous commander chat is no longer an active planning authority; its outputs are historical evidence only.
+- The successor commander must recover state through `REBUILD-START-HERE.md` / D-015 before issuing new plans, and must determine current progress from GitHub + actual Acceptance evidence rather than inheriting the former commander's latest conclusion.
+- This assignment change does not modify gameplay, Monster Art rules, runtime behavior, or any existing product-domain decision.
