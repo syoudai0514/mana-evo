@@ -46,7 +46,9 @@ function terminalDotGame({ withBench = false, captureReady = false } = {}) {
   const battle = started.game.activeBattle
   battle.enemy.hp = 1
   battle.enemy.status = { type: 'poison' }
-  if (captureReady) started.game.captureItems.star = Math.max(1, Number(started.game.captureItems.star) || 0)
+  // Failed-capture path consumes one ball. Keep a second one so the post-KO CTA
+  // is still eligible after the presentation gate finishes.
+  if (captureReady) started.game.captureItems.star = Math.max(2, Number(started.game.captureItems.star) || 0)
   return started.game
 }
 
