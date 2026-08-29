@@ -1,7 +1,7 @@
 # ManaEvo 正本設計 — 現行runtime
 
-更新日: 2026-08-25
-状態: **IMPLEMENTED / MAIN運用中**
+更新日: 2026-08-29
+状態: **IMPLEMENTED / MAIN運用中 + LEARNING ECONOMY DESIGN REVIEW中**
 
 この `design/00-README.md` を、ManaEvo の設計を読むときの唯一の入口とする。
 PR #4 / #5 / #15 時点のレビュー文書に残る `NO-GO`、`runtime実装ロック`、`未実装` 等の記述は、その時点の履歴であり現行状態を上書きしない。
@@ -11,11 +11,12 @@ PR #4 / #5 / #15 時点のレビュー文書に残る `NO-GO`、`runtime実装�
 実装と仕様が競合した場合は、以下の順で確認する。
 
 1. この文書 — 現在の実装状態と優先ルール
-2. `design/19-sol-pr15-runtime-completion.md` — 238体runtime完成時の最終判定
-3. `design/09-special-forms-master.md` — ギガシンカ12体 / キョダイバースト8体の対象割当
-4. `design/12-detailed-balance-design-for-sol-review.md` — 戦闘バランス原則
-5. `design/13*` / `design/14*` — 238体成長・155進化・32アイテム取得master
-6. `README.md` — 利用者・開発者向け現行仕様
+2. `design/23-learning-game-economy.md` — **学習→報酬→ticket→battle→XP/捕獲→育成を一体で扱う上位economy設計。現在DESIGN REVIEW中で、実装変更は未承認**
+3. `design/19-sol-pr15-runtime-completion.md` — 238体runtime完成時の最終判定
+4. `design/09-special-forms-master.md` — ギガシンカ12体 / キョダイバースト8体の対象割当
+5. `design/12-detailed-balance-design-for-sol-review.md` — 戦闘バランス原則。学習報酬/economyについて23と競合する場合は23を優先
+6. `design/13*` / `design/14*` — 238体成長・155進化・32アイテム取得master
+7. `README.md` — 利用者・開発者向け現行仕様
 
 `design/16-sol-pr15-full-review.md` 以前のレビュー文書は履歴として参照してよいが、現在の実装可否判定には使わない。
 
@@ -40,14 +41,48 @@ PR #4 / #5 / #15 時点のレビュー文書に残る `NO-GO`、`runtime実装�
 
 Kids Quest学習基盤を正本とし、ManaEvo都合で簡略化しない。
 
+### CURRENT production behavior
+
 - 今日の基本は5教科タスク
 - 国語・算数は各5問、通常教科は各4問、道徳は該当日2問
 - 基本5教科完了でバトルチケット3枚 + ほしのわ3個
 - 自由勉強はチケット0枚
-- 追加チャレンジ3問中2問正解でチケット1枚
+- Battle V6ではadditional `extra` の5正解を1 battle ticketの基準としている
 - `わからない` を残し、誤答→解説→補強→後日復習へつなぐ
 - 単元MASTERでぎんのわ、むずかしいMASTERできんのわ
 - 前日までのチケットを持っていても、当日の基本学習完了前は新規バトル不可
+
+### Learning × Game Economy design review
+
+`design/23-learning-game-economy.md` を、次のbalance implementation前に必ず独立レビューする。
+
+最上位原則:
+
+> **ゲーム報酬を最大化しようとする行動が、高価値な学習行動につながること。**
+
+設計レビューでは特に以下を確認する。
+
+- 簡単問題大量周回が最適にならない
+- 習得済み / 同一skill / 同一concept短期反復が最適にならない
+- 得意教科だけの固定周回が最適にならない
+- わざと誤答してdifficultyを下げる戦略が得にならない
+- 高速正解という本当の習熟を不当に罰しない
+- 画面放置でstudy timeを稼げない
+- 苦手問題を避けるより、誤答→解説→再挑戦→克服が報われる
+- SRS上適切な復習を「簡単問題」と誤判定しない
+- free / extra / okawariの境界でbattle ticketをfarmできない
+- reward optimizerでもlearning time > game timeを維持する
+- battle/capture/XP側から学習economyを迂回できない
+
+提案中の追加学習rewardは、単純な `5 correct` から以下へ変更候補とする。
+
+```text
+qualifying Learning Value >= 5.0
+AND effective active study time >= 20 sec
+→ 1 battle ticket
+```
+
+この値は**未実装・未承認**であり、7日/30日simulationと独立レビュー後に確定する。
 
 ## セーブ・プロフィール
 
@@ -121,16 +156,15 @@ Kids Quest学習基盤を正本とし、ManaEvo都合で簡略化しない。
 - `スター覚醒` は不採用。復活させない。
 - ギガ/バースト対象種族をレビュー担当の好みで変更しない。
 - Kids Quest学習仕様をManaEvo側だけで簡略化しない。
-- ゲーム思想や報酬条件を変更する場合は、先にこの正本を更新して意図を明記する。
+- ゲーム思想や報酬条件を変更する場合は、先にこの正本および該当上位設計書を更新して意図を明記する。
+- Learning × Game Economyを変更する場合、`design/23-learning-game-economy.md` のplayer archetype simulationとguardrailを更新してから実装する。
 - 実装変更には回帰テストを追加し、CI成功後にmainへ反映する。
-
 
 ## 2026-08-25 ワールド・進化・育成コンセプト
 
 正本: [`20-world-map-evolution-progression.md`](./20-world-map-evolution-progression.md)
 
 当初設計の「エリア固定寄りの敵Lv・最終形は野生入手不可」を復活し、さらに「第2形態の初回入手は自力進化、初進化後に上級ゾーン野生解禁」を正式採用する。完全手持ち追従ではなく、ゾーンLv帯でクランプするハイブリッド制を正とする。
-
 
 ## UIビジュアル正本
 
