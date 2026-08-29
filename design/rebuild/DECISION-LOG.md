@@ -2,6 +2,8 @@
 
 重要仕様の判断を時系列で残す。実装だけで仕様を確定しない。
 
+更新日: 2026-08-29
+
 ## Status
 - PROPOSED: 候補
 - CONFIRMED: 根拠確認済み
@@ -78,6 +80,7 @@
 - Runtime drift: extra 3問中2問でtask全体ticket+1、追加学習star+1欠落。
 - Decision: Kids Questのextra task形状（3問）は維持するが、ManaEvo reward bridgeは原本どおり追加問題1問クリアごとticket+1・上限なしへ戻す。ringは後続明示決定を採用し、追加3正解ごとのstar+1も実装する。
 - Tests required: core+3 / per-extra-question ticket / no cap / ring grants / 7-day FEFO。
+- Later override: **D-022 Battle V6がextra battle-ticket rateのみを `5 correct extra answers -> ticket +1` へ後続置換する。** D-006のdaily core +3、additional 3 correct -> star+1、MASTER silver/gold、FEFO等の非競合部分は維持。
 
 ## D-007 ticket battle lifecycle
 - Status: SUPERSEDED / CONFIRMED_CHANGE
@@ -85,6 +88,7 @@
 - Later explicit decision: PR #5 user-confirmed ticket reservation lifecycle。
 - Decision: battle開始時に1枚reserve。勝利/捕獲成功で消費確定。敗北/明示離脱は同じ期限lotを返却。crash/reloadはactiveBattle再開で二重消費しない。
 - Tests required: reserve/refund/commit/idempotency/original-expiry。
+- Later override: **D-022 Battle V6がplayed loss / explicit abandonのrefundをcommitへ変更する。** exact reservation、FEFO、crash/reload resume、idempotencyは維持。
 
 ## D-008 進化アイテム取得
 - Status: REVERT-TO-BASELINE
@@ -115,14 +119,15 @@
 - Baseline: Area1〜4、最終形通常wild不可等の原則。
 - Later explicit direction: UDE-005「自分で育てて進化させる体験」を強化するworld/zone方向。
 - Decision: `area`（原データ分類）と冒険配置レイヤを分離。入口/中盤/奥地。第2形態の初回入手は自力進化、自力進化後のみ後半wild解禁。`evolutionDiscoveries`で自力進化を別記録。最終形は通常wild捕獲不可。過去areaへ戻り育成差を実感できる。
-- Tuning default: 現行 zone Lv帯（A1 5–22 / A2 18–38 / A3 32–58 / A4 50–80 / EX 70–100）やzone clear数はplaytest用暫定値。プロダクト正本ではなくbalance tuningとして調整可。
+- Tuning default: 2026-08-25時点 zone Lv帯（A1 5–22 / A2 18–38 / A3 32–58 / A4 50–80 / EX 70–100）やzone clear数はplaytest用暫定値。
+- Later tuning override: **D-022がcurrent production bandsをA1 5–16 / A2 14–27 / A3 24–40 / A4 37–58 / EX 55–100へ更新する。** route clear数等の非競合tuningは別。
 - Tests required: discovery gate / final wild ban / location persist / level clamp / return-to-old-area advantage。
 
 ## D-012 ボス再戦
 - Status: CONFIRMED_CHANGE
 - Evidence of approval: UDE-003。
 - Decision: story/area bossは育成後の通常再戦で相対的に楽になる。初回snapshotを通常再戦で固定し、challenge再戦のみ再scale可。balance version更新でsnapshotを再評価する場合、新snapshotを1回保存し以後再固定する。
-- Runtime drift: invalid old-version snapshotから新planを計算してもreplacement snapshotを保存しない不具合あり。
+- Runtime drift: invalid old-version snapshotからnew planを計算してもreplacement snapshotを保存しない不具合あり。
 - Tests required: first snapshot / normal lock / challenge rescale / version replacement then lock。
 
 ## D-013 UI再建原則
@@ -199,3 +204,82 @@
 - Reason: Supabase自体は静的GitHub Pagesでも利用可能だが、ManaEvoの現在の開発ではAuth redirect、password recovery、PWA identity、Service Worker scope、PR Preview、iPhone実機確認を一つのroot production originへ統一した方が運用・検証・将来拡張が単純になるため。
 - Affected areas: hosting / deployment / canonical metadata / PWA manifest / Service Worker / release readiness / Supabase Auth URLs / preview policy / CURRENT W-107 hosting sections。game rules、save payload semantics、monster art approval semanticsには影響しない。
 - Tests required: production root build / canonical+OG exact Vercel URL / manifest id+start_url+scope exact Vercel URL / no `/mana-evo/` production-base dependency / SW root scope + update/offline continuity / GitHub Pages deploy workflow absent / Vercel production READY / Supabase confirmation+recovery redirect to Vercel / iPhone PWA install+relaunch smoke。
+
+## D-020 Evolution pacing V5
+- Status: CONFIRMED_CHANGE / USER-DECISION
+- Baseline / prior CURRENT: encounter XP poolをbattle-start team全員へ大きく配る構造により、production playtestで初日から複数monsterが進化できるほど育成速度が速くなった。
+- Runtime before decision: ordinary encounter XP poolは110等で、eligible team membersへのsettlementが進化ペースを早めていた。
+- Evidence of approval: 2026-08-28 production playtest後、PR #104 `Balance V5: slow first-day evolution pacing` をユーザー要求に基づきmainへmerge。
+- Decision: encounter XP poolはcompat/reporting上維持するが、active battlerの受取はpoolの**40%**。他のeligible teammateはactive受取量の**40%**（poolの16% before later modifiers）。学習で得るticket量はこのV5では変更しない。level-evolution speciesを高Lvで捕獲した場合、次のlevel evolution thresholdの少なくとも**5 levels手前**へcapture levelをbufferする。既存save/progressは自動rewrite/rollbackしない。
+- Reason: 「捕まえる→育てる→自分で進化させる」時間を確保し、初日で進化体験を消費し尽くさないため。
+- Affected areas: Battle XP settlement / capture level initialization / evolution pacing。学習仕様、Monster Art、既存save levelは変更しない。
+- Tests required: 110 pool→active44 / teammate18のrounding contract、first-day evolution pacing、capture buffer、existing battle/capture/evolution regression。
+
+## D-021 Cloud conflictをchild gameplayから外す
+- Status: CONFIRMED_CHANGE
+- Baseline / D-018: same-profile cloud conflictはsilent last-write-wins禁止、Parentが解決する。
+- Runtime before decision: logged-in child gameplay中にもcloud/account FABやconflict modalが出て、`今すぐ同期`を押しても同じconflict検出へ戻るため、子どもの通常flowを妨げた。
+- Evidence of approval: 2026-08-28 playtest問題を受けたPR #105 / #107がmainへmerge。
+- Decision: normal logged-in child gameplayではcloud/account FABを常設しない。conflict検出だけでmodalをauto-openしない。conflict pending中もlocal saveを継続する。sync attention / cloud-vs-device overwrite choiceはParent-owned surfaceへ集約し、既存Parent PIN protectionを維持する。fresh/unauthenticated login entry、Parent内management、TEST等の必要経路は残す。
+- Reason: cloud conflictはadult-ownedであり、学習・冒険・battle中の子どもへ解決責務を押しつけないため。
+- Affected areas: child UI / Parent / cloud sync presentation。cloud revision/backup/save semantics自体はD-018を維持。
+- Tests required: no child conflict FAB / no auto-modal / local save continues while pending / Parent conflict action reachable+PIN protected / stale conflict clears after resolution。
+
+## D-022 Battle V6 — study-first pacing / fair fight / played-ticket cost / post-KO capture
+- Status: CONFIRMED_CHANGE / USER-DECISION
+- Baseline / prior CURRENT: D-006はextra 1clearごとticket+1、D-007はloss/explicit abandonでreservation refund。旧battle tuningはSTAB1.5 / crit1.5 / random0.90〜1.00等。D-011旧level bandsはより高く広かった。captureはHP<=50%の生存中windowのみ。
+- Runtime/problem evidence: child playtestでone-hit win/lossが多い、高Lvactive + 低Lvbenchでenemyが弱くなる、loss/refundがfree retry loopになる、XP/world progressionが速すぎる、turn順が分かりづらい、KOするとwild capture機会を失う問題が確認された。
+- Evidence of approval: 2026-08-29 user requirementsを受けたPR #110 `Battle V6: study-first pacing, fair fights, post-KO capture` がmainへmerge。production merged main commit `f3017bda0724d398bc35c959df34316f5e9e35bd`。
+- Decision — additional study ticket: daily core `ticket+3`は維持。daily core完了後のqualifying `extra` correct **5回ごとにticket+1**。freeはdirect ticket0。D-006のadditional 3 correct -> star+1、MASTER silver/gold等は維持。
+- Decision — played ticket settlement: battle start exact reservationは維持。win / capture success / **loss / explicit voluntary abandon** はreserved ticketをconsume/commit。reload / crash / Safari終了等のtechnical interruptionはsame `activeBattle` resumeし、追加reserve/consumeしない。
+- Decision — damage tuning: STAB **1.25**、critical chance 1/16、critical multiplier **1.35**、damage random **0.92〜1.00**。type effectiveness/immunity semanticsは維持。
+- Decision — normal fair-fight invariant: ordinary encounterのreferenceはactive battlerを主とし、**weak benchを加えることでnormal referenceをactive-only powerより下げてはいけない**。強いactive + 弱い控えによるenemy downscale exploitを禁止する。already-cleared old normal stageは完全追従せず、育成差を感じられるrepeat capを維持する。
+- Runtime drift note: merged #110の `0.70 * activePower + 0.30 * strongestSupportPower` はsupportが弱いとactive-onlyを下回り得るため、上記invariantを完全には満たさない。これはproduct decisionではなく既知implementation drift。open Draft PR #111がhotfix対象としているが、mergeされるまで「修正済み」とは扱わない。
+- Decision — normal tuning defaults: weak target0.86/xp90、normal0.96/110、strong1.03/125、rare1.08/145、elite1.13/165。normal repeat reference capは約1.10、defensive mastery floor約0.70。tuning値は将来playtest変更可だがD-023により同PRでCURRENT同期する。
+- Decision — boss tuning: team/roster/carry floorを考慮し、弱いteam swapでfirst snapshotを不当に下げない。current C/B/A/S/EX targetは1.04/1.10/1.16/1.22/1.30、HP1.30/1.45/1.60/1.75/1.90、ATK1.00/1.03/1.05/1.08/1.10、DEF1.02/1.05/1.07/1.10/1.12、XP pool180/200/220/250/300。balance version 6。D-012 snapshot/rematch原則は維持。
+- Decision — Battle XP: D-020のactive/team distribution後、player-vs-enemy level gap multiplierを適用。playerがenemyより`>=15`高い→0.15、`>=10`→0.25、`>=6`→0.50、enemyがplayerより`>=3`高い→1.15、`>=5`高い→1.25、その他1.00。old-area farmingを最速育成経路にしない。
+- Decision — world bands: A1 **5–16** (5–8 / 9–12 / 13–16)、A2 **14–27** (14–18 / 19–23 / 24–27)、A3 **24–40** (24–29 / 30–35 / 36–40)、A4 **37–58** (37–44 / 45–51 / 52–58)、EX **55–100**。
+- Decision — post-KO capture: ordinary capturable wildをKOした後にもcapture opportunityを残す。boss/captureDisabled/specialは対象外。KOでsettleしたBattle XPをpost-KO capture successで再付与しない。new captured instanceへそのbattle XPをretroactive付与しない。same battleのcapture attempts total max3を維持。KO/turn presentation完了前にpost-KO CTAをactionableにしない。
+- Decision — terminal settlement / presentation: move / Protect / switch / failed capture / end-turn status等、どのaction pathからterminal outcomeへ到達しても同じauthoritative settlementを通す。HP/KO/action presentationと操作CTAを同期し、UI path差でticket/reward/outcomeを変えない。
+- Reason: game reward optimizationを学習時間・適正challenge・育成体験と整合させ、弱bench/free-retry/old-area XP farm等のゲーム側抜け道を減らす。
+- Affected areas: W-101 ticket earning / W-102 battle+XP / W-103 post-KO capture / W-105 world tuning / W-106 battle presentation / W-108 acceptance。
+- Tests required: 430/390/375 WebKit、ticket exactly-once、V6 damage constants、weak-bench active floor、boss snapshot、XP gap/order、post-KO no-double-XP、terminal-path convergence、KO presentation gate。
+
+## D-023 Canonical Design Sync Gate
+- Status: CONFIRMED / USER-DECISION
+- Baseline / problem: 再建でCURRENTを作った後も、複数司令塔がruntime/productionを更新するたびに、設計書更新が別作業・後追いになり、次司令塔が古いCURRENTを読むかruntimeを独自正本化する循環が再発した。PR #81は司令塔復元を強化したが、「product change PRとowning designの恒久同期」まではCIで強制していなかった。
+- Evidence of approval: 2026-08-29 ユーザーが「各司令塔に更新依頼はするけど恒久的に同期取れる仕組みづくりして欲しい」「あなたが把握していることはちゃんと設計書更新して」と明示要求。
+- Decision: **product behavior changeとowning CURRENT updateを同じPR/change setで扱う。** protected runtime/art pathを変更するPRは本文に `Canonical-Impact: changed|none`、`Canonical-Domains:`、`Canonical-Reason:` を宣言する。`changed`ならowning `design/current/**` contractと本Decision Logを同じPRで変更する。`none`なら具体理由を書き、Reviewerがcontract changeなしを確認する。
+- Machine-readable ownership: `design/current/canonical-sync-map.json` がruntime/art path→owning CURRENT domainをprocess metadataとして保持する。これはgameplay authorityではない。
+- CI: `scripts/verify-canonical-sync.mjs` をPR CIで実行し、protected path changeに対するimpact宣言漏れ、`changed`なのにowning CURRENT未更新、Decision Log未更新、`none`理由不足をfailする。
+- PR workflow: `.github/pull_request_template.md` で上記宣言とAcceptance evidenceを標準化する。
+- Stateful companion rule: asset manifest/generated master/runtime allowlist等は可能な限りgenerate/verifyする。ただしfile existence、candidate QA、production visibilityからFORMAL approval等の**意味的承認を自動推測してはいけない**。
+- Reason: 「あとで設計書を直す」を通常経路から排除し、司令塔が変わっても実装と正本の同期判断自体を忘れられないようにするため。
+- Affected areas: all PR governance / commander / worker / CURRENT maintenance / CI。D-023導入だけではgameplay ruleを変更しない。
+- Tests required: canonical-sync unit test / PR CI gate / full normal CI。意味判断はReviewer responsibilityとして残す。
+
+## D-024 司令塔担当変更
+- Status: CONFIRMED / USER-DECISION
+- Baseline / prior state: D-015は司令塔交代時の復元手順を定義していたが、直近の旧司令塔チャット自体はactive commanderとして作業していた。
+- Runtime: 影響なし。
+- Evidence of approval: 2026-08-29 ユーザーが旧司令塔について「司令塔出来ません。司令塔切り替えます」と明示し、続けてPR #113のCanonical Syncルールを確認した上で「担当変更をCURRENT設計とDecision Logまで同期してから続けてください」と指示。
+- Decision: ManaEvoのactive commander / Reviewer責務は旧司令塔チャットから後継司令塔へ移管する。旧司令塔チャットはactive planning authorityではなくhistorical evidenceとして扱う。後継司令塔はD-015 / `REBUILD-START-HERE.md` の復元プロトコルを実行し、旧司令塔の直近結論を無条件に継承せず、GitHub実状態とAcceptance evidenceから現在地を再判定する。
+- Reason: 司令塔の判断品質低下をユーザーが明示的に認定し、担当交代を決定したため。担当変更自体もD-023に従いCURRENTとDecision Logへ同じchange setで同期する。
+- Affected areas: commander assignment / handoff governance / CURRENT entry。gameplay、runtime、Monster Art rule、既存product decisionsは変更しない。
+- Tests required: governance review。後継司令塔によるD-015 recovery完了確認。
+
+## D-025 Battle V6 production independent-review hotfix
+- Status: CONFIRMED_CHANGE / USER-DECISION
+- Baseline / prior CURRENT: D-022 established the Battle V6 study-first/fair-fight/level-gap/post-KO direction and PR #110 merged it to production main `f3017bda0724d398bc35c959df34316f5e9e35bd`. The later independent production review found concrete implementation and qualification gaps without requiring rollback.
+- Runtime/problem evidence: normal reference could still fall below active-only power with a weak bench; pre-KO capture and evolution crossings could bypass the intended level-gap XP policy because scaling was applied after mutation; generic additional-learning correct totals allowed free/okawari work to subsidize extra-ticket milestones and five fast correct answers had no minimum study-time gate; post-KO capture trusted stale caller battle state and could consume an item before idempotency checks; Protect/switch/failed-capture end-turn DOT could leave a 0-HP enemy fighting until the next action; turn HP/presentation could expose post-KO controls before the visual resolution finished.
+- Evidence of approval: 2026-08-29 user supplied the independent production review verdict `HOTFIX REQUIRED`, explicitly approved the listed correction directions, required regression coverage, prohibited rollback/art/save-level/cloud-UX scope expansion, and instructed implementation on a hotfix PR without main merge or production deploy until review.
+- Decision — normal fair-fight floor: ordinary `normalReferencePower` must never be below active-only combat power. Preserve the reviewed 70% active + 30% strongest-support scaling when it raises the reference: `max(activePower, 0.70*activePower + 0.30*supportPower)`.
+- Decision — canonical Battle XP order: for each eligible battle-start recipient use `base encounter XP -> V5 global 0.40 -> teammate 0.40 when applicable -> D-022 level-gap multiplier from the recipient pre-settlement level -> gainXp -> level-up/evolution`. The same policy applies to normal KO and pre-KO capture including duplicate capture and evolution-threshold crossings. Evolution must not exempt a recipient from the multiplier. Post-KO capture remains `0` additional Battle XP.
+- Decision — extra-ticket study budget: battle-ticket progress uses an extra-only persisted correct/time budget. `free` and `okawari` contribute zero to that battle-ticket budget even though they may retain their legitimate non-ticket learning/reward effects. One ticket requires both **5 qualifying correct extra answers** and at least **20 seconds of cumulative qualifying extra active learning time**. If correct progress reaches the threshold before time, hold/preserve the earned progress until later legitimate extra study supplies the missing time; do not punish/reset the child. Idle/abandoned wall-clock time must not be bankable. Semantic answer replay/rerender/reload/cloud roundtrip/profile switching must not double-count or cross profiles.
+- Decision — authoritative post-KO capture: `game.activeBattle` is the source of truth. Post-KO requests require the current battle identity/state to match; stale prior-battle or old-snapshot requests are rejected without mutating activeBattle or consuming an item. Existing capture settlement/idempotency is checked before ball decrement. Replaying an already-settled or duplicate-pending capture cannot consume a second ball or create duplicate capture/XP settlement.
+- Decision — common terminal outcome: move / Protect / voluntary switch / failed capture / end-turn status paths converge on one authoritative post-turn outcome boundary. If end-turn damage reduces enemy HP to 0, victory settles immediately; a 0-HP enemy cannot remain `fighting` into the next turn.
+- Decision — presentation correction: HP display changes follow the turn presentation/hit/KO phases; while a turn is resolving, duplicate action/capture entry remains blocked; post-KO capture/result controls become actionable only after turn/KO presentation completes. Reduced-motion may shorten motion but must preserve ordering and action gating.
+- Non-goals: no Monster Art/candidate/FORMAL/art registry changes; no automatic correction/downgrade of existing production save levels; no hidden level migration; no change to PR #107/D-021 cloud child UX; no rollback of Battle V6.
+- Reason: close the reviewed exploit/idempotency/settlement gaps while preserving Battle V6's approved study-first pacing, fair challenge, child-friendly pending progress and exactly-once state semantics.
+- Affected areas: W-101 learning reward bridge / W-102 battle balance+XP+terminal settlement / W-103 post-KO capture safety. UI/evolution/test files may be implementation surfaces, but D-025 does not create a new evolution method, navigation model or acceptance authority beyond these owner contracts.
+- Tests required: Lv30+Lv5 weak-bench floor; KO vs pre-KO same XP policy; player +6/+10/+15 and enemy +3/+5; evolution crossing; stale post-KO/duplicate replay no item; free4+extra1 no ticket; extra5 without 20s pending; later qualifying time grants once; reload/replay/profile isolation; Protect/switch/failed-capture DOT KO; loss/abandon exact reserved-ticket settlement; expiration/FEFO; cloud child-surface regression; build/release readiness; iPhone WebKit 430/390/375.

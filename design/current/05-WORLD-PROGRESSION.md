@@ -1,12 +1,14 @@
 # ManaEvo CURRENT — World / Progression
 
-Status: **CURRENT CANONICAL (W-105)**
-Date: 2026-08-25
+Status: **CURRENT CANONICAL (W-105 + D-022 tuning override)**  
+Date: 2026-08-29  
 Work item: `W-105`
 
 This document is the CURRENT canonical contract for ManaEvo world structure, adventure progression, wild-form availability, evolution-discovery world unlocks, boss-area progression, and persisted adventure location.
 
-It does **not** make runtime authoritative, does not rewrite the immutable FINAL-CORRECTED baseline, and does not define learning, evolution-method, battle-balance, UI, save-platform, or monster-master details owned by other Phase 2 work items.
+It does **not** make runtime authoritative, does not rewrite the immutable FINAL-CORRECTED baseline, and does not define learning, evolution-method, battle-balance, UI, save-platform, or monster-master details owned by other work items.
+
+> **重要:** 本文のworld topology / self-evolution discovery / boss learning gate / persisted location等は維持する。本文§6の2026-08-25 level bandsはBattle V6（D-022）で後続置換済み。現在のproduction bandsは末尾§17を正とする。
 
 ## 1. Authority and evidence
 
@@ -23,7 +25,7 @@ Apply repository governance in this order:
 Primary evidence used for this canonicalization:
 
 - `REBUILD-START-HERE.md`
-- `design/rebuild/DECISION-LOG.md`, especially D-003, D-009, D-011, D-012
+- `design/rebuild/DECISION-LOG.md`, especially D-003, D-009, D-011, D-012, D-022
 - `design/rebuild/PHASE-2-COMMANDER-REVIEW.md`
 - `design/rebuild/USER-DECISION-EVIDENCE.md`, especially UDE-003 and UDE-005
 - exact baseline:
@@ -35,10 +37,11 @@ Primary evidence used for this canonicalization:
 - later design/runtime used only to recover approved direction or current tuning/default state:
   - `design/20-world-map-evolution-progression.md`
   - `src/game/worldProgression.js`
+  - `src/game/content.js`
   - `src/game/engine.js`
   - `src/game/progression.js`
 
-When this file conflicts with runtime, implementation must be changed later to match this file after review; runtime is not a reason to change this file.
+When this file conflicts with runtime, apply higher-authority confirmed decisions; runtime alone is not a reason to change the product contract.
 
 ## 2. Product invariant
 
@@ -128,7 +131,7 @@ Canonical now:
 
 - EX exists as a postgame direction separate from the Area1–4 main sequence.
 - EX is not required to reinterpret Area1–4 source `area` data.
-- Current playtest level band `70–100` may remain as a tuning default.
+- exact production level band is a tuning value; current D-022 value is §17.
 
 Not canonicalized yet:
 
@@ -136,7 +139,7 @@ Not canonicalized yet:
 - whether EX is internally a numeric fifth area or another postgame container;
 - exact EX zone count/route structure.
 
-Current runtime's `area=5`, one `ex` zone, and `requiresAllAreasCleared` behavior are implementation history/defaults, **not recovered product truth**. See `BLOCKED DECISION` below.
+Current runtime's `area=5`, one `ex` zone, and all-main-boss default are implementation continuity/defaults, **not recovered immutable product truth**. See `BLOCKED DECISION` below.
 
 ## 5. Entrance / mid / deep route
 
@@ -167,13 +170,13 @@ The current playtest default is:
 
 The value `2` is a balance/route tuning value, not an immutable user decision. Repeated clears of the same already-cleared stage do not increase this first-clear count.
 
-## 6. World level bands — `TUNING-DEFAULT`
+## 6. World level bands — historical 2026-08-25 tuning, superseded by §17
 
-The canonical rule is structural: enemies must have area/zone level bands and must **not fully scale to the player's current team**.
+The canonical structural rule remains: enemies have area/zone bands and do **not** fully scale to the player's current team.
 
-Current playtest bands may remain until balance tuning changes them:
+The previous playtest bands were:
 
-| Area | Zone | Current zone ID | Current Lv band |
+| Area | Zone | Zone ID | Old Lv band |
 |---|---|---|---:|
 | 1 | entrance | `meadow` | 5–10 |
 | 1 | mid | `forest` | 11–16 |
@@ -189,17 +192,15 @@ Current playtest bands may remain until balance tuning changes them:
 | 4 | deep | `deep` | 71–80 |
 | EX | current single zone | `ex` | 70–100 |
 
-Area envelopes are therefore currently A1 `5–22`, A2 `18–38`, A3 `32–58`, A4 `50–80`, EX `70–100`.
+These exact numbers are **SUPERSEDED tuning evidence**, not current production bands. See §17.
 
-These values are `TUNING-DEFAULT`, not product invariants.
-
-Battle/balance owns the soft-scaling calculation. W-105 only requires the result to be bounded by the applicable zone band, equivalent in shape to:
+Battle/balance owns the soft-scaling calculation. W-105 requires the result to be bounded by the applicable current zone band, equivalent in shape to:
 
 ```text
 enemyLevel = clamp(zone.minLevel, softScaledLevel, zone.maxLevel)
 ```
 
-See `design/current/02-BATTLE-TICKETS-BALANCE.md` for battle/boss balance ownership after W-102 is integrated.
+See `design/current/02-BATTLE-TICKETS-BALANCE.md`.
 
 ## 7. Wild-form acquisition rules
 
@@ -265,7 +266,7 @@ Rules:
 
 ## 9. Area boss challenge and progression
 
-D-009 restores the baseline learning-progress boss gate. The current runtime's `minAreaClears=5` is **not canonical**.
+D-009 restores the baseline learning-progress boss gate. Runtime clear-count-only gates are **not canonical**.
 
 ### 9.1 Per-area boss progress state
 
@@ -288,8 +289,6 @@ The two skills may belong to the same subject. They must be distinct skills.
 
 ### 9.2 Canonical progress events
 
-Baseline evidence fixes these grants:
-
 - that day's core task first clear: `+1`
 - mastery milestone increase: `+2`
 - chapter test first pass: `+3`
@@ -299,37 +298,37 @@ Repeated exploitation does not count:
 - repeating the same question: `+0`
 - repeating already-mastered trivial content without a new qualifying milestone: `+0`
 
-The learning/reward producer belongs to W-101 (`design/current/01-LEARNING-REWARDS.md`). W-105 owns the per-area accumulation and boss-gate consumption contract.
+The learning/reward producer belongs to W-101. W-105 owns per-area accumulation and boss-gate consumption.
 
 ### 9.3 Area isolation
 
 Boss progress is area-specific.
 
 - Area1 starts with its own progress state.
-- When Area2, Area3, or Area4 is newly unlocked, its boss progress starts at `0 points / empty unique-skill set`.
-- Progress from a previous area is not carried forward.
+- Newly unlocked Area2/3/4 starts at `0 points / empty unique-skill set`.
+- Previous area progress is not carried forward.
 - Returning to an older area and performing eligible learning updates that older area's progress, not the newest unlocked area's progress.
 
 ### 9.4 Boss route relationship
 
 A boss must be in an unlocked/reachable area route **and** satisfy the 12-point + 2-skill learning gate.
 
-Current route depth rules may also determine whether the boss node can be reached visually/structurally. That route condition is separate from the learning gate.
+Route depth is separate from learning gate.
 
-The following are explicitly **not** valid substitutes for the boss learning gate:
+Explicitly invalid substitutes:
 
-- 5 exploration clears;
-- full dex completion;
-- all species caught;
-- all subjects cleared.
+- 5 exploration clears
+- full dex
+- all species caught
+- all subjects cleared
 
 ### 9.5 Boss clear -> next area
 
-On first clear of an Area1–3 boss, unlock the immediately next main area.
+On first clear of Area1–3 boss, unlock the immediately next main area.
 
-The boss clear and next-area unlock must persist. Re-clearing the boss does not create duplicate area unlock state.
+Boss clear and next-area unlock persist. Re-clear does not duplicate unlock state.
 
-Boss rematch scaling/snapshot behavior belongs to W-102 and D-012.
+Boss rematch scaling/snapshot belongs to W-102 / D-012.
 
 ## 10. Persisted current adventure location
 
@@ -344,155 +343,159 @@ adventureLocation = {
 
 Canonical meaning:
 
-- `area` is the **adventure** area, not monster source `area`;
-- `zoneId` identifies the selected/reached zone inside that adventure area;
-- the value is profile-specific and survives reload;
-- Adventure re-entry uses the actual persisted location rather than automatically jumping to the highest unlocked area;
-- Home/other consumers that show “current adventure” must reflect this actual location;
-- returning from a battle must not silently reset the player to a different area/zone;
-- unlocking a new area does not itself rewrite the saved location to the new highest area.
+- `area` is adventure area, not monster source `area`;
+- `zoneId` identifies selected/reached zone;
+- profile-specific and survives reload;
+- Adventure re-entry uses actual persisted location, not automatically highest unlocked area;
+- Home/current-location consumers reflect actual location;
+- returning from battle does not reset area/zone;
+- unlocking a new area does not itself rewrite saved location.
 
-W-107 owns save normalization/migration. If a saved location becomes invalid after migration or content-version changes, it must be normalized deterministically to a valid unlocked location; W-105 does not invent the exact migration fallback policy.
+W-107 owns save normalization/migration. Invalid migrated location must normalize deterministically to a valid unlocked location; W-105 does not invent exact migration fallback.
 
 ## 11. Returning to old areas must show growth
 
 Past areas remain selectable after later areas unlock.
 
-To preserve the intended “I got stronger” feeling:
+To preserve “I got stronger”:
 
-- normal enemy levels remain bounded by the area's/zone's tuning band;
-- player growth is not canceled by full enemy level mirroring;
-- returning with a stronger team therefore produces an easier experience in a previously difficult zone;
-- boss normal-rematch behavior must likewise preserve the approved raising advantage through W-102 / D-012 rather than rescaling every rematch to erase growth.
+- normal enemy levels remain bounded by area/zone tuning band;
+- growth is not canceled by full enemy mirroring;
+- stronger team therefore sees easier old-area experience;
+- boss normal rematch preserves raising advantage through W-102/D-012.
 
 This is a product requirement, not merely a balance preference.
 
+D-022 additionally applies level-gap Battle XP throttling so old-area easy fights do not become the fastest leveling farm.
+
 ## 12. Grade / ahead learning / world evidence recovery
 
-Kids Quest grade and ahead-learning behavior belongs to the learning domain. Evidence reviewed for W-105 does **not** establish an exact direct rule that school grade unlocks ManaEvo world areas.
+Kids Quest grade and ahead-learning belongs to learning domain. Evidence does **not** establish an exact direct rule that school grade unlocks ManaEvo areas.
 
 Therefore:
 
-- do not invent a direct `grade -> adventureArea` gate;
-- do not claim that grade can never affect world progression in the future;
-- the confirmed Area1–4 chain remains boss-clear based;
-- any additional grade/world coupling requires recovered evidence or a later user decision.
+- do not invent direct `grade -> adventureArea` gate;
+- do not claim grade can never affect world progression in future;
+- confirmed Area1–4 chain remains boss-clear based;
+- additional grade/world coupling requires evidence or later decision.
 
 ### 12.1 Grade reward species
 
-Past discussion establishes grade-reward characters as an important candidate concept, but no exact species assignment was recovered in:
+Grade-reward characters remain a candidate concept but exact species assignment was not recovered. No worker may assign by taste/rarity/area/runtime availability.
 
-- exact W-105 baseline evidence;
-- `USER-DECISION-EVIDENCE.md`;
-- Phase 1.5 monster/world audit;
-- Phase 2 commander decisions.
-
-No worker may assign species by taste, rarity, area, or current runtime availability.
-
-This does not block canonical Area1–4 progression.
+This does not block Area1–4 progression.
 
 ## 13. Cross-work-item interfaces
 
-W-105 must coordinate by reference only.
-
 - **W-101 / Learning-Rewards**: produces qualifying learning milestones; W-105 attributes/stores per-area boss progress.
-- **W-102 / Battle-Tickets-Balance**: owns normal/boss battle level calculation and boss rematch snapshots; W-105 supplies area/zone band and world access constraints.
-- **W-103 / Capture-Duplicates**: owns capture and duplicate result behavior; W-105 only determines whether a species/stage is available as a world encounter.
-- **W-104 / Evolution-Items-Special-Forms**: writes own-evolution outcomes and `evolutionDiscoveries`; W-105 reads discovery for advanced wild unlocks.
-- **W-106 / UI-Screen-Contract**: renders world route/current location without redefining world rules.
-- **W-107 / Save-Profiles-Parent-PWA**: persists/migrates `adventureLocation`, `evolutionDiscoveries`, area unlocks, and boss-progress state.
-- **W-108 / Acceptance-Test-Contract**: converts this behavior into product-level tests.
-- **W-109 / Monster Master-Art**: owns active species/source-master identity; W-105 never rewrites source monster identity to fit placement.
+- **W-102 / Battle-Tickets-Balance**: owns normal/boss battle level calculation, Battle XP and boss rematch; W-105 supplies current area/zone band and access constraints.
+- **W-103 / Capture-Duplicates**: owns capture/result; W-105 determines world encounter availability.
+- **W-104 / Evolution**: writes own-evolution outcomes / `evolutionDiscoveries`; W-105 reads discovery.
+- **W-106 / UI**: renders route/current location without redefining rules.
+- **W-107 / Save**: persists/migrates location/discoveries/unlocks/boss progress.
+- **W-108 / Acceptance**: converts behavior to product-level tests.
+- **W-109 / Monster**: owns source identity; W-105 never rewrites source identity to fit placement.
 
-## 14. Current runtime delta ledger
+## 14. Current runtime delta ledger — historical baseline note
 
-Runtime is evidence of present behavior only. The following deltas matter to later implementation:
+The original W-105 ledger was written before the Phase 3 implementation and Battle V6. Do not use old “current runtime” sentences as live truth.
 
-### Aligns with CURRENT direction
+Still-current governance points:
 
-- separate `adventureArea` placement exists;
-- Area1–4 have entrance/mid/deep-style zones;
-- current level bands exist and can remain as tuning defaults;
-- `evolutionDiscoveries` is separate from `dex.caught`;
-- non-final evolved wild stages can require evolution discovery;
-- final evolved normal-wild stages are suppressed from normal capture;
-- `adventureLocation` is present in profile game state and normalized;
-- earlier areas remain addressable.
+- separate `adventureArea` placement
+- entrance/mid/deep structure
+- `evolutionDiscoveries` separate from `dex.caught`
+- non-final evolved wild discovery gate
+- final wild prohibition
+- persisted location
+- boss learning gate 12 points + 2 skills
 
-### Must change in implementation
-
-- current boss gate uses `minAreaClears=5` / wild-clear counting;
-- current game state does not implement the canonical per-area `12 points + 2 unique skills` boss-progress contract;
-- `5 clears` must not remain the boss challenge truth after W-105 implementation.
-
-### Must not be promoted without a decision
-
-- exact per-species evolved-form relocation map;
-- exact EX unlock (`all four bosses` in current runtime);
-- EX internal `area=5` representation;
-- grade -> world direct gate;
-- grade reward species assignments.
+Current production level bands are §17.
 
 ## 15. `BLOCKED DECISION` — non-blocking
 
-These are intentionally unresolved and must not be filled by worker preference:
-
 ### BD-W105-01 — EX exact unlock / representation
 
-Known: EX/postgame direction is approved.
+Known: EX/postgame direction approved.
 
 Unknown:
 
-- exact unlock condition;
-- exact route/zone structure;
-- whether numeric Area5 is the final internal model.
+- exact unlock condition
+- exact route/zone structure
+- whether numeric Area5 is final internal model
 
-Current runtime's all-four-boss unlock may be preserved temporarily for continuity, but it is not product canonical until evidence/decision resolves it.
+Current all-four-boss unlock may be continuity default but is not immutable product truth.
 
 ### BD-W105-02 — grade directly unlocking world regions
 
-Known: grade/ahead-learning exists on the learning side.
-
-Unknown: whether grade adds a direct ManaEvo world unlock/gate beyond the confirmed boss-clear chain.
-
-Do not add a speculative grade gate.
+Unknown. Do not add speculative grade gate.
 
 ### BD-W105-03 — grade reward species assignments
 
-Known: grade reward characters were discussed as a desired concept.
-
-Unknown: the exact species/grade assignment table.
-
-Do not invent assignments.
+Unknown. Do not invent assignments.
 
 ### BD-W105-04 — exact evolved-form relocation map
 
-Known: source `area` and adventure placement are separate; evolved forms after self-evolution belong in later/advanced/deep play.
+Known: source area and adventure placement are separate; evolved forms after self-evolution belong in later/advanced/deep play.
 
-Unknown: a fully approved species-by-species placement map.
+Unknown: fully approved species-by-species placement map.
 
-Do not mutate source `area`; preserve current placement only as a noncanonical continuity default until a placement map is approved.
+Do not mutate source area; preserve current placement only as continuity default until approved.
 
 ## 16. Implementation acceptance derived from W-105
 
-A later implementation can be considered aligned with this world canonical only if all of the following are true:
+A later implementation is aligned only if:
 
-1. Source `area` remains distinct from adventure placement.
-2. Area1 is initial; Area2–4 unlock in sequence by previous-area boss first clear.
-3. Earlier areas remain revisit-able.
-4. Areas1–4 expose the entrance/mid/deep route structure.
-5. Current zone clear count `2` is treated as tuning, not product truth.
-6. Current level bands are treated as tuning and enemies are not fully mirrored to player level.
-7. First-form normal-wild acquisition remains the default subject to encounter-role exceptions.
-8. A non-final evolved form cannot be normal-wild caught before qualifying own evolution.
-9. `evolutionDiscoveries`, not `dex.caught`, controls that post-evolution wild unlock.
-10. Final evolution forms cannot be acquired through normal wild capture.
-11. Boss eligibility uses per-area `>=12 points && >=2 unique skills`.
-12. New main areas start boss progress at `0 / empty`; previous-area progress is not carried forward.
-13. `5 exploration clears` is not the boss challenge gate.
-14. Boss first clear persists next-area unlock.
-15. `adventureLocation` persists the actual profile area/zone and does not auto-jump to highest unlocked area.
-16. Returning to old areas leaves enough enemy-band stability for player growth to feel real.
-17. EX exact unlock, grade/world direct coupling, and grade-reward species remain unresolved rather than invented.
+1. source `area` distinct from adventure placement;
+2. Area1 initial; Area2–4 sequential by previous boss first clear;
+3. earlier areas revisit-able;
+4. entrance/mid/deep route;
+5. route clear `2` treated as tuning;
+6. **current D-022 bands in §17** and no full enemy mirroring;
+7. first-form wild acquisition default subject to role exceptions;
+8. non-final evolved form unavailable wild before own evolution;
+9. `evolutionDiscoveries`, not `dex.caught`, gates that wild unlock;
+10. final forms cannot be ordinary wild capture;
+11. boss eligibility `>=12 points && >=2 unique skills`;
+12. new main areas boss progress `0 / empty`;
+13. clear-count-only boss gate invalid;
+14. boss first clear persists next-area unlock;
+15. `adventureLocation` persists actual profile area/zone;
+16. old areas preserve growth feeling;
+17. EX/grade/grade-reward/placement unresolved items remain unresolved.
 
-This acceptance is behavioral. CSS classes, current function names, and current runtime file structure are not proof of compliance.
+## 17. 2026-08-29 Battle V6 production level-band override — D-022
+
+Battle V6 slowed XP/evolution pacing and additional battle access. The prior bands assumed much faster leveling and made later areas trivial too quickly.
+
+Current production bands:
+
+| Area | Zone | ID | CURRENT Lv band |
+|---|---|---|---:|
+| 1 | entrance | `meadow` | **5–8** |
+| 1 | mid | `forest` | **9–12** |
+| 1 | deep | `deep` | **13–16** |
+| 2 | entrance | `foothill` | **14–18** |
+| 2 | mid | `magma` | **19–23** |
+| 2 | deep | `deep` | **24–27** |
+| 3 | entrance | `coast` | **24–29** |
+| 3 | mid | `frost` | **30–35** |
+| 3 | deep | `deep` | **36–40** |
+| 4 | entrance | `city` | **37–44** |
+| 4 | mid | `skyway` | **45–51** |
+| 4 | deep | `deep` | **52–58** |
+| EX | current single zone | `ex` | **55–100** |
+
+Area envelopes:
+
+- A1 `5–16`
+- A2 `14–27`
+- A3 `24–40`
+- A4 `37–58`
+- EX `55–100`
+
+These remain **TUNING** rather than immutable lore. Future playtest change is allowed, but D-023 requires the same PR to update this contract and Decision Log.
+
+Battle scaling must remain inside these bounds. W-102's fair-fight logic cannot escape the current world band merely to perfectly match player power.
+
+D-022 level-gap Battle XP further discourages old-area farming while preserving old-area access and the feeling of becoming stronger.

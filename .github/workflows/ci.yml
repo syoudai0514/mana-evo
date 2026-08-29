@@ -11,9 +11,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+      - name: Canonical design sync gate
+        if: github.event_name == 'pull_request'
+        env:
+          CANONICAL_SYNC_BASE: ${{ github.event.pull_request.base.sha }}
+          CANONICAL_SYNC_PR_BODY: ${{ github.event.pull_request.body }}
+        run: npm run verify:canonical-sync
       - name: Install dependencies
         run: npm ci
       - name: Audit dependencies
