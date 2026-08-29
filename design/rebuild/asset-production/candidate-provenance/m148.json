@@ -13,6 +13,41 @@
       },
       "manifestStateBefore": "PLACEHOLDER",
       "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-29T12:24:57.693443+00:00",
+      "sourceLabel": "ManaEvo Phase 2B-1 safe repair pilot cp1",
+      "previous": {
+        "repositoryPath": "public/monsters/m148.webp",
+        "sha256": "b52b5db491c3ee9cab92a5d10a32d1e19d2fbbd4b90806152319a7a31b811b40",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m148/b52b5db491c3ee9cab92a5d10a32d1e19d2fbbd4b90806152319a7a31b811b40.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m148.webp",
+        "sha256": "9457abee9201e0f013759c6dbf03add3af0a63bd7fb5b69114199dab05adee6c",
+        "bytes": 225114
+      },
+      "manifestStateBefore": "CANDIDATE",
+      "operation": "repair",
+      "reason": "Remove only the border-connected flat white background plate and its conservative exterior edge matte; preserve the existing candidate subject.",
+      "repairType": "flat-white-background-plate-removal",
+      "alphaBackgroundOperation": {
+        "repairType": "flat-white-background-plate-removal",
+        "backgroundRgb": [
+          254,
+          254,
+          254
+        ],
+        "backgroundConnectivityThreshold": 18,
+        "edgeMatteRadiusPixels": 2,
+        "edgeMatteThreshold": 80,
+        "backgroundPixelsRemoved": 171886,
+        "edgePixelsMatted": 2009,
+        "pixelsChanged": 173895
+      },
+      "noSemanticArtChange": true,
+      "characterPixelPreservation": "PASS",
+      "formalPromotion": false
     }
   ]
 }
