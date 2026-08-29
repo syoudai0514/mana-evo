@@ -58,6 +58,8 @@ export default function CloudAccountShell({ children }) {
   const [parentScreenOpen, setParentScreenOpen] = useState(false)
   const syncTimer = useRef(null)
   const syncMaxTimer = useRef(null)
+  const syncInFlight = useRef(null)
+  const syncRerunRequested = useRef(false)
   const testMode = getTestMode()
   const config = cloudConfig()
   const profileInfo = useMemo(() => getLocalProfiles(), [open, status, testMode?.kind])
@@ -159,12 +161,30 @@ export default function CloudAccountShell({ children }) {
 
   const flushSync = useCallback(async ({ quiet = true } = {}) => {
     clearSyncTimers()
-    try {
-      await syncNow({ quiet })
-    } catch (error) {
-      setStatus('同期待ち・端末には保存済み')
-      throw error
+    if (syncInFlight.current) {
+      syncRerunRequested.current = true
+      return syncInFlight.current
     }
+
+    const runSerialized = async () => {
+      let nextQuiet = quiet
+      do {
+        syncRerunRequested.current = false
+        await syncNow({ quiet: nextQuiet })
+        nextQuiet = true
+      } while (syncRerunRequested.current)
+    }
+
+    const pending = runSerialized()
+      .catch((error) => {
+        setStatus('同期待ち・端末には保存済み')
+        throw error
+      })
+      .finally(() => {
+        syncInFlight.current = null
+      })
+    syncInFlight.current = pending
+    return pending
   }, [clearSyncTimers, syncNow])
 
   const scheduleSync = useCallback(() => {
@@ -287,8 +307,8 @@ export default function CloudAccountShell({ children }) {
 
   const switchProfile = (profileId) => run(async () => {
     if (profileId === profileInfo.activeProfileId) return
-    switchDeviceProfile(profileId)
     await flushSync({ quiet: true })
+    switchDeviceProfile(profileId)
     window.location.reload()
   })
   const startTest = (kind) => {
