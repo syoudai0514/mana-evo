@@ -41,19 +41,20 @@ export function BattleView({ game, setGame, onExitToMap, goStudy }) {
   const [captureOpen, setCaptureOpen] = useState(false)
   const [switchOpen, setSwitchOpen] = useState(false)
   const [captureSequence, setCaptureSequence] = useState(null)
-  const [queuedCaptureTurnPresentation, setQueuedCaptureTurnPresentation] = useState(null)
   const [evolutionQueue, setEvolutionQueue] = useState([])
   const [shardResult, setShardResult] = useState(null)
   const [turnCue, setTurnCue] = useState(null)
   const [animatedHp, setAnimatedHp] = useState(null)
   const seenEvolutionKeys = useRef(new Set())
   const turnTimers = useRef([])
+  const observedTurnPresentationId = useRef(battle.turnPresentation?.id || null)
 
   useEffect(() => () => {
     turnTimers.current.forEach((timer) => window.clearTimeout(timer))
   }, [])
 
-  const resolvingTurn = !!turnCue || !!queuedCaptureTurnPresentation
+  const pendingTurnPresentation = !!battle.turnPresentation?.id && battle.turnPresentation.id !== observedTurnPresentationId.current
+  const resolvingTurn = !!turnCue || pendingTurnPresentation
   const captureResolutionId = battle.rewardResolutionId ? `${battle.rewardResolutionId}:capture` : null
   const captureSettlement = captureResolutionId ? game.captureDomain?.settlements?.[captureResolutionId] : null
   const duplicatePending = captureSettlement?.status === 'pending_duplicate_choice'
@@ -158,11 +159,11 @@ export function BattleView({ game, setGame, onExitToMap, goStudy }) {
   }
 
   useEffect(() => {
-    if (captureSequence || !queuedCaptureTurnPresentation || turnCue) return
-    const presentation = queuedCaptureTurnPresentation
-    setQueuedCaptureTurnPresentation(null)
+    const presentation = battle.turnPresentation
+    if (!presentation?.id || presentation.id === observedTurnPresentationId.current || captureSequence || turnCue) return
+    observedTurnPresentationId.current = presentation.id
     playTurnPresentation(presentation)
-  }, [captureSequence, queuedCaptureTurnPresentation, turnCue])
+  }, [battle.turnPresentation?.id, captureSequence, turnCue])
 
   const act = (moveId) => {
     if (resolvingTurn) return
@@ -172,14 +173,12 @@ export function BattleView({ game, setGame, onExitToMap, goStudy }) {
     setGame(result.game)
     setCaptureOpen(false)
     setSwitchOpen(false)
-    playTurnPresentation(result.battle?.turnPresentation)
   }
   const protect = () => {
     if (resolvingTurn) return
     const result = useProtect(game, battle)
     if (!result.ok) return
     setGame(result.game)
-    playTurnPresentation(result.battle?.turnPresentation)
   }
   const specialAct = (type) => {
     if (resolvingTurn) return
@@ -191,17 +190,13 @@ export function BattleView({ game, setGame, onExitToMap, goStudy }) {
     const result = attemptCapture(game, battle, null, itemType)
     if (!result.ok) return
     const frames = result.capturePresentation?.frames || result.battle?.capturePresentation || []
-    const turnPresentation = result.battle?.turnPresentation || null
     if (Array.isArray(frames) && frames.length) {
-      setQueuedCaptureTurnPresentation(turnPresentation)
       setCaptureSequence({
         id: `${result.battle?.battleId || result.battle?.stageId || 'capture'}:${result.battle?.captureAttempts || 0}`,
         frames,
         itemType,
         speciesId: battle.enemy.speciesId
       })
-    } else if (turnPresentation) {
-      playTurnPresentation(turnPresentation)
     }
     enqueueEvolutions(result.evolutionsByInstance || result.rewards?.evolutionsByInstance, result.game)
     setGame(result.game)
@@ -213,7 +208,6 @@ export function BattleView({ game, setGame, onExitToMap, goStudy }) {
     if (!result.ok) return
     setGame(result.game)
     setSwitchOpen(false)
-    playTurnPresentation(result.battle?.turnPresentation)
   }
   const resolveDuplicate = (choice) => {
     if (!captureResolutionId) return
