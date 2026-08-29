@@ -24,7 +24,7 @@ This is a concise owner-readable companion to `07A-CLOUD-SYNC-USE-CASES.md` and 
 - Sync fails → keep local save and retry later.
 - TEST mode → never send fixture data to family cloud save.
 
-### Example: child answers while syncing
+## Example: child answers while syncing
 
 Suppose cloud reconciliation starts when the device has 10 completed questions. While the network request is still pending, the child completes question 11.
 
@@ -43,21 +43,17 @@ The Parent conflict screen shows both sides with judgment material:
 - game progress comparison such as battles won, monsters caught, monsters owned, dex caught count and cleared stages;
 - an explicit note that learning data also differs when applicable.
 
-The timestamp is **evidence, not authority**. A later clock does not automatically win. For example, one device may have newer battle/capture progress while another has important learning progress. Parent should compare both the time and the progress summary before choosing.
+The timestamp is **evidence, not authority**. A later clock does not automatically win.
 
-### The comparison cannot go stale
+Even after Parent has read the screen, either side can change before or during button processing. Therefore both `クラウド側を使う` and `この端末側を使う` re-check live cloud and current device data. The device is guarded while the live cloud request is pending. After the pre-resolution backup, the device is checked again. For the cloud-choice path, cloud is fetched once more after backup. For the device-choice path, the cloud write uses an optimistic revision condition and refreshes the comparison if another device wins that race.
 
-Even after Parent has read the screen, another device may sync before Parent presses a button. Therefore both `クラウド側を使う` and `この端末側を使う` re-check the live cloud revision/content and the current device content at button time.
-
-If either side changed after the comparison was shown, ManaEvo **does not execute the old choice**. It refreshes the comparison and asks Parent to review the new information again. This prevents an unseen revision from being discarded by a decision made from an old screen.
-
-After the evidence is confirmed current, choosing either side remains Parent-only and the current cloud copy is backed up before destructive conflict resolution where practical.
+If any evidence became stale, ManaEvo **does not execute the old choice**. It refreshes the comparison and asks Parent to decide again.
 
 ## Child-facing behavior
 
 Normal autosync waiting, successful syncing and brief offline periods do not show cloud UI to the child.
 
-One temporary failure is also kept silent. ManaEvo promotes a child-visible `保存確認` only for a confirmed same-profile conflict or after **3 consecutive sync failures** without a successful sync in between. A successful reconciliation resets this count.
+One temporary failure is also kept silent. ManaEvo promotes a child-visible `保存確認` only for a confirmed same-profile conflict or after **3 consecutive sync failures** without a successful reconciliation in between. A successful reconciliation resets this count.
 
 The child warning never shows cloud-vs-device overwrite buttons. It only indicates that the current device data is still saved locally and a Parent should check it later.
 
