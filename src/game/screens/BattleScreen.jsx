@@ -47,7 +47,7 @@ export function BattleView({ game, setGame, onExitToMap, goStudy }) {
   const [animatedHp, setAnimatedHp] = useState(null)
   const seenEvolutionKeys = useRef(new Set())
   const turnTimers = useRef([])
-  const observedTurnPresentationId = useRef(battle.turnPresentation?.id || null)
+  const observedTurnPresentationId = useRef(null)
 
   useEffect(() => () => {
     turnTimers.current.forEach((timer) => window.clearTimeout(timer))
@@ -86,7 +86,7 @@ export function BattleView({ game, setGame, onExitToMap, goStudy }) {
     if (!presentation) {
       setTurnCue(null)
       setAnimatedHp(null)
-      return
+      return false
     }
 
     const steps = []
@@ -130,7 +130,7 @@ export function BattleView({ game, setGame, onExitToMap, goStudy }) {
         if (presentation.playerDamage > 0) steps.push({ phase: presentation.playerFainted ? 'player-fainted' : 'player-hit', text: `${presentation.playerName}に ${presentation.playerDamage} ダメージ！` })
       }
     }
-    if (!steps.length) return
+    if (!steps.length) return false
 
     let shownPlayerHp = Number.isFinite(Number(presentation.playerHpBefore)) ? Number(presentation.playerHpBefore) : playerHp
     let shownEnemyHp = Number.isFinite(Number(presentation.enemyHpBefore)) ? Number(presentation.enemyHpBefore) : battle.enemy.hp
@@ -156,13 +156,14 @@ export function BattleView({ game, setGame, onExitToMap, goStudy }) {
       setTurnCue(null)
       setAnimatedHp(null)
     }, Math.max(900, sequenced.length * 430 + 280)))
+    return true
   }
 
   useEffect(() => {
     const presentation = battle.turnPresentation
     if (!presentation?.id || presentation.id === observedTurnPresentationId.current || captureSequence || turnCue) return
-    observedTurnPresentationId.current = presentation.id
-    playTurnPresentation(presentation)
+    const started = playTurnPresentation(presentation)
+    if (started) observedTurnPresentationId.current = presentation.id
   }, [battle.turnPresentation?.id, captureSequence, turnCue])
 
   const act = (moveId) => {
@@ -253,7 +254,14 @@ export function BattleView({ game, setGame, onExitToMap, goStudy }) {
   const displayedPlayerHp = animatedHp?.playerHp ?? playerHp
   const displayedEnemyHp = animatedHp?.enemyHp ?? battle.enemy.hp
 
-  return <main className={`screen battle-screen-v2 area-theme-${stage?.adventureArea || stage?.area || 5}`}>
+  return <main
+    className={`screen battle-screen-v2 area-theme-${stage?.adventureArea || stage?.area || 5}`}
+    data-presentation-id={battle.turnPresentation?.id || ''}
+    data-observed-id={observedTurnPresentationId.current || ''}
+    data-capture-sequence={captureSequence ? '1' : '0'}
+    data-turn-cue={turnCue ? '1' : '0'}
+    data-battle-status={battle.status}
+  >
     <EvolutionCelebration reveal={activeEvolutionReveal} onClose={() => setEvolutionQueue((queue) => queue.slice(1))} />
     <CapturePresentation sequence={captureSequence} onComplete={() => setCaptureSequence(null)} />
 
