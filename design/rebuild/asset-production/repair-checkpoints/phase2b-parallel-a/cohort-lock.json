@@ -1,0 +1,21 @@
+{
+  "worker": "A",
+  "baseIntegrationHead": "dfbb2183e82c6502d6e9ca5c981a6bd748e06837",
+  "selected": [
+    "m052",
+    "m053",
+    "m054",
+    "m097",
+    "m098",
+    "m099"
+  ],
+  "families": [
+    "F018",
+    "F033"
+  ],
+  "repairReasons": {
+    "F018": "uniform white fake-transparency plate with clear subject boundary",
+    "F033": "uniform white fake-transparency plate with clear subject boundary"
+  },
+  "lockedAt": "2026-08-29T23:27:15.883Z"
+}

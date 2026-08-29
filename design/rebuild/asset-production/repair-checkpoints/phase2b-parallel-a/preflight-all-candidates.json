@@ -1,0 +1,6428 @@
+[
+  {
+    "speciesId": "m001",
+    "sourceSha256": "7155656d37ec2541fc97adfacb99c74368fe0be5ffdf90080aab86f97431b041",
+    "sourceBytes": 38504,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.520283,
+    "bbox": {
+      "minX": 39,
+      "minY": 51,
+      "maxX": 472,
+      "maxY": 460,
+      "width": 434,
+      "height": 410
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m002",
+    "sourceSha256": "f6772e39647f1ba8e78ed9386e52d058bdacb4c255c5f2c95c1a572661d28ac4",
+    "sourceBytes": 53540,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.434093,
+    "bbox": {
+      "minX": 39,
+      "minY": 39,
+      "maxX": 472,
+      "maxY": 472,
+      "width": 434,
+      "height": 434
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m003",
+    "sourceSha256": "d3c94c46b180e1354ddfabd5c7f6701a3ad60e23dcd7f553746b01a957b29be0",
+    "sourceBytes": 52434,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.430527,
+    "bbox": {
+      "minX": 45,
+      "minY": 40,
+      "maxX": 466,
+      "maxY": 471,
+      "width": 422,
+      "height": 432
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m004",
+    "sourceSha256": "e7370f61737c2139187d48b0195c7c84865a1c71352760ad342226f6b4d88794",
+    "sourceBytes": 148868,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.688839,
+    "bbox": {
+      "minX": 94,
+      "minY": 41,
+      "maxX": 418,
+      "maxY": 472,
+      "width": 325,
+      "height": 432
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m005",
+    "sourceSha256": "6006961d581410b387a5af049cda9099a3a8982872cca0bef4198708aa113dc3",
+    "sourceBytes": 157092,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.687546,
+    "bbox": {
+      "minX": 39,
+      "minY": 52,
+      "maxX": 472,
+      "maxY": 460,
+      "width": 434,
+      "height": 409
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m006",
+    "sourceSha256": "2bc39baebda89f387b57d522ffa618c444d0ccb1501e014edfbc736402163991",
+    "sourceBytes": 159734,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.686764,
+    "bbox": {
+      "minX": 37,
+      "minY": 80,
+      "maxX": 474,
+      "maxY": 431,
+      "width": 438,
+      "height": 352
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m007",
+    "sourceSha256": "98665390498734104206dd9b82951fa49f3a2c5db843d6bf1233a40250caff18",
+    "sourceBytes": 177492,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.601566,
+    "bbox": {
+      "minX": 52,
+      "minY": 6,
+      "maxX": 460,
+      "maxY": 506,
+      "width": 409,
+      "height": 501
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m008",
+    "sourceSha256": "0fc5e0fff8edec521f08367d69dc157b599b9bfa8bcc3a6636c7fddc2178cd2a",
+    "sourceBytes": 253290,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.505592,
+    "bbox": {
+      "minX": 25,
+      "minY": 6,
+      "maxX": 491,
+      "maxY": 498,
+      "width": 467,
+      "height": 493
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m009",
+    "sourceSha256": "4246a204a6353c76db575b417a75b7b9ee70e4563d2005f5121a20c2107bf937",
+    "sourceBytes": 322938,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.377533,
+    "bbox": {
+      "minX": 6,
+      "minY": 3,
+      "maxX": 506,
+      "maxY": 506,
+      "width": 501,
+      "height": 504
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m010",
+    "sourceSha256": "8cdc0e759bcceda804eed3936f9b270fcf0747827e378d562a2d30029e019f21",
+    "sourceBytes": 61812,
+    "dimensions": {
+      "width": 640,
+      "height": 640
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.598066,
+    "bbox": {
+      "minX": 109,
+      "minY": 4,
+      "maxX": 542,
+      "maxY": 607,
+      "width": 434,
+      "height": 604
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m011",
+    "sourceSha256": "97270ef1e7e6445bf5ac49293fc256f12b283563c0a533d784960e839e12c599",
+    "sourceBytes": 82792,
+    "dimensions": {
+      "width": 640,
+      "height": 640
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.476624,
+    "bbox": {
+      "minX": 16,
+      "minY": 0,
+      "maxX": 623,
+      "maxY": 637,
+      "width": 608,
+      "height": 638
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m012",
+    "sourceSha256": "61444a71535cc2778cb2ef1a645a788d6b121cbd539016962c019070bee8147e",
+    "sourceBytes": 87854,
+    "dimensions": {
+      "width": 640,
+      "height": 640
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.53303,
+    "bbox": {
+      "minX": 31,
+      "minY": 15,
+      "maxX": 610,
+      "maxY": 622,
+      "width": 580,
+      "height": 608
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m013",
+    "sourceSha256": "e7c5295b9945e799a038edeaf8f897a3195de181e738b9ac1bc03fcb287a6d01",
+    "sourceBytes": 67416,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.771946,
+    "bbox": {
+      "minX": 111,
+      "minY": 35,
+      "maxX": 371,
+      "maxY": 403,
+      "width": 261,
+      "height": 369
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m014",
+    "sourceSha256": "451c5b894976e70bbde1cc5719163a9c492be2d86da5e383ee834ad1e3897f62",
+    "sourceBytes": 69676,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.790108,
+    "bbox": {
+      "minX": 135,
+      "minY": 35,
+      "maxX": 429,
+      "maxY": 418,
+      "width": 295,
+      "height": 384
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m015",
+    "sourceSha256": "35761e3489ab1d220802f1399a31a857fbc7084216c74583edbb6031cea32e33",
+    "sourceBytes": 113750,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.62981,
+    "bbox": {
+      "minX": 104,
+      "minY": 50,
+      "maxX": 411,
+      "maxY": 449,
+      "width": 308,
+      "height": 400
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m016",
+    "sourceSha256": "7e5401608c3cef60cf32e8479b540eb568999653a46157c6da1eefe188279682",
+    "sourceBytes": 184146,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.627499,
+    "bbox": {
+      "minX": 43,
+      "minY": 39,
+      "maxX": 486,
+      "maxY": 478,
+      "width": 444,
+      "height": 440
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m017",
+    "sourceSha256": "54d36f66870a388b81524c7cf7f6297ef211b36d00b07b8bc226c07af6a79484",
+    "sourceBytes": 244984,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.534161,
+    "bbox": {
+      "minX": 4,
+      "minY": 4,
+      "maxX": 507,
+      "maxY": 499,
+      "width": 504,
+      "height": 496
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m018",
+    "sourceSha256": "498d30ef085783c61ed74f574355b5fa06d7da99fb180206a4d9941000a1857a",
+    "sourceBytes": 289760,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.407284,
+    "bbox": {
+      "minX": 5,
+      "minY": 2,
+      "maxX": 507,
+      "maxY": 507,
+      "width": 503,
+      "height": 506
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m019",
+    "sourceSha256": "c9c8f758e3b8d4d40f1ff89be5bd33c3b259d806bdf143b8e07dd2d472b0270d",
+    "sourceBytes": 189798,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.612541,
+    "bbox": {
+      "minX": 32,
+      "minY": 48,
+      "maxX": 493,
+      "maxY": 450,
+      "width": 462,
+      "height": 403
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m020",
+    "sourceSha256": "c9aabf150422ba028582d4e4f672177ef23fed604a1f5027392888961928a494",
+    "sourceBytes": 270892,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.484802,
+    "bbox": {
+      "minX": 4,
+      "minY": 5,
+      "maxX": 509,
+      "maxY": 503,
+      "width": 506,
+      "height": 499
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m021",
+    "sourceSha256": "558e00df00ffb6e92769698ab19f0c6d0d6c36df838f990f221977b52d400e1d",
+    "sourceBytes": 314078,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.393669,
+    "bbox": {
+      "minX": 2,
+      "minY": 2,
+      "maxX": 509,
+      "maxY": 510,
+      "width": 508,
+      "height": 509
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m022",
+    "sourceSha256": "c9781f901c698dcd59e27a3a54513710e90a1038f865edd6276b58c322bc40cf",
+    "sourceBytes": 166956,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.727688,
+    "bbox": {
+      "minX": 93,
+      "minY": 18,
+      "maxX": 455,
+      "maxY": 493,
+      "width": 363,
+      "height": 476
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m023",
+    "sourceSha256": "898262b71dbc4c60c8cc6d31dba7b7ba29ac17b8ec08bedf52d677ace1a00151",
+    "sourceBytes": 282568,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.556534,
+    "bbox": {
+      "minX": 22,
+      "minY": 4,
+      "maxX": 501,
+      "maxY": 505,
+      "width": 480,
+      "height": 502
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m024",
+    "sourceSha256": "4d08c1007b7ad4850834185b4ada3b479cc1e69c22f4f4fc31f5bab7c11f21a3",
+    "sourceBytes": 319068,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.499416,
+    "bbox": {
+      "minX": 18,
+      "minY": 8,
+      "maxX": 504,
+      "maxY": 504,
+      "width": 487,
+      "height": 497
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      0
+    ]
+  },
+  {
+    "speciesId": "m025",
+    "sourceSha256": "6df853aa27e3cf967975b39c93d4ab92445a70309b001e349353be803cf5bdbb",
+    "sourceBytes": 63506,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.624039,
+    "bbox": {
+      "minX": 61,
+      "minY": 57,
+      "maxX": 454,
+      "maxY": 447,
+      "width": 394,
+      "height": 391
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m026",
+    "sourceSha256": "b7f6d095ba17d5dfea03a7db270a3c503841df06e3dcd4364296464564eea33c",
+    "sourceBytes": 72258,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.6236,
+    "bbox": {
+      "minX": 57,
+      "minY": 59,
+      "maxX": 463,
+      "maxY": 446,
+      "width": 407,
+      "height": 388
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m027",
+    "sourceSha256": "cf434531c2c8aaa1049f883b85253de8ca8092b50ee8bbd8351dba374e476238",
+    "sourceBytes": 83082,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.580498,
+    "bbox": {
+      "minX": 49,
+      "minY": 51,
+      "maxX": 462,
+      "maxY": 452,
+      "width": 414,
+      "height": 402
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m028",
+    "sourceSha256": "50d59372273b51d28ecbe4fee45a8a9fa9be041674150cf44637596c9f2d6bca",
+    "sourceBytes": 53060,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.757282,
+    "bbox": {
+      "minX": 51,
+      "minY": 47,
+      "maxX": 465,
+      "maxY": 463,
+      "width": 415,
+      "height": 417
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m029",
+    "sourceSha256": "a3e810611db2095e0b9d2b9920c1eaf541f58dc7426aa945e65c109e5ee5d70e",
+    "sourceBytes": 71030,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.699383,
+    "bbox": {
+      "minX": 49,
+      "minY": 50,
+      "maxX": 461,
+      "maxY": 461,
+      "width": 413,
+      "height": 412
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m030",
+    "sourceSha256": "f37e641f70f49fe4c4732909895dd537eadcc55ef6e6afc6d54906842c0e5732",
+    "sourceBytes": 87892,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.636063,
+    "bbox": {
+      "minX": 46,
+      "minY": 48,
+      "maxX": 465,
+      "maxY": 464,
+      "width": 420,
+      "height": 417
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m031",
+    "sourceSha256": "1a3300ee184165683e17db69bd1ae936feff0bf0c786b3dcfa6bea3691c2ccb0",
+    "sourceBytes": 129262,
+    "dimensions": {
+      "width": 1024,
+      "height": 1024
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.620676,
+    "bbox": {
+      "minX": 56,
+      "minY": 111,
+      "maxX": 970,
+      "maxY": 916,
+      "width": 915,
+      "height": 806
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m032",
+    "sourceSha256": "655045e583c71480c2520b7fff1bd8ccd7e655ddf9711e25f2436b636500e474",
+    "sourceBytes": 233450,
+    "dimensions": {
+      "width": 1024,
+      "height": 1024
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.524076,
+    "bbox": {
+      "minX": 33,
+      "minY": 77,
+      "maxX": 1004,
+      "maxY": 954,
+      "width": 972,
+      "height": 878
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m033",
+    "sourceSha256": "f9e1df4f2b004ad9d8e80fb77ec4ae52fc36c1cec05be2e59fd90a65ed1685ee",
+    "sourceBytes": 290912,
+    "dimensions": {
+      "width": 1024,
+      "height": 1024
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.492455,
+    "bbox": {
+      "minX": 24,
+      "minY": 67,
+      "maxX": 999,
+      "maxY": 964,
+      "width": 976,
+      "height": 898
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m034",
+    "sourceSha256": "bb070dcd944d35f440bf8895380bde2ee35cae0adbd14ddc9778befe5f8063b4",
+    "sourceBytes": 26720,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      86,
+      75,
+      65
+    ]
+  },
+  {
+    "speciesId": "m035",
+    "sourceSha256": "16dba27c46839f4bc16afe0fe6b8f22cb3af11b6f861a2c496afd89647951063",
+    "sourceBytes": 35310,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      102,
+      91,
+      79
+    ]
+  },
+  {
+    "speciesId": "m036",
+    "sourceSha256": "04fab9b80b3225ae3034be417112739ced816b677d4c4f5e9daabc8deaf24091",
+    "sourceBytes": 38564,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      112,
+      98,
+      85
+    ]
+  },
+  {
+    "speciesId": "m037",
+    "sourceSha256": "c5954096c6ba66a48d3d596c30f457566b797878cf52c3c3aae9da3eba386161",
+    "sourceBytes": 173764,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.60651,
+    "bbox": {
+      "minX": 9,
+      "minY": 23,
+      "maxX": 502,
+      "maxY": 472,
+      "width": 494,
+      "height": 450
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m038",
+    "sourceSha256": "78a4f8c25f9cb4fae3aad345e3b722dc1c6d5861e03081f78d1821f5c34fbccb",
+    "sourceBytes": 286930,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.437366,
+    "bbox": {
+      "minX": 4,
+      "minY": 6,
+      "maxX": 508,
+      "maxY": 505,
+      "width": 505,
+      "height": 500
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m039",
+    "sourceSha256": "a83556af195ca7fb70cd04c7d1d22be336fef6c75a1b7d159609d4d7ea80335a",
+    "sourceBytes": 331276,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.341774,
+    "bbox": {
+      "minX": 3,
+      "minY": 7,
+      "maxX": 510,
+      "maxY": 499,
+      "width": 508,
+      "height": 493
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m040",
+    "sourceSha256": "c405c6f485b6cf6536ff9740f5f3a3d40d8b90c77f027afa25d2720b2a81471d",
+    "sourceBytes": 61600,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.898766,
+    "bbox": {
+      "minX": 138,
+      "minY": 163,
+      "maxX": 372,
+      "maxY": 343,
+      "width": 235,
+      "height": 181
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m041",
+    "sourceSha256": "f3e6e66a07cd948778438e77b3a5343e2b1991699b0f451d8507628b9ad4a517",
+    "sourceBytes": 72128,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.88818,
+    "bbox": {
+      "minX": 127,
+      "minY": 160,
+      "maxX": 364,
+      "maxY": 344,
+      "width": 238,
+      "height": 185
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m042",
+    "sourceSha256": "a3850ea7adb796061dc98a438d3f305f3d0b97d7037fbc044779d7b61861effc",
+    "sourceBytes": 131834,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.799957,
+    "bbox": {
+      "minX": 57,
+      "minY": 160,
+      "maxX": 452,
+      "maxY": 350,
+      "width": 396,
+      "height": 191
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m043",
+    "sourceSha256": "3345c1ca8c387143d3b759dff39136ab56d6de40e1a0df8ab1f9b11d541b7675",
+    "sourceBytes": 56900,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.625397,
+    "bbox": {
+      "minX": 68,
+      "minY": 22,
+      "maxX": 480,
+      "maxY": 470,
+      "width": 413,
+      "height": 449
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m044",
+    "sourceSha256": "88c9790991afe2ac10a49d2f6e5f86405f837c72004b6274a820e7ac593b3cbc",
+    "sourceBytes": 126750,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 254,
+    "transparentRatio": 0.395664,
+    "bbox": {
+      "minX": 17,
+      "minY": 9,
+      "maxX": 499,
+      "maxY": 505,
+      "width": 483,
+      "height": 497
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m045",
+    "sourceSha256": "6ee86f89c52f90b944388605f5a5dc204a0bd50f2cce7266f9b3f5a3d5695565",
+    "sourceBytes": 160268,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 254,
+    "transparentRatio": 0.310772,
+    "bbox": {
+      "minX": 24,
+      "minY": 0,
+      "maxX": 492,
+      "maxY": 505,
+      "width": 469,
+      "height": 506
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m046",
+    "sourceSha256": "114169672ac45e55c144369742799cb2faf5847b08667adeb60c82efd68e2cbf",
+    "sourceBytes": 85384,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.839123,
+    "bbox": {
+      "minX": 119,
+      "minY": 111,
+      "maxX": 391,
+      "maxY": 402,
+      "width": 273,
+      "height": 292
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m047",
+    "sourceSha256": "3f1e07fc6751c9fa7bce79033a2a4da823a1fe69ce00cdc116d49c26df73d7e1",
+    "sourceBytes": 118740,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.782921,
+    "bbox": {
+      "minX": 108,
+      "minY": 66,
+      "maxX": 402,
+      "maxY": 443,
+      "width": 295,
+      "height": 378
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m048",
+    "sourceSha256": "2aa0a8b5997cc620a3529d60805ee356ad506c9cd4d4bc5c27f4605fc2cc66c0",
+    "sourceBytes": 142288,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.667854,
+    "bbox": {
+      "minX": 85,
+      "minY": 29,
+      "maxX": 425,
+      "maxY": 482,
+      "width": 341,
+      "height": 454
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m049",
+    "sourceSha256": "387fa20fe5f63c9002f2295f22c26fde0343dbdc99a0ae3d9fc286a0d5ccb277",
+    "sourceBytes": 34400,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": true,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m050",
+    "sourceSha256": "03c105d1d6fa1215a4c1cd144bd247af3e9bf9d98077d41d472b027399a12371",
+    "sourceBytes": 39600,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": true,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m051",
+    "sourceSha256": "63b49418e5f4e66589e1afd4e99d0de508fc019fc7aa4778ba97a96491575104",
+    "sourceBytes": 46206,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": true,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m052",
+    "sourceSha256": "14a85bd2123f52d198de3f6f2526b0a36a3b7ba26adea39bf8c7114b4fa4b892",
+    "sourceBytes": 38552,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": true,
+    "estimatedBorderBackgroundRgb": [
+      254,
+      254,
+      254
+    ]
+  },
+  {
+    "speciesId": "m053",
+    "sourceSha256": "506df2100b98688814cd9882a50e5d50d223a3c7b06f8795fc039decd3692ba9",
+    "sourceBytes": 46214,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": true,
+    "estimatedBorderBackgroundRgb": [
+      254,
+      254,
+      254
+    ]
+  },
+  {
+    "speciesId": "m054",
+    "sourceSha256": "1f346ff3d5a130b9d63041091cd7cd5a3262182c0324357dd5da8d385320c3a1",
+    "sourceBytes": 48140,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": true,
+    "estimatedBorderBackgroundRgb": [
+      254,
+      254,
+      254
+    ]
+  },
+  {
+    "speciesId": "m055",
+    "sourceSha256": "b3172206e1f1a2cb228d0c23f597f0af50c238dc94d737372e25dbeced8225dd",
+    "sourceBytes": 151452,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.68441,
+    "bbox": {
+      "minX": 90,
+      "minY": 47,
+      "maxX": 420,
+      "maxY": 461,
+      "width": 331,
+      "height": 415
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m056",
+    "sourceSha256": "4864b93737466517180dbae73a2fad38ea61b006d00d5501a51ca52d42b77941",
+    "sourceBytes": 198522,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.615868,
+    "bbox": {
+      "minX": 47,
+      "minY": 56,
+      "maxX": 465,
+      "maxY": 445,
+      "width": 419,
+      "height": 390
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m057",
+    "sourceSha256": "b700369d316f5eb336b348bc1a4d71e3aacd54325f00444aed1e4cd730761bd5",
+    "sourceBytes": 195066,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.66029,
+    "bbox": {
+      "minX": 43,
+      "minY": 117,
+      "maxX": 469,
+      "maxY": 394,
+      "width": 427,
+      "height": 278
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m058",
+    "sourceSha256": "74cf8fb8f0ebd6321323250d683a2f89641c53efac6ea0ec9a6cdac76df9b764",
+    "sourceBytes": 99368,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.735069,
+    "bbox": {
+      "minX": 106,
+      "minY": 51,
+      "maxX": 405,
+      "maxY": 462,
+      "width": 300,
+      "height": 412
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m059",
+    "sourceSha256": "91fe52a09a425a221fc4668423988c693a98bef9510f6de8850006704150a30e",
+    "sourceBytes": 162026,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.656078,
+    "bbox": {
+      "minX": 76,
+      "minY": 48,
+      "maxX": 436,
+      "maxY": 463,
+      "width": 361,
+      "height": 416
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m060",
+    "sourceSha256": "2658f12552a89527b04dfe913a0ce2216523173bdb8e4ec9ddcc5d65d928215b",
+    "sourceBytes": 200608,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.639675,
+    "bbox": {
+      "minX": 43,
+      "minY": 89,
+      "maxX": 469,
+      "maxY": 434,
+      "width": 427,
+      "height": 346
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m061",
+    "sourceSha256": "3be1c7af24ff13a045afa522d56a19c76c1a4a5302304d379b27bae771bdfdce",
+    "sourceBytes": 142646,
+    "dimensions": {
+      "width": 1024,
+      "height": 1024
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.709647,
+    "bbox": {
+      "minX": 161,
+      "minY": 44,
+      "maxX": 941,
+      "maxY": 983,
+      "width": 781,
+      "height": 940
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m062",
+    "sourceSha256": "a177fb3e0295f644d9054309f2132d289e72a1504815647628ce4730f0596569",
+    "sourceBytes": 332842,
+    "dimensions": {
+      "width": 1024,
+      "height": 1024
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.450752,
+    "bbox": {
+      "minX": 95,
+      "minY": 12,
+      "maxX": 1010,
+      "maxY": 1008,
+      "width": 916,
+      "height": 997
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m063",
+    "sourceSha256": "98fdcac95c5c7d9442690599b9f866697f2a157e2dd9567016c7489e363c2b91",
+    "sourceBytes": 263194,
+    "dimensions": {
+      "width": 1024,
+      "height": 1024
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.548002,
+    "bbox": {
+      "minX": 64,
+      "minY": 32,
+      "maxX": 972,
+      "maxY": 982,
+      "width": 909,
+      "height": 951
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m064",
+    "sourceSha256": "7d4c1316a0a8e0fb7441c844319084c41d23bcbe3bd28590a4084648b1bd06b6",
+    "sourceBytes": 32924,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      101,
+      84,
+      68
+    ]
+  },
+  {
+    "speciesId": "m065",
+    "sourceSha256": "d2e8b9780c12ad434b261fce72fe9926aab54eb3f39fd2788e242661ec191c31",
+    "sourceBytes": 36484,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      111,
+      89,
+      70
+    ]
+  },
+  {
+    "speciesId": "m066",
+    "sourceSha256": "3d845a9db0441c490f6e1b089d173b0eb2ae0137bfe7ef6a6e8b9ca56c8c3da2",
+    "sourceBytes": 38154,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      110,
+      94,
+      83
+    ]
+  },
+  {
+    "speciesId": "m067",
+    "sourceSha256": "e014d513a6dc2f105c1b8534c10ce95b32d8d5bebaf9400b5c6d702396a13c6f",
+    "sourceBytes": 63196,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.651814,
+    "bbox": {
+      "minX": 65,
+      "minY": 25,
+      "maxX": 463,
+      "maxY": 486,
+      "width": 399,
+      "height": 462
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m068",
+    "sourceSha256": "b2c6204e4be661924363804d57e7785d93e77c0a9e05f9de26f344b527ad719e",
+    "sourceBytes": 79408,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.575417,
+    "bbox": {
+      "minX": 54,
+      "minY": 26,
+      "maxX": 486,
+      "maxY": 485,
+      "width": 433,
+      "height": 460
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m069",
+    "sourceSha256": "d103b0ff2d56bd2f8c31288387f845510f3d890c78da281fb9cc536e6f391c1b",
+    "sourceBytes": 93600,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.508072,
+    "bbox": {
+      "minX": 25,
+      "minY": 29,
+      "maxX": 484,
+      "maxY": 482,
+      "width": 460,
+      "height": 454
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m070",
+    "sourceSha256": "a83566087ded1cf5ff26a5afd7c21b29e016dd8e2815ddab158c04ac37bff3cd",
+    "sourceBytes": 55766,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.74065,
+    "bbox": {
+      "minX": 81,
+      "minY": 48,
+      "maxX": 450,
+      "maxY": 463,
+      "width": 370,
+      "height": 416
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m071",
+    "sourceSha256": "3887b9291f44319f66d53cdb3262590805e9f32dfce46de3e443fb27179c7adc",
+    "sourceBytes": 81046,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.647228,
+    "bbox": {
+      "minX": 53,
+      "minY": 47,
+      "maxX": 458,
+      "maxY": 464,
+      "width": 406,
+      "height": 418
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m072",
+    "sourceSha256": "5205e956577185221e44ae69bbec0e6393ce17d719facd9f0692e4b70a1ee29b",
+    "sourceBytes": 100262,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.589272,
+    "bbox": {
+      "minX": 46,
+      "minY": 48,
+      "maxX": 464,
+      "maxY": 461,
+      "width": 419,
+      "height": 414
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m073",
+    "sourceSha256": "f5c621f611032bca80b017b7d584aa3eb975275eca99dc326f7e4487b1aa8667",
+    "sourceBytes": 170122,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.66642,
+    "bbox": {
+      "minX": 10,
+      "minY": 14,
+      "maxX": 504,
+      "maxY": 469,
+      "width": 495,
+      "height": 456
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m074",
+    "sourceSha256": "2cd186a4478473991936395ae3435b6c68f438b3ebb2df034d6d72dac67b290f",
+    "sourceBytes": 213984,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.606354,
+    "bbox": {
+      "minX": 6,
+      "minY": 8,
+      "maxX": 507,
+      "maxY": 492,
+      "width": 502,
+      "height": 485
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m075",
+    "sourceSha256": "945506e03033f58989090060fc28db18ad26615d4f2991c8b5f1f3de72478f1d",
+    "sourceBytes": 300530,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.455723,
+    "bbox": {
+      "minX": 4,
+      "minY": 5,
+      "maxX": 507,
+      "maxY": 502,
+      "width": 504,
+      "height": 498
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m076",
+    "sourceSha256": "134988f2f11b9da210e3b0f8d49aa93ea8fa0c0f04e87350a5c43d22c6e59873",
+    "sourceBytes": 219508,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.558559,
+    "bbox": {
+      "minX": 59,
+      "minY": 23,
+      "maxX": 475,
+      "maxY": 489,
+      "width": 417,
+      "height": 467
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m077",
+    "sourceSha256": "742a66afaf7bc4b11b2c3f9d71f2f317de7f3add4beddb3f23da046325bdb8bc",
+    "sourceBytes": 298276,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.431816,
+    "bbox": {
+      "minX": 26,
+      "minY": 11,
+      "maxX": 493,
+      "maxY": 503,
+      "width": 468,
+      "height": 493
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m078",
+    "sourceSha256": "9e8ec05cb825cb7567c24be07475c300453990929843842cdeddf80b82c0f698",
+    "sourceBytes": 376190,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.324387,
+    "bbox": {
+      "minX": 12,
+      "minY": 4,
+      "maxX": 498,
+      "maxY": 507,
+      "width": 487,
+      "height": 504
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m079",
+    "sourceSha256": "a835f1b2970431be7433e769e35258c0d83b8190711b7a37949b0375e036504f",
+    "sourceBytes": 86630,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.526123,
+    "bbox": {
+      "minX": 22,
+      "minY": 12,
+      "maxX": 485,
+      "maxY": 502,
+      "width": 464,
+      "height": 491
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m080",
+    "sourceSha256": "a58141b8a13785ddfedee232f72bf6adb46d911b581e4714abcbf5004f15bca3",
+    "sourceBytes": 140238,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 254,
+    "transparentRatio": 0.381092,
+    "bbox": {
+      "minX": 18,
+      "minY": 3,
+      "maxX": 491,
+      "maxY": 510,
+      "width": 474,
+      "height": 508
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m081",
+    "sourceSha256": "2daea4399372cbdcd975293609139adb4e912305153929b7bc10bb1d5ce0c284",
+    "sourceBytes": 152450,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 254,
+    "transparentRatio": 0.353588,
+    "bbox": {
+      "minX": 22,
+      "minY": 0,
+      "maxX": 491,
+      "maxY": 507,
+      "width": 470,
+      "height": 508
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m082",
+    "sourceSha256": "6de588fc3674bff146a6d8b363e22a92a4fcdb3d943dabe18c19eac4741d711a",
+    "sourceBytes": 56534,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.655891,
+    "bbox": {
+      "minX": 42,
+      "minY": 39,
+      "maxX": 468,
+      "maxY": 472,
+      "width": 427,
+      "height": 434
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m083",
+    "sourceSha256": "e11f68157b54b4ec22e7c0faa74c6801fc5bfd30a517f924c087ff9b312caee7",
+    "sourceBytes": 64168,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.593945,
+    "bbox": {
+      "minX": 71,
+      "minY": 39,
+      "maxX": 440,
+      "maxY": 472,
+      "width": 370,
+      "height": 434
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m084",
+    "sourceSha256": "bb9b10c4bffb93b996b271380cb93fcdbcf195bda209a4fb46af423447d51dea",
+    "sourceBytes": 60802,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.443512,
+    "bbox": {
+      "minX": 39,
+      "minY": 45,
+      "maxX": 472,
+      "maxY": 465,
+      "width": 434,
+      "height": 421
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m085",
+    "sourceSha256": "09082fa6609b7ffd378d748cfba1392a651956c741b8a78320c3c03997169448",
+    "sourceBytes": 36554,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.590748,
+    "bbox": {
+      "minX": 39,
+      "minY": 41,
+      "maxX": 472,
+      "maxY": 470,
+      "width": 434,
+      "height": 430
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m086",
+    "sourceSha256": "d4f423580b7a665f998d464329e2660c6a671375753eaeafb1dabff872dd6a36",
+    "sourceBytes": 44700,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.558979,
+    "bbox": {
+      "minX": 71,
+      "minY": 39,
+      "maxX": 440,
+      "maxY": 472,
+      "width": 370,
+      "height": 434
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m087",
+    "sourceSha256": "f59cb06267582741b720ace74feca397aaf25dd79a1f7e0b5dadd3cb7f720780",
+    "sourceBytes": 55818,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.480999,
+    "bbox": {
+      "minX": 39,
+      "minY": 58,
+      "maxX": 472,
+      "maxY": 452,
+      "width": 434,
+      "height": 395
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m088",
+    "sourceSha256": "57479b0361049caa94c43d6ba208be2b7d79b13203951032da59238f95b1bbc1",
+    "sourceBytes": 112278,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.770451,
+    "bbox": {
+      "minX": 110,
+      "minY": 91,
+      "maxX": 398,
+      "maxY": 419,
+      "width": 289,
+      "height": 329
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m089",
+    "sourceSha256": "be375cbe9557729e0f1d634b9b080ae789518337fe6bbc7e79528a1e68291bc3",
+    "sourceBytes": 127098,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.75523,
+    "bbox": {
+      "minX": 85,
+      "minY": 82,
+      "maxX": 425,
+      "maxY": 428,
+      "width": 341,
+      "height": 347
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m090",
+    "sourceSha256": "06ee2343c5cd6f397f0fd2d45078f91624ec82be72839bc7722bc810dfdf9760",
+    "sourceBytes": 38840,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": true,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m091",
+    "sourceSha256": "dc33a3a9b65608fbcf4ba8a0f60b26c42577ff33f706f94d15a6ca640881d428",
+    "sourceBytes": 21680,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": true,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m092",
+    "sourceSha256": "f728f366ac13ce8460cb196975c490209ce99721c54446cadc3520405fd87195",
+    "sourceBytes": 23418,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": true,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m093",
+    "sourceSha256": "7f8414435d44125b259d337de934eec025ed77dfdf962556373b43bcff827eef",
+    "sourceBytes": 36810,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": true,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m094",
+    "sourceSha256": "63763a4df307a8d517f87b83a27fa82be8da4aa5dad70d8034f8ca684549d518",
+    "sourceBytes": 170860,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.618423,
+    "bbox": {
+      "minX": 6,
+      "minY": 47,
+      "maxX": 492,
+      "maxY": 443,
+      "width": 487,
+      "height": 397
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      81
+    ]
+  },
+  {
+    "speciesId": "m095",
+    "sourceSha256": "d7b710c42168e6eb46cf5143596d367be48f5e1b7643b7d393c90c26e039cf79",
+    "sourceBytes": 225652,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.529678,
+    "bbox": {
+      "minX": 3,
+      "minY": 5,
+      "maxX": 508,
+      "maxY": 506,
+      "width": 506,
+      "height": 502
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      85,
+      85,
+      85
+    ]
+  },
+  {
+    "speciesId": "m096",
+    "sourceSha256": "47a2dc375318963773f486ba7e7edfd42bfae2e095c56b9fcca31e40849b3c26",
+    "sourceBytes": 316690,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.326344,
+    "bbox": {
+      "minX": 4,
+      "minY": 5,
+      "maxX": 507,
+      "maxY": 504,
+      "width": 504,
+      "height": 500
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      177,
+      177,
+      121
+    ]
+  },
+  {
+    "speciesId": "m097",
+    "sourceSha256": "37a0a4986062bc26dce7a0b8dbcf1f2e54d1865f32e5c06cf9c1240c45bdee27",
+    "sourceBytes": 47942,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": true,
+    "estimatedBorderBackgroundRgb": [
+      254,
+      254,
+      254
+    ]
+  },
+  {
+    "speciesId": "m098",
+    "sourceSha256": "a690c5ecd531d2208352ccbf68ba3d798d861f79afc2cfe1fb08af7ed07df5be",
+    "sourceBytes": 48808,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": true,
+    "estimatedBorderBackgroundRgb": [
+      254,
+      254,
+      254
+    ]
+  },
+  {
+    "speciesId": "m099",
+    "sourceSha256": "4aee3944a5b844f33246f04b2c1d52b95dc18c651c6083322bd5688a3dbbb941",
+    "sourceBytes": 44244,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": true,
+    "estimatedBorderBackgroundRgb": [
+      254,
+      254,
+      254
+    ]
+  },
+  {
+    "speciesId": "m100",
+    "sourceSha256": "57eb537b1722585b13685c1e67b04d6f080b56749f59614113884cd97a074bf1",
+    "sourceBytes": 60220,
+    "dimensions": {
+      "width": 640,
+      "height": 640
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.470874,
+    "bbox": {
+      "minX": 67,
+      "minY": 4,
+      "maxX": 631,
+      "maxY": 634,
+      "width": 565,
+      "height": 631
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m101",
+    "sourceSha256": "a83076f04ab74b22b333718a311979038a6988234a91f3a7d8ab072c079a25b3",
+    "sourceBytes": 80188,
+    "dimensions": {
+      "width": 640,
+      "height": 640
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.457175,
+    "bbox": {
+      "minX": 23,
+      "minY": 3,
+      "maxX": 614,
+      "maxY": 634,
+      "width": 592,
+      "height": 632
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m102",
+    "sourceSha256": "6e8bbe8ec22b409d97d1e03169ba06527bf786d20e2058411d4c0cc6a0aca728",
+    "sourceBytes": 97720,
+    "dimensions": {
+      "width": 640,
+      "height": 640
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.394404,
+    "bbox": {
+      "minX": 15,
+      "minY": 1,
+      "maxX": 622,
+      "maxY": 633,
+      "width": 608,
+      "height": 633
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m103",
+    "sourceSha256": "c412105331be01a912d69408162ad6b27e59c1d603eed780804c421b9c8ca07f",
+    "sourceBytes": 26340,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      29,
+      61,
+      81
+    ]
+  },
+  {
+    "speciesId": "m104",
+    "sourceSha256": "ef173a339c5b1b62fa63aa5a4142cc0a6c62b00bc0f3dac66ed48fcc938ec786",
+    "sourceBytes": 44588,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      56,
+      128,
+      168
+    ]
+  },
+  {
+    "speciesId": "m105",
+    "sourceSha256": "cad0fd4963fdcb66790500d4df50d0ba727047b4621a1fed63890a60a7bea676",
+    "sourceBytes": 61624,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      77,
+      144,
+      203
+    ]
+  },
+  {
+    "speciesId": "m106",
+    "sourceSha256": "d45bb40aef1295b9a286337c725cd921ad8cb179c59139afeaf55887d2b6ea27",
+    "sourceBytes": 194778,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.619011,
+    "bbox": {
+      "minX": 31,
+      "minY": 40,
+      "maxX": 497,
+      "maxY": 467,
+      "width": 467,
+      "height": 428
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      254,
+      254,
+      254
+    ]
+  },
+  {
+    "speciesId": "m107",
+    "sourceSha256": "09adea56fb2fc23c48669229ac4a3c7f9633a1512e17274f21608e5646e0cc11",
+    "sourceBytes": 250170,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.630604,
+    "bbox": {
+      "minX": 30,
+      "minY": 30,
+      "maxX": 484,
+      "maxY": 489,
+      "width": 455,
+      "height": 460
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      253,
+      252,
+      252
+    ]
+  },
+  {
+    "speciesId": "m108",
+    "sourceSha256": "d462f906ca24e6e157005d4a421081fae155e3d1158d39c7cd271e831c3984b8",
+    "sourceBytes": 269244,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.539318,
+    "bbox": {
+      "minX": 7,
+      "minY": 9,
+      "maxX": 501,
+      "maxY": 504,
+      "width": 495,
+      "height": 496
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      254,
+      254,
+      254
+    ]
+  },
+  {
+    "speciesId": "m109",
+    "sourceSha256": "56683e8a9385c0572814ec4ae07b27d1bdb56681918c767cd4bba0a59ddc7bc3",
+    "sourceBytes": 107976,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.685543,
+    "bbox": {
+      "minX": 92,
+      "minY": 40,
+      "maxX": 370,
+      "maxY": 470,
+      "width": 279,
+      "height": 431
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m110",
+    "sourceSha256": "73176396161056e8486594ca3e717aac22950ef595988df2c97a907180e17f01",
+    "sourceBytes": 108662,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.706291,
+    "bbox": {
+      "minX": 115,
+      "minY": 36,
+      "maxX": 394,
+      "maxY": 475,
+      "width": 280,
+      "height": 440
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m111",
+    "sourceSha256": "3f16c09674f181a121dbcd43e709e0339780691c4a6a067eb31173338df96744",
+    "sourceBytes": 125386,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.719444,
+    "bbox": {
+      "minX": 140,
+      "minY": 34,
+      "maxX": 369,
+      "maxY": 477,
+      "width": 230,
+      "height": 444
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m112",
+    "sourceSha256": "110a8b233a238a2fd516ea2c1857dfd6778e8dd4ba72f88097fb421171a4bb0f",
+    "sourceBytes": 114588,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.657677,
+    "bbox": {
+      "minX": 91,
+      "minY": 41,
+      "maxX": 464,
+      "maxY": 471,
+      "width": 374,
+      "height": 431
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m113",
+    "sourceSha256": "639e5e504a84ad042d899fb083eafcd2bd6ab35fb4c4e58edfb886b1e76fa4c3",
+    "sourceBytes": 132548,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.714039,
+    "bbox": {
+      "minX": 117,
+      "minY": 35,
+      "maxX": 390,
+      "maxY": 475,
+      "width": 274,
+      "height": 441
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m114",
+    "sourceSha256": "7c46cd19af56cff0bc507fc5970e929194641d14e71374e5d9f433390e714538",
+    "sourceBytes": 139360,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.725052,
+    "bbox": {
+      "minX": 146,
+      "minY": 33,
+      "maxX": 354,
+      "maxY": 485,
+      "width": 209,
+      "height": 453
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m115",
+    "sourceSha256": "e9a311c545dd483d00b952fc697a54311c9f36054d92fd1aca9f127fda8e2498",
+    "sourceBytes": 37252,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": true,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m116",
+    "sourceSha256": "525e01b9504981e255aba8d76817ebf67d16c241c9445332cd1aa11d3f768b75",
+    "sourceBytes": 61672,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": true,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m117",
+    "sourceSha256": "6fefdb100e95c03527aaa81f80989e46676a58aed6e9715967eaec80f46ec43c",
+    "sourceBytes": 70414,
+    "dimensions": {
+      "width": 640,
+      "height": 640
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.441843,
+    "bbox": {
+      "minX": 8,
+      "minY": 1,
+      "maxX": 628,
+      "maxY": 635,
+      "width": 621,
+      "height": 635
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m118",
+    "sourceSha256": "470bf466d5e93529b9559efaa8b41aa5509ecf1ccdcdca889f53c547814ba246",
+    "sourceBytes": 95324,
+    "dimensions": {
+      "width": 640,
+      "height": 640
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.322043,
+    "bbox": {
+      "minX": 4,
+      "minY": 6,
+      "maxX": 634,
+      "maxY": 635,
+      "width": 631,
+      "height": 630
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m119",
+    "sourceSha256": "a45a7986040e17e2546aba5c00a1382fafc11107a25e8cf4c7168c54616995be",
+    "sourceBytes": 19650,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      40,
+      79,
+      104
+    ]
+  },
+  {
+    "speciesId": "m120",
+    "sourceSha256": "d237cf346e63c02c57d1ee437c016f8009825cc812549cc8f487a342e758acb9",
+    "sourceBytes": 32982,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      69,
+      127,
+      181
+    ]
+  },
+  {
+    "speciesId": "m121",
+    "sourceSha256": "70643fc59c6c737b800e905367120b92ecb0ab6aa19bae24192dde5a0a6dfe06",
+    "sourceBytes": 51078,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      107,
+      157,
+      214
+    ]
+  },
+  {
+    "speciesId": "m122",
+    "sourceSha256": "3e8a80919815acc9f38e1b8b89f3ad4d7727fa3db8b403ad3098863facf07d81",
+    "sourceBytes": 27290,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      36,
+      87,
+      141
+    ]
+  },
+  {
+    "speciesId": "m123",
+    "sourceSha256": "e86c6dc34aa7f4e2189a22edceff4b2b02c94556cd21d017084aa4adea02044b",
+    "sourceBytes": 44194,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      60,
+      120,
+      180
+    ]
+  },
+  {
+    "speciesId": "m124",
+    "sourceSha256": "d52a25b49c07652261a16a6c3237121ae62608d6c1f64dbe7d4229297fee0078",
+    "sourceBytes": 64690,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      101,
+      159,
+      224
+    ]
+  },
+  {
+    "speciesId": "m125",
+    "sourceSha256": "d0737155f5883cf7a25c47984370dc976af94e50cafd1069401c87d4e9f650c6",
+    "sourceBytes": 31844,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      35,
+      71,
+      104
+    ]
+  },
+  {
+    "speciesId": "m126",
+    "sourceSha256": "43bae154ede29a7c93cee2783f59e23fc9d4d62d11b8a506c4b7dc5be9fc9a03",
+    "sourceBytes": 46590,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      36,
+      69,
+      103
+    ]
+  },
+  {
+    "speciesId": "m127",
+    "sourceSha256": "dda15ac25c30a71b5490c165c34b647f093adb7a72dfe5c522d72152b5cdf07a",
+    "sourceBytes": 51512,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      34,
+      59,
+      96
+    ]
+  },
+  {
+    "speciesId": "m128",
+    "sourceSha256": "f16c96b46d53bfa5db5820d90ba7a695a8bc009288944291de01b982bbcaf556",
+    "sourceBytes": 207434,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.491253,
+    "bbox": {
+      "minX": 13,
+      "minY": 38,
+      "maxX": 497,
+      "maxY": 476,
+      "width": 485,
+      "height": 439
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m129",
+    "sourceSha256": "b1d657b0733a762638f8d249aaafdc62e0a057c8ade4c7693fdef10ceb5b0e72",
+    "sourceBytes": 272802,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.387661,
+    "bbox": {
+      "minX": 4,
+      "minY": 5,
+      "maxX": 511,
+      "maxY": 500,
+      "width": 508,
+      "height": 496
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m130",
+    "sourceSha256": "aa178fa1b929ec54ae5bb59f924d33fe0544a5282efbbcb1ea872a0fcd077709",
+    "sourceBytes": 320520,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.333298,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 508,
+      "width": 512,
+      "height": 509
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      127,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m131",
+    "sourceSha256": "bd498c013b8fd11f7f047d5b60c14d81ff50e9aaf8a6f4b01ed847f5e97fa346",
+    "sourceBytes": 208082,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.62748,
+    "bbox": {
+      "minX": 71,
+      "minY": 6,
+      "maxX": 424,
+      "maxY": 505,
+      "width": 354,
+      "height": 500
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m132",
+    "sourceSha256": "46a3db5cf7854952cb6a3e958636a6e100f64e455a01f23b0661224b5128d8e7",
+    "sourceBytes": 278476,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.524654,
+    "bbox": {
+      "minX": 71,
+      "minY": 2,
+      "maxX": 462,
+      "maxY": 510,
+      "width": 392,
+      "height": 509
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      214,
+      255
+    ]
+  },
+  {
+    "speciesId": "m133",
+    "sourceSha256": "3a5db2f4e7f6aca180dca1f65d776171661602cf824b4e0ce7016aad1ca15198",
+    "sourceBytes": 310940,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.449547,
+    "bbox": {
+      "minX": 32,
+      "minY": 0,
+      "maxX": 479,
+      "maxY": 511,
+      "width": 448,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m134",
+    "sourceSha256": "33f088481b913ef2a1a182cf47a9abdb9e286c591562b6fde2eb90b4b1327598",
+    "sourceBytes": 68824,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.902004,
+    "bbox": {
+      "minX": 139,
+      "minY": 165,
+      "maxX": 359,
+      "maxY": 346,
+      "width": 221,
+      "height": 182
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m135",
+    "sourceSha256": "1ff588d055eaa9b67c97c28a559834bfb65b9725fc8ab853a2743e0adccc7422",
+    "sourceBytes": 81356,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.879219,
+    "bbox": {
+      "minX": 121,
+      "minY": 165,
+      "maxX": 365,
+      "maxY": 346,
+      "width": 245,
+      "height": 182
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m136",
+    "sourceSha256": "887466ff6895bff95b1a6f8ecb2f2d9cc829a53f10f30218c610f1ff1fea1bee",
+    "sourceBytes": 150138,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.735485,
+    "bbox": {
+      "minX": 47,
+      "minY": 157,
+      "maxX": 462,
+      "maxY": 352,
+      "width": 416,
+      "height": 196
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m137",
+    "sourceSha256": "ced1a4f52fdbebcaeea6a0e757e6de176ede235407eddb5467ba1e4fd81ab820",
+    "sourceBytes": 211110,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.660133,
+    "bbox": {
+      "minX": 61,
+      "minY": 18,
+      "maxX": 487,
+      "maxY": 498,
+      "width": 427,
+      "height": 481
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m138",
+    "sourceSha256": "bbc787b8c831b03763cc770d8ec2a3bd99d64f2be3cc2398b612fac4280ed82b",
+    "sourceBytes": 304770,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.519737,
+    "bbox": {
+      "minX": 25,
+      "minY": 7,
+      "maxX": 495,
+      "maxY": 504,
+      "width": 471,
+      "height": 498
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m139",
+    "sourceSha256": "c83b04c4e2d7c4574bdd30a9f7809e3770304909503316cdcdaa4981165fe30a",
+    "sourceBytes": 354736,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.443954,
+    "bbox": {
+      "minX": 15,
+      "minY": 7,
+      "maxX": 505,
+      "maxY": 506,
+      "width": 491,
+      "height": 500
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m140",
+    "sourceSha256": "66bd4a672a635297ba8d78771907b2089ea0b048da20ad64c300df1df0e8e66e",
+    "sourceBytes": 190752,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.694328,
+    "bbox": {
+      "minX": 21,
+      "minY": 70,
+      "maxX": 450,
+      "maxY": 493,
+      "width": 430,
+      "height": 424
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m141",
+    "sourceSha256": "b8be7ddfcf8f5b33a37b1e20bd8c26ef73d76444cf06e93e5f06ef428f4f523b",
+    "sourceBytes": 288946,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.515354,
+    "bbox": {
+      "minX": 3,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 510,
+      "width": 509,
+      "height": 511
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      182
+    ]
+  },
+  {
+    "speciesId": "m142",
+    "sourceSha256": "8bac25f9431f18983088b6203809ce1f38159f13bf90dff9bdc33f691139c1c9",
+    "sourceBytes": 349406,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.41774,
+    "bbox": {
+      "minX": 3,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 510,
+      "width": 509,
+      "height": 511
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m143",
+    "sourceSha256": "c7a9d1fccd7d45d12d77a234739002b29a7b89b741a5d13b70392cbe2ea704d6",
+    "sourceBytes": 48386,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": true,
+    "estimatedBorderBackgroundRgb": [
+      254,
+      254,
+      254
+    ]
+  },
+  {
+    "speciesId": "m144",
+    "sourceSha256": "c571ff90d7629f1e4f2b6841263cbb17de929f0c82de2a4e7a1711bd75cd79b1",
+    "sourceBytes": 51102,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": true,
+    "estimatedBorderBackgroundRgb": [
+      254,
+      254,
+      254
+    ]
+  },
+  {
+    "speciesId": "m145",
+    "sourceSha256": "d0760af8f17e6fd9df8be9e6a993f372784cd5133919c9359d82a297dcd8252e",
+    "sourceBytes": 117224,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.703781,
+    "bbox": {
+      "minX": 87,
+      "minY": 39,
+      "maxX": 434,
+      "maxY": 472,
+      "width": 348,
+      "height": 434
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m146",
+    "sourceSha256": "fbfcb143e91b9724bd19138bc48000f7cba2fa29feb5ce9802b13050cd153eb9",
+    "sourceBytes": 113216,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.739052,
+    "bbox": {
+      "minX": 125,
+      "minY": 34,
+      "maxX": 386,
+      "maxY": 477,
+      "width": 262,
+      "height": 444
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m147",
+    "sourceSha256": "eb37efe61c306f096181fc03408f917a6121bb57b0ad81b3f10e565d345f6fcd",
+    "sourceBytes": 166258,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.659763,
+    "bbox": {
+      "minX": 135,
+      "minY": 28,
+      "maxX": 375,
+      "maxY": 477,
+      "width": 241,
+      "height": 450
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m148",
+    "sourceSha256": "9457abee9201e0f013759c6dbf03add3af0a63bd7fb5b69114199dab05adee6c",
+    "sourceBytes": 225114,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.655697,
+    "bbox": {
+      "minX": 41,
+      "minY": 15,
+      "maxX": 498,
+      "maxY": 491,
+      "width": 458,
+      "height": 477
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      254,
+      254,
+      254
+    ]
+  },
+  {
+    "speciesId": "m149",
+    "sourceSha256": "cb5a91afdb438225049da8a48ca8731a8d547c117abfc26e39417ce8b0771cc5",
+    "sourceBytes": 294338,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.575729,
+    "bbox": {
+      "minX": 6,
+      "minY": 14,
+      "maxX": 506,
+      "maxY": 506,
+      "width": 501,
+      "height": 493
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      253,
+      253,
+      253
+    ]
+  },
+  {
+    "speciesId": "m150",
+    "sourceSha256": "e478a74780fdba249b7a8bb014c22c01ae79a7362ed344c3fb6ae466ca04bb91",
+    "sourceBytes": 274364,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.617115,
+    "bbox": {
+      "minX": 8,
+      "minY": 25,
+      "maxX": 504,
+      "maxY": 508,
+      "width": 497,
+      "height": 484
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      253,
+      253,
+      253
+    ]
+  },
+  {
+    "speciesId": "m151",
+    "sourceSha256": "c98288f5b8e68c842fc34a1c4f0ed7fea3812b770f2f577996250ed882cd0be9",
+    "sourceBytes": 237232,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.53941,
+    "bbox": {
+      "minX": 14,
+      "minY": 27,
+      "maxX": 492,
+      "maxY": 461,
+      "width": 479,
+      "height": 435
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      254,
+      254,
+      254
+    ]
+  },
+  {
+    "speciesId": "m152",
+    "sourceSha256": "bc08aa396e940d4103ec1960ac845d1205e315e2944844de46b0f6ebfbbb5b38",
+    "sourceBytes": 233808,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.635685,
+    "bbox": {
+      "minX": 11,
+      "minY": 77,
+      "maxX": 498,
+      "maxY": 441,
+      "width": 488,
+      "height": 365
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      254,
+      254,
+      254
+    ]
+  },
+  {
+    "speciesId": "m153",
+    "sourceSha256": "a53b4d2eb88c4e48f12005a5a0f154c9f02d75b709bcce369fa8702f221630b1",
+    "sourceBytes": 309942,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.523956,
+    "bbox": {
+      "minX": 11,
+      "minY": 46,
+      "maxX": 505,
+      "maxY": 482,
+      "width": 495,
+      "height": 437
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      253,
+      253,
+      253
+    ]
+  },
+  {
+    "speciesId": "m154",
+    "sourceSha256": "8d1732f3eda93abee5de79bae2f4ba9a1f5fb32791879a8c4bdf6794eff75b2a",
+    "sourceBytes": 51200,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.688473,
+    "bbox": {
+      "minX": 25,
+      "minY": 87,
+      "maxX": 486,
+      "maxY": 406,
+      "width": 462,
+      "height": 320
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m155",
+    "sourceSha256": "45bb2ac514bad68f2797218fa530b44941706755b8b60f78de02afbffa3bf5d4",
+    "sourceBytes": 65428,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.619507,
+    "bbox": {
+      "minX": 28,
+      "minY": 49,
+      "maxX": 485,
+      "maxY": 432,
+      "width": 458,
+      "height": 384
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m156",
+    "sourceSha256": "49e21a745707317e1695dbda09904d836f39f1240a0fc06ce934358e3bb4ced7",
+    "sourceBytes": 74912,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.551128,
+    "bbox": {
+      "minX": 24,
+      "minY": 47,
+      "maxX": 487,
+      "maxY": 464,
+      "width": 464,
+      "height": 418
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m157",
+    "sourceSha256": "b16d083a908795dab3d5cac200a71656b0cec6ddbb4997314b7e02404c4d8c72",
+    "sourceBytes": 33666,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      128,
+      96,
+      58
+    ]
+  },
+  {
+    "speciesId": "m158",
+    "sourceSha256": "3f7fb18a03633e7513d78f83c251d82b2eecbc477aaaaf3e9d1659b99b0503f8",
+    "sourceBytes": 44092,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      139,
+      106,
+      67
+    ]
+  },
+  {
+    "speciesId": "m159",
+    "sourceSha256": "82eeabeabb525259cea05c19385551bafb69431c9253dde1da2d89632c423d0f",
+    "sourceBytes": 45776,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      138,
+      103,
+      71
+    ]
+  },
+  {
+    "speciesId": "m160",
+    "sourceSha256": "2723c2df407ea635de67b03ccfa897618af5a3168844cf78afffdcaeeca0119a",
+    "sourceBytes": 10392,
+    "dimensions": {
+      "width": 1024,
+      "height": 1024
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 1023,
+      "maxY": 1023,
+      "width": 1024,
+      "height": 1024
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      245,
+      245,
+      240
+    ]
+  },
+  {
+    "speciesId": "m161",
+    "sourceSha256": "75f1cae7aec05cb8465ce676d52bfacd25d8ed44a8e415ff3982423f6bedd906",
+    "sourceBytes": 19670,
+    "dimensions": {
+      "width": 1024,
+      "height": 1024
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 1023,
+      "maxY": 1023,
+      "width": 1024,
+      "height": 1024
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      245,
+      245,
+      240
+    ]
+  },
+  {
+    "speciesId": "m162",
+    "sourceSha256": "e02077ce4450fb710d5aff0f73717fea097cee06f13fb7d725bc559f14f871ca",
+    "sourceBytes": 26018,
+    "dimensions": {
+      "width": 1024,
+      "height": 1024
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 1023,
+      "maxY": 1023,
+      "width": 1024,
+      "height": 1024
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      245,
+      245,
+      240
+    ]
+  },
+  {
+    "speciesId": "m163",
+    "sourceSha256": "3a03c64ded7e0eeb54823517f7d6c6a66d29050d6584877a7d130e80902a5340",
+    "sourceBytes": 206950,
+    "dimensions": {
+      "width": 1024,
+      "height": 1024
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.530867,
+    "bbox": {
+      "minX": 75,
+      "minY": 65,
+      "maxX": 970,
+      "maxY": 941,
+      "width": 896,
+      "height": 877
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m164",
+    "sourceSha256": "001a5eab3b0c02981e2942b77dc2d8f8b28a4715a97285633c8439a4f0aba35c",
+    "sourceBytes": 325550,
+    "dimensions": {
+      "width": 1024,
+      "height": 1024
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.406301,
+    "bbox": {
+      "minX": 24,
+      "minY": 54,
+      "maxX": 1011,
+      "maxY": 970,
+      "width": 988,
+      "height": 917
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m165",
+    "sourceSha256": "42ea22e661523ee17478bb772589d1fded0180aa14ad9e15b7e9d7ae4bf8ee10",
+    "sourceBytes": 366464,
+    "dimensions": {
+      "width": 1024,
+      "height": 1024
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.389868,
+    "bbox": {
+      "minX": 25,
+      "minY": 24,
+      "maxX": 997,
+      "maxY": 1004,
+      "width": 973,
+      "height": 981
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m166",
+    "sourceSha256": "6c984ec630ed4b810ddca71f47bd86eebb7f7f832aedc33653b789954e4442f1",
+    "sourceBytes": 66884,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.599312,
+    "bbox": {
+      "minX": 73,
+      "minY": 11,
+      "maxX": 435,
+      "maxY": 486,
+      "width": 363,
+      "height": 476
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m167",
+    "sourceSha256": "c0faf3ba44f5a03fecff3a268404a378ebe39082175c190b05014c17d635557f",
+    "sourceBytes": 112294,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 254,
+    "transparentRatio": 0.401756,
+    "bbox": {
+      "minX": 6,
+      "minY": 0,
+      "maxX": 504,
+      "maxY": 504,
+      "width": 499,
+      "height": 505
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m168",
+    "sourceSha256": "d6c1e46fb2b7c6ea9cf2eb2fc482885991464707786699c9912ca4b28774b97f",
+    "sourceBytes": 109644,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.39249,
+    "bbox": {
+      "minX": 30,
+      "minY": 3,
+      "maxX": 484,
+      "maxY": 506,
+      "width": 455,
+      "height": 504
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m169",
+    "sourceSha256": "a873476fb60ef9c2d91482be9adade297ade62a408a1064014c9505db9fa6a60",
+    "sourceBytes": 33490,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": true,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m170",
+    "sourceSha256": "ea0735eb5dfff7ff122ef71883379e344c4ed77b414d64efce3370319b39cfa0",
+    "sourceBytes": 40142,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": true,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m171",
+    "sourceSha256": "6aa722cfac571f2dd100a0f0748ca497cf3543f9d06ba247c0eaf7c7994cb94b",
+    "sourceBytes": 49158,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": true,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m172",
+    "sourceSha256": "f0bc6dac01795a26f55bd42db2a7e82251da857f646b33e1e54750297401e185",
+    "sourceBytes": 238656,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.539314,
+    "bbox": {
+      "minX": 18,
+      "minY": 16,
+      "maxX": 500,
+      "maxY": 493,
+      "width": 483,
+      "height": 478
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m173",
+    "sourceSha256": "0a2fcb7be35a769a7b5bd6ec24c0ff17db8ec08cc37c2d96769aac1018a0b8b6",
+    "sourceBytes": 296466,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.463078,
+    "bbox": {
+      "minX": 4,
+      "minY": 3,
+      "maxX": 509,
+      "maxY": 506,
+      "width": 506,
+      "height": 504
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      255
+    ]
+  },
+  {
+    "speciesId": "m174",
+    "sourceSha256": "c844cd15f827b81899890e114ea2b858ec1ae92f229b04058adbe12bdbfc7cb2",
+    "sourceBytes": 311152,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.430931,
+    "bbox": {
+      "minX": 3,
+      "minY": 1,
+      "maxX": 509,
+      "maxY": 507,
+      "width": 507,
+      "height": 507
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      255
+    ]
+  },
+  {
+    "speciesId": "m175",
+    "sourceSha256": "20852c830f6bc78de7f0761f0f9fb651024ee50ed6120b9b341a74c0ee44424c",
+    "sourceBytes": 26376,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": true,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m176",
+    "sourceSha256": "0d2cdf88be4740235a6a3519000fad6f7248225231cdfd5aa26e330dc3b1e479",
+    "sourceBytes": 47242,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": true,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m177",
+    "sourceSha256": "8ab3bbbfe6943a0974ca0c32af6b60f085614b885e69d094d970054da4ce8aea",
+    "sourceBytes": 62748,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": true,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m178",
+    "sourceSha256": "5ab88a2311fee2d74259600a7464726ee2a77fc27e1af6c6206068d5cbf1d105",
+    "sourceBytes": 184610,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.683338,
+    "bbox": {
+      "minX": 73,
+      "minY": 120,
+      "maxX": 455,
+      "maxY": 419,
+      "width": 383,
+      "height": 300
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m179",
+    "sourceSha256": "7203379f870bc3ba886599983568714c2081c183ce9479ad1c26cb211c669540",
+    "sourceBytes": 187444,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.676605,
+    "bbox": {
+      "minX": 57,
+      "minY": 124,
+      "maxX": 478,
+      "maxY": 420,
+      "width": 422,
+      "height": 297
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m180",
+    "sourceSha256": "563f43a12e80944ab4865b1262df33e89070498b987a01ab6c5f59bb48a61918",
+    "sourceBytes": 160044,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.747612,
+    "bbox": {
+      "minX": 75,
+      "minY": 120,
+      "maxX": 468,
+      "maxY": 410,
+      "width": 394,
+      "height": 291
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m181",
+    "sourceSha256": "a5801c41b2b617263212915fdbc2d1e7ec288a3d41b7da15ec9ca29c95f5690c",
+    "sourceBytes": 56776,
+    "dimensions": {
+      "width": 640,
+      "height": 640
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.544109,
+    "bbox": {
+      "minX": 101,
+      "minY": 1,
+      "maxX": 572,
+      "maxY": 638,
+      "width": 472,
+      "height": 638
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m182",
+    "sourceSha256": "20cbebbd6fde1a98f659bba1f6981cbb6c239de295c695b8911d6a259905b4a6",
+    "sourceBytes": 96794,
+    "dimensions": {
+      "width": 640,
+      "height": 640
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.304326,
+    "bbox": {
+      "minX": 5,
+      "minY": 4,
+      "maxX": 635,
+      "maxY": 634,
+      "width": 631,
+      "height": 631
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m183",
+    "sourceSha256": "d5850bca493a67486540a531d371d05850ee66e8f8bc3be232cbfaf0ca2acc48",
+    "sourceBytes": 91200,
+    "dimensions": {
+      "width": 640,
+      "height": 640
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.485403,
+    "bbox": {
+      "minX": 16,
+      "minY": 1,
+      "maxX": 636,
+      "maxY": 628,
+      "width": 621,
+      "height": 628
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m184",
+    "sourceSha256": "ccbb3a69ac950cb7e79b08da60990c62b71094a6d1ed543f7779b6b732d56a95",
+    "sourceBytes": 21498,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      59,
+      32,
+      27
+    ]
+  },
+  {
+    "speciesId": "m185",
+    "sourceSha256": "b3810570d90da6d70ca1b65a9951583eae3d711207441ad56a5b7e1af26214f3",
+    "sourceBytes": 28258,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      75,
+      46,
+      47
+    ]
+  },
+  {
+    "speciesId": "m186",
+    "sourceSha256": "0207273ee81a29ae4c6da1d03430aa99783c6ba27cc0bb95fb4c64b1d91eb209",
+    "sourceBytes": 40230,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      75,
+      76,
+      85
+    ]
+  },
+  {
+    "speciesId": "m187",
+    "sourceSha256": "f339b4dc1260351b71764fd6362b10c7bd9ca8abcfdd5609dd4bc178eb8cf6b9",
+    "sourceBytes": 27970,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      61,
+      45,
+      46
+    ]
+  },
+  {
+    "speciesId": "m188",
+    "sourceSha256": "415e4033798566426e26f96c236c3857f01667f2aa676bf143f39f941fc94168",
+    "sourceBytes": 35970,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      73,
+      89,
+      88
+    ]
+  },
+  {
+    "speciesId": "m189",
+    "sourceSha256": "8850a8b0395eb1977098c8d4327917c9e00df5443d34013bf371be5072559a29",
+    "sourceBytes": 51046,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      82,
+      99,
+      121
+    ]
+  },
+  {
+    "speciesId": "m190",
+    "sourceSha256": "7fd1246fc4cfdaa05126f55cd3403bd76590bac9893455b83c970b6cb535e176",
+    "sourceBytes": 36296,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      39,
+      36,
+      28
+    ]
+  },
+  {
+    "speciesId": "m191",
+    "sourceSha256": "b67c2eaf1423445a1f239c3e55485035dac6bfa0fc2bdb4a7305dcae5d86ed85",
+    "sourceBytes": 45278,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      60,
+      71,
+      60
+    ]
+  },
+  {
+    "speciesId": "m192",
+    "sourceSha256": "0ba9a5883ef4bcd2d6fab41e7fa692883847d73d572c385ad4ea8cb8bd281881",
+    "sourceBytes": 55312,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      68,
+      84,
+      72
+    ]
+  },
+  {
+    "speciesId": "m193",
+    "sourceSha256": "102d76fcb1b3bec5c37f69c772cf44c3a77560ba87cc7d3247e9bcd561fe1e57",
+    "sourceBytes": 53634,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": true,
+    "estimatedBorderBackgroundRgb": [
+      254,
+      254,
+      254
+    ]
+  },
+  {
+    "speciesId": "m194",
+    "sourceSha256": "4f28e1bc9d4e153a06a3b487a0733eabb5e999c505edb20867c4c6ddea79a28f",
+    "sourceBytes": 51482,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": true,
+    "estimatedBorderBackgroundRgb": [
+      254,
+      254,
+      254
+    ]
+  },
+  {
+    "speciesId": "m195",
+    "sourceSha256": "e0658be9b2478370bc1b7acabd8caaee1e728c7e5f922404f57149a7adf93545",
+    "sourceBytes": 45372,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": true,
+    "estimatedBorderBackgroundRgb": [
+      254,
+      254,
+      254
+    ]
+  },
+  {
+    "speciesId": "m196",
+    "sourceSha256": "4cc9174210b5e89c5487302c2c3b239f2091273e9db0837e2c530102a304a582",
+    "sourceBytes": 55620,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.772308,
+    "bbox": {
+      "minX": 113,
+      "minY": 37,
+      "maxX": 424,
+      "maxY": 481,
+      "width": 312,
+      "height": 445
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m197",
+    "sourceSha256": "51abc64417b7dabbd49746c69d7d5f5ec0becee06d5fe2d4267d5c53c2e11b82",
+    "sourceBytes": 86742,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.637066,
+    "bbox": {
+      "minX": 26,
+      "minY": 25,
+      "maxX": 484,
+      "maxY": 481,
+      "width": 459,
+      "height": 457
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m198",
+    "sourceSha256": "43c88796607364e02ae47f721573b0fcd1d4d143b8da34603c48d8ebe55559db",
+    "sourceBytes": 100208,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.590893,
+    "bbox": {
+      "minX": 25,
+      "minY": 29,
+      "maxX": 484,
+      "maxY": 482,
+      "width": 460,
+      "height": 454
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m199",
+    "sourceSha256": "1a69478a2c4b4dcfc52aeefa2bf8ecc5046026266ad386422d2f6a8c436a4643",
+    "sourceBytes": 92936,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.509003,
+    "bbox": {
+      "minX": 26,
+      "minY": 27,
+      "maxX": 484,
+      "maxY": 484,
+      "width": 459,
+      "height": 458
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m200",
+    "sourceSha256": "da152a4918eadc7ce3412f2bb7c09448722ce0d1a10b49e59c1eb81a2e9b07f1",
+    "sourceBytes": 87398,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.631218,
+    "bbox": {
+      "minX": 55,
+      "minY": 26,
+      "maxX": 455,
+      "maxY": 485,
+      "width": 401,
+      "height": 460
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m201",
+    "sourceSha256": "0c17ada239b928ba4f442324c50504e8287c6068823af1af568f5e79807d728c",
+    "sourceBytes": 105456,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.584148,
+    "bbox": {
+      "minX": 41,
+      "minY": 26,
+      "maxX": 470,
+      "maxY": 485,
+      "width": 430,
+      "height": 460
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m202",
+    "sourceSha256": "7e38a8fb77b9531e0492d11767b16e51f6e770394600b14ed0c6b365bfe78616",
+    "sourceBytes": 71350,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.866673,
+    "bbox": {
+      "minX": 165,
+      "minY": 103,
+      "maxX": 347,
+      "maxY": 420,
+      "width": 183,
+      "height": 318
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m203",
+    "sourceSha256": "9bef5165d6d0f7c9fd74fbaafc3c69511b7daeba4cf70c6979ed1254aa203a43",
+    "sourceBytes": 115496,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.809673,
+    "bbox": {
+      "minX": 130,
+      "minY": 57,
+      "maxX": 397,
+      "maxY": 450,
+      "width": 268,
+      "height": 394
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m204",
+    "sourceSha256": "1203cdb9203f7b27b99ff1727f66baf044fb740ae8fbd4e8c4f04119348750cb",
+    "sourceBytes": 182170,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.682438,
+    "bbox": {
+      "minX": 126,
+      "minY": 28,
+      "maxX": 382,
+      "maxY": 483,
+      "width": 257,
+      "height": 456
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m205",
+    "sourceSha256": "5b521d751dffd080fdff856361d5aaeae4d6405d5f8b18785e15a409d9fc99e0",
+    "sourceBytes": 229180,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.567837,
+    "bbox": {
+      "minX": 10,
+      "minY": 66,
+      "maxX": 498,
+      "maxY": 443,
+      "width": 489,
+      "height": 378
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      254,
+      254,
+      254
+    ]
+  },
+  {
+    "speciesId": "m206",
+    "sourceSha256": "2fb05ba1e0e32b283633d64d3b28f19b88c33d0b234bbd1362a203d6d1a489f6",
+    "sourceBytes": 252750,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.632187,
+    "bbox": {
+      "minX": 7,
+      "minY": 116,
+      "maxX": 502,
+      "maxY": 433,
+      "width": 496,
+      "height": 318
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      253,
+      252,
+      252
+    ]
+  },
+  {
+    "speciesId": "m207",
+    "sourceSha256": "80e53232b566ee7dfee591528607baa1a70eec2e45c3e7f8ad6e555b57f1aa7d",
+    "sourceBytes": 270462,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.501518,
+    "bbox": {
+      "minX": 6,
+      "minY": 57,
+      "maxX": 503,
+      "maxY": 463,
+      "width": 498,
+      "height": 407
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      254,
+      254,
+      254
+    ]
+  },
+  {
+    "speciesId": "m208",
+    "sourceSha256": "0b6a5edddd3ed0c984df4a34e6367cf5b46d31dc075a154f80f0eef2bad6649f",
+    "sourceBytes": 41856,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": true,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m209",
+    "sourceSha256": "b4c09f6b0a7106f6e0e3ce69236d620f2dd7999cbb7985ef54987d9902492523",
+    "sourceBytes": 70724,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": true,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m210",
+    "sourceSha256": "283f9b54b5c35be26f1748461c155e4c99c0ecba3da544ce92d3f7ed4adff8c2",
+    "sourceBytes": 73424,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": true,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m211",
+    "sourceSha256": "b6b6db53c407f698ab01ef5f59a9fd92099fa111de3fee51c04c4bc49effd5c2",
+    "sourceBytes": 146914,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.63089,
+    "bbox": {
+      "minX": 64,
+      "minY": 52,
+      "maxX": 446,
+      "maxY": 458,
+      "width": 383,
+      "height": 407
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m212",
+    "sourceSha256": "c6a29cc028ba0db9d57c6c46d699ba65097f0171920bf255ea4c2f72a823f626",
+    "sourceBytes": 172656,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.674278,
+    "bbox": {
+      "minX": 47,
+      "minY": 93,
+      "maxX": 464,
+      "maxY": 419,
+      "width": 418,
+      "height": 327
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m213",
+    "sourceSha256": "5832f802ef80fae73dbde009828db91b112d92c2701efd6d0f8d1ce1f54a3851",
+    "sourceBytes": 152480,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.740749,
+    "bbox": {
+      "minX": 42,
+      "minY": 123,
+      "maxX": 469,
+      "maxY": 378,
+      "width": 428,
+      "height": 256
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m214",
+    "sourceSha256": "b1e8c183f263f092f49cae3e5ceddfd195267d3cd052bbf2d9528ce5333d900e",
+    "sourceBytes": 230290,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.582584,
+    "bbox": {
+      "minX": 65,
+      "minY": 5,
+      "maxX": 458,
+      "maxY": 503,
+      "width": 394,
+      "height": 499
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m215",
+    "sourceSha256": "642030e5abe6493f53838767ec2aff0b3949ac9353d2d396f20ca7db7abb817d",
+    "sourceBytes": 272622,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.503288,
+    "bbox": {
+      "minX": 54,
+      "minY": 0,
+      "maxX": 472,
+      "maxY": 511,
+      "width": 419,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      127,
+      250
+    ]
+  },
+  {
+    "speciesId": "m216",
+    "sourceSha256": "1f32e4647ede4418d35ccdc305ca8e2101a4f371b5a6ff0a704f2ea5875f8c35",
+    "sourceBytes": 323572,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.420769,
+    "bbox": {
+      "minX": 18,
+      "minY": 2,
+      "maxX": 496,
+      "maxY": 511,
+      "width": 479,
+      "height": 510
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m217",
+    "sourceSha256": "8d17227dbc5c742ca7fe04b27b38df5c4e4a03c6a151d87c7b6167485495b9a3",
+    "sourceBytes": 62138,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.722614,
+    "bbox": {
+      "minX": 69,
+      "minY": 48,
+      "maxX": 452,
+      "maxY": 455,
+      "width": 384,
+      "height": 408
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m218",
+    "sourceSha256": "7d5e0d0de8e3b2e17b4377d4a96d4b5f22867bf70ac8cbf107622feb47dd02dc",
+    "sourceBytes": 205172,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.668571,
+    "bbox": {
+      "minX": 66,
+      "minY": 103,
+      "maxX": 493,
+      "maxY": 410,
+      "width": 428,
+      "height": 308
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m219",
+    "sourceSha256": "9e1061233b3746e8a65cce86c5ecfadb6aabcb9afaaf307fffc9e587b4fe6163",
+    "sourceBytes": 197016,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.692108,
+    "bbox": {
+      "minX": 75,
+      "minY": 92,
+      "maxX": 477,
+      "maxY": 419,
+      "width": 403,
+      "height": 328
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m220",
+    "sourceSha256": "df1f65775dfa2fe4ead3143790f5b6fd50411d2d220cb8729083a0e77f0386d7",
+    "sourceBytes": 33742,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": true,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m221",
+    "sourceSha256": "92b157d4a0c96fdc4eecb4d1deb281cf56d10a1fbaa204be88ceea44e1471444",
+    "sourceBytes": 41658,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": true,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m222",
+    "sourceSha256": "dca379585ab3dfd36c949d6b1cca66a70e2984e73c02642bc97c4a1235731716",
+    "sourceBytes": 56354,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": true,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m223",
+    "sourceSha256": "fb11592178e2ffbf025cf70b455ef8948426ddea9a16979f8a1623977b031095",
+    "sourceBytes": 197504,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.547092,
+    "bbox": {
+      "minX": 19,
+      "minY": 40,
+      "maxX": 490,
+      "maxY": 465,
+      "width": 472,
+      "height": 426
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m224",
+    "sourceSha256": "5f865e962d9f5d8dffe5e3dbad5a4edfc353495513e4112ee295af74302971f5",
+    "sourceBytes": 227020,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.490486,
+    "bbox": {
+      "minX": 9,
+      "minY": 18,
+      "maxX": 499,
+      "maxY": 491,
+      "width": 491,
+      "height": 474
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m225",
+    "sourceSha256": "9129fe6c07664e349b751b87e6675f883dfe5ac1e86f9a953f86ab54bc41462b",
+    "sourceBytes": 274256,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.422997,
+    "bbox": {
+      "minX": 5,
+      "minY": 8,
+      "maxX": 505,
+      "maxY": 504,
+      "width": 501,
+      "height": 497
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m226",
+    "sourceSha256": "5280f2b4ebd5dc6e23c0629b59fb07fbaf66069ba0df741104121f854ba9d5eb",
+    "sourceBytes": 164572,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.70327,
+    "bbox": {
+      "minX": 21,
+      "minY": 47,
+      "maxX": 503,
+      "maxY": 469,
+      "width": 483,
+      "height": 423
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m227",
+    "sourceSha256": "7da6cd61ade498075b76589c9ce7a77f06d2ab5e2b764db5781ac6a96e6c2f38",
+    "sourceBytes": 226790,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.602512,
+    "bbox": {
+      "minX": 7,
+      "minY": 32,
+      "maxX": 508,
+      "maxY": 488,
+      "width": 502,
+      "height": 457
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m228",
+    "sourceSha256": "3a92454ac96d4df18147a53ebeb488731c3732db09d79683d506d07d1d01113c",
+    "sourceBytes": 311026,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.485046,
+    "bbox": {
+      "minX": 5,
+      "minY": 2,
+      "maxX": 506,
+      "maxY": 507,
+      "width": 502,
+      "height": 506
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m229",
+    "sourceSha256": "8e8005b11ae00b4fcf1cd069b59973180862e1e7b598c0295f8f983293789503",
+    "sourceBytes": 22042,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      86,
+      75,
+      102
+    ]
+  },
+  {
+    "speciesId": "m230",
+    "sourceSha256": "b9acc60c0b78f5e4c2104cabeeec52a934ebf5b0d9d6dbd5452be89b73d268fc",
+    "sourceBytes": 107110,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.452915,
+    "bbox": {
+      "minX": 1,
+      "minY": 1,
+      "maxX": 511,
+      "maxY": 507,
+      "width": 511,
+      "height": 507
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m231",
+    "sourceSha256": "d75fed6ce3016eecc28d8ae625b1f28b70e6da926c03f0ff7f7fa2a79bdf36cb",
+    "sourceBytes": 139894,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.314487,
+    "bbox": {
+      "minX": 1,
+      "minY": 1,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 511,
+      "height": 511
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m232",
+    "sourceSha256": "484990140a0dbf7e552541788d39d4854088c6841d1eb4b2befafc91ad2a95b7",
+    "sourceBytes": 102092,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.655079,
+    "bbox": {
+      "minX": 95,
+      "minY": 67,
+      "maxX": 416,
+      "maxY": 443,
+      "width": 322,
+      "height": 377
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m233",
+    "sourceSha256": "1ccf6d7a21f81eb109bf9c08711ec2172e26ed1e58e9e2db4a4bd7fbe525eb7d",
+    "sourceBytes": 4902,
+    "dimensions": {
+      "width": 640,
+      "height": 640
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.967793,
+    "bbox": {
+      "minX": 203,
+      "minY": 223,
+      "maxX": 436,
+      "maxY": 416,
+      "width": 234,
+      "height": 194
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m234",
+    "sourceSha256": "547a96030f47d146b4728d62773c44e30cbd0ad0795abf7a8b560970807baf97",
+    "sourceBytes": 6822,
+    "dimensions": {
+      "width": 640,
+      "height": 640
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.94436,
+    "bbox": {
+      "minX": 199,
+      "minY": 201,
+      "maxX": 439,
+      "maxY": 437,
+      "width": 241,
+      "height": 237
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m235",
+    "sourceSha256": "a5c1defafa948bba4e46bfa1548a1ec72dfb09a165279c9c3225827fb8afb95d",
+    "sourceBytes": 33298,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": true,
+    "estimatedBorderBackgroundRgb": [
+      255,
+      255,
+      255
+    ]
+  },
+  {
+    "speciesId": "m236",
+    "sourceSha256": "a7dc19a20cb53432bce2877562e35bfd557b4ffa9aa045e2bff9df5b58f1d511",
+    "sourceBytes": 47994,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": true,
+    "estimatedBorderBackgroundRgb": [
+      254,
+      254,
+      254
+    ]
+  },
+  {
+    "speciesId": "m237",
+    "sourceSha256": "9c2f5290f2253f4366dbe1541294f2890b45b422145c3cfd64b4742e10b73ed4",
+    "sourceBytes": 370074,
+    "dimensions": {
+      "width": 1024,
+      "height": 1024
+    },
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "transparentRatio": 0.414721,
+    "bbox": {
+      "minX": 24,
+      "minY": 31,
+      "maxX": 990,
+      "maxY": 1000,
+      "width": 967,
+      "height": 970
+    },
+    "edgeContact": false,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "speciesId": "m238",
+    "sourceSha256": "863d2205ee9af480cf23a2d81ba1629ee1aae19cc3814796078e70eb319d6163",
+    "sourceBytes": 47690,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "alphaMin": 255,
+    "alphaMax": 255,
+    "transparentRatio": 0,
+    "bbox": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 511,
+      "maxY": 511,
+      "width": 512,
+      "height": 512
+    },
+    "edgeContact": true,
+    "backgroundSuspicion": false,
+    "estimatedBorderBackgroundRgb": [
+      82,
+      79,
+      78
+    ]
+  }
+]
