@@ -30,7 +30,8 @@ Current decisions that materially supersede the original W-108 snapshot include:
 - D-021 — cloud conflict resolution is Parent-owned, not child gameplay responsibility;
 - D-022 — Battle V6 study-first pacing, played-ticket cost, fair-fight scaling, damage tuning, level-gap XP, post-KO capture and new world bands;
 - D-023 — protected product changes must keep CURRENT + Decision Log synchronized in the same PR/change set;
-- D-026 — A+ semantic extra-ticket qualification plus Battle V6 production-review conformance corrections.
+- D-026 — A+ semantic extra-ticket qualification plus Battle V6 production-review conformance corrections;
+- D-027 — Parent authentication explicitly separates ManaEvo email/password from Google OAuth and preserves cloud ownership across safe verified-email identity linking.
 
 If this file conflicts with a more specific owning CURRENT contract, the owning contract plus later Decision Log entry wins. Fix this file in the same canonical-sync change; do not let the contradiction remain indefinitely.
 
@@ -343,7 +344,7 @@ These are the current production tuning from D-022. A future tuning PR may chang
 
 # 8. Save / profile / cloud acceptance
 
-Detailed semantics are owned by `07-SAVE-PROFILES-PARENT-PWA.md` and D-018/D-021.
+Detailed semantics are owned by `07-SAVE-PROFILES-PARENT-PWA.md` and D-018/D-021/D-027.
 
 ## AC-SAVE-001 — Account vs profile separation
 
@@ -373,6 +374,22 @@ TEST mode does not become a normal family profile/cloud revision. Entering test 
 ## AC-SAVE-006 — Migration / stable IDs
 
 Migrations preserve stable player/species/instance/learning identities, are idempotent, and do not duplicate tickets, rewards, profiles or monsters. Adding later species must not reinterpret existing IDs by array position.
+
+## AC-SAVE-007 — Parent authentication method is explicit and recoverable
+
+Parent authentication must satisfy all of the following:
+
+- email/password login labels the credential as a **ManaEvo/Supabase password**, not a Google account password;
+- a Gmail address alone must never imply that the Google password belongs in ManaEvo's password field;
+- Google OAuth is offered as a separate action only when the Supabase Google provider is actually enabled/configured;
+- ManaEvo never receives, stores, proxies or validates the user's Google password;
+- production Google OAuth returns through the approved Supabase callback/redirect flow to `https://mana-evo.vercel.app/`;
+- when an existing verified-email Auth user later signs in through Google with the same verified email, safe identity linking preserves the existing Auth user UUID and therefore the existing `auth.uid()`-owned cloud save;
+- an identity that cannot be safely linked must not be silently merged or used to create a second competing cloud-save owner merely from an email-string match;
+- existing email/password login and password recovery remain usable after Google OAuth is introduced;
+- provider-disabled state is explained as setup pending rather than routing the user into an `Invalid login credentials` trap with a Google password.
+
+Regression evidence must cover provider capability detection, OAuth authorize URL/return URL, account-screen wording, session establishment/reuse, and cloud-owner continuity. Production enablement additionally requires provider configuration evidence; source code alone cannot manufacture Google OAuth credentials.
 
 ---
 
@@ -422,7 +439,7 @@ After a successful online load/install, supported PWA relaunch/update behavior m
 
 ## AC-PWA-004 — Auth redirects
 
-Production sign-in confirmation/password recovery returns to the approved Vercel production origin. Preview redirect exceptions must never become canonical metadata/PWA identity.
+Production email confirmation, ManaEvo/Supabase password recovery, and Google OAuth return to the approved Vercel production origin. Preview redirect exceptions must never become canonical metadata/PWA identity. Provider secrets must not be placed in the browser bundle or source repository.
 
 ---
 
@@ -506,7 +523,8 @@ A release/merge claiming current canonical alignment requires, as applicable:
 8. art scope/integrity checks when image assets or production art eligibility changed;
 9. canonical-sync CI gate for protected product changes;
 10. owner-facing `USER-GUIDE.md` updated and shown before merge for product-design changes;
-11. concrete tangible evidence for any manual/visual/device acceptance claimed by the Work Item.
+11. when Parent Auth changes, provider capability/redirect/session/credential-boundary tests and production provider-configuration evidence where the provider is being enabled;
+12. concrete tangible evidence for any manual/visual/device acceptance claimed by the Work Item.
 
 CI PASS alone does not prove specification correctness. Final review must compare the actual changed behavior and tangible artifacts against the owning CURRENT contract and Decision Log.
 
@@ -527,6 +545,7 @@ The following historical assertions are specifically superseded and must not be 
 - capture only while enemy alive — superseded by D-022 post-KO ordinary-wild opportunity;
 - GitHub Pages `/mana-evo/` as production canonical — superseded by D-019;
 - cloud conflict resolver as child-flow responsibility — superseded by D-021;
+- email/password as the only possible Parent Auth method — superseded by D-027; email/ManaEvo-password remains valid but Google OAuth may coexist when configured;
 - CANDIDATE forbidden from normal production gameplay in all cases — superseded within D-016's explicit allowlist scope;
 - Work Item/PR/CI completion text as sufficient Acceptance evidence — prohibited by D-015.
 
@@ -558,3 +577,19 @@ Release is blocked unless automated or equivalent deterministic evidence covers 
 - stale post-KO snapshots cannot consume a ball or rewrite authoritative `activeBattle`;
 - post-KO success gives no second XP;
 - loss/abandon exact reservation, FEFO and expiration behavior remain unchanged.
+
+---
+
+# 16. D-027 focused Parent Auth regression matrix
+
+Release of the Parent Auth change is blocked unless evidence covers at least:
+
+- Google authorize URL uses the configured Supabase origin, `provider=google`, and the intended ManaEvo return URL;
+- unsupported OAuth provider names are not accepted by the ManaEvo auth bridge;
+- account UI visibly separates `Googleでログイン` from `メールでログイン`;
+- email credential is labeled `ManaEvo用パスワード` and explicitly warns not to enter a Google account password;
+- provider capability is checked before Google login is actionable;
+- provider-disabled state remains usable through existing email/password recovery and does not pretend Google is enabled;
+- after Google provider configuration, a same verified-email existing account resolves to the same Auth user UUID/cloud owner before production completion is claimed;
+- OAuth callback/session persistence reaches the same cloud-save ownership/RLS boundary as email/password login;
+- no Google Client Secret/service-role secret is present in source, generated browser assets, or user-entered ManaEvo fields.
