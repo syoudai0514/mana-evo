@@ -74,6 +74,19 @@ async function expectTerminalPresentationGate(page, expectedCue) {
   await expect(page.getByText(/^HP 0\//).first()).toBeVisible()
 }
 
+async function failedCaptureDiagnostic(page) {
+  const battleRoot = page.locator('.battle-screen-v2')
+  return {
+    presentationId: await battleRoot.getAttribute('data-presentation-id'),
+    observedId: await battleRoot.getAttribute('data-observed-id'),
+    captureSequence: await battleRoot.getAttribute('data-capture-sequence'),
+    turnCue: await battleRoot.getAttribute('data-turn-cue'),
+    battleStatus: await battleRoot.getAttribute('data-battle-status'),
+    captureNodeCount: await page.getByTestId('capture-sequence').count(),
+    cueCount: await page.locator('.battle-turn-cue-v6').count()
+  }
+}
+
 test('Protect DOT KO keeps post-KO CTA gated until turn/HP/KO presentation completes', async ({ page }) => {
   await installSave(page, terminalDotGame())
   await page.goto('/')
@@ -109,10 +122,22 @@ test('failed capture DOT KO waits for capture sequence, then turn/HP/KO presenta
 
   await expect(captureSequence).toBeVisible()
   await expect(postKoCapture).toHaveCount(0)
+  const diagnosticAtCaptureStart = await failedCaptureDiagnostic(page)
 
-  // Observe the next transient phase directly. Waiting for the capture node to
-  // disappear first can miss the short first cue under loaded WebKit CI.
-  await expect(cue).toBeVisible({ timeout: 12_000 })
+  try {
+    // Observe the next transient phase directly. Waiting for the capture node to
+    // disappear first can miss the short first cue under loaded WebKit CI.
+    await expect(cue).toBeVisible({ timeout: 12_000 })
+  } catch (error) {
+    const diagnosticAtCueTimeout = await failedCaptureDiagnostic(page)
+    throw new Error(
+      `failed-capture presentation diagnostic\n` +
+      `capture-start=${JSON.stringify(diagnosticAtCaptureStart)}\n` +
+      `cue-timeout=${JSON.stringify(diagnosticAtCueTimeout)}\n` +
+      `original=${error instanceof Error ? error.message : String(error)}`
+    )
+  }
+
   await expect(captureSequence).toBeHidden()
   await expect(postKoCapture).toHaveCount(0)
 
