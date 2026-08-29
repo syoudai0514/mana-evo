@@ -1,9 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
+  beginGoogleSignIn,
   cloudConfig,
   consumeAuthHash,
   createBackup,
   fetchMainSave,
+  getAuthProviderAvailability,
   getValidSession,
   insertMainSave,
   listBackups,
@@ -54,6 +56,8 @@ export default function CloudAccountShell({ children }) {
   const [backups, setBackups] = useState([])
   const [busy, setBusy] = useState(false)
   const [parentScreenOpen, setParentScreenOpen] = useState(false)
+  const [googleAvailable, setGoogleAvailable] = useState(false)
+  const [googleChecked, setGoogleChecked] = useState(false)
   const syncTimer = useRef(null)
   const testMode = getTestMode()
   const config = cloudConfig()
@@ -157,6 +161,14 @@ export default function CloudAccountShell({ children }) {
   useEffect(() => {
     const auth = consumeAuthHash()
     if (auth?.type === 'recovery') { setRecoveryMode(true); setOpen(true) }
+    if (config.configured) {
+      getAuthProviderAvailability()
+        .then((providers) => setGoogleAvailable(!!providers.google))
+        .catch(() => setGoogleAvailable(false))
+        .finally(() => setGoogleChecked(true))
+    } else {
+      setGoogleChecked(true)
+    }
     getValidSession().then((value) => {
       setSession(value)
       if (value) syncNow().catch((error) => { setStatus('同期エラー・端末には保存済み'); setMessage(error.message) })
@@ -195,6 +207,10 @@ export default function CloudAccountShell({ children }) {
     finally { setBusy(false) }
   }
 
+  const doGoogleSignIn = () => run(async () => {
+    const redirect = `${window.location.origin}${window.location.pathname}`
+    await beginGoogleSignIn(redirect)
+  })
   const doSignIn = () => run(async () => {
     const value = await signInWithPassword(email.trim(), password)
     setSession(value); setPassword(''); setMessage('ログインしました')
@@ -210,7 +226,7 @@ export default function CloudAccountShell({ children }) {
   const doReset = () => run(async () => {
     const redirect = `${window.location.origin}${window.location.pathname}`
     await requestPasswordReset(email.trim(), redirect)
-    setMessage('パスワード再設定メールを送りました')
+    setMessage('ManaEvo用パスワードの再設定メールを送りました')
   })
   const doUpdatePassword = () => run(async () => {
     await updatePassword(newPassword); setNewPassword(''); setRecoveryMode(false); setMessage('パスワードを変更しました')
@@ -287,9 +303,9 @@ export default function CloudAccountShell({ children }) {
 
         {!config.configured && <div className="cloud-card"><strong>🔧 共通バックエンド設定待ち</strong><p>アプリ側の実装は有効です。共通SupabaseのURLとpublishable keyを設定するとクラウド機能が開始します。</p></div>}
 
-        {recoveryMode && <div className="cloud-card"><h3>🔑 新しいパスワード</h3><input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="新しいパスワード"/><button disabled={busy || newPassword.length < 8} onClick={doUpdatePassword}>パスワードを変更</button></div>}
+        {recoveryMode && <div className="cloud-card"><h3>🔑 新しいManaEvo用パスワード</h3><input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="新しいManaEvo用パスワード"/><button disabled={busy || newPassword.length < 8} onClick={doUpdatePassword}>パスワードを変更</button></div>}
 
-        {!session ? <div className="cloud-card"><h3>☁️ 保護者アカウント</h3><label>メールアドレス<input type="email" autoCapitalize="none" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)}/></label><label>パスワード<input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)}/></label><div className="cloud-actions"><button disabled={busy || !config.configured || !email || !password} onClick={doSignIn}>ログイン</button><button className="secondary" disabled={busy || !config.configured || !email || password.length < 8} onClick={doSignUp}>新規登録</button></div><button className="cloud-link" disabled={busy || !config.configured || !email} onClick={doReset}>パスワードを忘れた</button><small>一度ログインした端末はセッションを保持します。</small></div> : <div className="cloud-card"><div className="cloud-row"><div><h3>👤 {sessionLabel(session)}</h3><small>共通アカウント</small></div><span>☁️</span></div>{conflict ? <p><strong>同期は保護者確認待ちです。</strong><br/><small>端末のデータは保存されています。下の「保護者専用」で残すデータを選んでください。</small></p> : <button disabled={busy || !!testMode} onClick={() => run(() => syncNow())}>☁️ 今すぐ同期</button>}</div>}
+        {!session ? <div className="cloud-card"><h3>☁️ 保護者アカウント</h3><button className="secondary" disabled={busy || !config.configured || !googleAvailable} onClick={doGoogleSignIn}>Googleでログイン</button><small>{googleAvailable ? 'Googleで登録・ログインした方はこちら。GoogleのパスワードをManaEvoへ入力する必要はありません。' : googleChecked ? 'Googleログインは現在、管理者側のGoogle/Supabase設定待ちです。' : 'Googleログインの利用可否を確認中…'}</small><p><small>または、メールアドレスとManaEvo用パスワードでログイン</small></p><label>メールアドレス<input type="email" autoCapitalize="none" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)}/></label><label>ManaEvo用パスワード<input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)}/></label><small>ここにはGoogleアカウントのパスワードを入力しないでください。</small><div className="cloud-actions"><button disabled={busy || !config.configured || !email || !password} onClick={doSignIn}>メールでログイン</button><button className="secondary" disabled={busy || !config.configured || !email || password.length < 8} onClick={doSignUp}>メールで新規登録</button></div><button className="cloud-link" disabled={busy || !config.configured || !email} onClick={doReset}>ManaEvo用パスワードを忘れた</button><small>一度ログインした端末はセッションを保持します。</small></div> : <div className="cloud-card"><div className="cloud-row"><div><h3>👤 {sessionLabel(session)}</h3><small>共通アカウント</small></div><span>☁️</span></div>{conflict ? <p><strong>同期は保護者確認待ちです。</strong><br/><small>端末のデータは保存されています。下の「保護者専用」で残すデータを選んでください。</small></p> : <button disabled={busy || !!testMode} onClick={() => run(() => syncNow())}>☁️ 今すぐ同期</button>}</div>}
 
         <AdultCloudControls>
           {session && conflict && <div className="cloud-card cloud-conflict"><h3>⚠️ iPhone/iPadの同じプレイヤーに両方の変更があります</h3><p>別プレイヤー同士なら自動統合します。同じプレイヤーを両端末で変更した場合だけ、自動で上書きせず止めます。残したい方を選んでください。</p><button disabled={busy} onClick={chooseCloud}>☁️ クラウド側を使う</button><button className="secondary" disabled={busy} onClick={chooseLocal}>📱 この端末側を使う</button></div>}

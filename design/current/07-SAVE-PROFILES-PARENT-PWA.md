@@ -1,8 +1,8 @@
 # ManaEvo CURRENT — Save / Profiles / Parent / Cloud / PWA
 
-Status: **CURRENT normative contract (W-107 + D-018 + D-019 normalization)**  
+Status: **CURRENT normative contract (W-107 + D-018 + D-019 + D-027 normalization)**  
 Phase: Rebuild / platform normalization  
-Scope: save ownership, profiles, Parent controls, Kids Quest isolation/import, cloud persistence, backups, migrations, test-mode isolation, Vercel production/PWA, monster-asset cache/versioning
+Scope: save ownership, profiles, Parent controls, Kids Quest isolation/import, cloud persistence, authentication, backups, migrations, test-mode isolation, Vercel production/PWA, monster-asset cache/versioning
 
 ## 0. Authority and scope
 
@@ -18,7 +18,7 @@ Authority order follows `REBUILD-START-HERE.md` and `design/rebuild/DECISION-LOG
 6. runtime implementation;
 7. review/completion history.
 
-This normalization incorporates the later explicit decisions in **D-018** (shared account/cloud save/test data) and **D-019** (Vercel as the sole production canonical host). Those decisions supersede the earlier W-107 GitHub Pages/local-only assumptions where they conflict.
+This normalization incorporates the later explicit decisions in **D-018** (shared account/cloud save/test data), **D-019** (Vercel as the sole production canonical host), and **D-027** (explicit Parent authentication methods and Google OAuth safety). Those decisions supersede earlier assumptions where they conflict.
 
 Runtime files named later are implementation evidence. They do not outrank the contract.
 
@@ -60,6 +60,8 @@ A Supabase Auth account is the **family/parent account** used to access shared c
 One Auth account may own multiple stable ManaEvo player profiles. Creating another child profile does not require another Auth user.
 
 A player profile must have a stable ID independent of display name. Display-name changes, if later supported, must not create a new save identity or orphan game/learning data.
+
+The cloud ownership boundary is the stable Supabase Auth user UUID (`auth.uid()`), not the human-readable email string and not the authentication method used on a particular login. Adding a Google identity to the same verified-email Auth user must therefore retain the same cloud owner UUID rather than creating a second ManaEvo save owner.
 
 ### 2.2 Device-local state
 
@@ -152,7 +154,7 @@ Adult-only controls include:
 - backup creation/restore/import;
 - account logout and other destructive account/save actions.
 
-Email/password sign-in may be offered on a fresh device so the family can recover its cloud save, but mutation of Parent-owned player/test/restore controls remains behind the local Parent gate.
+A fresh device may offer Parent account authentication so the family can recover its cloud save. Supported sign-in methods are governed by §5.4; mutation of Parent-owned player/test/restore controls remains behind the local Parent gate.
 
 The exact adult-check puzzle is an implementation detail unless a higher-authority decision fixes it.
 
@@ -199,13 +201,25 @@ ManaEvo local storage remains required as:
 
 Cloud persistence is the cross-device durable layer. A temporary network/Auth failure must not erase already-valid local progress.
 
-### 5.4 Session persistence and recovery
+### 5.4 Parent authentication, session persistence and recovery
 
-Normal cloud authentication is parent/family **email + password**.
+Parent/family cloud authentication supports two explicit methods:
 
-After successful sign-in, the browser session may persist/refresh so every app launch does not require a password. Password recovery and email-confirmation flows use Supabase Auth and must return to the canonical Vercel production origin for production use.
+1. **email address + ManaEvo/Supabase password**;
+2. **Google OAuth**, only when the Google provider is configured and enabled for the shared Supabase Auth project.
 
-Account password and local Parent PIN are separate concepts.
+These methods must be visually and semantically distinct.
+
+- The password field in ManaEvo means the password registered with ManaEvo/Supabase email authentication. It must be labeled so a Gmail address does not imply “enter your Google account password.”
+- ManaEvo must **never ask for, receive, proxy, store or validate a Google account password**. Google credentials are entered only on Google's own authentication surface.
+- The account UI must detect provider capability (for example, from Supabase Auth provider settings) and must not present a non-functional Google login as if it were available. If configuration is incomplete, the UI explains that Google login is awaiting administrator/provider setup.
+- For an existing **verified-email** Supabase user, Supabase Auth's automatic identity-linking behavior is the intended authority when the same verified email later signs in through Google. The added Google identity must resolve to the same Auth user UUID so existing `auth.uid()`-owned ManaEvo cloud saves remain the same family save.
+- If the system cannot safely prove/link the identity to the existing Auth owner, ManaEvo must not silently merge or duplicate cloud ownership. Stop the migration/login path for adult recovery rather than guessing by email string alone.
+- Existing email/password users remain valid; adding Google login must not require a new player profile, reset a save, or invalidate the existing email login method.
+
+After successful sign-in by either method, the Supabase session may persist/refresh so every app launch does not require authentication again. Password recovery applies to the ManaEvo/Supabase email-password credential, not to a Google password. Email confirmation, password recovery, and Google OAuth return flows must return to the canonical Vercel production origin for production use.
+
+Account authentication and local Parent PIN are separate concepts. Parent PIN is never an Auth password.
 
 ### 5.5 First-device / fresh-device behavior
 
@@ -351,12 +365,15 @@ Vercel Preview deployments are review/test environments, not canonical productio
 
 ---
 
-## 10. Supabase Auth URL authority
+## 10. Supabase Auth URL and provider authority
 
 For production authentication:
 
 - Supabase Auth **Site URL** points to `https://mana-evo.vercel.app/`;
 - production email-confirmation/password-recovery redirects return to that origin;
+- production Google OAuth returns to that origin after the provider callback;
+- Google OAuth is considered available to the child/parent UI only when the Supabase Google provider is actually enabled and configured;
+- Google Client Secret and any other provider secret live only in Google/Supabase provider configuration and must never be committed to the repository, embedded in the browser bundle, or requested through normal ManaEvo UI;
 - Vercel Preview redirect URLs may be added only when an Auth flow must be tested on a Preview;
 - historical GitHub Pages URLs are not a production Auth return target.
 
@@ -428,6 +445,7 @@ These observations are useful for locating reusable implementation and are not i
 | Reward bridge | persisted learning→game envelope | must be included in cloud revision |
 | Profiles | stable profile snapshots | aligns; selected device profile stays local |
 | Parent gate | local 4-digit PIN + adult check | valid local safety boundary |
+| Auth | email/ManaEvo password + capability-gated Google OAuth | D-027 direction; Google provider requires external configuration |
 | Cloud | generic Supabase `app_id=mana-evo` + revisioned snapshot | D-018 direction |
 | Backup | manual/destructive-boundary cloud snapshots | D-018 direction |
 | TEST | local-only exact return snapshot and fixtures | D-018 direction |
@@ -470,13 +488,18 @@ W-107 owns platform/save/hosting boundaries and does not redefine other domain r
 
 - [ ] signed-in user can access only own save/backup rows under RLS;
 - [ ] anonymous clients cannot read/write save/backup rows;
-- [ ] browser bundle contains no secret/service-role credential;
+- [ ] browser bundle contains no secret/service-role/provider credential;
 - [ ] full learning + game + reward bridge round-trips through cloud;
 - [ ] fresh device adopts existing cloud state;
 - [ ] disjoint edits to different stable profiles merge without losing either profile;
 - [ ] divergent edits to the same stable profile surface a conflict rather than silent overwrite;
-- [ ] session persists/refreshes correctly;
-- [ ] email confirmation and password recovery return to Vercel production for production flows.
+- [ ] session persists/refreshes correctly for supported login methods;
+- [ ] the email/password field is explicitly a ManaEvo/Supabase password and never implies a Google password;
+- [ ] ManaEvo never collects or submits a Google account password;
+- [ ] Google login is actionable only when the Supabase Google provider is actually enabled;
+- [ ] when the same verified email adds Google OAuth, Auth user UUID/cloud ownership remains the existing owner rather than creating a second ManaEvo save;
+- [ ] unsafe/unverified identity ambiguity stops for adult recovery instead of silently merging by email string;
+- [ ] email confirmation, password recovery and Google OAuth return to Vercel production for production flows.
 
 ### TEST / backup / migrations
 
@@ -531,4 +554,4 @@ This contract does not independently define:
 - a custom domain replacing `mana-evo.vercel.app`;
 - paid Vercel/Supabase upgrades.
 
-If a later implementation needs one of these as a product decision, recover or obtain explicit approval rather than inferring it from runtime.
+Google OAuth provider configuration is an external deployment prerequisite, not a license to place Google Client Secret in source or invent credentials. If provider configuration is unavailable, email/ManaEvo-password authentication remains valid and the UI must say Google setup is pending rather than accepting a Google password.
