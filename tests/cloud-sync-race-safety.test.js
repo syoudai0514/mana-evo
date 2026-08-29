@@ -95,17 +95,26 @@ test('runtime wires local mutation guards around fetch, merge write and destruct
   assert.match(shell, /decision\.action === 'pull'[\s\S]*localSnapshotStillCurrent\(localHash, captureCloudPayload\)[\s\S]*applyCloudPayload\(cloud\.payload\)/)
 })
 
-test('Parent choice re-fetches current cloud before either destructive resolution', () => {
+test('Parent choice re-fetches live cloud with local guard before either destructive resolution', () => {
   const chooseCloudStart = shell.indexOf('const chooseCloud')
   const chooseLocalStart = shell.indexOf('const chooseLocal')
   const backupStart = shell.indexOf('const manualBackup')
   const chooseCloudBlock = shell.slice(chooseCloudStart, chooseLocalStart)
   const chooseLocalBlock = shell.slice(chooseLocalStart, backupStart)
   for (const block of [chooseCloudBlock, chooseLocalBlock]) {
-    assert.match(block, /const latestCloud = await fetchMainSave\(\)/)
+    assert.match(block, /const fetched = await waitForRemoteWithLocalGuard\(\{/)
+    assert.match(block, /capturedHash: displayedLocalHash/)
+    assert.match(block, /captureLocal: captureCloudPayload/)
+    assert.match(block, /remoteOperation: fetchMainSave/)
+    assert.match(block, /const latestCloud = fetched\.value/)
+    assert.match(block, /if \(!fetched\.localUnchanged\)/)
     assert.match(block, /sameCloudSnapshot\(displayedCloud, latestCloud\)/)
     assert.match(block, /refreshConflictEvidence/)
   }
+  assert.match(chooseCloudBlock, /const finalCloud = await fetchMainSave\(\)/)
+  assert.match(chooseCloudBlock, /sameCloudSnapshot\(latestCloud, finalCloud\)/)
+  assert.match(chooseLocalBlock, /updateMainSave\(finalLocal, latestCloud\.revision\)/)
+  assert.match(chooseLocalBlock, /const refreshedCloud = await fetchMainSave\(\)/)
 })
 
 test('transient failures stay child-silent until three consecutive failures', () => {
