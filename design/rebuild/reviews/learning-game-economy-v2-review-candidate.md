@@ -326,6 +326,8 @@ This proposal may be promoted into CURRENT only when an independent reviewer con
 12. The model is implementable with stable IDs/state and remains idempotent across reload/profile/cloud boundaries.
 13. Complexity is justified; if a simpler model meets these criteria, prefer the simpler model.
 
+The authoring review is not sufficient for promotion. A separate review pass must challenge the candidate against CURRENT implementation, all relevant CURRENT contracts and actual Kids Quest learning state available to the reward bridge.
+
 ## 14. Promotion procedure under D-023
 
 If review approves a product change:
