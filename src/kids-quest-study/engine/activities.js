@@ -20,6 +20,34 @@ import { generateShakaiQuestion } from '../data/content/shakai.js'
 import { generateDoutokuQuestion } from '../data/content/doutoku.js'
 import { generateEnglishQuestion } from '../data/content/english.js'
 
+function englishProgressEntry(params, itemKey) {
+  const key = String(itemKey || '')
+  if (key.startsWith('enw:')) return params?.englishWordStats?.[key.slice(4)] || null
+  if (key.startsWith('ena:')) return params?.englishAlphabetStats?.[key.slice(4)] || null
+  if (key.startsWith('enp:')) return params?.englishPhraseStats?.[key.slice(4)] || null
+  if (key.startsWith('eng:')) return params?.englishPhraseStats?.[key.slice(4)] || null
+  return null
+}
+
+// English has its own SRS/mastery store. Freeze the A+ semantic provenance at
+// question generation/presentation time, while the pre-answer state is still
+// authoritative. Reward settlement must never re-infer this from mutated stats.
+function generateEnglishQuestionWithPresentationProvenance(params = {}, reviewKey) {
+  const question = generateEnglishQuestion(params, reviewKey)
+  if (!question || String(question.itemKey || '').startsWith('hard:')) return question
+  const entry = englishProgressEntry(params, question.itemKey)
+  if (!entry) return question
+  const today = Number(params.today)
+  const masteredAtPresentation = Number(entry.stage) >= 5
+  const dueAtPresentation = Number.isFinite(today) && Number(entry.nextDue) <= today
+  return {
+    ...question,
+    englishLearningIntentAtPresentation: dueAtPresentation ? 'srs_due' : 'adaptive',
+    englishMasteredAtPresentation: masteredAtPresentation,
+    englishTicketQualifyingAtPresentation: dueAtPresentation || !masteredAtPresentation
+  }
+}
+
 export const DOMAINS = [
   {
     id: 'yomu',
@@ -97,7 +125,7 @@ export const DOMAINS = [
   {
     id: 'english', name: 'えいご', nameByGrade: () => 'えいご', emoji: '🔤',
     color: 'linear-gradient(180deg,#9edbff,#5f9df5)', available: true,
-    grades: [0, 1, 2, 3, 4, 5, 6], generateQuestion: generateEnglishQuestion
+    grades: [0, 1, 2, 3, 4, 5, 6], generateQuestion: generateEnglishQuestionWithPresentationProvenance
   }
 ]
 
