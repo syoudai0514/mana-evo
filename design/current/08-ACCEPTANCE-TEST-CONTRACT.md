@@ -1,660 +1,505 @@
 # ManaEvo CURRENT — Acceptance / Test Contract
 
-- Date: 2026-08-25
-- Work item: W-108
-- Status: **CURRENT CANONICAL — BEHAVIORAL ACCEPTANCE CONTRACT**
-- Scope: acceptance/test contract only. This document does **not** change `src/**` or `tests/**`.
+Updated: 2026-08-29  
+Status: **CURRENT NORMATIVE BEHAVIORAL ACCEPTANCE CONTRACT**  
+Owner: cross-domain release acceptance / regression classification
 
-## 0. Authority and conflict rule
+This document defines the behavioral gates a ManaEvo change must satisfy. It does not make tests, runtime code, PR descriptions, or historical review documents product authority.
 
-This contract follows the rebuild authority order and commander decisions in `design/rebuild/DECISION-LOG.md` D-003 through D-014.
+## 0. Authority and ownership
 
-Primary evidence used here:
+Apply authority in this order:
 
-- exact FINAL-CORRECTED baseline under `design/baseline/FINAL-CORRECTED/source/`
-- `06-battle-and-progression-design.md`
-- `08-gameplay-state-spec.md`
-- `09-implementation-traceability.md`
-- `10-BRAND-AND-REPOSITORY-SPEC.md`
-- `12-KIDS-QUEST-LEARNING-IMPORT-SPEC.md`
-- `99-IMPLEMENTATION-REVIEW-CHECKLIST.md`
-- Phase 1.5 audits under `design/rebuild/audit/`
-- commander decisions D-003〜D-014
+1. explicit user decisions;
+2. immutable FINAL-CORRECTED baseline;
+3. approved later changes recorded in `design/rebuild/DECISION-LOG.md`;
+4. owning `design/current/**` contract;
+5. data master;
+6. runtime implementation;
+7. tests / review history.
 
-Runtime and existing tests are evidence of current behavior only. They are **not** specification authority. If an existing test conflicts with this contract or a commander decision, the test is a refactor/replacement candidate; the product is not changed merely to make the old test pass.
+This contract must be read together with the owning domain contracts. It summarizes release-level acceptance; it must not silently redefine domain semantics.
 
-## 1. Test policy
+Current decisions that materially supersede the original W-108 snapshot include:
 
-### 1.1 Product behavior is the acceptance boundary
+- D-016 — validated CANDIDATE art may be progressively production-visible without becoming FORMAL;
+- D-017 — child-facing capture devices are ほし/ぎん/きん/にじボール and use throw → contain → temporal four-star → result presentation;
+- D-018 — family account, stable profiles, cloud snapshot, conflict/backup/test-mode model;
+- D-019 — Vercel is the only production canonical host;
+- D-020 — Evolution pacing V5 Battle XP distribution and capture-level buffer;
+- D-021 — cloud conflict resolution is Parent-owned, not child gameplay responsibility;
+- D-022 — Battle V6 study-first pacing, played-ticket cost, fair-fight scaling, damage tuning, level-gap XP, post-KO capture and new world bands;
+- D-023 — protected product changes must keep CURRENT + Decision Log synchronized in the same PR/change set.
 
-A canonical acceptance test should observe one or more of:
-
-- user-visible state or navigation
-- persisted game/learning state
-- reward/accounting result
-- allowed/blocked action
-- stable master/data invariant
-- offline/update behavior
-- viewport behavior at the supported child device size
-
-CSS selector names, source-string existence, stylesheet import order, cache version literals, component class names, and DOM implementation shape are **not** product acceptance by themselves.
-
-### 1.2 Test layers
-
-Use three explicit layers so tuning and implementation details do not silently become product rules.
-
-1. **CANONICAL GATE** — must pass before release; assertions in this document.
-2. **TUNING GATE** — balance defaults such as exact zone level bands/clear counts. These may be adjusted under the tuning policy without reopening product decisions.
-3. **IMPLEMENTATION GUARD** — low-level regression checks that are useful locally but do not outrank canonical behavior.
-
-### 1.3 Determinism and idempotency
-
-- Random systems must be tested with deterministic RNG/seeds or boundary injection; do not use flaky probability tests.
-- Rewards, migrations, battle settlement, imports, and one-time unlocks must be tested for **exactly-once** behavior.
-- Reload/crash simulations must verify persisted state, not only in-memory state.
+If this file conflicts with a more specific owning CURRENT contract, the owning contract plus later Decision Log entry wins. Fix this file in the same canonical-sync change; do not let the contradiction remain indefinitely.
 
 ---
 
-# 2. Learning → rewards
+# 1. Test policy
 
-## AC-LRN-001 — Kids Quest learning remains the learning authority
+## 1.1 Three test layers
 
-**Given** ManaEvo is running its active learning flow  
-**When** a child studies, changes grade within allowed settings, uses `わからない`, enters review/SRS, free study, or a star trial  
-**Then** the learning behavior comes from the migrated Kids Quest learning source, not an independently reimplemented ManaEvo learning engine.
+1. **CANONICAL GATE** — approved product behavior. Release-blocking.
+2. **TUNING GATE** — currently approved/tuned numeric defaults whose values may later move through an explicit tuning change.
+3. **IMPLEMENTATION GUARD** — useful internal regressions that may not redefine product behavior.
 
-Acceptance evidence:
+A test does not become canonical merely because it existed first.
 
-- active learning routes use the authoritative migrated Kids Quest modules
-- stable learning IDs such as `knowledgeId`, `unitId`, `skillId`, and `questionInstanceId` are not changed incidentally
-- Kids Quest learning regression behavior remains intact after the ManaEvo reward bridge runs
-- `src/study` must not silently become a second active learning authority
+## 1.2 Observable acceptance
 
-## AC-LRN-002 — Daily core completion rewards are exactly-once
+Prefer assertions on:
 
-**Given** today’s five core learning tasks are not all complete  
-**When** the final required core task becomes complete for the first time that day  
-**Then** ManaEvo grants exactly:
+- user-visible state and navigation;
+- allowed/blocked actions;
+- persisted learning/game/cloud state;
+- reward/ticket/XP settlement;
+- stable IDs/master invariants;
+- exact production host / PWA behavior;
+- actual image/art resolution state;
+- browser layout and interaction at supported iPhone widths.
 
-- battle ticket `+3`
-- exploration points `+2`
-- `ほしのわ +3` under the later-approved ring economy
+CSS selector names, class names, source regexes, stylesheet import order, cache-version literals and component file structure are not product acceptance by themselves.
 
-Reopening, reloading, revisiting the completed task, or replaying a completion event must not grant the daily completion package again.
+## 1.3 Determinism / exactly-once
 
-## AC-LRN-003 — Extra question rewards are per completed question and unlimited
-
-**Given** the daily core is complete and the child answers extra learning questions  
-**When** each extra question is completed  
-**Then** each completed extra question grants:
-
-- battle ticket `+1`
-- exploration point `+1`
-
-There is no daily cap on extra-question tickets.
-
-The three-question shape of a Kids Quest extra task does **not** change the reward unit: the ticket is per completed extra question, not one ticket for the whole task.
-
-## AC-LRN-004 — Later-approved ring rewards are preserved
-
-The canonical ring reward bridge is:
-
-- daily completion → `ほしのわ +3`
-- every three correct additional-learning answers → `ほしのわ +1`
-- unit MASTER → `ぎんのわ +1`
-- hard MASTER → `きんのわ +1`
-
-Milestone rewards are exactly-once per qualifying milestone event. The additional-learning star counter must cross the three-correct boundary correctly across task/reload boundaries.
-
-## AC-LRN-005 — Other exploration-point learning grants remain baseline behavior
-
-- mastery step-up → exploration points `+2`
-- chapter test first pass → exploration points `+5`
-
-Repeated already-earned milestones do not duplicate the grant.
-
-## AC-LRN-006 — Free study does not mint battle tickets
-
-Free study remains available through the Kids Quest learning system, but completing free-study questions does not mint the daily core or extra-question battle-ticket rewards.
+Random systems use deterministic seeds/boundary injection in tests. Reward settlement, ticket settlement, capture, migrations, save conflict resolution, boss snapshots, unlocks and promotions must be idempotent across render/reload/retry boundaries.
 
 ---
 
-# 3. Ticket lifecycle
+# 2. Learning → game reward acceptance
 
-## AC-TKT-001 — Seven-day lots and FEFO
+## AC-LRN-001 — Kids Quest remains learning authority
 
-Each ticket grant retains its own earning/expiry lot. Tickets are valid for seven days according to the canonical date representation and are selected nearest-expiry first (FEFO).
+The active child learning flow uses the migrated Kids Quest learning source. ManaEvo may observe learning events and award game rewards, but must not independently replace grade/domain/unit generation, mastery, SRS/review, mistakes, `わからない`, star trial, ahead-learning or stable learning IDs.
 
-Day rollover must not zero all tickets.
+`src/study/**` must not silently become a second active learning authority.
 
-## AC-TKT-002 — Battle start reserves one ticket
+## AC-LRN-002 — Daily core completion
 
-**Given**:
+On the first transition to all required daily core tasks complete for that day, grant exactly once:
 
-- today’s required learning is complete for the current day
-- the selected stage is unlocked
-- at least one unexpired ticket is available
-- there is no conflicting active battle
+- battle ticket `+3`;
+- ほしボール resource (`star` key) `+3`;
+- exploration points `+2`.
 
-**When** battle starts  
-**Then** exactly one nearest-expiry ticket is reserved and its original lot/expiry is attached to the persisted active battle.
+Reopen/reload/replay must not repeat this package.
 
-No second ticket is reserved by rendering, navigation, reload, or restoring that same active battle.
+## AC-LRN-003 — Additional study is study-first
 
-## AC-TKT-003 — Win/capture commits; defeat/explicit abandon refunds
+After daily core completion, qualifying `extra` correct answers are cumulative for the Battle V6 ticket rule:
 
-- victory settlement commits the reserved ticket
-- successful in-battle capture commits the reserved ticket
-- defeat refunds the reservation exactly once
-- explicit battle abandon refunds the reservation exactly once
-- refund restores the original expiry, not a fresh seven-day life
-- if that original expiry has already passed, preservation of the expiry must not create a newly usable ticket
+- **every 5 qualifying extra correct answers → battle ticket +1**;
+- free study does **not** directly mint battle tickets;
+- the earlier D-006 reward **every 3 correct additional-learning answers → star resource +1** remains;
+- qualifying extra correct answers continue to produce their approved exploration progress signal;
+- unit MASTER / hard MASTER rewards remain owned by the learning/reward contract.
 
-## AC-TKT-004 — Crash/reload is idempotent
+The old per-extra-question `ticket +1` acceptance is superseded by D-022 and must not be restored by a stale test.
 
-Reloading with an `activeBattle` resumes the same battle/reservation. Reloading around settlement must never create both a committed and refunded copy, nor consume two tickets for one battle.
+## AC-LRN-004 — Reward bridge is idempotent
 
----
-
-# 4. Adventure → Battle
-
-## AC-ADV-001 — Adventure may be browsed without bypassing the study gate
-
-The child may navigate to Adventure according to the UI contract, but a battle cannot start unless the current-day learning gate, stage-unlock gate, and ticket gate all pass.
-
-If battle start is blocked, no ticket is reserved and no battle state is created.
-
-## AC-ADV-002 — Encounter selection starts exactly one persisted battle
-
-Selecting an eligible encounter and confirming battle creates one `activeBattle` bound to that stage/encounter and the reserved ticket. Repeated taps or reload must not create duplicate battles or duplicate reservation.
-
-## AC-ADV-003 — World tuning is not a hidden product decision
-
-Entrance/mid/deep progression and bounded enemy level bands are canonical direction, but exact zone level ranges and exact zone-clear counts are `TUNING-DEFAULT` values. Tests may cover them in a tuning suite, but they must not be treated as immutable product acceptance unless promoted by a later canonical decision.
+A semantic learning completion/question milestone has a stable completion identity. Reloading or receiving the same event twice cannot duplicate tickets, capture items, exploration progress or mastery rewards.
 
 ---
 
-# 5. Capture and duplicate choice
+# 3. Ticket / Battle lifecycle acceptance
 
-## AC-CAP-001 — In-battle eligibility
+## AC-TKT-001 — Seven-day FEFO lots
 
-Capture becomes available only while the enemy is still in battle and its HP is `<= 50%` of max HP. Above 50%, capture is blocked and no ring/attempt is consumed.
+Ticket grants retain dated lots and expire under the seven-day rule. FEFO chooses the nearest-expiry usable lot. Day rollover must not zero every ticket.
 
-## AC-CAP-002 — Ring performance and three-attempt limit
+## AC-TKT-002 — Battle start reserves exactly one
 
-Canonical ring behavior:
+A new battle requires the approved daily-learning gate, unlocked target, valid team and one usable ticket. Starting creates one persisted battle/reservation. Reload/render/re-entry cannot reserve a second ticket for the same battle.
 
-- `ほし` ×1.00
-- `ぎん` ×1.20
-- `きん` ×1.50
-- `にじ` = 100%
-- non-rainbow final success probability cap = 92%
-- maximum three capture attempts per battle
+## AC-TKT-003 — Played outcomes consume the ticket
 
-Probability tests must inject deterministic RNG/boundaries. They must not rely on statistical luck.
+Battle V6 supersedes the old loss/abandon refund rule.
 
-## AC-CAP-003 — Child-facing capture presentation
+The reservation is committed/consumed exactly once on:
 
-The child-facing primary representation is ease/recommendation, such as a five-step ease indication and recommendation wording. Exact percentage is secondary/detail information.
+- victory;
+- successful live capture;
+- loss after the battle was played;
+- explicit voluntary abandon/leave.
 
-A capture attempt uses the ManaEvo four-star temporal presentation: four stars progress in sequence toward a completed ring; success closes the ring, while failure breaks the sequence. A test that only finds four star elements in the DOM is insufficient — the temporal progression must be observable.
+A stale test expecting defeat or explicit abandon to return a playable ticket is invalid.
 
-## AC-CAP-004 — Attempt accounting
+## AC-TKT-004 — Technical interruption is not abandon
 
-Each actual throw consumes exactly one selected ring item and one of the maximum three attempts. A blocked attempt consumes neither.
+Reload, crash, Safari/PWA termination and equivalent technical interruption resume the same persisted `activeBattle`. They do not reserve, consume or refund another ticket merely because the process restarted.
 
-**Canonical-detail dependency:** the exact enemy-turn continuation after a failed throw must follow the W-103 capture canonical. Existing runtime currently gives the enemy a turn, but W-108 does not elevate that implementation detail beyond the capture-domain canonical.
+## AC-TKT-005 — Terminal settlement is path-independent
 
-## AC-CAP-005 — First catch is automatic
-
-On the first successful catch of a species:
-
-- the species is marked caught in the active dex
-- one monster instance is added to the player’s collection
-- no duplicate-choice prompt is required
-
-## AC-CAP-006 — Second and later catches require duplicate choice
-
-On a later successful catch of the same species, settlement pauses for exactly one child choice:
-
-1. `なかまにする`
-2. `おうえんにかえる`
-
-The game must not silently auto-add a second instance before that choice is resolved.
-
-## AC-CAP-007 — `なかまにする`
-
-Choosing `なかまにする` creates a distinct monster instance while preserving species identity and per-instance history fields such as nickname/catch date/used ring/learned moves/level where supported by the save model.
-
-## AC-CAP-008 — `おうえんにかえる` and growth shards
-
-Choosing `おうえんにかえる`:
-
-- does not add the duplicate monster instance
-- grants `そだちのかけら +1`
-
-Exactly three growth shards can be consumed to grant `育成XP +30` to one selected current-team monster. The operation consumes exactly three shards and grants the XP exactly once.
+A terminal result reached through a move, Protect, switch, failed capture response, status/end-turn damage or other legal action path must converge on the same authoritative battle/ticket/reward settlement. UI action path must not change accounting semantics.
 
 ---
 
-# 6. XP / raising
+# 4. Battle V6 acceptance
 
-## AC-XP-001 — Canonical XP curve and compatibility cap handling
+Detailed mechanics are owned by `02-BATTLE-TICKETS-BALANCE.md`.
 
-Level progression uses the baseline canonical cumulative curve:
+## AC-BTL-001 — Damage constants
 
-`totalXp(L) = round(6 × (L - 1)^1.9)`
+Current Battle V6 tuning:
 
-The product's final level cap is **not an approved canonical decision**. W-102 records the existing Lv100 clamp as a compatibility value that may be preserved until a separate product decision is made. Therefore the CANONICAL GATE must not assert “Lv100 is the product's final cap” as an immutable rule; a Lv100 clamp may only be covered as an implementation/save-compatibility guard while that decision remains unresolved.
+- STAB = `1.25`;
+- critical chance = `1/16`;
+- critical multiplier = `1.35`;
+- damage random multiplier = `0.92..1.00`;
+- type immunity still produces zero damage.
 
-Level/XP normalization must be deterministic for the same saved value.
+Deterministic unit tests must cover lower/upper random boundaries and critical/non-critical branches.
 
-## AC-XP-002 — Reward application is exactly-once
+## AC-BTL-002 — Weak bench cannot trivialize normal enemies
 
-Learning XP, battle XP, and growth-shard XP must be applied exactly once to their canonical recipients. Reloading a reward/result screen must not replay XP.
+Normal encounter reference power is anchored to the monster actually entering first and the strongest other current-team support. Current V6 policy is effectively 70% active / 30% strongest support. A high-level carry paired with low-level reserves must not average down into a trivial enemy.
 
-## AC-XP-003 — Level-up is reflected immediately
+## AC-BTL-003 — Boss scaling preserves rematch growth
 
-When XP crosses one or more level thresholds:
+Boss first-normal-encounter snapshot remains authoritative for ordinary rematches. Challenge rematch may rescale separately. Balance-version replacement is persisted once and then re-locked; repeated normal rematches must not continuously chase current player growth.
 
-- new level/stats are reflected immediately
-- evolution readiness is recomputed immediately
-- the same monster `instanceId` remains the player’s instance
+## AC-BTL-004 — Battle XP pacing V5 + V6
 
-## AC-XP-004 — Evolution never makes a monster numerically weaker at base-stat transition
+The encounter reward pool remains the reporting source, but settlement follows D-020/D-022:
 
-Across the active canonical evolution transition set, evolution must not reduce any of the four canonical base stats relative to the prior form. This is a machine-checkable data invariant, not a visual-only test.
+- active battler receives 40% of the legacy pool;
+- other eligible teammates receive 40% of that active amount (16% of legacy pool before later modifiers, subject to established rounding);
+- level-gap multiplier is then applied per recipient;
+- high-level farming of much weaker enemies is throttled;
+- fighting meaningfully stronger enemies may receive the approved positive multiplier;
+- loss/abandon grants no victory XP;
+- settlement is exactly-once.
+
+Current level-gap multipliers are:
+
+- player `>=15` levels above enemy → `0.15`;
+- `>=10` above → `0.25`;
+- `>=6` above → `0.50`;
+- enemy `>=3` levels above player → `1.15`;
+- enemy `>=5` levels above player → `1.25`;
+- otherwise `1.00`.
+
+## AC-BTL-005 — Turn/KO presentation gates input
+
+When an action resolves, HP change, move/KO presentation and the next actionable CTA remain synchronized. The UI must not expose post-KO capture, result dismissal or another combat action before the authoritative turn/KO presentation has reached the corresponding state.
 
 ---
 
-# 7. Normal evolution
+# 5. Capture / duplicate acceptance
+
+Detailed capture semantics are owned by `03-CAPTURE-DUPLICATES.md`.
+
+## AC-CAP-001 — Stable capture keys and child-facing names
+
+Stable domain keys remain:
+
+- `star`;
+- `silver`;
+- `gold`;
+- `rainbow`.
+
+Child-facing names are:
+
+- ほしボール;
+- ぎんボール;
+- きんボール;
+- にじボール.
+
+Old `○○のわ` child-facing copy must not be reintroduced by stale tests or docs.
+
+## AC-CAP-002 — Probability / attempts
+
+Current fixed boundaries:
+
+- star ×1.00;
+- silver ×1.20;
+- gold ×1.50;
+- rainbow guaranteed;
+- non-rainbow final cap 92%;
+- maximum three attempts for the whole battle.
+
+Base-chance internals remain tuning/domain-owned unless separately promoted.
+
+## AC-CAP-003 — Live capture window
+
+While a normal capturable enemy is alive, ordinary capture requires enemy HP `<=50%`, remaining attempts and a usable selected capture item. A blocked attempt consumes neither item nor attempt.
+
+## AC-CAP-004 — Post-KO wild capture
+
+Battle V6 adds a second legal opportunity for ordinary capturable wild encounters after KO/win settlement.
+
+Required invariants:
+
+- boss/capture-disabled/special targets do not gain this path merely because HP reached zero;
+- the same battle-wide max-three-attempt counter applies;
+- the already-settled battle XP is **not awarded again** after post-KO capture success;
+- the newly caught instance receives no retroactive XP from that battle;
+- post-KO capture is not actionable before KO/turn presentation completes.
+
+## AC-CAP-005 — Temporal ball presentation
+
+One attempt presents one ManaEvo-original ball:
+
+`throw → hit/contain → 1→2→3→4 star temporal confirmation → success close/GET or failure release`.
+
+UI must present the already-decided domain result; it must not reroll probability. A test that merely finds four star DOM nodes is insufficient.
+
+## AC-CAP-006 — Duplicate settlement
+
+First catch adds the species/instance through the normal first-catch path. Second and later catches require the canonical choice:
+
+- `なかまにする` → distinct instance;
+- `おうえんにかえる` → no new instance, `そだちのかけら +1`.
+
+Three growth shards grant the approved XP amount to one selected eligible monster exactly once. No capture may grant both duplicate branches.
+
+## AC-CAP-007 — Capture evolution pacing buffer
+
+When a captured species has a next level-based evolution threshold, capture initialization must preserve the D-020 minimum buffer: do not hand the child an already-near-instant next evolution solely because the wild enemy level exceeded that threshold. Current contract keeps at least five levels before the next level-evolution threshold where applicable.
+
+---
+
+# 6. Evolution / items / special-form acceptance
 
 ## AC-EVO-001 — Active transition integrity
 
-The active No.001〜238 master exposes exactly the canonical 155 normal evolution transitions. Every transition has a valid active source/target and a recognized method.
+Active scope remains No.001–238 / 83 families with the canonical 155 normal evolution transitions. Stable instance identity is preserved across evolution.
 
-## AC-EVO-002 — Level evolution
+## AC-EVO-002 — Evolution methods
 
-When a monster reaches the canonical required level, it becomes eligible. Evolving:
+Level, consumable-item and held-item level-up evolution follow `04-EVOLUTION-ITEMS-SPECIAL-FORMS.md`. An implementation may not replace a held-item level-up trigger with an invented fixed level or consume an item twice on reload.
 
-- changes the species to the canonical target
-- preserves the same monster instance identity and applicable instance history
-- marks the target form in the dex
-- applies updated stats immediately
+## AC-EVO-003 — Exploration/item acquisition
 
-## AC-EVO-003 — Consumable-item evolution
+The approved exploration/pity system remains the canonical evolution-item acquisition system where owned by the evolution contract. A stale test may not re-establish dedicated transition trials as the sole source unless a later explicit decision says so.
 
-When the required evolution item is present, evolution may consume exactly one required item and transition exactly once. Re-render/reload cannot consume a second copy for the same completed evolution.
+## AC-EVO-004 — Evolution pacing
 
-## AC-EVO-004 — Held-item level-up evolution
+`08-EVOLUTION-PACING.md` and D-020 own current production pacing. Tests must verify the lower Battle XP distribution and capture-level buffer without rewriting existing save levels backwards.
 
-Held-item evolution is triggered by the next actual level-up while the required item is held. It is not converted into an invented fixed-level threshold.
+## AC-FORM-001 — Giga/Burst sets and exclusivity
 
-## AC-EVO-005 — Self-evolution discovery is recorded
+The active master keeps the canonical 12 Giga and 8 Burst eligible species with no overlap. One player battle cannot stack both systems.
 
-When a form that participates in the self-evolution world gate is obtained by the player’s own evolution, `evolutionDiscoveries` records that discovery and preserves it across save/load.
+## AC-FORM-002 — Form effects
 
----
-
-# 8. Evolution-item exploration and pity
-
-## AC-EXP-001 — Five points buys one exploration
-
-Exploration costs exactly five exploration points. A successful start deducts five points once. There is no daily exploration-count cap.
-
-Only unlocked regions can be selected for exploration.
-
-## AC-EXP-002 — Exploration always returns a result
-
-Each exploration returns either:
-
-- normal material, baseline weight 80%
-- a regional evolution item, baseline weight 20%
-
-The test must verify configured branches deterministically rather than run a flaky random-rate sample.
-
-## AC-EXP-003 — Pity is regional and persistent
-
-For each area independently:
-
-- a normal-material result increments that area’s miss count
-- an evolution-item result resets that area’s miss count to zero
-- save/load preserves the miss count
-- exploring another area does not alter this area’s count
-
-## AC-EXP-004 — Sixth-run choice guarantee
-
-After five consecutive evolution-item misses in one area, the **start of the sixth exploration** offers a choice of one evolution item from that region.
-
-Choosing the guaranteed item resets that area’s miss count to zero.
-
-There is no separate pre-registered “target item” state required by the canonical design.
-
-## AC-EXP-005 — Boss first-clear bonus
-
-The first clear of a regional boss grants one regional evolution item once. Re-clearing the same first-clear reward must not duplicate it.
-
-## AC-EXP-006 — Dedicated evolution trial is not the sole canonical acquisition source
-
-A test must not require “all 32 item evolutions receive their item only from deterministic dedicated transition trials.” D-008 restores exploration/pity as the canonical acquisition system. A dedicated trial may remain only if separately approved for another purpose; it cannot replace exploration/pity by test fiat.
+Giga preserves the approved ×1.35 all-stat effect and HP-ratio conversion. Burst preserves approved HP ×2, attack ×1.2, three-turn duration and its canonical move replacement contract. Reversion preserves HP ratio and never revives a 0-HP monster.
 
 ---
 
-# 9. Self-evolution world unlock
+# 7. World / progression acceptance
 
-## AC-WLD-001 — Second form first acquisition is self-evolution
+Detailed world rules are owned by `05-WORLD-PROGRESSION.md`.
 
-For forms governed by the self-evolution-first world rule, normal wild access remains locked until that species has been obtained through the player’s own evolution.
+## AC-WLD-001 — Source identity vs adventure placement
 
-Having the species in `dex.caught` alone is not sufficient if `evolutionDiscoveries` is absent.
+Monster source `area` remains master identity evidence and is not rewritten to match adventure placement. Adventure area/zone is a separate layer.
 
-## AC-WLD-002 — Discovery unlock persists
+## AC-WLD-002 — Self-evolution-first progression
 
-After the self-evolution occurs:
+For applicable non-final evolved forms, first normal acquisition comes from own evolution; qualifying own evolution records `evolutionDiscoveries`; advanced wild access may unlock afterward. Final evolved forms remain unavailable as ordinary wild catches unless a later explicit rule says otherwise.
 
-- `evolutionDiscoveries[targetSpeciesId] = true` or equivalent canonical record persists
-- eligible later-world wild access can unlock according to the current adventure placement/tuning gates
-- save/load does not lose the discovery
+## AC-WLD-003 — Area/boss progression
 
-## AC-WLD-003 — Final forms are not ordinary wild catches
+Area1–4 remain sequential. Regional boss eligibility uses the approved per-area learning gate (`>=12` points and at least two distinct skills), not a stale five-wild-clear replacement. Earlier areas remain revisit-able.
 
-Final evolved forms covered by the progression rule must not appear as normal wild-capture targets. Boss/event/specially approved appearances are separate from ordinary wild capture.
+## AC-WLD-004 — Battle V6 world recommendation bands
 
-## AC-WLD-004 — Source `area` and adventure placement are not conflated
+Current production bands are:
 
-Tests must not rewrite baseline/source `area` merely because a form is placed in a different adventure area/zone. Source classification and adventure placement are separate layers.
+- Area1: 5–16; zones 5–8 / 9–12 / 13–16;
+- Area2: 14–27; zones 14–18 / 19–23 / 24–27;
+- Area3: 24–40; zones 24–29 / 30–35 / 36–40;
+- Area4: 37–58; zones 37–44 / 45–51 / 52–58;
+- EX: 55–100.
 
----
-
-# 10. Boss learning gate and rematch
-
-## AC-BOSS-001 — Per-area learning gate
-
-A regional boss becomes challenge-eligible only when that area has both:
-
-- `progressPoints >= 12`
-- at least `2` unique skill IDs
-
-Canonical point grants for this gate:
-
-- core task first completion → `+1`
-- mastery milestone → `+2`
-- chapter test first pass → `+3`
-
-Already-earned repetitive/easy-loop events do not mint duplicate boss progress.
-
-## AC-BOSS-002 — Progress is area-local
-
-Boss progress is stored per area. When a new area unlocks, that new area starts at `0` points and an empty unique-skill set. Progress from an earlier area is not carried forward.
-
-## AC-BOSS-003 — Boss clear unlocks the next area
-
-The first clear of Area 1/2/3 boss unlocks the next normal area in sequence. A test must not substitute “five wild clears” for the boss challenge learning gate.
-
-## AC-BOSS-004 — Normal rematch preserves growth advantage
-
-On the first normal boss encounter, the canonical boss balance snapshot is saved. A later **normal** rematch uses the locked snapshot so raising the player team can make the rematch relatively easier.
-
-## AC-BOSS-005 — Challenge rematch may rescale
-
-A separately selected challenge rematch may build a newly scaled challenge plan. Challenge scaling must not silently replace the locked normal-rematch experience.
-
-## AC-BOSS-006 — `balanceVersion` replacement is saved once, then re-locked
-
-If an old snapshot is invalid because the balance version changed:
-
-1. compute the replacement normal snapshot
-2. persist that replacement snapshot
-3. subsequent normal rematches reuse the replacement snapshot
-
-Computing a replacement without saving it is an implementation drift and must fail the canonical test.
+These are the current production tuning from D-022. A future tuning PR may change them only through the canonical-sync process; old W-105 bands must not silently return.
 
 ---
 
-# 11. Giga / Burst
+# 8. Save / profile / cloud acceptance
 
-## AC-FORM-001 — Canonical eligible sets remain disjoint
+Detailed semantics are owned by `07-SAVE-PROFILES-PARENT-PWA.md` and D-018/D-021.
 
-The active master has:
+## AC-SAVE-001 — Account vs profile separation
 
-- 12 Giga species
-- 8 Burst species
-- zero overlap between the two sets
+A family Auth account may own multiple stable ManaEvo player profiles. Learning/game progress remains profile-specific. Device-selected current profile is device-local and one device must not steal another device's active selection.
 
-The exact species set must match the canonical active master/forms data. Baseline names include the 12 Giga targets and 8 Burst targets from `scripts/forms.mjs`; tests should resolve stable active IDs from the canonical master rather than infer eligibility from UI text.
+## AC-SAVE-002 — Complete recoverable snapshot
 
-## AC-FORM-002 — One battle cannot stack Giga and Burst
+Cloud persistence preserves the versioned profile registry plus each profile's learning state, game state and learning→game reward bridge required to continue play. Local storage remains offline/cache/unsynced continuity rather than being discarded.
 
-A battle may use at most one of the special-form systems for the player side according to the canonical unlock/ownership gates. Activating one blocks activation of the other in that same battle.
+## AC-SAVE-003 — Revision conflict is safe
 
-## AC-FORM-003 — Giga effect
+A stale revision may not silently destroy newer progress. Compatible disjoint-profile changes may merge according to the save contract. Same-profile conflicting changes require Parent-owned resolution/backup rather than silent last-write-wins.
 
-Giga applies `×1.35` to all four battle stats, including max HP. Current HP converts by preserving HP ratio on activation and again when reverting.
+## AC-SAVE-004 — Child gameplay does not own cloud conflict UI
 
-## AC-FORM-004 — Burst effect and duration
+When logged in and playing normally:
 
-Burst applies:
+- no persistent cloud/account conflict FAB is required in child gameplay;
+- conflict detection does not automatically force a child-facing conflict modal;
+- local progress can continue while attention is pending;
+- overwrite/pull/resolve actions remain reachable through the protected Parent surface.
 
-- max HP `×2.0`
-- attack `×1.2`
-- duration `3` turns
-- Burst move power `110`
-- Burst move accuracy `95%`
+## AC-SAVE-005 — TEST isolation
 
-On ending Burst, current HP converts back by preserving HP ratio. A monster at `0 HP` remains `0 HP`; form expiration must not become a revive mechanic.
+TEST mode does not become a normal family profile/cloud revision. Entering test preserves the real local state, suppresses normal cloud writes as specified, visibly marks TEST, and exiting restores the preserved real state.
 
-## AC-FORM-005 — Special-form result is persistent where canonical data requires it
+## AC-SAVE-006 — Migration / stable IDs
 
-Dex/form-discovery records and one-time unlock ownership must persist exactly once across save/load. Reopening a result screen must not mint another unlock item/mark/core.
+Migrations preserve stable player/species/instance/learning identities, are idempotent, and do not duplicate tickets, rewards, profiles or monsters. Adding later species must not reinterpret existing IDs by array position.
 
 ---
 
-# 12. Save / profile / migration
+# 9. Monster master / art acceptance
 
-## AC-SAVE-001 — Profile isolation
+## AC-ART-001 — Active scope
 
-Create at least two profiles A and B. Mutating A’s learning progress, team/box, tickets, dex, world progress, exploration pity, evolution discoveries, or active battle must not mutate B’s corresponding per-profile state.
+Active monster scope is exactly `m001`–`m238` / 83 families. `m239` remains immutable baseline/reference only and is absent from active dex, normal encounters and required active art scope.
 
-Switching A → B → A restores each profile’s own state without cross-profile leakage.
+## AC-ART-002 — Identity and visual provenance
 
-## AC-SAVE-002 — ManaEvo storage is isolated from Kids Quest
+Art production uses the rescued baseline visual briefs plus CURRENT description shards. Family continuity/originality/small-size readability rules in `09-MONSTER-MASTER-ART-SPEC.md` apply. Do not invent replacement identities from runtime filenames.
 
-ManaEvo writes only to its own storage/cache namespace. Normal ManaEvo operations, reset/delete, migration, and cache cleanup must not mutate Kids Quest localStorage/IndexedDB/cache data.
+## AC-ART-003 — CANDIDATE ≠ FORMAL
 
-## AC-SAVE-003 — Optional Kids Quest progress import is read-only and one-way
+Repository file existence, candidate QA PASS and production visibility do not create FORMAL approval. FORMAL requires explicit approval evidence.
 
-If compatible Kids Quest learning progress is imported:
+## AC-ART-004 — Progressive production candidate visibility
 
-- Kids Quest source is read-only
-- data is copied into ManaEvo
-- an import marker/version is stored on the ManaEvo side
-- a second import attempt is idempotent and creates no duplicates
-- there is no live two-way sync after import
-- Kids Quest game-specific monster/battle state is not auto-mapped without an explicit safe mapping
+D-016 permits validated candidates to render in normal production before FORMAL completion, but only by explicit per-species production allowlist/state. The runtime must not infer production eligibility merely from a successful file request, a number range or file extension.
 
-## AC-SAVE-004 — Legacy ticket migration preserves quantity without duplication
+Current main production overlay from PR #98 covers the explicit 184-species allowlist. W-306 electric, W-309 bug, W-313 poison, W-319 dark and m239 were excluded from that rollout until a later merge changes actual production state.
 
-A legacy save that contains only a simple ticket count migrates once into compatible ticket lots without losing count. Re-running normalization/migration does not grant the same legacy tickets again.
+## AC-ART-005 — Replacement remains species-addressable
 
-## AC-SAVE-005 — Active battle survives reload without double reservation
-
-A persisted active battle after migration/reload keeps one reservation and one battle identity. Migration cannot create an additional reservation or silently discard the battle in a way that duplicates/refunds tickets incorrectly.
-
-## AC-SAVE-006 — Stable IDs survive migration
-
-Monster instance IDs, species IDs, dex IDs, and stable learning IDs are not renamed merely for display-name/UI changes. Migration preserves referential integrity.
+Replacing `mNNN` art must be one-species-addressable, preserve provenance/checksum evidence where the candidate pipeline requires it, and must not require unrelated manual mapping edits. A future generated production index may remove duplicated hand-maintained lists but must never auto-generate FORMAL approval.
 
 ---
 
-# 13. Active dex — 238
+# 10. Production host / PWA acceptance
 
-## AC-DEX-001 — Active species scope is exactly No.001〜238
+## AC-PWA-001 — Vercel is the only production canonical host
 
-The active game/dex/master scope contains exactly 238 species with stable No.001 through No.238 coverage and no duplicate IDs.
+Production canonical is exactly:
 
-## AC-DEX-002 — No.239 is excluded from active gameplay but retained in baseline reference
+`https://mana-evo.vercel.app/`
 
-No.239 `シラユキヒメ`:
+GitHub remains source/PR/CI authority. GitHub Pages is not a second production authority.
 
-- is absent from active species registry/dex denominator/ordinary encounters/active asset-required scope
-- remains preserved in immutable baseline/reference data
+## AC-PWA-002 — Root production identity
 
-A test must not delete No.239 from the baseline archive in order to make the active count 238.
+Production manifest/canonical/OG/Service Worker/app scope use the Vercel root production identity (`/`), not the old `/mana-evo/` GitHub Pages production base.
 
-## AC-DEX-003 — Dex progress uses the active denominator
+## AC-PWA-003 — Offline/update behavior
 
-Child-visible active dex progress and completion logic use 238 as the active species denominator unless a later canonical mode explicitly defines a filtered subset.
+After a successful online load/install, supported PWA relaunch/update behavior must not strand a stale broken shell. Cache cleanup touches only ManaEvo-owned caches/data.
 
----
+## AC-PWA-004 — Auth redirects
 
-# 14. PWA / offline / update
-
-## AC-PWA-001 — GitHub Pages is the official production target
-
-The canonical production application loads from:
-
-`https://syoudai0514.github.io/mana-evo/`
-
-Build base, manifest navigation, asset paths, and service-worker scope must work under `/mana-evo/`.
-
-## AC-PWA-002 — Install metadata is valid and ManaEvo-specific
-
-Manifest `name`/`short_name`/`id`/`start_url`/`scope`, icons, Apple metadata, and launch metadata resolve to ManaEvo and do not collide with Kids Quest.
-
-Tests may verify required icon files/dimensions, but exact source-code spelling is not the behavioral contract.
-
-## AC-PWA-003 — Offline relaunch works after a successful online load
-
-After the app has loaded successfully online and required app-shell assets have been cached, switching the browser context offline and relaunching `/mana-evo/` reaches the ManaEvo shell/offline-capable experience rather than a browser network error.
-
-## AC-PWA-004 — Update does not strand stale shell or formal monster assets
-
-Test an upgrade from build/cache version N to N+1:
-
-- new app shell becomes active after the intended update flow
-- a formally versioned monster asset resolves to the new version rather than being permanently shadowed by an old cache entry
-- no mixed old/new shell that breaks navigation
-
-The literal cache version string (for example `v8`) is not canonical; successful update behavior is.
-
-## AC-PWA-005 — Cache cleanup is ownership-safe
-
-ManaEvo service-worker update/cleanup removes only ManaEvo-owned caches and stays within `/mana-evo/` scope. Opening Kids Quest and ManaEvo in separate tabs and updating ManaEvo must not break `/kids-quest/` or remove its caches.
+Production sign-in confirmation/password recovery returns to the approved Vercel production origin. Preview redirect exceptions must never become canonical metadata/PWA identity.
 
 ---
 
-# 15. 390px child-flow UI
+# 11. iPhone child-flow UI acceptance
 
-Target viewport for the canonical child acceptance flow: **390px portrait first viewport**.
+Detailed UI ownership is in `06-UI-SCREEN-CONTRACT.md` / D-017 / D-021.
 
-## AC-UI-001 — One dominant child decision in normal states
+## AC-UI-001 — Supported mobile widths
 
-At 390px width, each normal child screen presents one dominant primary action for the current state. Secondary information may exist through progressive disclosure, but competing permanent primary actions must not turn the first viewport into a dashboard.
+Critical child journeys must be exercised at least at 390px portrait, with regression coverage for 375px and current wider iPhone-class 430px behavior where layout/safe-area changed.
 
-## AC-UI-002 — Home primary action follows learning state
+## AC-UI-002 — Safe-area ownership
 
-- learning incomplete → primary action is Study
-- learning complete → primary action is Adventure
-- an earned evolution is handled as a focused reward flow and does not silently replace the Home rule with a permanent third priority
+Focused Study, Battle, Capture, Evolution and Parent surfaces own safe top/bottom insets. Controls must not collide with status/Dynamic Island/home-indicator regions.
 
-## AC-UI-003 — Adventure does not duplicate navigation/browse controls
+## AC-UI-003 — One dominant child decision
 
-Normal Adventure must not simultaneously expose:
+Normal Home/Study/Adventure/Monster screens keep one dominant decision. Home primary remains Study while daily learning is incomplete and Adventure after completion; evolution does not permanently steal Home primary.
 
-- world route **and** duplicate Area tabs for the same choice
-- permanent search/filter controls
-- a huge encounter list
+## AC-UI-004 — Top-level scroll ownership
 
-Browse-all/search/filter may be progressively disclosed after the normal child choice.
+Home / Study / Adventure / Monster / HowTo maintain independent top-level scroll state. A destination must not inherit arbitrary scrollY from the previously open destination. Focused flows begin from their owned top position and return to the correct parent context.
 
-## AC-UI-004 — Battle uses a state-driven command surface
+## AC-UI-005 — Battle command clarity
 
-Normal battle turn shows the battle state and currently actionable commands. Capture controls, team-switch flow, result flow, special-form explanations, and battle tips are not all permanently piled beneath the normal turn.
+Battle visually separates arena/current state/command deck. Japanese labels must not collapse into one- or two-character vertical fragments. Actionability follows the authoritative turn presentation state.
 
-## AC-UI-005 — Capture is a focused state
+## AC-UI-006 — Capture focused flow
 
-After the child chooses capture, the capture decision becomes the focused state. Ease/recommendation is primary; exact percentage is secondary/detail. Normal battle clutter does not compete with the ring choice.
+Capture presents ball choice/ease/recommendation/remaining attempts as the focused decision; exact percentage is secondary. The visual throw and temporal star result correspond to exactly one domain attempt.
 
-## AC-UI-006 — Monster screen is not Team + Box + Dex + tutorial at once
+## AC-UI-007 — Cloud conflict remains adult-owned
 
-Normal Monster state makes the team/selected monster the primary context. Box, Dex, special-form details, move detail, and general evolution tutorials are secondary routes/states rather than simultaneous permanent panels.
-
-## AC-UI-007 — First viewport is actually usable
-
-Browser/screenshot/E2E verification at 390px must show:
-
-- primary CTA visible without horizontal clipping
-- no content hidden beneath unsafe top/bottom areas
-- no horizontal page overflow in the canonical child screens
-- focused Battle/Capture/Evolution states are visually owned by the active flow
-
-Passing by finding a CSS class name is insufficient.
-
-## AC-UI-008 — Canonical child-flow E2E
-
-With deterministic fixture data, the suite must exercise a representative child journey:
-
-Home → Study → daily completion/reward → Adventure → eligible Battle → Capture → caught Monster → raising/evolution-ready state → focused Evolution result.
-
-The E2E asserts actions, state changes, and visible decisions; it does not assert stylesheet import order.
+Normal child Home/Study/Adventure/Battle flow must not be obstructed by a cloud conflict resolver. Parent retains the protected management route.
 
 ---
 
-# 16. Existing test disposition
+# 12. Canonical synchronization acceptance
 
-No tests are edited in W-108. The following are explicit candidates for later replacement/refactor when implementation work starts.
+## AC-SYNC-001 — Protected product PR declares canonical impact
 
-| Existing test | Current issue | Canonical disposition |
-|---|---|---|
-| `tests/premium-ui-v4.test.js` | Explicitly requires `premium-ui-v4.css` to load after `runtime.css` and asserts classes such as `premium-world-map`, `encounter-art`, showcase classes | **REFACTOR.** Replace import-order/class assertions with AC-UI-001〜008 viewport/flow behavior. CSS load order must not be visual authority. |
-| `tests/mockup-ui-v3.test.js` | Reads source/CSS text and freezes `game-bottom-nav`, mockup class names, `Mockup UI v3`, `--me-gold` token presence | **REFACTOR.** Keep desired navigation/CTA behavior, drop implementation-name/token authority. |
-| `tests/trace-layout.test.js` | Asserts exact CSS selectors/properties and that trace CSS loads after shared styles | **REFACTOR.** Preserve the actual behavior — trace canvas visible, controls below/not overlapped, header not covering instructions at mobile width — using browser layout/viewport assertions rather than selector/import order. |
-| `tests/navigation.test.js` | Uses regex against `App.jsx` source to prove navigation wiring | **REFACTOR.** Replace with click/navigation tests that verify the user reaches the correct screen and battle gate cannot be bypassed. |
-| `tests/pwa-assets.test.js` | Useful manifest/icon checks are mixed with exact `CACHE_NAME ... v8`, source-regex, and specific cache-strategy implementation assertions | **SPLIT.** Keep stable public contract checks; replace literal cache version/implementation strategy checks with AC-PWA-003〜005 offline/update behavior. |
-| `tests/world-progression.test.js` | Requires story bosses to use `minAreaClears === 5`; exact area bands are hard-coded as product assertions | **REPLACE/RECLASSIFY.** Five-clear boss gate conflicts with D-009/AC-BOSS-001. Exact level bands belong TUNING GATE. Keep self-evolution/final-wild behavior where consistent. |
-| `tests/progression-review-fixes.test.js` | Hard-codes exactly two wild first-clears for zone unlock | **RECLASSIFY.** Zone structure remains; exact clear count is a tuning default unless separately promoted. Keep `evolutionDiscoveries` behavior as CANONICAL GATE. |
-| `tests/pr15-master.test.js` | Requires all 32 item evolutions to have deterministic transition-trial acquisition rows | **REPLACE acquisition assertion.** D-008/AC-EXP restores exploration/pity. Preserve valid master/evolution integrity assertions that do not make trial the sole acquisition source. |
-| `tests/runtime-completion.test.js` | Requires 32 evolution trials and first-clear item grant; boss helpers depend on old clear-count gate | **REWRITE conflicting cases.** Replace with AC-EXP and AC-BOSS. Giga/Burst behavior can be retained/reworked where it matches AC-FORM. |
+When a PR changes a protected runtime/art path mapped by `design/current/canonical-sync-map.json`, its body declares:
 
-### 16.1 Explicit CSS/load-order refactor list
+```text
+Canonical-Impact: changed | none
+Canonical-Domains: <domain,...>
+Canonical-Reason: <concrete reason>
+```
 
-The minimum mandatory refactor set for the W-108 requirement is:
+## AC-SYNC-002 — Behavior change updates authority in the same PR
 
-- `tests/premium-ui-v4.test.js`
-- `tests/mockup-ui-v3.test.js`
-- `tests/trace-layout.test.js`
+For `Canonical-Impact: changed`:
 
-These tests currently make stylesheet/class implementation details part of the pass condition. They must not block a canonical UI rebuild whose child behavior is correct.
+- every declared owning CURRENT contract is changed in the same PR;
+- `design/rebuild/DECISION-LOG.md` is changed in the same PR;
+- implementation/tests/generated state are updated as required;
+- CI rejects missing synchronization.
 
----
+## AC-SYNC-003 — No-impact claim is reviewable
 
-# 17. Known current implementation/test deltas against this contract
+For `Canonical-Impact: none`, a concrete reason is mandatory. CI may permit the declaration, but Reviewer must confirm the protected runtime change truly does not alter the contract.
 
-These are implementation work for later phases, not changes to be made in W-108:
+## AC-SYNC-004 — Machine-readable metadata is not gameplay authority
 
-1. extra-question ticket reward currently drifts from per-question `+1` behavior
-2. later-approved `ほしのわ +1` per three correct additional-learning answers is missing in current runtime
-3. dedicated evolution-trial first-clear acquisition currently replaces the canonical exploration/pity source
-4. current boss gate/test path uses wild-clear count instead of per-area `12 points + 2 unique skills`
-5. duplicate capture currently lacks the canonical `なかまにする / おうえんにかえる` settlement and growth-shard loop
-6. invalid old-version boss snapshots can be recalculated without persisting the replacement snapshot
-7. capture star presentation must be verified as temporal four-stage progression, not only final star state
-8. current UI architecture/tests rely on CSS load order/class preservation rather than the D-013 screen/child-flow contract
-
-A release is not canonical merely because the old suite is green while one of these deltas remains.
+`canonical-sync-map.json` is process ownership metadata. It cannot be used to invent gameplay rules or approval state.
 
 ---
 
-# 18. Release acceptance gate
+# 13. Release gate
 
-For an implementation PR claiming canonical completion of these domains, the minimum release evidence is:
+A release/merge claiming current canonical alignment requires, as applicable:
 
-1. `npm test` — after conflicting legacy tests have been migrated to the canonical/tuning/implementation categories
-2. `npm run build`
-3. `npm run test:e2e` with the canonical child flow and 390px viewport coverage
-4. save/reload/idempotency cases for rewards, ticket reservation, boss snapshot, exploration pity, duplicate settlement, and migration
-5. active dex master check: 238 active, No.239 absent from active runtime but retained in baseline
-6. PWA browser test: install metadata, offline relaunch, update, and Kids Quest isolation
-7. no acceptance test whose only justification is CSS import order/class/token existence
+1. `npm test`;
+2. `npm run build`;
+3. `npm run verify:release`;
+4. WebKit E2E / child-flow coverage including relevant 375/390/430 cases;
+5. deterministic tests for changed reward/battle/capture/random boundaries;
+6. save/reload/idempotency coverage for changed settlement/migration boundaries;
+7. active master guard: exactly 238 active species, m239 excluded from active scope but retained in baseline;
+8. art scope/integrity checks when image assets or production art eligibility changed;
+9. canonical-sync CI gate for protected product changes;
+10. concrete tangible evidence for any manual/visual/device acceptance claimed by the Work Item.
 
-The final review must report the commit SHA and which AC IDs are covered by which test file/scenario. CI PASS alone is not proof of specification correctness; coverage must trace back to this behavioral contract.
+CI PASS alone does not prove specification correctness. Final review must compare the actual changed behavior and tangible artifacts against the owning CURRENT contract and Decision Log.
+
+---
+
+# 14. Stale-test prohibition
+
+The following historical assertions are specifically superseded and must not be resurrected as product truth:
+
+- extra question `ticket +1` per clear — superseded by D-022 `5 correct → ticket +1`;
+- loss/explicit abandon refund — superseded by D-022 played-ticket commit;
+- STAB 1.5 / crit 1.5 / random 0.90–1.00 — superseded by Battle V6 values;
+- old Area1–4/EX recommendation bands — superseded by D-022 bands;
+- capture child-facing `○○のわ` — superseded by D-017 ball naming/presentation;
+- capture only while enemy alive — superseded by D-022 post-KO ordinary-wild opportunity;
+- GitHub Pages `/mana-evo/` as production canonical — superseded by D-019;
+- cloud conflict resolver as child-flow responsibility — superseded by D-021;
+- CANDIDATE forbidden from normal production gameplay in all cases — superseded within D-016's explicit allowlist scope;
+- Work Item/PR/CI completion text as sufficient Acceptance evidence — prohibited by D-015.
+
+If an existing test still asserts one of these, update or reclassify that test; do not roll production backward merely to make the stale test pass.

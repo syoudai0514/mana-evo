@@ -18,6 +18,7 @@
     "test": "node --test tests/*.test.js",
     "test:e2e": "playwright test",
     "verify:release": "node scripts/release-readiness.mjs",
+    "verify:canonical-sync": "node scripts/verify-canonical-sync.mjs",
     "check": "npm test && npm run build && npm run verify:release"
   },
   "dependencies": {
