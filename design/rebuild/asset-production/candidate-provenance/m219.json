@@ -29,6 +29,34 @@
       },
       "manifestStateBefore": "PLACEHOLDER",
       "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-29T12:07:15.618238+00:00",
+      "sourceLabel": "ManaEvo Phase 2A FINAL presentation-only normalization",
+      "previous": {
+        "repositoryPath": "public/monsters/m219.webp",
+        "sha256": "b63717b26bbedb47d70aad88556b42862b95dc0946b8793f0385bfbabdea6776",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m219/b63717b26bbedb47d70aad88556b42862b95dc0946b8793f0385bfbabdea6776.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m219.webp",
+        "sha256": "9e1061233b3746e8a65cce86c5ecfadb6aabcb9afaaf307fffc9e587b4fe6163",
+        "bytes": 197016
+      },
+      "manifestStateBefore": "CANDIDATE",
+      "operation": "normalization",
+      "reason": "Phase 1 final visual audit classified this existing candidate as NORMALIZE; adjust only transparent canvas scale and placement for card presence.",
+      "normalizationParameters": {
+        "scale": 1.28,
+        "placement": "center-full-alpha-bbox",
+        "xAdjust": -14,
+        "sourceBounds": "full-alpha-bbox",
+        "resampling": "premultiplied-alpha-lanczos",
+        "output": "lossless-webp-512x512"
+      },
+      "noSemanticArtChange": true,
+      "backgroundMutation": false,
+      "formalPromotion": false
     }
   ]
 }
