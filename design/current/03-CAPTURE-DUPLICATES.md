@@ -1,196 +1,171 @@
 # ManaEvo CURRENT — Capture / Duplicates
 
-Work Item: W-103  
-Status: **CURRENT CANONICAL CANDIDATE — PHASE 2**  
-Updated: 2026-08-28  
-Scope: 捕獲、捕獲結果、重複捕獲、BOX/TEAM境界のみ。UI実装・battle engine実装は行わない。
+Status: **CURRENT**  
+Updated: 2026-08-29  
+Owner: capture eligibility / capture result / duplicate settlement / capture presentation contract
 
----
+## 1. Authority / boundary
 
-## 0. Authority / evidence precedence
+Apply `REBUILD-START-HERE.md` and `design/rebuild/DECISION-LOG.md` first.
 
-本書は次を上から順に適用してCURRENTを一本化する。
+Key decisions:
 
-1. ユーザー明示決定
-2. `design/rebuild/DECISION-LOG.md` D-004 / D-010 / D-013 / **D-017**
-3. exact baseline `design/baseline/FINAL-CORRECTED/source/`
-4. 承認済み後続設計
-5. current runtime（差分確認用。正本ではない）
+- D-004 — in-battle capture, HP gate, multipliers, 92% cap, max 3 attempts
+- D-010 — first catch / duplicate choice / growth shard
+- D-013 — child-facing 5-step ease + recommendation; exact % secondary
+- D-017 — child-facing capture device becomes ManaEvo-original **ball** presentation
+- Battle V6 decision — capturable wild monster may still be captured immediately after KO, without double Battle XP
 
-主な証拠:
+Battle ticket settlement belongs to `02-BATTLE-TICKETS-BALANCE.md`.
 
-- `design/rebuild/DECISION-LOG.md` D-004 — 戦闘中捕獲、HP50%以下、stable capture item倍率、92% cap、最大3投、4星演出維持
-- `design/rebuild/DECISION-LOG.md` D-010 — 初回自動加入、重複2択、そだちのかけら復元
-- `design/rebuild/DECISION-LOG.md` D-013 — 子ども向け捕獲表示は5段階/おすすめを主、正確な%は詳細
-- `design/rebuild/DECISION-LOG.md` **D-017 — child-facing捕獲道具をボール化し、1投→命中/包み込み→4星→成功/失敗の時間演出へ変更。stable domain key / 倍率 / cap / 最大投数は不変**
-- `design/baseline/FINAL-CORRECTED/source/08-gameplay-state-spec.md` §9 / §10 — 重複捕獲、4星演出、子ども向け表示
-- `design/baseline/FINAL-CORRECTED/source/01-catch-and-evolution-design.md` §7 — 図鑑とBOXの分離、手持ち3体
-- `design/baseline/FINAL-CORRECTED/source/03-screens-catch-and-raise.md` — 捕獲結果、4星演出、BOX/図鑑表示
-- `design/baseline/FINAL-CORRECTED/source/scripts/rewards.mjs` `GROWTH_SHARD` — 3個でXP+30
-- `design/rebuild/audit/battle-capture-evolution-audit.md` — Phase 1.5差分・runtime drift
-- `design/18-sol-pr15-fix-resolution.md` §3 — 捕獲成功Battle XPの後続仕様記録
+## 2. Stable capture items and child-facing names
 
-### 後続ユーザー明示決定として本書に採用する追加証拠
+Stable domain/save keys do not change:
 
-2026-08-24 21:19 JST のユーザー明示判断:
+| stable key | child-facing name | multiplier / guarantee |
+|---|---|---:|
+| `star` | ほしボール | `1.00` |
+| `silver` | ぎんボール | `1.20` |
+| `gold` | きんボール | `1.50` |
+| `rainbow` | にじボール | `100% guaranteed` |
 
-- **捕獲成功でも撃破/勝利と同額のBattle XPを付与する。**
-- **その戦闘で新しく捕まえた個体には、その戦闘XPを付与しない。**
+Rules:
 
-2026-08-28 のiPhone実機playtestで、ユーザーは次を明示判断した。
+- non-rainbow final chance cap: `0.92`
+- rainbow is guaranteed and is not capped at 92%
+- one attempt consumes one selected capture item
+- zero inventory means that item cannot be selected
+- only rainbow may be described as guaranteed / 100%
 
-- 子ども向けの「○○のわ」表現を廃止し、**ほしボール / ぎんボール / きんボール / にじボール**へ変更する。
-- 捕獲時は1個のボールを実際に投げ、命中/包み込みの後に4星の時間演出を見せ、成功/失敗のmotionまでつなげる。
-- 既存作品は操作文法の参考に留め、固有の球デザイン・配色・意匠・animationを複製しない。
+Internal legacy variable names such as `ring`, `wa`, or older child-facing "○○のわ" text do not change stable save identity and must not be restored to child UI.
 
-これらはD-017に記録済み。表示変更はstable key / save / probability / economy migrationを要求しない。
+## 3. Capture opportunities
 
----
+ManaEvo now has **two valid capture windows** for ordinary capturable wild encounters.
 
-## 1. Canonical summary
+### 3.1 In-battle capture
 
-### 1.1 捕獲可能条件
+Capture may be attempted while battle is still active when all are true:
 
-通常の捕獲対象では、次をすべて満たしたときだけ捕獲を試行できる。
+- target encounter is capturable;
+- target is not a boss/special `captureDisabled` encounter;
+- enemy is alive;
+- enemy HP ratio is `<= 50%`;
+- fewer than 3 capture attempts have been used;
+- chosen item inventory is available.
 
-- battleが進行中である
-- 敵がまだ倒れていない
-- **敵HPが最大HPの50%以下**
-- そのbattleでの捕獲試行が**3回未満**
-- 使用するcapture itemを1個以上所持している
-- stage/event側で捕獲禁止にされていない
+### 3.2 Post-KO wild capture — Battle V6
 
-HP50%は「捕獲を開始できる閾値」として確定する。**HPが50%よりさらに低くなるほどbase捕獲率を追加上昇させるかは別論点であり、本書では勝手に確定しない。**
+If the player KOs an ordinary capturable wild monster before capturing it:
 
-### 1.2 Capture item 4種 — stable keyとchild-facing名を分離
+- the battle win/KO resolves first;
+- the wild encounter may expose one immediate post-KO capture opportunity state;
+- the same max-3-attempt counter and item inventory still apply;
+- capture-disabled / boss / special encounters do not gain this opportunity;
+- Battle XP already settled for the KO is **not awarded again** on post-KO capture success;
+- the newly captured monster does not retroactively receive that already-settled Battle XP;
+- UI must wait until turn/KO presentation is complete before enabling the post-KO capture CTA.
 
-| stable key | 子ども向け名 | 倍率 / 保証 | CURRENT |
-|---|---|---:|---|
-| `star` | **ほしボール** | ×1.00 | CONFIRMED |
-| `silver` | **ぎんボール** | ×1.20 | CONFIRMED |
-| `gold` | **きんボール** | ×1.50 | CONFIRMED |
-| `rainbow` | **にじボール** | 100% | CONFIRMED |
+This is not a return to the original old "capture only after battle" system. In-battle capture at HP<=50% remains valid; post-KO capture is an additional forgiving opportunity for wild encounters.
 
-- stable key `star / silver / gold / rainbow` はsave/domain互換のため変更しない。
-- 過去設計・内部変数に `ring` / `わ` が残る場合、それは互換名でありchild-facing表示名ではない。
-- 非rainbowの**最終1投成功率は92%を上限**とする。
-- `rainbow` / にじボールは92% capの対象外で、**100%成功**。
-- **1battle最大3投**。
-- 1回の試行では選択したcapture item 1種類だけを使う。所持0は選択不可。
-- 「かならずつかまる」「100%」という主張をしてよいのは、確定保証であるにじボールだけ。
+## 4. Capture chance
 
-### 1.3 捕獲成功のbattle結果
-
-捕獲成功はそのbattleの成功終了であり、enemyを追加で0HPにする必要はない。
-
-- battle result: `caught` 相当
-- 捕獲試行はそこで終了
-- 予約ticketの扱いは W-102 / D-007 に従い、**捕獲成功で消費確定**
-- speciesは `seen=true` / `caught=true` 相当の図鑑状態になる
-- 所持個体の扱いは「初回」か「重複」かで §5 のとおり分岐する
-
-stage clear、進化item、特殊形態報酬など**捕獲以外のstage固有報酬を捕獲成功で同時付与するかはW-103では新規定義しない**。それぞれ W-102 / W-104 / W-105 の正本に従う。
-
----
-
-## 2. Capture probability contract
-
-### 2.1 CURRENTとして固定する部分
-
-非rainbowの最終確率は、少なくとも次の境界を守る。
+For non-rainbow items:
 
 ```text
-finalChance = min(baseChance × captureItemMultiplier, 0.92)
-rainbow     = 1.00
+finalChance = min(baseChance * itemMultiplier, 0.92)
 ```
 
-互換コード内で `ringMultiplier` と呼んでも意味は同じであり、D-017は計算式を変更しない。
-
-固定するのは以下だけ。
-
-- capture item multiplier: `1.00 / 1.20 / 1.50`
-- rainbow: `1.00 guaranteed`
-- non-rainbow cap: `0.92`
-- eligibility: enemy HP ratio `<= 0.50`
-- max attempts: `3`
-
-### 2.2 baseChanceはCURRENT product ruleへ昇格しない
-
-現runtime `src/game/engine.js` は次の式を持つ。
+For rainbow:
 
 ```text
-base = clamp(0.12,
-  0.34 + missingHpRatio * 0.62 - catchRank * 0.07,
-  0.90)
+finalChance = 1.00
 ```
 
-しかし、以下はユーザー明示承認を確認できていない。
+The following are canonical:
 
-- HP50%以下の範囲で、さらにHPを削るほど成功率を上げること
-- `catchRank` の具体係数
-- `0.12 / 0.34 / 0.62 / 0.07 / 0.90` の具体定数
+- eligibility HP gate `<= 50%` for the in-battle window;
+- item multipliers `1.00 / 1.20 / 1.50`;
+- rainbow guarantee;
+- non-rainbow cap 92%;
+- max attempts 3.
 
-PR #5系ではcapture base chanceの最終値はplaytest調整対象として扱われている。したがって、**現runtime式を「実装済みだから」という理由でCURRENT product ruleにしない。** 実装作業で一時的なtuning defaultとして保持する場合も、canonical acceptance testでこの具体定数を固定しない。
+The exact `baseChance` tuning formula is **not** promoted to immutable product law merely because current runtime has constants for missing HP / catch rank. Those values remain balance-tuning unless explicitly approved.
 
----
+Post-KO capture reuses the same capture-domain chance contract; KO itself must not silently add a second success bonus unless explicitly approved later.
 
-## 3. Capture presentation — 1投 + four-star suspense
+## 5. Capture result and battle settlement
 
-4つの星は単なる最終結果の4文字表示ではなく、**時間方向を持つsequence**である。D-017により、その前後を1個の球形capture deviceの投球・結果motionで接続する。
+### In-battle capture success
 
-### 3.1 成功
+Capture success is a terminal successful battle outcome.
+
+- battle result becomes caught/success;
+- reserved ticket is consumed under W-102;
+- Battle XP for a successful pre-KO capture follows the current canonical capture-XP rule;
+- the newly captured monster does not receive the battle XP from the battle in which it was caught;
+- no second KO is required.
+
+### Post-KO capture success
+
+- win/KO Battle XP has already been settled exactly once;
+- capture settlement runs without another Battle XP grant;
+- battle state transitions from won/post-KO-opportunity to caught/final capture result;
+- duplicate settlement still follows §8.
+
+### Capture failure
+
+In an ordinary in-battle capture attempt:
+
+- one attempt/item is consumed;
+- failure keeps battle active unless the subsequent enemy/end-turn settlement ends it;
+- the enemy may act according to battle rules;
+- any defeat/KO caused by that continuation must use the common battle terminal settlement path.
+
+In a post-KO failure, the already-defeated enemy does not receive an extra attack merely because the ball failed; the battle remains a won encounter with the remaining post-KO attempt state until attempts/items are exhausted or player finishes.
+
+## 6. One throw + four-star presentation
+
+The capture UI expresses a result already decided by the capture domain. UI must never reroll.
+
+### Success flow
 
 ```text
-1個の選択済みボールを投げる
-↓
-enemyへ命中し、ボールの光で包み込む
-↓
-★ ☆ ☆ ☆
-↓
-★ ★ ☆ ☆
-↓
-★ ★ ★ ☆
-↓
-★ ★ ★ ★
-↓
-ボールが光って閉じる
-↓
-ゲット！
+choose one ball
+→ throw exactly one ball
+→ hit / ManaEvo-original containment effect
+→ ★ ☆ ☆ ☆
+→ ★ ★ ☆ ☆
+→ ★ ★ ★ ☆
+→ ★ ★ ★ ★
+→ ball closes / success motion
+→ GET
 ```
 
-### 3.2 失敗
+### Failure flow
 
-- 投球は1試行につき**1個・1回**として見せる。4星を4〜5個の追加投球のように見せてはいけない。
-- 星は1つずつ順に点灯する。
-- 4つ揃う前に失敗が確定した時点でsequenceを止める。
-- ボールの光がほどけ、enemyが外へ戻る/飛び出す結果motionを見せる。
-- 4回の物理的な「揺れ」を必須仕様にはしない。
+- exactly one physical throw per attempt;
+- stars illuminate over time;
+- stop before 4 completed stars when the attempt fails;
+- target escapes/releases from the containment effect;
+- never display 4 fully completed stars for a failed attempt.
 
-### 3.3 確率と演出を分離する
+The four stars are presentation of one capture attempt, not four separate throws.
 
-- 最終1投成功率と4星presentationは別契約。
-- 投球・命中・光・星・成功/失敗は**既にdomainが決めた結果を表現するpresentation**であり、UIが再抽選してはいけない。
-- 内部で4段階sub-rollへ分解するかはengine実装詳細。
-- どの内部方式でも、**4星演出を使ったことで最終成功率を変えてはいけない。**
-- exact animation durationはproduct probability ruleではない。playtestで調整可。
-- 既存作品の固有capture device、配色分割、ロゴ、効果音、固有animation timingをコピーしない。ManaEvoのdiamond/マナ意匠を使った独自球形deviceとする。
+Do not copy an existing franchise's distinctive ball split, logo, color blocking, shake timing, sound, or capture animation. ManaEvo uses its own Mana/diamond visual language.
 
----
+## 7. Child-facing probability display
 
-## 4. Child-facing probability presentation
+Primary child-facing information:
 
-子ども向け通常画面の主情報は**正確な%ではない**。
+- ball identity / color / Mana motif
+- Japanese label
+- inventory count
+- remaining attempts
+- recommendation
+- 5-step ease cue
 
-### 主表示
-
-- ボール自体の色/意匠
-- 5段階のつかまえやすさ
-- 日本語ラベル
-- どのボールがおすすめか
-- 各ボールの所持数
-- 残り投数
-
-5段階ラベルはbaselineの語彙を継承する。
+Baseline five-step wording may be used:
 
 1. かなり つかまえにくい
 2. つかまえにくい
@@ -198,244 +173,86 @@ enemyへ命中し、ボールの光で包み込む
 4. つかまえやすい
 5. ほとんど つかまる
 
-必要に応じて最適候補を **`おすすめ！`** と強調する。にじボールだけは保証なので `かならずつかまる` と表現してよい。
+`おすすめ！` may highlight the best practical option.
 
-### secondary / detail
+Exact probability is secondary/detail information, not the dominant child CTA.
 
-- exact percentageは詳細表示・保護者向け・補助値として表示可。
-- exact %を通常の主CTAや各ボールの最も目立つ主情報にしない。
-- 5段階への具体thresholdは、baseChanceがまだproduct canonical化されていないため本書では新規固定しない。
+## 8. First catch / duplicate catch
 
----
+### First owned instance of a species
 
-## 5. First catch / duplicate catch
+When the species is not already owned:
 
-D-010により、重複捕獲はbaselineへ戻す。
+- mark dex caught;
+- add a new independent monster instance to BOX;
+- do not show duplicate choice;
+- do not overwrite another instance;
+- automatic "なかま" means BOX ownership, not automatic replacement of the 3-member team.
 
-### 5.1 初回捕獲
+### Duplicate catch
 
-そのspeciesをまだ1体も所持していない初回捕獲は、自動で **`なかまにする`**。
+When the species is already owned, show exactly two choices:
 
-結果:
+#### `なかまにする`
 
-- speciesを図鑑で `caught` にする
-- 捕獲した個体を**独立instanceとしてBOXへ1体追加**する
-- duplicate choiceは出さない
+- add a new independent instance to BOX;
+- keep existing instances unchanged.
 
-ここでいう「自動でなかまにする」は、baselineの定義どおり**BOX個体として保持する経路を自動選択する**ことを意味する。手持ち3体への自動編成までを意味する証拠はない。
+#### `おうえんにかえる`
 
-### 5.2 2匹目以降
+- do not add the captured duplicate as a new BOX instance;
+- grant `そだちのかけら +1`.
 
-同じspeciesをすでに所持している状態で捕獲成功した場合、次の2択を必ず出す。
+Growth shard rule:
 
-#### A. `なかまにする`
+- 3 shards may be consumed for `育成XP +30` to one selected owned monster;
+- settlement must be idempotent;
+- reload must not both add the duplicate and grant the shard.
 
-- 新しい別instanceとしてBOXへ追加
-- 既存個体を上書きしない
-- 同種を複数所持できる
-- 個体ごとに育成状態を持てる
+## 9. Captured monster level pacing
 
-baselineで個体の思い出として想定されている情報:
+Evolution pacing V5 applies to captured level-evolution monsters.
 
-- nickname
-- 捕獲日
-- 使用したcapture item（child-facingでは各ボール名）
-- 覚えさせた技
-- 育成Lv / XP
+When a captured species evolves by level and the encountered enemy level is too close to or above its next evolution threshold, capture level is capped to at least **5 levels below the next level-evolution threshold**.
 
-#### B. `おうえんにかえる`
+Purpose:
 
-- 捕獲したduplicateの新規BOX instanceは作らない
-- `そだちのかけら +1`
-- 図鑑のcaught状態は維持
+- prevent capture → immediate evolution from skipping the intended raising experience;
+- preserve high-level encounter challenge without granting a nearly-ready evolution for free.
 
-1回のduplicate捕獲成功から、`なかまにする` と `おうえんにかえる` の**両方の報酬を同時に得てはいけない。**
+This applies to the captured monster instance level, not to the defeated enemy's battle presentation.
 
----
+## 10. Exactly-once boundaries
 
-## 6. そだちのかけら
+A capture attempt/result needs stable identity across rerender, reload and cloud sync.
 
-正本値は baseline `scripts/rewards.mjs` の `GROWTH_SHARD`。
+The implementation must prevent:
 
-```text
-3 そだちのかけら
-→ 現在の手持ちから任意の1体を選ぶ
-→ 育成XP +30
-```
+- consuming one ball twice;
+- granting the captured instance twice;
+- granting both duplicate outcomes;
+- double Battle XP on post-KO capture;
+- replaying 4-star success settlement after refresh;
+- duplicating dex/caught changes.
 
-- 1回使用ごとに3個消費。
-- 対象は**現在の手持ち1体**。
-- BOX全体へ一括付与しない。
-- +30は既存個体の通常XP進行へ加える育成補助であり、別の隠し成長値を作らない。
-- その結果のLvUP/進化可否は W-102 / W-104 の通常XP・進化contractへ接続する。
-- duplicate捕獲を主要育成手段にはしない。baselineの標準学習350XP/日と比べ、3duplicate=30XPは補助報酬である。
+## 11. Acceptance
 
----
+A conforming implementation verifies:
 
-## 7. Capture XP / Mana
-
-### 7.1 Battle XP — CONFIRMED
-
-後続ユーザー明示判断により、捕獲成功は**同stageを撃破して勝利した場合と同額のBattle XP**を付与する。
-
-- 戦闘開始時の手持ち最大3体へ、それぞれ100%ずつ
-- 戦闘中に瀕死になった個体も、開始時teamなら対象
-- BOXの非参加個体は対象外
-- **その戦闘で捕まえた新規個体は、その戦闘XPの対象外**
-- duplicateを `なかまにする` でBOXへ追加した場合も、新規duplicate instanceにその戦闘XPを遡及付与しない
-- XP具体量そのものはW-102のBattle XP正本を参照し、W-103側で別capture XP値を作らない
-
-現runtimeの「capture successでも `battleXpForStage(stage)` をbattle開始時teamへ付与する」構造は、この点についてはCURRENTと整合する。
-
-### 7.2 Mana — BLOCKED DECISION
-
-現runtimeは捕獲成功時に `floor(stage.mana / 2)` を付与している。
-
-しかし、以下を正本化するユーザー明示承認・commander decisionは確認できない。
-
-- 捕獲成功でManaを付与するか
-- 勝利と同額か
-- 半額か
-- 0か
-
-したがって **`stage.mana / 2` をCURRENTへ昇格しない。** W-102との統合時に証拠回収または司令塔判断が必要。
-
----
-
-## 8. BOX / Team contract
-
-### 8.1 BOX
-
-- BOXは**個体単位**。
-- 同じspeciesを何体でも保持可能。
-- `なかまにする` は新規instanceをBOXへ追加する。
-- `おうえんにかえる` は新規instanceをBOXへ追加しない。
-
-### 8.2 Dex
-
-- Dexは**species単位**。
-- `seen` と `caught` を分ける。
-- 捕獲失敗でもseen記録は残せる。
-- 同speciesを何体捕獲してもDex枠は1つ。
-
-active scopeはD-003に従いNo.001〜238。No.239はbaseline referenceのみでactive Dexへ出さない。
-
-### 8.3 Team
-
-- Team上限は3体。
-- TeamはBOX instanceへの参照で構成する。
-- 捕獲によって既存team memberを暗黙に置換してはいけない。
-
-**空きteam slotがあるとき新規捕獲個体を自動追加するか**は、baseline / user decision / commander decisionで明示確定できていない。現runtimeは空きがあれば自動追加するが、runtimeを正本根拠にはしない。§11 `BD-04` として保留する。
-
----
-
-## 9. Failed capture behavior
-
-### 確定済み
-
-- 1battle最大3投
-- 失敗してもその1投は失敗としてcountされる
-- 4星が完成しなければ捕獲成功にしない
-
-### 未確定
-
-現current design/runtimeは:
-
-```text
-捕獲失敗
-→ その行動でturn消費
-→ 敵が1回行動
-→ battle継続
-```
-
-としている。
-
-しかし、UDE-002のユーザー明示決定は「HP50%以下から捕獲可能 / capture item倍率 / 92% cap / 最大3投」までで、**失敗時に敵turnを与えること自体の明示承認は回収できていない。** exact baselineは勝利後CAPTURE方式だったため、この論点をbaselineから自動継承することもできない。
-
-よって、失敗時のaction economyと3投失敗後のbattle/encounter継続方法は §11 `BD-01` として保留する。実装済みという理由だけでCURRENTへ昇格しない。
-
----
-
-## 10. Runtime / implementation delta notes
-
-D-017後に実装が満たすべきpresentation側の差分は次。
-
-| 項目 | CURRENT |
-|---|---|
-| 捕獲開始 | enemy HP <= 50% |
-| 最大投数 | 3 |
-| star/silver/gold/rainbow | 1.0 / 1.2 / 1.5 / 100% |
-| child-facing名 | ほしボール / ぎんボール / きんボール / にじボール |
-| 非rainbow cap | 92% |
-| baseChance | product canonical未固定 |
-| 投球visual | 1試行=1個のボールを1回投げる |
-| 4星演出 | 投球/命中の後に1→2→3→4のtemporal sequence |
-| 失敗visual | 4星完成前で止め、ボールからenemyを開放 |
-| 子ども主表示 | 5段階/おすすめ/所持数/残り投数。exact %はdetail |
-| duplicate | 2択必須 |
-| shard 3→XP30 | 必須 |
-| 捕獲成功Battle XP | 勝利と同額、開始時team、新規捕獲個体除外 |
-| 捕獲成功Mana | 未確定 |
-| 空きteam slot自動追加 | 未確定 |
-| 失敗時敵turn | 未確定 |
-
----
-
-## 11. BLOCKED DECISIONS
-
-### BD-01 — 捕獲失敗時のturn / 3投失敗後のresolution
-
-未確認:
-
-- 失敗をplayerの1行動として敵turnへ渡すか
-- 3投目失敗後もbattleを継続するか
-- encounterをその時点でresolveするか
-
-current runtimeは「敵turn→battle継続」だが、明示承認証拠なし。
-
-### BD-02 — base capture chance structure
-
-未確認:
-
-- HP50%以下でさらに削るほど成功率を上げるか
-- catchRankの具体寄与
-- 現runtime式の具体定数
-
-確定済みのcapture item倍率 / cap / rainbow保証だけをproduct contractにする。
-
-### BD-03 — capture success Mana
-
-現runtime `floor(stage.mana / 2)` の承認証拠なし。W-102統合で決める。
-
-### BD-04 — free team slotへのauto-add
-
-現runtimeはteamが3未満なら新規捕獲instanceを自動追加するが、baseline/後続ユーザー明示/commander decisionで確定できない。BOX追加とteam編成を混同しない。
-
----
-
-## 12. Implementation acceptance for later work
-
-W-103/Capture UI実装担当は、少なくとも以下を満たすこと。
-
-1. enemy HP `<= 50%` でのみ通常捕獲を開始できる。
-2. 1battle最大3投。
-3. stable capture item性能が `1.0 / 1.2 / 1.5 / rainbow100%`。
-4. child-facing名は `ほしボール / ぎんボール / きんボール / にじボール`。stable keyは変更しない。
-5. non-rainbow final chanceは`<= 92%`。
-6. runtimeのbaseChance具体式をproduct acceptanceへ固定しない。
-7. 1試行につき1個のボールを1回投げ、命中/包み込みから4星へ連続する。
-8. 4星が**時間的に**1→2→3→4と進み、成功時はボールが閉じてGETする。
-9. 失敗時は4星完成を見せず、enemyがボールから戻る/飛び出す結果motionを持つ。
-10. UIはdomainのcapture result/presentation frameを再利用し、独自random rerollをしない。
-11. 子ども主表示は5段階/おすすめ。exact %はsecondary/detail。
-12. first catchは自動`なかまにする`。
-13. duplicateでは必ず`なかまにする / おうえんにかえる`の2択。
-14. `なかまにする`だけが新規BOX instanceを作る。
-15. `おうえんにかえる`はBOX instanceを作らず`そだちのかけら+1`。
-16. shard 3個を消費してcurrent teamの選択1体へXP+30。
-17. capture success Battle XPは同stage victoryと同額でbattle開始時teamへ付与する。
-18. 捕まえた新規instanceへ、その捕獲戦XPを付けない。
-19. BD-01〜BD-04を実装者の推測で埋めない。
-
----
+- stable keys `star/silver/gold/rainbow` remain unchanged;
+- child UI uses ほし/ぎん/きん/にじボール;
+- in-battle capture unlocks at enemy HP<=50%;
+- max 3 attempts;
+- multipliers and 92% cap remain exact;
+- rainbow remains guaranteed;
+- wild post-KO capture exists without turning bosses/special battles capturable;
+- KO Battle XP is not granted twice after post-KO capture;
+- captured monster does not receive the battle's already-settled XP;
+- one throw maps to one capture attempt;
+- failed visual sequence never shows four completed stars;
+- exact % stays secondary to child-readable ease/recommendation;
+- first catch auto-adds an independent BOX instance;
+- duplicate catch offers `なかまにする` / `おうえんにかえる`;
+- 3 growth shards -> selected monster XP +30;
+- level-evolution captures respect the 5-level evolution buffer;
+- capture settlement is idempotent across reload/cloud boundaries.
