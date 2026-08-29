@@ -13,6 +13,41 @@
       },
       "manifestStateBefore": "PLACEHOLDER",
       "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-29T21:00:05.681383+00:00",
+      "sourceLabel": "ManaEvo Phase 2B-3 SAFE REPAIR SCALE-UP safe background repair cp1",
+      "previous": {
+        "repositoryPath": "public/monsters/m088.webp",
+        "sha256": "9feb6d757e66ec8ea5147acb6746e7f301245f0f393a689bd996178a278a0649",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m088/9feb6d757e66ec8ea5147acb6746e7f301245f0f393a689bd996178a278a0649.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m088.webp",
+        "sha256": "57479b0361049caa94c43d6ba208be2b7d79b13203951032da59238f95b1bbc1",
+        "bytes": 112278
+      },
+      "manifestStateBefore": "CANDIDATE",
+      "operation": "repair",
+      "reason": "Remove only the border-connected flat white background plate and its conservative exterior edge matte; preserve the existing candidate subject.",
+      "repairType": "flat-white-background-plate-removal",
+      "alphaBackgroundOperation": {
+        "repairType": "flat-white-background-plate-removal",
+        "backgroundRgb": [
+          255,
+          255,
+          255
+        ],
+        "backgroundConnectivityThreshold": 18,
+        "edgeMatteRadiusPixels": 2,
+        "edgeMatteThreshold": 80,
+        "backgroundPixelsRemoved": 201969,
+        "edgePixelsMatted": 1362,
+        "pixelsChanged": 203331
+      },
+      "noSemanticArtChange": true,
+      "characterPixelPreservation": "PASS",
+      "formalPromotion": false
     }
   ]
 }
