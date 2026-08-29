@@ -61,11 +61,44 @@ ManaEvo を、原本 `mana-evo-terra-FINAL-CORRECTED` から現在までの試�
 9. 必要に応じてCommander Review / Final Review
 10. 最後に最新ユーザー発言を評価する
 
-現在Work Itemが不明なら最新会話から推測しない。GitHub実状態を照合し、Acceptanceを満たした最後のgateと、まだ満たしていない最初のgateを特定する。
+現在Work Itemが不明なら最新会話から推測しない。GitHub実状態を照合し、
+
+- Acceptanceを満たした最後のgate
+- まだ満たしていない最初のgate
+
+を特定する。
+
+司令塔は作戦を出す前に、最低限次を説明できなければならない。
+
+- なぜこの作業をしているか
+- 正本順位
+- owning CURRENT contract
+- 現在のproduction / phase / gate
+- 実成果物が何か
+- 何が設計だけで、何が実装・生成済みか
+- 必要実行能力
+- 既決事項 / 未決事項
+- 最新発言が仕様変更なのか、確認・懸念なのか
+
+説明できなければ、推測せず復元を続ける。
 
 ## 5. ユーザー発言の分類
 
-仕様・scope・計画に関係する発言はまず、質問 / 確認、懸念 / リスク指摘、提案 / 候補案、明示的な変更決定に分類する。質問・懸念・提案だけでは新しい正本決定にしない。
+仕様・scope・計画に関係する発言はまず次に分類する。
+
+1. **質問 / 確認**
+2. **懸念 / リスク指摘**
+3. **提案 / 候補案**
+4. **明示的な変更決定**
+
+1〜3だけでは新しい正本決定にしない。CURRENT / DECISION-LOG /既承認事項と照合し、
+
+- 既に対策済み
+- 説明不足
+- 実際の計画穴
+- 新しい明示決定が必要
+
+のどれかを判断する。
 
 ## 6. 恒久 Canonical Sync Gate
 
@@ -99,13 +132,36 @@ machine-readable ownershipは `design/current/canonical-sync-map.json` を使用
 
 ### 6.3 `Canonical-Impact: none`
 
-refactor、既存契約への単純適合、テスト強化等で製品契約が変わらない場合のみ使用できる。`none` を設計更新回避の抜け道に使わない。
+refactor、既存契約への単純適合、テスト強化等で製品契約が変わらない場合のみ使用できる。
+
+- `Canonical-Reason:` に具体理由を書く。
+- CIが通っても、Reviewerは本当にcontract changeがないか確認する。
+- `none` を設計更新回避の抜け道に使わない。
 
 ### 6.4 CI drift guard
 
-`.github/workflows/ci.yml` はPRで `scripts/verify-canonical-sync.mjs` を実行する。CIは設計同期の判断自体を忘れられなくするためのguardであり、人間の意味判断を完全自動化するものではない。
+`.github/workflows/ci.yml` はPRで `scripts/verify-canonical-sync.mjs` を実行する。
 
-### 6.5 オーナー向け設計同期 Gate
+CIは、protected path変更について次をfailさせる。
+
+- Canonical impact宣言なし
+- `changed`なのにowning CURRENT docが未更新
+- `changed`なのにDecision Logが未更新
+- `changed`なのに`design/current/USER-GUIDE.md`が未更新
+- `none`なのに具体理由なし
+
+CIは人間の意味判断を完全自動化するものではない。目的は、**設計同期の判断自体を忘れられなくすること**である。
+
+### 6.5 stateful companions
+
+asset manifest、generated master、runtime allowlistなど、実状態を表すmachine-readable companionは、可能な限り自動生成/検証する。
+
+- file existence ≠ approval
+- production visibility ≠ FORMAL
+- generated stateは承認意味を推測しない
+- state companionがruntimeと矛盾した場合はdriftとして修正する
+
+### 6.6 オーナー向け設計同期 Gate
 
 `design/current/USER-GUIDE.md` は恒久的なuser-facing CURRENT companionとする。
 
@@ -122,32 +178,90 @@ refactor、既存契約への単純適合、テスト強化等で製品契約が
 ### 司令塔 / Reviewer
 
 - 正本とGitHub実状態を横断して現在地を復元する。
+- Workerへscope / Acceptance / owning docs / 必須成果物 / 必要能力を渡す。
 - behavior change PRではCURRENT + Decision Log + USER-GUIDEの同時更新を確認する。
+- 実成果物の存在を確認する。
+- 仕様変更が本当に必要な場合だけユーザー判断へ上げる。
 - 設計変更時、オーナーへ初心者向け変更説明を表示する。
 
 ### Worker / SOL
 
 - 指定Work Itemのみ実施する。
+- 着手時にowning CURRENT contractを読む。
+- 必須能力がなければ `BLOCKED CAPABILITY`。
 - product contractを変えたら、同じPRでCURRENT + Decision Log + USER-GUIDEを更新する。
+- product contractを変えていないなら `Canonical-Impact: none` と理由を明示する。
 - scope外の再設計をしない。
 
 ## 8. CURRENT / historical / progress の分離
 
-日常実装の入口は `design/current/00-START-HERE.md`。`design/current/USER-GUIDE.md` はオーナー向けCURRENT companion。`design/rebuild/DECISION-LOG.md` は「なぜCURRENTが変わったか」を残す。現在地はGitHub実状態から毎回復元する。
+### CURRENT
+
+日常実装の入口は `design/current/00-START-HERE.md`。
+`design/current/USER-GUIDE.md` はオーナー向けCURRENT companionであり、専門CURRENTを置き換えない。
+
+### Decision evidence
+
+`design/rebuild/DECISION-LOG.md` は「なぜCURRENTが変わったか」を残す。
+
+### Historical
+
+以下は履歴・evidenceであり、現在進捗のライブ正本ではない。
+
+- `design/rebuild/WORK-QUEUE.md`
+- old Phase plans
+- Commander Reviews
+- Final Reviews
+- old PR review docs
+
+`WORK-QUEUE.md` に「現在W-xxx」を再び持たせない。
+
+### Dynamic progress
+
+現在地はGitHubから毎回復元する。
+
+- production/main HEAD
+- relevant branch / PR
+- actual artifacts
+- Acceptance / review gate
 
 ## 9. Release / production authority
 
-GitHubはsource / PR / CI、Vercelは唯一のproduction canonical + PR Preview、SupabaseはAuth / DB / Cloud Saveを担当する。production canonicalは `https://mana-evo.vercel.app/`。
+現在の責務分離:
+
+- **GitHub**: source / PR / CI
+- **Vercel**: 唯一のproduction canonical + PR Preview
+- **Supabase**: Auth / DB / Cloud Save
+
+production canonical:
+
+`https://mana-evo.vercel.app/`
+
+Vercel Previewは検証環境でありcanonical URLではない。
 
 ## 10. チャット分岐
 
-Workerは大領域化、仕様判断増加、変更ファイル増加、正本順位への迷い等があれば新しいチャットへ分岐し、司令塔は本書の復元プロトコルを実行する。
+Workerは次の場合、新しいチャットへ分岐する。
+
+- 1 Work Itemが複数大領域へ広がる
+- 仕様判断が3件以上
+- 変更ファイルが概ね10ファイル超
+- 同じ説明を繰り返し始める
+- 正本順位に迷う
+- PRレビューで根本方針の再確認が必要
+
+Worker分岐には `design/rebuild/HANDOFF-TEMPLATE.md` を使う。
+司令塔交代はWorker handoffだけで済ませず、本書の復元プロトコルを実行する。
 
 ## 11. 禁止事項
 
 - 「今のコードがそうだから」で仕様を決める
 - 最新チャットだけで承認済み計画を変更する
 - 設計資料を実成果物の代わりにする
+- CI PASSを仕様承認にする
+- 必要能力のないWorkerに作業を抱えさせ続ける
+- 古いreview/Phase planをCURRENTとして読む
+- 変動進捗を複数の恒久handoffへコピーする
 - product behaviorを変更したのにCURRENTを更新しない
 - product designを変更したのにUSER-GUIDEとユーザー向け変更説明を更新しない
 - `Canonical-Impact: none` を理由なく使用する
