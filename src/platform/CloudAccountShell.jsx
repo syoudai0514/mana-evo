@@ -27,6 +27,7 @@ import { decideSync, payloadHash, payloadPartHashes, syncMetaKey } from './cloud
 import AdultCloudControls from './AdultCloudControls.jsx'
 
 const LOCAL_SAVE_EVENT = 'manaevo:local-save-changed'
+const LOCAL_SAVE_AT_KEY = 'manaevo:last-local-save-at:v1'
 const DAILY_BACKUP_KEY = 'manaevo:cloud-daily-backup:v1'
 export const CLOUD_SYNC_DEBOUNCE_MS = 800
 export const CLOUD_SYNC_MAX_DIRTY_MS = 4000
@@ -41,6 +42,46 @@ function todayKey() { return new Date().toISOString().slice(0, 10) }
 
 function sessionLabel(session) {
   return session?.user?.email || session?.user?.phone || 'ログイン済み'
+}
+
+function formatSaveTime(value) {
+  if (!value) return '不明'
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? '不明' : date.toLocaleString('ja-JP')
+}
+
+function profileIdsForConflict(conflict) {
+  const explicit = (conflict?.conflicts || []).filter((id) => id && id !== '__global__')
+  if (explicit.length) return explicit
+  const ids = new Set([
+    ...Object.keys(conflict?.localPayload?.learning?.profiles || {}),
+    ...Object.keys(conflict?.cloud?.payload?.learning?.profiles || {})
+  ])
+  return [...ids].sort()
+}
+
+function profileProgressSummary(payload, profileId) {
+  const learning = payload?.learning?.profiles?.[profileId]
+  const game = payload?.gameEnvelope?.gameByProfile?.[profileId] || {}
+  const caught = Object.keys(game?.dex?.caught || {}).filter((id) => game.dex.caught[id]).length
+  return {
+    name: learning?.name || profileId,
+    battlesWon: Math.max(0, Number(game?.battlesWon) || 0),
+    monstersCaught: Math.max(0, Number(game?.monstersCaught) || 0),
+    boxCount: Object.keys(game?.box || {}).length,
+    dexCaught: caught,
+    stagesCleared: Array.isArray(game?.stagesCleared) ? game.stagesCleared.length : 0,
+    hasLearning: !!learning?.state
+  }
+}
+
+function ProgressSummary({ title, payload, profileId }) {
+  const summary = profileProgressSummary(payload, profileId)
+  return <div className="cloud-card">
+    <strong>{title}：{summary.name}</strong>
+    <p>バトル勝利 {summary.battlesWon} / 捕獲 {summary.monstersCaught} / 所持 {summary.boxCount}体 / 図鑑捕獲 {summary.dexCaught}種 / クリア {summary.stagesCleared}</p>
+    <small>{summary.hasLearning ? '学習データにも差があります。詳細な学習履歴は日時だけで自動判定しません。' : '学習データなし'}</small>
+  </div>
 }
 
 export default function CloudAccountShell({ children }) {
@@ -148,7 +189,12 @@ export default function CloudAccountShell({ children }) {
       window.location.reload()
       return
     }
-    setConflict({ cloud, localPayload })
+    setConflict({
+      cloud,
+      localPayload,
+      conflicts: decision.conflicts || [],
+      localSavedAt: readJson(LOCAL_SAVE_AT_KEY)?.at || null
+    })
     setStatus('同期保留・端末には保存済み')
   }, [config.configured, maybeBackupCloud, setMeta, testMode])
 
@@ -220,7 +266,10 @@ export default function CloudAccountShell({ children }) {
   }, [])
 
   useEffect(() => {
-    const onSave = () => scheduleSync()
+    const onSave = () => {
+      writeJson(LOCAL_SAVE_AT_KEY, { at: new Date().toISOString() })
+      scheduleSync()
+    }
     const flushQuietly = () => flushSync({ quiet: true }).catch(() => {})
     const onVisibilityChange = () => { if (document.visibilityState === 'hidden') flushQuietly() }
     window.addEventListener(LOCAL_SAVE_EVENT, onSave)
@@ -323,6 +372,7 @@ export default function CloudAccountShell({ children }) {
   const childCloudAttention = !!session && !parentScreenOpen && (!!conflict || status.includes('同期エラー'))
   const showAccountFab = !session || recoveryMode || parentScreenOpen || childCloudAttention
   const accountFabWarn = (parentScreenOpen || childCloudAttention) && needsCloudAttention
+  const conflictProfileIds = profileIdsForConflict(conflict)
 
   return <>
     {children}
@@ -340,10 +390,10 @@ export default function CloudAccountShell({ children }) {
 
         {recoveryMode && <div className="cloud-card"><h3>🔑 新しいパスワード</h3><input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="新しいパスワード"/><button disabled={busy || newPassword.length < 8} onClick={doUpdatePassword}>パスワードを変更</button></div>}
 
-        {!session ? <div className="cloud-card"><h3>☁️ 保護者アカウント</h3><label>メールアドレス<input type="email" autoCapitalize="none" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)}/></label><label>パスワード<input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)}/></label><div className="cloud-actions"><button disabled={busy || !config.configured || !email || !password} onClick={doSignIn}>ログイン</button><button className="secondary" disabled={busy || !config.configured || !email || password.length < 8} onClick={doSignUp}>新規登録</button></div><button className="cloud-link" disabled={busy || !config.configured || !email} onClick={doReset}>パスワードを忘れた</button><small>一度ログインした端末はセッションを保持します。</small></div> : <div className="cloud-card"><div className="cloud-row"><div><h3>👤 {sessionLabel(session)}</h3><small>共通アカウント</small></div><span>☁️</span></div>{conflict ? <p><strong>同期は保護者確認待ちです。</strong><br/><small>端末のデータは保存されています。下の「保護者専用」で残すデータを選んでください。</small></p> : <button disabled={busy || !!testMode} onClick={() => run(() => flushSync({ quiet: false }))}>☁️ 今すぐ同期</button>}</div>}
+        {!session ? <div className="cloud-card"><h3>☁️ 保護者アカウント</h3><label>メールアドレス<input type="email" autoCapitalize="none" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)}/></label><label>パスワード<input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)}/></label><div className="cloud-actions"><button disabled={busy || !config.configured || !email || !password} onClick={doSignIn}>ログイン</button><button className="secondary" disabled={busy || !config.configured || !email || password.length < 8} onClick={doSignUp}>新規登録</button></div><button className="cloud-link" disabled={busy || !config.configured || !email} onClick={doReset}>パスワードを忘れた</button><small>一度ログインした端末はセッションを保持します。</small></div> : <div className="cloud-card"><div className="cloud-row"><div><h3>👤 {sessionLabel(session)}</h3><small>共通アカウント</small></div><span>☁️</span></div>{conflict ? <p><strong>同期は保護者確認待ちです。</strong><br/><small>端末のデータは保存されています。下の「保護者専用」で比較して残すデータを選んでください。</small></p> : <button disabled={busy || !!testMode} onClick={() => run(() => flushSync({ quiet: false }))}>☁️ 今すぐ同期</button>}</div>}
 
         <AdultCloudControls>
-          {session && conflict && <div className="cloud-card cloud-conflict"><h3>⚠️ iPhone/iPadの同じプレイヤーに両方の変更があります</h3><p>別プレイヤー同士なら自動統合します。同じプレイヤーを両端末で変更した場合だけ、自動で上書きせず止めます。残したい方を選んでください。</p><button disabled={busy} onClick={chooseCloud}>☁️ クラウド側を使う</button><button className="secondary" disabled={busy} onClick={chooseLocal}>📱 この端末側を使う</button></div>}
+          {session && conflict && <div className="cloud-card cloud-conflict"><h3>⚠️ iPhone/iPadの同じプレイヤーに両方の変更があります</h3><p>更新日時だけで自動的に新しい方を採用しません。下の時刻・revision・進捗差を判断材料にしてください。どちらを選んでも現在のクラウドは事前バックアップします。</p><div className="cloud-card"><strong>📱 この端末</strong><p>最終ローカル保存目安: {formatSaveTime(conflict.localSavedAt)}</p><small>この時刻は端末内保存イベントの目安です。</small></div><div className="cloud-card"><strong>☁️ クラウド</strong><p>最終更新: {formatSaveTime(conflict.cloud?.updated_at)} / revision {Number(conflict.cloud?.revision) || 0}</p><small>クラウドDBが最後に更新された時刻です。</small></div>{conflictProfileIds.map((profileId) => <div key={profileId}><ProgressSummary title="📱 端末" payload={conflict.localPayload} profileId={profileId}/><ProgressSummary title="☁️ クラウド" payload={conflict.cloud?.payload} profileId={profileId}/></div>)}<p><small>※ 時刻が新しいだけで正しいとは限りません。たとえば別端末でバトル、こちらで学習を進めた場合などがあるため、進捗内容も確認してください。</small></p><button disabled={busy} onClick={chooseCloud}>☁️ クラウド側を使う</button><button className="secondary" disabled={busy} onClick={chooseLocal}>📱 この端末側を使う</button></div>}
 
           <div className="cloud-card"><h3>👨‍👩‍👧 プレイヤー</h3><p>この端末で開く人だけを切り替えます。他の端末の選択は変わりません。</p><div className="cloud-profile-list">{Object.entries(profileInfo.profiles || {}).map(([id, profile]) => <button key={id} className={id === profileInfo.activeProfileId ? 'active' : ''} disabled={busy} onClick={() => switchProfile(id)}>{id === profileInfo.activeProfileId ? '✓ ' : ''}{profile.name || id}</button>)}</div><small>パパ・まさき・ウタノなどのプロフィール追加は保護者メニューからできます。</small></div>
 
