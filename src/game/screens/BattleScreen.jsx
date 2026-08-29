@@ -41,13 +41,13 @@ export function BattleView({ game, setGame, onExitToMap, goStudy }) {
   const [captureOpen, setCaptureOpen] = useState(false)
   const [switchOpen, setSwitchOpen] = useState(false)
   const [captureSequence, setCaptureSequence] = useState(null)
-  const [pendingCaptureTurnPresentation, setPendingCaptureTurnPresentation] = useState(null)
   const [evolutionQueue, setEvolutionQueue] = useState([])
   const [shardResult, setShardResult] = useState(null)
   const [turnCue, setTurnCue] = useState(null)
   const [animatedHp, setAnimatedHp] = useState(null)
   const seenEvolutionKeys = useRef(new Set())
   const turnTimers = useRef([])
+  const pendingCaptureTurnPresentationRef = useRef(null)
 
   useEffect(() => () => {
     turnTimers.current.forEach((timer) => window.clearTimeout(timer))
@@ -186,13 +186,13 @@ export function BattleView({ game, setGame, onExitToMap, goStudy }) {
     const frames = result.capturePresentation?.frames || result.battle?.capturePresentation || []
     const turnPresentation = result.battle?.turnPresentation || null
     if (Array.isArray(frames) && frames.length) {
+      pendingCaptureTurnPresentationRef.current = turnPresentation
       setCaptureSequence({
         id: `${result.battle?.battleId || result.battle?.stageId || 'capture'}:${result.battle?.captureAttempts || 0}`,
         frames,
         itemType,
         speciesId: battle.enemy.speciesId
       })
-      setPendingCaptureTurnPresentation(turnPresentation)
     } else if (turnPresentation) {
       playTurnPresentation(turnPresentation)
     }
@@ -255,12 +255,10 @@ export function BattleView({ game, setGame, onExitToMap, goStudy }) {
   return <main className={`screen battle-screen-v2 area-theme-${stage?.adventureArea || stage?.area || 5}`}>
     <EvolutionCelebration reveal={activeEvolutionReveal} onClose={() => setEvolutionQueue((queue) => queue.slice(1))} />
     <CapturePresentation sequence={captureSequence} onComplete={() => {
+      const presentation = pendingCaptureTurnPresentationRef.current
+      pendingCaptureTurnPresentationRef.current = null
       setCaptureSequence(null)
-      if (pendingCaptureTurnPresentation) {
-        const presentation = pendingCaptureTurnPresentation
-        setPendingCaptureTurnPresentation(null)
-        playTurnPresentation(presentation)
-      }
+      if (presentation) playTurnPresentation(presentation)
     }} />
 
     <div className="battle-head">
