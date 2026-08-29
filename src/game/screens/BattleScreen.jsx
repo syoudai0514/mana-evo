@@ -41,6 +41,7 @@ export function BattleView({ game, setGame, onExitToMap, goStudy }) {
   const [captureOpen, setCaptureOpen] = useState(false)
   const [switchOpen, setSwitchOpen] = useState(false)
   const [captureSequence, setCaptureSequence] = useState(null)
+  const [captureTurnHandoffPending, setCaptureTurnHandoffPending] = useState(false)
   const [evolutionQueue, setEvolutionQueue] = useState([])
   const [shardResult, setShardResult] = useState(null)
   const [turnCue, setTurnCue] = useState(null)
@@ -53,7 +54,7 @@ export function BattleView({ game, setGame, onExitToMap, goStudy }) {
     turnTimers.current.forEach((timer) => window.clearTimeout(timer))
   }, [])
 
-  const resolvingTurn = !!turnCue
+  const resolvingTurn = !!turnCue || captureTurnHandoffPending
   const captureResolutionId = battle.rewardResolutionId ? `${battle.rewardResolutionId}:capture` : null
   const captureSettlement = captureResolutionId ? game.captureDomain?.settlements?.[captureResolutionId] : null
   const duplicatePending = captureSettlement?.status === 'pending_duplicate_choice'
@@ -187,6 +188,7 @@ export function BattleView({ game, setGame, onExitToMap, goStudy }) {
     const turnPresentation = result.battle?.turnPresentation || null
     if (Array.isArray(frames) && frames.length) {
       pendingCaptureTurnPresentationRef.current = turnPresentation
+      setCaptureTurnHandoffPending(!!turnPresentation)
       setCaptureSequence({
         id: `${result.battle?.battleId || result.battle?.stageId || 'capture'}:${result.battle?.captureAttempts || 0}`,
         frames,
@@ -258,7 +260,14 @@ export function BattleView({ game, setGame, onExitToMap, goStudy }) {
       const presentation = pendingCaptureTurnPresentationRef.current
       pendingCaptureTurnPresentationRef.current = null
       setCaptureSequence(null)
-      if (presentation) playTurnPresentation(presentation)
+      if (presentation) {
+        window.requestAnimationFrame(() => {
+          playTurnPresentation(presentation)
+          setCaptureTurnHandoffPending(false)
+        })
+      } else {
+        setCaptureTurnHandoffPending(false)
+      }
     }} />
 
     <div className="battle-head">
