@@ -15,9 +15,9 @@ Generated from actual decoded candidate pixels on PR #108 branch, then cross-che
 
 TOTAL: 238
 
-KEEP: 120
+KEEP: 121
 
-NORMALIZE: 10
+NORMALIZE: 9
 
 REPAIR: 92
 
@@ -26,10 +26,10 @@ REGENERATE: 0
 MANUAL_REVIEW: 16
 
 ### KEEP
-m001, m002, m003, m004, m005, m006, m007, m008, m009, m010, m015, m016, m017, m018, m019, m020, m021, m022, m023, m024, m025, m026, m027, m028, m029, m030, m031, m032, m033, m037, m038, m039, m043, m044, m055, m056, m057, m058, m059, m060, m061, m062, m063, m067, m068, m069, m070, m071, m072, m073, m074, m075, m076, m077, m078, m079, m080, m082, m083, m084, m085, m086, m087, m094, m095, m096, m100, m101, m102, m109, m110, m111, m112, m113, m114, m117, m118, m128, m131, m132, m137, m138, m139, m140, m145, m146, m147, m154, m155, m156, m163, m164, m165, m166, m168, m172, m173, m174, m181, m182, m183, m196, m197, m198, m199, m200, m201, m204, m211, m212, m213, m214, m217, m223, m224, m225, m226, m227, m228, m237
+m001, m002, m003, m004, m005, m006, m007, m008, m009, m010, m015, m016, m017, m018, m019, m020, m021, m022, m023, m024, m025, m026, m027, m028, m029, m030, m031, m032, m033, m037, m038, m039, m043, m044, m055, m056, m057, m058, m059, m060, m061, m062, m063, m067, m068, m069, m070, m071, m072, m073, m074, m075, m076, m077, m078, m079, m080, m082, m083, m084, m085, m086, m087, m094, m095, m096, m100, m101, m102, m109, m110, m111, m112, m113, m114, m117, m118, m128, m131, m132, m137, m138, m139, m140, m145, m146, m147, m154, m155, m156, m163, m164, m165, m166, m168, m172, m173, m174, m181, m182, m183, m196, m197, m198, m199, m200, m201, m204, m211, m212, m213, m214, m217, m223, m224, m225, m226, m227, m228, m232, m237
 
 ### NORMALIZE
-m013, m014, m178, m179, m180, m202, m203, m218, m219, m232
+m013, m014, m178, m179, m180, m202, m203, m218, m219
 
 ### REPAIR
 m034, m035, m036, m040, m041, m042, m046, m047, m048, m049, m050, m051, m052, m053, m054, m064, m065, m066, m088, m089, m090, m091, m092, m093, m097, m098, m099, m103, m104, m105, m106, m107, m108, m115, m116, m119, m120, m121, m122, m123, m124, m125, m126, m127, m134, m135, m136, m143, m144, m148, m149, m150, m151, m152, m153, m157, m158, m159, m160, m161, m162, m169, m170, m171, m175, m176, m177, m184, m185, m186, m187, m188, m189, m190, m191, m192, m193, m194, m195, m205, m206, m207, m208, m209, m210, m220, m221, m222, m233, m234, m236, m238
@@ -72,22 +72,22 @@ m011, m012, m045, m081, m129, m130, m133, m141, m142, m167, m215, m216, m229, m2
 - m235: **MANUAL_REVIEW** — Manual visual QA: image is dominated by a horizontal forest/tree scene rather than an unambiguous isolated monster; safe separation of creature from scenery is uncertain.
 
 ## Smallest apparent species — TOP 20
-- m232 (F079, S1, normal) — H 24.5% / W 20.9%
 - m233 (F079, S2, normal) — H 30.3% / W 36.6%
 - m234 (F079, S3, normal) — H 37.0% / W 37.7%
-- m219 (F074, S3, electric) — H 49.8% / W 61.3%
 - m213 (F072, S3, fire) — H 50.0% / W 83.6%
-- m218 (F074, S2, electric) — H 50.0% / W 69.7%
 - m057 (F019, S3, fire) — H 54.3% / W 83.4%
 - m180 (F061, S3, electric) — H 56.8% / W 77.0%
 - m179 (F061, S2, electric) — H 58.0% / W 82.4%
 - m178 (F061, S1, electric) — H 58.6% / W 74.8%
+- m218 (F074, S2, electric) — H 60.2% / W 83.6%
 - m202 (F069, S1, ghost) — H 62.1% / W 35.7%
 - m154 (F053, S1, steel) — H 62.5% / W 90.2%
 - m212 (F072, S2, fire) — H 63.9% / W 81.6%
+- m219 (F074, S3, electric) — H 64.1% / W 78.7%
 - m060 (F020, S3, fire) — H 67.6% / W 83.4%
 - m006 (F002, S3, fire) — H 68.8% / W 85.5%
 - m013 (F005, S1, normal) — H 72.1% / W 51.0%
+- m232 (F079, S1, normal) — H 73.6% / W 62.9%
 - m014 (F005, S2, normal) — H 75.0% / W 57.6%
 - m155 (F053, S2, steel) — H 75.0% / W 89.5%
 - m026 (F009, S2, electric) — H 75.8% / W 79.5%
