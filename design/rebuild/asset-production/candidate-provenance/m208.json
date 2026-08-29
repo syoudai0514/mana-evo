@@ -13,6 +13,22 @@
       },
       "manifestStateBefore": "PLACEHOLDER",
       "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-29T23:24:20.406Z",
+      "sourceLabel": "ManaEvo Phase 2B parallel worker C safe white-background alpha repair cp1",
+      "previous": {
+        "repositoryPath": "public/monsters/m208.webp",
+        "sha256": "0b6a5edddd3ed0c984df4a34e6367cf5b46d31dc075a154f80f0eef2bad6649f",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m208/0b6a5edddd3ed0c984df4a34e6367cf5b46d31dc075a154f80f0eef2bad6649f.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m208.webp",
+        "sha256": "6f549075af313fb820442841831b39a7b935fed64d3ddab66e5d001a9c4fbf76",
+        "bytes": 143924
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
     }
   ]
 }
