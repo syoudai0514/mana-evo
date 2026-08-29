@@ -8,7 +8,11 @@ import {
   recordAdditionalLearningAnswer,
   releaseHeldLearningRewards
 } from '../src/kids-quest-study/state/learningRewardPolicy.js'
-import { deriveLearningRewardRuntime, EXTRA_CORRECT_PER_BATTLE_TICKET } from '../src/kids-quest-study/state/learningRewardRuntime.js'
+import {
+  deriveLearningRewardRuntime,
+  EXTRA_ACTIVE_MS_PER_BATTLE_TICKET,
+  EXTRA_CORRECT_PER_BATTLE_TICKET
+} from '../src/kids-quest-study/state/learningRewardRuntime.js'
 import {
   applyLearningGameReward,
   applyLearningGameRewards,
@@ -35,7 +39,7 @@ function learningState(overrides = {}) {
   }
 }
 
-function extraAnswer(id, correct = true) {
+function extraAnswer(id, correct = true, elapsedMs = 4200) {
   return {
     type: 'ANSWER',
     domainId: 'suuji',
@@ -43,7 +47,7 @@ function extraAnswer(id, correct = true) {
     correct,
     itemKey: `skill:${id}`,
     unitId: null,
-    elapsedMs: 2200,
+    elapsedMs,
     choiceKey: correct ? `ok-${id}` : `ng-${id}`,
     question: { questionInstanceId: id, itemKey: `n:${id}` }
   }
@@ -116,8 +120,9 @@ test('daily core transition emits canonical reward exactly once plus exploration
   assert.equal(duplicate.pendingProgressionSignals.length, 2)
 })
 
-test('five correct extra questions pay one battle ticket while every correct extra still pays exploration', () => {
+test('five qualifying extra questions pay one battle ticket while every correct extra still pays exploration', () => {
   assert.equal(EXTRA_CORRECT_PER_BATTLE_TICKET, 5)
+  assert.equal(EXTRA_ACTIVE_MS_PER_BATTLE_TICKET, 20_000)
   const state = learningState()
   let runtime = {}
   for (let index = 1; index <= 4; index += 1) runtime = deriveLearningRewardRuntime(runtime, state, state, extraAnswer(`q${index}`, true))
@@ -132,6 +137,42 @@ test('five correct extra questions pay one battle ticket while every correct ext
 
   runtime = deriveLearningRewardRuntime(runtime, state, state, extraAnswer('wrong', false))
   assert.equal(runtime.pendingGameRewards.filter((reward) => reward.kind === 'extra-learning-ticket').length, 1)
+})
+
+test('free study cannot contribute to the extra-only battle ticket counter', () => {
+  const state = learningState()
+  let runtime = {}
+  for (const id of ['free1', 'free2', 'free3', 'free4']) {
+    runtime = deriveLearningRewardRuntime(runtime, state, state, { ...extraAnswer(id, true, 6000), taskKind: 'free' })
+  }
+  runtime = deriveLearningRewardRuntime(runtime, state, state, extraAnswer('extra1', true, 6000))
+  assert.equal(runtime.learningRewardMeta.additionalCorrectTotal, 5)
+  assert.equal(runtime.learningRewardMeta.extraBattleCorrectTotal, 1)
+  assert.equal(runtime.learningRewardMeta.extraBattleActiveMs, 6000)
+  assert.equal(runtime.pendingGameRewards.filter((reward) => reward.kind === 'extra-learning-ticket').length, 0)
+})
+
+test('five fast extra correct answers hold ticket progress until qualifying study time is reached and replay is idempotent', () => {
+  const state = learningState()
+  let runtime = {}
+  for (let index = 1; index <= 5; index += 1) {
+    runtime = deriveLearningRewardRuntime(runtime, state, state, extraAnswer(`fast-${index}`, true, 2000))
+  }
+  assert.equal(runtime.learningRewardMeta.extraBattleCorrectTotal, 5)
+  assert.equal(runtime.learningRewardMeta.extraBattleActiveMs, 10_000)
+  assert.equal(runtime.pendingGameRewards.filter((reward) => reward.kind === 'extra-learning-ticket').length, 0)
+
+  const timeCompleter = extraAnswer('time-completer', false, 10_000)
+  runtime = deriveLearningRewardRuntime(runtime, state, state, timeCompleter)
+  assert.equal(runtime.learningRewardMeta.extraBattleCorrectTotal, 5)
+  assert.equal(runtime.learningRewardMeta.extraBattleActiveMs, 20_000)
+  assert.equal(runtime.pendingGameRewards.filter((reward) => reward.kind === 'extra-learning-ticket').length, 1)
+
+  const reloaded = JSON.parse(JSON.stringify(runtime))
+  const replay = deriveLearningRewardRuntime(reloaded, state, state, timeCompleter)
+  assert.equal(replay.learningRewardMeta.extraBattleActiveMs, 20_000)
+  assert.equal(replay.learningRewardMeta.extraBattleTicketsIssued, 1)
+  assert.equal(replay.pendingGameRewards.filter((reward) => reward.kind === 'extra-learning-ticket').length, 1)
 })
 
 test('every three correct additional-learning answers emits star +1 with a persisted counter', () => {
