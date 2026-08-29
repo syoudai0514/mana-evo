@@ -44,13 +44,13 @@ F042,ice,m122|m123|m124,1|2|3,1,0.932,true,adjacent stages unusually similar: m1
 F043,ice,m125|m126|m127,1|2|3,1,0.7402,true,adjacent stages unusually similar: m126-m127,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
 F044,water,m128|m129|m130,1|2|3,0.8662,0.9734,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
 F045,water,m131|m132|m133,1|2|3,0.9252,0.9872,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
-F046,grass,m134|m135|m136,1|2|3,1,0.996,true,"adjacent stages unusually similar: m134-m135, m135-m136",false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
+F046,grass,m134|m135|m136,1|2|3,0.7855,0.9525,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
 F047,bug,m137|m138|m139,1|2|3,0.8587,0.9972,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
 F048,bug,m140|m141|m142,1|2|3,0.8768,0.9929,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
 F049,psychic,m143|m144,1|2,1,0.999,true,adjacent stages unusually similar: m143-m144,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
 F050,ghost,m145|m146|m147,1|2|3,0.8486,0.9031,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
 F051,dark,m148|m149|m150,1|2|3,0.753,0.9818,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
-F052,dark,m151|m152|m153,1|2|3,1,0.9249,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
+F052,dark,m151|m152|m153,1|2|3,0.8337,0.9959,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
 F053,steel,m154|m155|m156,1|2|3,0.9535,0.9894,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
 F054,rock,m157|m158|m159,1|2|3,1,0.9695,true,adjacent stages unusually similar: m157-m158,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
 F055,ground,m160|m161|m162,1|2|3,1,0.9999,true,"adjacent stages unusually similar: m160-m161, m161-m162",false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
