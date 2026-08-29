@@ -1,7 +1,7 @@
 # ManaEvo Cloud Sync — Review Checklist
 
 Target change: D-028 cloud sync timing and reconciliation safety
-Review target head: freeze the current PR head supplied in the review request; do not review a moving branch.
+Review target head is supplied explicitly in the review request. Reviewer must verify that PR head still matches it before judging.
 
 Reviewer should validate design and implementation together.
 
