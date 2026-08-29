@@ -43,8 +43,12 @@ jobs:
       - name: Candidate registry validation
         run: node scripts/monster-art/generate-candidate-index.mjs
       - name: Monster art tests
+        id: tests
+        continue-on-error: true
         run: npm test
       - name: Production build
+        id: build
+        continue-on-error: true
         run: npm run build
       - name: Verify protected candidate state unchanged
         shell: bash
@@ -69,7 +73,14 @@ jobs:
           git add design/rebuild/asset-production/final-visual-audit
           if git diff --cached --quiet; then
             echo 'No audit artifact changes to commit.'
-            exit 0
+          else
+            git commit -m 'audit: record final monster visual QA evidence'
+            git push origin HEAD:${{ github.head_ref }}
           fi
-          git commit -m 'audit: record final monster visual QA evidence'
-          git push origin HEAD:${{ github.head_ref }}
+      - name: Surface validation failures
+        if: steps.tests.outcome != 'success' || steps.build.outcome != 'success'
+        shell: bash
+        run: |
+          echo "npm test outcome: ${{ steps.tests.outcome }}"
+          echo "npm run build outcome: ${{ steps.build.outcome }}"
+          exit 1
