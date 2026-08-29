@@ -234,7 +234,7 @@ CURRENT timing policy:
 - app/session startup with a valid Auth session performs an immediate reconciliation attempt;
 - network reconnect and window focus perform an immediate reconciliation attempt;
 - when the document moves to background/hidden state or receives `pagehide`, ManaEvo makes a best-effort immediate flush before suspension/navigation;
-- profile switching must perform a cloud flush attempt after the local profile transition and **before** reloading the application;
+- profile switching must perform a cloud flush attempt **before changing the device-local active profile** and before reloading the application;
 - a browser may terminate background network work before it completes; therefore local persistence remains the safety authority, and the next startup/focus/online event retries reconciliation automatically;
 - TEST mode remains excluded from normal cloud writes.
 
