@@ -41,20 +41,19 @@ export function BattleView({ game, setGame, onExitToMap, goStudy }) {
   const [captureOpen, setCaptureOpen] = useState(false)
   const [switchOpen, setSwitchOpen] = useState(false)
   const [captureSequence, setCaptureSequence] = useState(null)
-  const [captureTurnHandoffPending, setCaptureTurnHandoffPending] = useState(false)
+  const [queuedCaptureTurnPresentation, setQueuedCaptureTurnPresentation] = useState(null)
   const [evolutionQueue, setEvolutionQueue] = useState([])
   const [shardResult, setShardResult] = useState(null)
   const [turnCue, setTurnCue] = useState(null)
   const [animatedHp, setAnimatedHp] = useState(null)
   const seenEvolutionKeys = useRef(new Set())
   const turnTimers = useRef([])
-  const pendingCaptureTurnPresentationRef = useRef(null)
 
   useEffect(() => () => {
     turnTimers.current.forEach((timer) => window.clearTimeout(timer))
   }, [])
 
-  const resolvingTurn = !!turnCue || captureTurnHandoffPending
+  const resolvingTurn = !!turnCue || !!queuedCaptureTurnPresentation
   const captureResolutionId = battle.rewardResolutionId ? `${battle.rewardResolutionId}:capture` : null
   const captureSettlement = captureResolutionId ? game.captureDomain?.settlements?.[captureResolutionId] : null
   const duplicatePending = captureSettlement?.status === 'pending_duplicate_choice'
@@ -158,6 +157,13 @@ export function BattleView({ game, setGame, onExitToMap, goStudy }) {
     }, Math.max(900, sequenced.length * 430 + 280)))
   }
 
+  useEffect(() => {
+    if (captureSequence || !queuedCaptureTurnPresentation || turnCue) return
+    const presentation = queuedCaptureTurnPresentation
+    setQueuedCaptureTurnPresentation(null)
+    playTurnPresentation(presentation)
+  }, [captureSequence, queuedCaptureTurnPresentation, turnCue])
+
   const act = (moveId) => {
     if (resolvingTurn) return
     const result = useMove(game, battle, moveId)
@@ -187,8 +193,7 @@ export function BattleView({ game, setGame, onExitToMap, goStudy }) {
     const frames = result.capturePresentation?.frames || result.battle?.capturePresentation || []
     const turnPresentation = result.battle?.turnPresentation || null
     if (Array.isArray(frames) && frames.length) {
-      pendingCaptureTurnPresentationRef.current = turnPresentation
-      setCaptureTurnHandoffPending(!!turnPresentation)
+      setQueuedCaptureTurnPresentation(turnPresentation)
       setCaptureSequence({
         id: `${result.battle?.battleId || result.battle?.stageId || 'capture'}:${result.battle?.captureAttempts || 0}`,
         frames,
@@ -256,19 +261,7 @@ export function BattleView({ game, setGame, onExitToMap, goStudy }) {
 
   return <main className={`screen battle-screen-v2 area-theme-${stage?.adventureArea || stage?.area || 5}`}>
     <EvolutionCelebration reveal={activeEvolutionReveal} onClose={() => setEvolutionQueue((queue) => queue.slice(1))} />
-    <CapturePresentation sequence={captureSequence} onComplete={() => {
-      const presentation = pendingCaptureTurnPresentationRef.current
-      pendingCaptureTurnPresentationRef.current = null
-      setCaptureSequence(null)
-      if (presentation) {
-        window.requestAnimationFrame(() => {
-          playTurnPresentation(presentation)
-          setCaptureTurnHandoffPending(false)
-        })
-      } else {
-        setCaptureTurnHandoffPending(false)
-      }
-    }} />
+    <CapturePresentation sequence={captureSequence} onComplete={() => setCaptureSequence(null)} />
 
     <div className="battle-head">
       <button className="back" disabled={!!captureSequence || duplicatePending || resolvingTurn} onClick={exit}>{finished ? '← マップ' : '✕ やめる'}</button>
