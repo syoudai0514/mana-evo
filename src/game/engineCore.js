@@ -253,7 +253,7 @@ function statusAdjustedStats(monster) {
   return {
     ...stats,
     attack: Math.max(1, Math.floor(stats.attack * statusAttackMultiplier(monster.battleStatus))),
-    speed: Math.max(1, Math.floor(stats.speed * statusSpeedMultiplier(monster.battleStatus)))
+    speed: Math.max(1, Math.floor(stats.speed * statusSpeedMultiplier(monster.battleStatus))
   }
 }
 
@@ -659,6 +659,27 @@ function awardWin(game, battle) {
   }
 }
 
+// Every completed turn resolves through one canonical outcome boundary. Enemy
+// defeat has priority just as it does for a direct attack, so poison/burn KO from
+// Protect, switching or a failed capture can never leave a 0-HP enemy fighting.
+function resolveBattleOutcomeAfterTurn(game, battle, { today = null } = {}) {
+  if (Number(battle?.enemy?.hp) <= 0) {
+    const nextBattle = structuredClone(battle)
+    nextBattle.status = 'won'
+    commitReservation(nextBattle)
+    clearBattleStatuses(nextBattle)
+    nextBattle.rewardResolutionId ||= `${nextBattle.battleId || nextBattle.stageId}:reward`
+    const rewards = awardWin(game, nextBattle)
+    nextBattle.log = [...(nextBattle.log || []).slice(-7), `かち！ XP +${rewards.xp} / マナ +${rewards.mana}`].slice(-8)
+    return { game: syncActiveBattle(rewards.game, nextBattle), battle: nextBattle, rewards }
+  }
+
+  const nextBattle = structuredClone(battle)
+  resolvePlayerFaint(game, nextBattle)
+  const resolved = refundLostBattleIfNeeded(game, nextBattle, today)
+  return { game: syncActiveBattle(resolved.game, resolved.battle), battle: resolved.battle, rewards: null }
+}
+
 function moveUseKey(instanceId, moveId) { return `${instanceId}:${moveId}` }
 
 function endBurstIfNeeded(game, battle, log) {
@@ -765,20 +786,10 @@ export function useMove(game, battle, moveId, { today = null } = {}) {
   next.turn += 1
   next.log = [...next.log.slice(-4), ...log].slice(-8)
 
-  if (next.enemy.hp <= 0) {
-    next.status = 'won'
-    commitReservation(next)
-    clearBattleStatuses(next)
-    next.rewardResolutionId ||= `${next.battleId || next.stageId}:reward`
-    const rewards = awardWin(game, next)
-    next.log.push(`かち！ XP +${rewards.xp} / マナ +${rewards.mana}`)
-    const synced = syncActiveBattle(rewards.game, next)
-    return { ok: true, game: synced, battle: next, rewards }
-  }
-
-  resolvePlayerFaint(game, next)
-  const resolved = refundLostBattleIfNeeded(game, next, today)
-  return { ok: true, game: syncActiveBattle(resolved.game, resolved.battle), battle: resolved.battle }
+  const outcome = resolveBattleOutcomeAfterTurn(game, next, { today })
+  return outcome.rewards
+    ? { ok: true, game: outcome.game, battle: outcome.battle, rewards: outcome.rewards }
+    : { ok: true, game: outcome.game, battle: outcome.battle }
 }
 
 export function canUseProtect(battle) {
@@ -799,9 +810,10 @@ export function useProtect(game, battle, { today = null } = {}) {
   if (next.playerSpecial?.type === 'burst' && next.playerSpecial.instanceId === next.activeInstanceId) endBurstIfNeeded(game, next, log)
   next.turn += 1
   next.log = [...next.log.slice(-4), ...log].slice(-8)
-  resolvePlayerFaint(game, next)
-  const resolved = refundLostBattleIfNeeded(game, next, today)
-  return { ok: true, game: syncActiveBattle(resolved.game, resolved.battle), battle: resolved.battle }
+  const outcome = resolveBattleOutcomeAfterTurn(game, next, { today })
+  return outcome.rewards
+    ? { ok: true, game: outcome.game, battle: outcome.battle, rewards: outcome.rewards }
+    : { ok: true, game: outcome.game, battle: outcome.battle }
 }
 
 function activateSpecial(game, battle, type) {
@@ -883,10 +895,10 @@ export function attemptCapture(game, battle, rolls = null, itemType = 'star', { 
     applyEndTurnStatuses(nextGame, nextBattle, log)
     if (nextBattle.playerSpecial?.type === 'burst') endBurstIfNeeded(nextGame, nextBattle, log)
     nextBattle.log = [...nextBattle.log.slice(-4), ...log].slice(-8)
-    resolvePlayerFaint(nextGame, nextBattle)
-    const resolved = refundLostBattleIfNeeded(nextGame, nextBattle, today)
-    resolved.game.activeBattle = structuredClone(resolved.battle)
-    return { ok: true, caught: false, stars, chance, game: resolved.game, battle: resolved.battle }
+    const outcome = resolveBattleOutcomeAfterTurn(nextGame, nextBattle, { today })
+    return outcome.rewards
+      ? { ok: true, caught: false, stars, chance, game: outcome.game, battle: outcome.battle, rewards: outcome.rewards }
+      : { ok: true, caught: false, stars, chance, game: outcome.game, battle: outcome.battle }
   }
 
   const stage = stageById(battle.stageId)
@@ -958,12 +970,16 @@ export function switchBattleMonster(game, battle, instanceId, { today = null } =
     applyEndTurnStatuses(nextGame, nextBattle, log)
     if (nextBattle.playerSpecial?.type === 'burst') endBurstIfNeeded(nextGame, nextBattle, log)
     nextBattle.turn += 1
-    resolvePlayerFaint(nextGame, nextBattle)
   }
   nextBattle.log = [...nextBattle.log.slice(-4), ...log].slice(-8)
-  const resolved = refundLostBattleIfNeeded(nextGame, nextBattle, today)
-  resolved.game.activeBattle = structuredClone(resolved.battle)
-  return { ok: true, game: resolved.game, battle: resolved.battle }
+  if (forced) {
+    nextGame.activeBattle = structuredClone(nextBattle)
+    return { ok: true, game: nextGame, battle: nextBattle }
+  }
+  const outcome = resolveBattleOutcomeAfterTurn(nextGame, nextBattle, { today })
+  return outcome.rewards
+    ? { ok: true, game: outcome.game, battle: outcome.battle, rewards: outcome.rewards }
+    : { ok: true, game: outcome.game, battle: outcome.battle }
 }
 
 export function abandonBattle(game, { today } = {}) {
