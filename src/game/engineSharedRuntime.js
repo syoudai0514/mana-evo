@@ -4,7 +4,8 @@ import {
   BATTLE_XP_GLOBAL_MULTIPLIER,
   BATTLE_XP_TEAMMATE_MULTIPLIER,
   CAPTURE_EVOLUTION_LEVEL_BUFFER,
-  battleXpForStage
+  battleXpForStage,
+  battleXpLevelMultiplier
 } from './balance.js'
 import { EVOLUTION_ITEMS, STAGES, speciesOf } from './content.js'
 import {
@@ -53,8 +54,6 @@ export const healthyTeamIds = core.healthyTeamIds
 export const currentPlayerMaxHp = core.currentPlayerMaxHp
 export const availableBattleMoveIds = core.availableBattleMoveIds
 export const canUseProtect = core.canUseProtect
-export const useProtect = core.useProtect
-export const switchBattleMonster = core.switchBattleMonster
 export const abandonBattle = core.abandonBattle
 export const clearFinishedBattle = core.clearFinishedBattle
 export const setTeam = core.setTeam
@@ -183,12 +182,21 @@ export function applyXpToInstance(game, {
   return { ok: true, game: next, levels: gained.levels, evolution }
 }
 
-function battleXpForRecipient(baseXp, battle, instanceId) {
+// Canonical Battle XP settlement order (V6 hotfix):
+// stage base XP -> V5 global 0.40 -> teammate 0.40 -> V6 level-gap -> gainXp.
+// Keeping the level-gap factor here means KO, capture and evolution crossings all
+// receive the exact same policy before any monster mutation occurs.
+function battleXpForRecipient(baseXp, battle, instanceId, sourceGame) {
   const pool = Math.max(0, Number(baseXp) || 0)
   if (pool <= 0) return 0
-  const activeXp = Math.max(1, Math.round(pool * BATTLE_XP_GLOBAL_MULTIPLIER))
-  if (instanceId === battle?.activeInstanceId) return activeXp
-  return Math.max(1, Math.round(activeXp * BATTLE_XP_TEAMMATE_MULTIPLIER))
+  const globalXp = Math.max(1, Math.round(pool * BATTLE_XP_GLOBAL_MULTIPLIER))
+  const roleXp = instanceId === battle?.activeInstanceId
+    ? globalXp
+    : Math.max(1, Math.round(globalXp * BATTLE_XP_TEAMMATE_MULTIPLIER))
+  const playerLevel = sourceGame?.box?.[instanceId]?.level
+  const enemyLevel = battle?.enemy?.level
+  const levelGap = battleXpLevelMultiplier(playerLevel, enemyLevel)
+  return Math.max(1, Math.round(roleXp * levelGap))
 }
 
 function pacedCaptureLevel(speciesId, enemyLevel) {
@@ -209,7 +217,7 @@ function applyBattleXpPacing(originalGame, result) {
   for (const instanceId of Object.keys(levelsByInstance)) {
     const before = originalGame?.box?.[instanceId]
     if (!before) continue
-    const amount = battleXpForRecipient(baseXp, result.battle, instanceId)
+    const amount = battleXpForRecipient(baseXp, result.battle, instanceId, originalGame)
     const gained = core.gainXp(before, amount)
     next.box[instanceId] = gained.monster
     pacedLevels[instanceId] = gained.levels
@@ -272,9 +280,22 @@ function integrateBossFirstClear(originalGame, result) {
   }
 }
 
+function settleCanonicalBattleXp(originalGame, result) {
+  const paced = applyBattleXpPacing(originalGame, result)
+  const evolved = integrateBattleXpEvolutions(originalGame, paced)
+  return integrateBossFirstClear(originalGame, evolved)
+}
+
 export function useMove(game, battle, moveId, options = {}) {
-  const result = applyBattleXpPacing(game, core.useMove(game, battle, moveId, options))
-  return integrateBossFirstClear(game, integrateBattleXpEvolutions(game, result))
+  return settleCanonicalBattleXp(game, core.useMove(game, battle, moveId, options))
+}
+
+export function useProtect(game, battle, options = {}) {
+  return settleCanonicalBattleXp(game, core.useProtect(game, battle, options))
+}
+
+export function switchBattleMonster(game, battle, instanceId, options = {}) {
+  return settleCanonicalBattleXp(game, core.switchBattleMonster(game, battle, instanceId, options))
 }
 
 function activeMonster(game, battle) {
@@ -375,8 +396,9 @@ function captureTeamXp(game, battle, capturedInstanceId, xp) {
   const evolutionsByInstance = {}
   const xpByInstance = {}
   const prefix = `${battle?.battleId || battle?.stageId || 'capture'}:capture-xp`
+  const sourceGame = game
   for (const instanceId of captureBattleXpRecipients(battle?.teamAtStart || [], capturedInstanceId)) {
-    const amount = battleXpForRecipient(xp, battle, instanceId)
+    const amount = battleXpForRecipient(xp, battle, instanceId, sourceGame)
     const applied = applyXpToInstance(next, { instanceId, amount, operationId: `${prefix}:${instanceId}` })
     if (!applied.ok) continue
     next = applied.game
@@ -413,7 +435,7 @@ export function attemptCapture(game, battle, rolls = null, itemType = 'star', { 
     // Failed-capture action economy is still a blocked product decision in W-103.
     // Preserve the existing enemy-turn compatibility path, but force it to failure;
     // the legacy probability calculation can no longer decide the outcome.
-    const compatibility = core.attemptCapture(game, battle, [1, 1, 1, 1], itemType, { today })
+    const compatibility = settleCanonicalBattleXp(game, core.attemptCapture(game, battle, [1, 1, 1, 1], itemType, { today }))
     if (!compatibility.ok) return compatibility
     const nextBattle = structuredClone(compatibility.battle)
     nextBattle.captureStars = resolution.presentation.starCount
