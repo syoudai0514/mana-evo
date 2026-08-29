@@ -9,18 +9,13 @@ import { PLAYTEST_CANDIDATE_ART, resolvePlaytestCandidateArt } from '../src/game
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const PROVENANCE = path.join(ROOT, 'design/rebuild/asset-production/candidate-provenance')
-const W306_PENDING = new Set(['m025','m026','m027','m028','m029','m030','m070','m071','m072','m178','m179','m180','m217','m218','m219'])
 const sha256 = (buffer) => crypto.createHash('sha256').update(buffer).digest('hex')
 
-test('candidate overlay is generated from the current 223 candidate artifacts', () => {
-  assert.equal(CANDIDATE_ART_SPECIES.length, 223)
-  assert.equal(new Set(CANDIDATE_ART_SPECIES).size, 223)
+test('candidate overlay is generated from the current 238 candidate artifacts', () => {
+  assert.equal(CANDIDATE_ART_SPECIES.length, 238)
+  assert.equal(new Set(CANDIDATE_ART_SPECIES).size, 238)
   assert.deepEqual(Object.keys(PLAYTEST_CANDIDATE_ART), CANDIDATE_ART_SPECIES)
 
-  for (const id of W306_PENDING) {
-    assert.equal(PLAYTEST_CANDIDATE_ART[id], undefined, `${id} remains outside the integrated candidate set`)
-    assert.equal(resolvePlaytestCandidateArt(id), null)
-  }
   assert.equal(resolvePlaytestCandidateArt('m239'), null)
 
   for (const integrated of ['m019','m043','m106','m228','m231']) {
