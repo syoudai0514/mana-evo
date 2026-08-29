@@ -36,11 +36,13 @@ A domain contract must not redefine another domain silently. Cross-domain behavi
 
 These are companions to the contracts above, not independent product authorities.
 
-- [`monster-asset-manifest.json`](./monster-asset-manifest.json) — per-species art state / production visibility evidence
+- [`monster-asset-manifest.json`](./monster-asset-manifest.json) — W-109 approval-state / initial-inventory companion used by FORMAL promotion guards. **Candidate ingestion intentionally does not make this a live count of every later candidate binary.**
+- `design/rebuild/asset-production/candidate-provenance/` + actual `public/monsters/mNNN.webp` + Work Item evidence — later candidate-revision evidence where present.
+- `src/game/playtestCandidateArt.js` — current main's explicit D-016 production-visible candidate allowlist; production visibility is not FORMAL approval.
 - [`monsters/descriptions-001-080.json`](./monsters/descriptions-001-080.json)
 - [`monsters/descriptions-081-160.json`](./monsters/descriptions-081-160.json)
 - [`monsters/descriptions-161-238.json`](./monsters/descriptions-161-238.json)
-- [`canonical-sync-map.json`](./canonical-sync-map.json) — CI ownership metadata only; it does **not** define gameplay
+- [`canonical-sync-map.json`](./canonical-sync-map.json) — CI ownership metadata only; it does **not** define gameplay.
 
 Active monster scope remains exactly `m001`–`m238` / 83 families. `m239` remains baseline/reference only under D-003.
 
@@ -66,7 +68,10 @@ At minimum, current readers must account for:
 - **D-017** — child-facing capture items are ほし/ぎん/きん/にじ **ボール**; stable domain keys remain `star/silver/gold/rainbow`.
 - **D-018** — family account + profile-separated cloud save / backup / TEST isolation.
 - **D-019** — Vercel production canonical.
-- **Battle V6 production decision** — study-first pacing, played loss/explicit abandon consumes the reserved battle ticket, anti-weak-bench enemy scaling, level-gap Battle XP throttling, post-KO wild capture, and slower world recommendation bands. This is recorded in the Decision Log by the canonical-sync remediation PR.
+- **D-020** — Evolution pacing V5.
+- **D-021** — cloud conflict resolution is adult-owned and must not interrupt normal child gameplay.
+- **D-022** — Battle V6 study-first pacing / played-ticket cost / fair-fight intent / level-gap XP / post-KO capture / slower world bands.
+- **D-023** — canonical design sync gate; product behavior and owning CURRENT update are one change set.
 
 An open design proposal is not CURRENT merely because it is newer. In particular, a design-only PR remains proposal until explicitly approved and promoted through Decision Log + owning CURRENT contracts.
 
