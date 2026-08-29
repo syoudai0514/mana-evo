@@ -9,6 +9,8 @@ import {
 import { normalizeLearningRewardRuntime } from './learningRewardStore.js'
 
 export const EXTRA_CORRECT_PER_BATTLE_TICKET = 5
+export const EXTRA_ACTIVE_MS_PER_BATTLE_TICKET = 20_000
+const MAX_QUALIFYING_EXTRA_ANSWER_MS = 15_000
 
 function statsIdFor(action = {}) {
   const domainId = String(action.domainId || '')
@@ -66,6 +68,71 @@ function dayKey(state) {
   return String(state?.daily?.date || '')
 }
 
+function qualifyingExtraAnswerKey(action, next) {
+  const instanceId = questionInstanceId(action)
+  if (instanceId) return instanceId
+  const itemKey = String(action?.itemKey || action?.question?.itemKey || '').trim()
+  const domainId = String(action?.domainId || '').trim()
+  if (!itemKey && !domainId) return null
+  return `${dayKey(next)}:${Number(next?.daily?.extraIndex) || 0}:${domainId}:${itemKey}`
+}
+
+function qualifyingExtraActiveMs(action) {
+  const elapsed = Number(action?.elapsedMs)
+  if (!Number.isFinite(elapsed) || elapsed <= 0) return 0
+  // A single abandoned/idle question must not bank minutes of future battle
+  // time. The cap still counts normal observed learning time in full.
+  return Math.min(MAX_QUALIFYING_EXTRA_ANSWER_MS, Math.floor(elapsed))
+}
+
+function recordExtraBattleTicketProgress(runtime, nextLearning, action) {
+  if (action?.taskKind !== 'extra' || nextLearning?.daily?.coreDone !== true) return runtime
+  const answerKey = qualifyingExtraAnswerKey(action, nextLearning)
+  if (!answerKey) return runtime
+
+  const meta = createLearningRewardMeta(runtime.learningRewardMeta)
+  if (meta.extraBattleAnswerIds.includes(answerKey)) return runtime
+
+  const extraBattleCorrectTotal = meta.extraBattleCorrectTotal + (action.correct === true ? 1 : 0)
+  const extraBattleActiveMs = meta.extraBattleActiveMs + qualifyingExtraActiveMs(action)
+  const extraBattleAnswerIds = [...meta.extraBattleAnswerIds, answerKey].slice(-512)
+  const eligibleTickets = Math.min(
+    Math.floor(extraBattleCorrectTotal / EXTRA_CORRECT_PER_BATTLE_TICKET),
+    Math.floor(extraBattleActiveMs / EXTRA_ACTIVE_MS_PER_BATTLE_TICKET)
+  )
+
+  let result = {
+    ...runtime,
+    learningRewardMeta: {
+      ...meta,
+      extraBattleCorrectTotal,
+      extraBattleActiveMs,
+      extraBattleAnswerIds
+    }
+  }
+
+  // Correct answers and active study time are both cumulative. Reaching five
+  // correct answers too quickly therefore leaves the reward pending naturally;
+  // the next qualifying extra-study answer can supply the missing time without
+  // deleting the child's earned correct-answer progress.
+  for (let milestone = meta.extraBattleTicketsIssued + 1; milestone <= eligibleTickets; milestone += 1) {
+    result = queueGame(result, {
+      id: `extra-ticket:${milestone}`,
+      ticketDelta: 1,
+      captureItemDelta: {},
+      kind: 'extra-learning-ticket'
+    }, true)
+    result = {
+      ...result,
+      learningRewardMeta: {
+        ...result.learningRewardMeta,
+        extraBattleTicketsIssued: milestone
+      }
+    }
+  }
+  return result
+}
+
 function deriveAnswer(runtime, previous, next, action) {
   const grade = previous?.grade ?? next?.grade ?? 0
   const { hard, statsId } = statsIdFor(action)
@@ -82,6 +149,10 @@ function deriveAnswer(runtime, previous, next, action) {
     result = { ...result, learningRewardMeta: policy.meta }
     if (policy.justReleased) result = releaseHeld(result)
 
+    // Only explicit extra study advances the battle-ticket budget. Free and
+    // okawari remain useful learning modes but can never subsidize battle time.
+    result = recordExtraBattleTicketProgress(result, next, action)
+
     if (action.correct === true && action.taskKind === 'extra' && next?.daily?.coreDone === true) {
       const instanceId = questionInstanceId(action)
       if (instanceId) {
@@ -92,21 +163,6 @@ function deriveAnswer(runtime, previous, next, action) {
           explorationPointDelta: 1,
           worldProgressDelta: 0,
           dayKey: dayKey(next)
-        }, true)
-      }
-
-      // Study must remain the main activity. Real play telemetry showed an
-      // average learning answer at ~7.8s and a battle at ~15.5s before V6
-      // animations. Paying one battle per correct answer inverted the intended
-      // time budget. Five correct extra answers now earn one battle ticket.
-      const correctTotal = Math.max(0, Number(result.learningRewardMeta.additionalCorrectTotal) || 0)
-      if (correctTotal > 0 && correctTotal % EXTRA_CORRECT_PER_BATTLE_TICKET === 0) {
-        const milestone = Math.floor(correctTotal / EXTRA_CORRECT_PER_BATTLE_TICKET)
-        result = queueGame(result, {
-          id: `extra-ticket:${milestone}`,
-          ticketDelta: 1,
-          captureItemDelta: {},
-          kind: 'extra-learning-ticket'
         }, true)
       }
     }
