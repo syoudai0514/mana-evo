@@ -37,7 +37,7 @@ Runtime/file existence is evidence only and must not invent approval.
 CURRENT official name remains `ホシラディア`.
 The later derived `ソラリオン` value has no approval evidence and must not rename `m236`.
 
-## 3. Identity/art-facing master fields
+## 3. Identity / art-facing master fields
 
 Each active species has canonical identity fields including:
 
@@ -116,25 +116,30 @@ Stage progression must read as:
 - no universal glossy-plastic material
 - unrelated families must remain distinguishable by silhouette and mass
 
-## 6. Art states
+## 6. Art states and three separate questions
 
-File existence and production visibility are separate from FORMAL approval.
+The art system must never collapse these three questions into one:
+
+1. **Does a candidate binary exist in the repository / candidate history?**
+2. **Is that candidate explicitly visible in current production?**
+3. **Has that species been explicitly approved as FORMAL?**
+
+They are different states/evidence streams.
 
 ### PLACEHOLDER
 
-No repository candidate eligible for the current production/review path.
-Runtime uses the canonical placeholder while keeping correct identity.
+No eligible production/formal species art is selected for this ID. Runtime uses the canonical placeholder while keeping correct species identity.
 
 ### CANDIDATE
 
-A per-species repository image exists and has not been promoted to FORMAL.
+A candidate revision exists but has not been promoted to FORMAL.
 
-Candidate may be in one of two visibility situations:
+A candidate can be:
 
-1. **review-only candidate** — repository image exists, but is not in the explicit production allowlist;
-2. **production-visible candidate** — D-016 gate passed and the exact species is explicitly included in the production candidate allowlist.
+- review-only / repository candidate;
+- production-visible candidate under D-016.
 
-Neither situation is FORMAL.
+Neither is FORMAL.
 
 ### FORMAL
 
@@ -146,16 +151,57 @@ FORMAL is not inferred from:
 - branch/PR name
 - successful image load
 - production visibility
-- historical `formal-v1` label
+- historical `formal-v1` labels
 - candidate QA PASS alone
 
-## 7. Progressive production rollout — D-016
+## 7. W-302 state model: manifest, provenance and production overlay
 
-FORMAL completion of all 238 species is **not** required before useful art can appear in production.
+The existing Phase 4 tooling deliberately separates state responsibilities.
+
+### 7.1 `monster-asset-manifest.json`
+
+`design/current/monster-asset-manifest.json` is the **W-109 approval-state / initial inventory companion used by W-302 tooling and FORMAL promotion guards**.
+
+Important current behavior:
+
+- candidate ingestion **does not rewrite this manifest just because a new CANDIDATE WebP is ingested**;
+- its historical `FORMAL / CANDIDATE / PLACEHOLDER` counts therefore must **not** be interpreted as a live count of every later generated candidate binary;
+- it remains useful for stable active scope and approval semantics;
+- explicit FORMAL promotion may update the per-ID FORMAL state / formal asset / approval evidence under the promotion workflow.
+
+Therefore the old manifest count `FORMAL 0 / CANDIDATE 20 / PLACEHOLDER 218` is **not evidence that only 20 candidate binaries exist today**. It describes the pre-Phase-4 W-109 approval/inventory snapshot unless later promotion explicitly changes it.
+
+Do **not** "fix" this drift by blindly marking every ingested candidate FORMAL or by mutating manifest semantics without also redesigning the W-302 queue/tests/tooling.
+
+### 7.2 Candidate provenance / binary evidence
+
+Actual later candidate revisions are evidenced by the relevant:
+
+- candidate-ingestion output;
+- per-species candidate provenance/history where present;
+- exact `public/monsters/mNNN.webp` binary;
+- Work Item / PR artifact evidence;
+- checksum/refetch validation.
+
+This evidence answers "candidate exists"; it still does not answer "FORMAL approved".
+
+### 7.3 Production visibility
+
+D-016 production visibility is a third layer.
+
+Current main uses the explicit production candidate overlay in `src/game/playtestCandidateArt.js`.
+
+That allowlist answers "this CANDIDATE may appear in normal production gameplay" without changing it to FORMAL.
+
+Long term, this allowlist should be generated/validated from a single candidate registry/provenance source so that one-species replacement does not require manually maintaining parallel lists. A generator must validate real bytes and exact IDs, and must never infer FORMAL approval.
+
+## 8. Progressive production rollout — D-016
+
+FORMAL completion of all 238 species is not required before useful art appears in production.
 
 A species may become production-visible as CANDIDATE only when the relevant candidate-production gate has real evidence, including as applicable:
 
-- actual generated/approved-for-candidate binary
+- actual candidate binary
 - correct species ownership
 - family/stage visual QA
 - candidate-safe WebP
@@ -166,11 +212,11 @@ A species may become production-visible as CANDIDATE only when the relevant cand
 
 Production candidate visibility must be explicit; never infer it from "a file exists" or an ID range.
 
-## 8. Current production art state
+## 9. Current production art state
 
 ### Production-visible CANDIDATE overlay
 
-Current `main` contains an explicit production overlay from PR #98 covering **184 species** from:
+Current `main` contains the PR #98 explicit overlay covering **184 species** from:
 
 - W-303 grass
 - W-304 fire
@@ -195,27 +241,19 @@ Explicit PR #98 exclusions:
 - W-319 dark
 - m239
 
-Those exclusions remain production facts until a later candidate integration is actually merged into `main`.
+Those exclusions remain **production facts** until a later candidate integration is actually merged into `main`.
 
 Open integration/review PRs are not production state merely because they contain more images.
 
-### Existing review-only legacy candidates
+### Review-only legacy candidates
 
-`m019` and `m020` still have historical per-ID SVG candidate files in main, but they are not part of the PR #98 184-species production overlay.
-
-Therefore CURRENT state must distinguish:
-
-- repository candidate inventory
-- production-visible candidate allowlist
-- FORMAL approval
-
-rather than using one count for all three concepts.
+`m019` and `m020` still have historical per-ID SVG candidate files in main, but they are not part of PR #98's 184-species production overlay.
 
 ### FORMAL
 
-Current FORMAL count remains `0` until explicit W-322-style approval/promotion evidence is recorded.
+Current FORMAL count remains `0` until explicit formal-approval/promotion evidence is recorded.
 
-## 9. Runtime resolver contract
+## 10. Runtime resolver contract
 
 All child-facing monster rendering must converge on one stable-ID resolver or generated equivalent.
 
@@ -224,7 +262,7 @@ Conceptual result:
 ```text
 resolveMonsterArt(speciesId) -> {
   speciesId,
-  state,                 // PLACEHOLDER | CANDIDATE | FORMAL
+  approvalState,         // PLACEHOLDER | CANDIDATE | FORMAL
   productionVisible,
   src,
   isFormal,
@@ -238,27 +276,11 @@ Runtime rules:
 2. Explicit D-016 production-visible CANDIDATE may render as candidate art.
 3. Review-only CANDIDATE must not become production-visible just because a file exists.
 4. Otherwise use placeholder.
-5. Missing/broken candidate/formal assets fail safely.
-6. Never infer state/visibility from number ranges or file extensions.
+5. Missing/broken assets fail safely.
+6. Never infer approval/visibility from number ranges or file extensions.
 7. `m239` never enters active resolution.
 
-`src/game/playtestCandidateArt.js` currently carries the explicit production overlay. This is implementation evidence; long-term it should be generated from validated candidate state/provenance rather than manually duplicated.
-
-## 10. Manifest contract
-
-`design/current/monster-asset-manifest.json` must have one active asset object for every `m001`〜`m238` and must not claim that file existence equals approval.
-
-It should distinguish at least:
-
-- repository `state`
-- `productionVisible` where applicable
-- candidate asset path/evidence
-- `formalAsset` only when FORMAL
-- `approvalEvidence` only when explicit approval exists
-
-State counts and production-visible counts are different metrics.
-
-A future generator may derive repository candidate inventory and production visibility from checked-in binaries + provenance + explicit allowlist, but it must **never auto-generate FORMAL approval**.
+Current `src/game/playtestCandidateArt.js` is an implementation layer for production visibility, not a replacement for approval semantics.
 
 ## 11. Candidate replacement / maintainability
 
@@ -268,11 +290,10 @@ Required properties:
 
 - stable path `public/monsters/mNNN.webp`
 - provenance/checksum per candidate revision
-- previous candidate can be archived/referenced
-- replacing one species must not require editing a large hand-maintained unrelated mapping
-- generated candidate index/allowlist should validate actual bytes before exposing an asset
-
-This supports continuing art repair without turning runtime image selection into manual drift.
+- previous candidate revision recoverable/auditable
+- replacing one species does not require editing unrelated species data
+- generated candidate index/allowlist validates actual bytes before exposing an asset
+- no automatic FORMAL promotion
 
 ## 12. Phase 4 final gates
 
@@ -280,7 +301,7 @@ Candidate production and production visibility do not eliminate later quality ga
 
 ### Cross-attribute QA
 
-Before broad FORMAL promotion, review across all active species for:
+Before broad FORMAL promotion, review across active species for:
 
 - duplicate silhouettes
 - type-internal template repetition
@@ -294,14 +315,14 @@ Before broad FORMAL promotion, review across all active species for:
 
 FORMAL promotion requires explicit approval evidence.
 
-Promotion must update:
+Promotion must update the approval-state source expected by the promotion workflow, including:
 
-- per-ID manifest state
+- per-ID FORMAL state
 - formal asset path/revision
 - approval evidence
-- runtime generated state if applicable
+- generated runtime state if the final resolver requires it
 
-No worker may silently promote all candidates because production has been using them successfully.
+No worker may silently promote all production-visible candidates simply because they have been used successfully in playtest/production.
 
 ## 13. Acceptance
 
@@ -310,11 +331,13 @@ A conforming art system verifies:
 - active scope exactly m001〜m238 / 83 families;
 - m239 excluded;
 - m236 name guard preserved;
-- exact visual brief provenance is used;
+- exact visual brief provenance used;
 - family continuity/originality/style rules preserved;
-- candidate file existence ≠ FORMAL;
+- file existence ≠ FORMAL;
+- candidate ingestion ≠ FORMAL;
 - production-visible CANDIDATE ≠ FORMAL;
-- production visibility is explicit per species;
+- W-109 manifest snapshot is not misread as live candidate-binary inventory;
+- candidate existence and production visibility are tracked by their actual evidence streams;
 - current main production overlay is exactly the merged allowlist, not open-PR inventory;
 - broken/missing assets fail safely;
 - per-species replacement remains stable-ID based;
