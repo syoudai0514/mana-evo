@@ -125,6 +125,7 @@ export default function CloudAccountShell({ children }) {
   }, [])
 
   const requestSafeRerun = useCallback((nextStatus = 'クラウド再確認中・端末には保存済み') => {
+    syncFailureCount.current = 0
     syncRerunRequested.current = true
     setStatus(nextStatus)
   }, [])
@@ -230,11 +231,6 @@ export default function CloudAccountShell({ children }) {
       const row = updated.value
       if (!row) throw new Error('統合中に別の端末で更新されました。もう一度同期してください')
       if (!updated.localUnchanged) {
-        // Cloud has advanced with the safe disjoint merge, but the device has newer
-        // local progress. Do not set meta and do not apply the older merged payload.
-        // The rerun compares the newer local state against the newly advanced cloud
-        // from the previous common base and will stop at conflict if compatibility
-        // cannot be proven.
         requestSafeRerun()
         return
       }
@@ -407,9 +403,14 @@ export default function CloudAccountShell({ children }) {
     const valid = await getValidSession(); if (!valid || !conflict?.cloud) return
     const displayedCloud = conflict.cloud
     const displayedLocalHash = payloadHash(conflict.localPayload)
+    const fetched = await waitForRemoteWithLocalGuard({
+      capturedHash: displayedLocalHash,
+      captureLocal: captureCloudPayload,
+      remoteOperation: fetchMainSave
+    })
+    const latestCloud = fetched.value
     const currentLocal = captureCloudPayload()
-    const latestCloud = await fetchMainSave()
-    if (!localSnapshotStillCurrent(displayedLocalHash, () => currentLocal)) {
+    if (!fetched.localUnchanged) {
       refreshConflictEvidence(latestCloud || displayedCloud, currentLocal, 'この端末のデータが比較後に更新されました。内容をもう一度確認してください。')
       return
     }
@@ -418,17 +419,32 @@ export default function CloudAccountShell({ children }) {
       return
     }
     await maybeBackupCloud(latestCloud, 'before-conflict-pull')
-    setMeta(valid.user.id, latestCloud)
-    applyCloudPayload(latestCloud.payload)
+    const afterBackupLocal = captureCloudPayload()
+    if (payloadHash(afterBackupLocal) !== displayedLocalHash) {
+      refreshConflictEvidence(latestCloud, afterBackupLocal, 'バックアップ中にこの端末のデータが更新されました。最新内容を確認してから選び直してください。')
+      return
+    }
+    const finalCloud = await fetchMainSave()
+    if (!sameCloudSnapshot(latestCloud, finalCloud)) {
+      refreshConflictEvidence(finalCloud, afterBackupLocal, '確認中に別端末でクラウドが更新されました。最新内容を確認してから選び直してください。')
+      return
+    }
+    setMeta(valid.user.id, finalCloud)
+    applyCloudPayload(finalCloud.payload)
     setConflict(null); window.location.reload()
   })
   const chooseLocal = () => run(async () => {
     const valid = await getValidSession(); if (!valid || !conflict?.cloud) return
     const displayedCloud = conflict.cloud
     const displayedLocalHash = payloadHash(conflict.localPayload)
+    const fetched = await waitForRemoteWithLocalGuard({
+      capturedHash: displayedLocalHash,
+      captureLocal: captureCloudPayload,
+      remoteOperation: fetchMainSave
+    })
+    const latestCloud = fetched.value
     const currentLocal = captureCloudPayload()
-    const latestCloud = await fetchMainSave()
-    if (!localSnapshotStillCurrent(displayedLocalHash, () => currentLocal)) {
+    if (!fetched.localUnchanged) {
       refreshConflictEvidence(latestCloud || displayedCloud, currentLocal, 'この端末のデータが比較後に更新されました。内容をもう一度確認してください。')
       return
     }
@@ -437,8 +453,17 @@ export default function CloudAccountShell({ children }) {
       return
     }
     await maybeBackupCloud(latestCloud, 'before-conflict-overwrite')
-    const row = await updateMainSave(currentLocal, latestCloud.revision)
-    if (!row) throw new Error('別端末でさらに更新されました')
+    const finalLocal = captureCloudPayload()
+    if (payloadHash(finalLocal) !== displayedLocalHash) {
+      refreshConflictEvidence(latestCloud, finalLocal, 'バックアップ中にこの端末のデータが更新されました。最新内容を確認してから選び直してください。')
+      return
+    }
+    const row = await updateMainSave(finalLocal, latestCloud.revision)
+    if (!row) {
+      const refreshedCloud = await fetchMainSave()
+      refreshConflictEvidence(refreshedCloud || latestCloud, finalLocal, '別端末でクラウドがさらに更新されました。最新内容を確認してから選び直してください。')
+      return
+    }
     setMeta(valid.user.id, row); setConflict(null); markSyncHealthy('この端末のデータを同期しました')
   })
 
