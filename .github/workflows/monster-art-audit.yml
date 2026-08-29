@@ -8,46 +8,68 @@ on:
       - 'public/monsters/**'
       - 'scripts/monster-art/**'
       - 'design/current/monster-asset-manifest.json'
-      - 'design/rebuild/asset-production/visual-audit/**'
+      - 'design/current/monsters/**'
+      - 'design/rebuild/asset-production/candidate-provenance/**'
+      - 'design/rebuild/asset-production/final-visual-audit/**'
       - '.github/workflows/monster-art-audit.yml'
       - 'package.json'
       - 'package-lock.json'
 
 jobs:
   audit:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 24
       - name: Install dependencies
         run: npm ci
-      - name: Install WebKit
-        run: npx playwright install --with-deps webkit
-      - name: Audit monster artwork
-        run: npm run audit:monster-art -- --output=artifacts/monster-art-visual-audit.json
-      - name: Build review contact sheets
-        run: npm run review:monster-art
-      - name: Export canonical repair briefs
-        run: node scripts/monster-art/export-repair-briefs.mjs --output=artifacts/monster-art-repair-briefs.json
-      - name: Upload visual audit report
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Snapshot protected candidate state
+        shell: bash
+        run: |
+          find public/monsters -maxdepth 1 -type f -name 'm*.webp' -print0 | sort -z | xargs -0 sha256sum > /tmp/candidate-before.sha256
+          find design/rebuild/asset-production/candidate-provenance -maxdepth 1 -type f -name 'm*.json' -print0 | sort -z | xargs -0 sha256sum > /tmp/provenance-before.sha256
+      - name: Run final visual audit
+        run: node scripts/monster-art/final-visual-audit.mjs
+      - name: Candidate registry validation
+        run: node scripts/monster-art/generate-candidate-index.mjs
+      - name: Monster art tests
+        run: npm test
+      - name: Production build
+        run: npm run build
+      - name: Verify protected candidate state unchanged
+        shell: bash
+        run: |
+          find public/monsters -maxdepth 1 -type f -name 'm*.webp' -print0 | sort -z | xargs -0 sha256sum > /tmp/candidate-after.sha256
+          find design/rebuild/asset-production/candidate-provenance -maxdepth 1 -type f -name 'm*.json' -print0 | sort -z | xargs -0 sha256sum > /tmp/provenance-after.sha256
+          diff -u /tmp/candidate-before.sha256 /tmp/candidate-after.sha256
+          diff -u /tmp/provenance-before.sha256 /tmp/provenance-after.sha256
+          git diff --exit-code -- public/monsters
+          git diff --exit-code -- design/rebuild/asset-production/candidate-provenance
+      - name: Upload final visual audit evidence
         uses: actions/upload-artifact@v4
         with:
-          name: monster-art-visual-audit
-          path: artifacts/monster-art-visual-audit.json
+          name: monster-art-final-visual-audit
+          path: design/rebuild/asset-production/final-visual-audit/**
           if-no-files-found: error
-      - name: Upload visual review sheets
-        uses: actions/upload-artifact@v4
-        with:
-          name: monster-art-contact-sheets
-          path: artifacts/monster-art-contact-sheets/**
-          if-no-files-found: error
-      - name: Upload canonical repair briefs
-        uses: actions/upload-artifact@v4
-        with:
-          name: monster-art-repair-briefs
-          path: artifacts/monster-art-repair-briefs.json
-          if-no-files-found: error
+      - name: Commit audit artifacts only
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add design/rebuild/asset-production/final-visual-audit
+          if git diff --cached --quiet; then
+            echo 'No audit artifact changes to commit.'
+            exit 0
+          fi
+          git commit -m 'audit: record final monster visual QA evidence'
+          git push origin HEAD:${{ github.head_ref }}
