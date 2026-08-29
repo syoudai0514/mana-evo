@@ -1,222 +1,266 @@
 # ManaEvo CURRENT — Monster Master / Art Contract
 
-Status: **CURRENT**  
-Updated: 2026-08-29  
-Owner: active monster identity / visual provenance / art-state semantics / production art resolution
+Status: **CURRENT — W-109 + D-016 production-visibility override**  
+Date: 2026-08-29  
+Scope: active monster identity/master slice and monster-art resolution contract
+
+> **重要:** W-109のidentity / visual provenance / FORMAL approval rulesは維持する。後続D-016により「normal runtimeはFORMALのみ」という旧visibility制約だけが置換され、validated CANDIDATEをexplicit allowlistでproduction表示できる。candidate visibilityはFORMAL approvalではない。末尾§13を必ず併読する。
 
 ## 1. Authority
 
-Apply `REBUILD-START-HERE.md` and `design/rebuild/DECISION-LOG.md` first.
+This document follows the rebuild precedence and does not make runtime authoritative.
 
-Key decisions:
+1. `design/rebuild/DECISION-LOG.md` D-003 / D-014 / D-016
+2. exact baseline `design/baseline/FINAL-CORRECTED/source/scripts/families.mjs`
+3. exact baseline `design/baseline/FINAL-CORRECTED/source/scripts/monster-visual-briefs.json`
+4. exact baseline `design/baseline/FINAL-CORRECTED/source/11-MONSTER-NAMING-AND-GRAPHICS-BIBLE.md`
+5. Phase 1.5 `design/rebuild/audit/monster-world-progression-audit.md`
+6. current data/runtime only as derived implementation evidence
 
-- D-003 — active scope m001〜m238 / 83 families; m239 reference-only
-- D-014 — exact baseline visual briefs and family continuity are art authority
-- D-016 — validated CANDIDATE art may be progressively visible in production without becoming FORMAL
+Phase 1.5 recorded broad agreement for No.001-238 between recovered baseline family data and the current master identity slice for No/name, source area, type, family/stage information and evolution method/parameter. W-114 identified one name-normalization exception: exact baseline family F081 / No.236 is `ホシラディア`, while later derived CSV data contains `ソラリオン` without approval evidence. The exact baseline name therefore remains CURRENT.
 
-Source provenance:
+## 2. Active registry and stable IDs
 
-- `design/baseline/FINAL-CORRECTED/source/scripts/families.mjs`
-- `design/baseline/FINAL-CORRECTED/source/scripts/monster-visual-briefs.json`
-- `design/baseline/FINAL-CORRECTED/source/11-MONSTER-NAMING-AND-GRAPHICS-BIBLE.md`
-- `design/current/monsters/descriptions-*.json`
+- Active game/master/dex/image-required scope is **No.001-238 / 83 families**.
+- `No.239 シラユキヒメ` is preserved in immutable baseline/reference only and excluded from active registry/dex/encounters/required-image scope.
+- Historical baseline remains 84 families / 239 species.
 
-Runtime/file existence is evidence only and must not invent approval.
+Stable species IDs are `m001` ... `m238`.
 
-## 2. Active registry / stable identity
+Rules:
 
-- active scope: exactly `m001`〜`m238`
-- family count: 83
-- `m239 / No.239 シラユキヒメ`: baseline/reference only
-- stable species ID is `m` + zero-padded number
-- display-name changes never change speciesId/save/asset key
-- monster number is identity, not a renumberable array index
+- `speciesId` immutable and independent of display name.
+- display-name change never changes speciesId/save/asset key.
+- asset names prefer stable IDs such as `m001.webp`.
+- active IDs exactly contiguous m001-m238; m239 reference-only.
+- monster number is identity, not an array index to renumber.
 
-### m236 guard
+### 2.1 m236 canonical-name guard
 
-CURRENT official name remains `ホシラディア`.
-The later derived `ソラリオン` value has no approval evidence and must not rename `m236`.
+- Stable ID / No.: `m236` / No.236
+- **CURRENT official display name: `ホシラディア`**
+- exact baseline source: F081 in `families.mjs` + Graphics Bible / visual brief.
+- later `design/13d-monster-growth-area4-part2.csv` value `ソラリオン` is derived-data drift without approved rename.
+- do not rename m236/save/art key because of that CSV.
 
-## 3. Identity / art-facing master fields
+## 3. Canonical monster-master slice
 
-Each active species has canonical identity fields including:
+W-109 owns only identity/art-facing data. Battle tuning, encounter placement, evolution conditions/items and special-form mechanics remain owned by their domain CURRENT documents.
 
-- `no`
-- `speciesId`
-- `name`
-- `familyNo`
-- `stage`
-- `maxStage`
-- `type`
-- `sourceArea`
-- previous/next family stage links
+Each active species has canonical identity fields:
 
-Adventure placement, battle tuning and evolution-method mechanics are owned by their own CURRENT domains and must not rewrite this identity slice.
+| Field | Meaning | Authority |
+|---|---|---|
+| `no` | stable No.001-238 | D-003 + baseline order |
+| `speciesId` | stable `mNNN` ID | stable-ID contract |
+| `name` | current official display name | baseline Graphics Bible / exact baseline data |
+| `familyNo` | family number | exact baseline `families.mjs` |
+| `stage` | 1-based family stage | exact baseline `families.mjs` |
+| `maxStage` | family stage count | exact baseline `families.mjs` |
+| `type` | canonical type ID | exact baseline `families.mjs` |
+| `sourceArea` | original source `area` 1-4 | exact baseline `families.mjs` |
+| `previousSpeciesId` | previous family stage or null | derived from exact family order |
+| `nextSpeciesId` | next evolution species or null | exact family chain/evolution link |
 
-## 4. Visual-description provenance
+Family membership/stage order must not be changed to fit runtime. `sourceArea` is separate from Adventure placement/zone layer owned by W-105. W-109 fixes evolution identity links only; level/item/held-item semantics are W-104.
 
-Do not start art production by inventing a new creature description.
+## 4. Description and visual-data provenance
 
-For every family/stage, use the rescued baseline visual data:
+Do not invent 238 replacement descriptions. Exact baseline `monster-visual-briefs.json` is the source for:
 
-- motif
+- family motif
 - family concept
-- personality arc
+- personalityArc
 - palette guidance
-- graphic core
-- stage description
-- expression / pose
-- silhouette
+- graphicCore
+- per-stage description
+- per-stage expressionAndPose
+- per-stage silhouette
 
-The three CURRENT description shards materialize this data for all active `m001`〜`m238`.
+Graphics Bible is naming/art-rule cross-check. W-110/W-111/W-112 CURRENT shards must extract baseline provenance faithfully.
 
-Historical 0822 boards are **visual reference evidence**, not authority over CURRENT identity/names/types.
+Historical 0822 boards may be used as **visual reference evidence** but do not override CURRENT names/types/family identity.
 
-## 5. Global art rules
+## 5. Canonical art rules
 
-### Audience
+A candidate can become FORMAL only if it satisfies baseline/D-014 rules.
 
-- primary audience 5〜8
-- not every monster must be uniformly cute
-- cool / mysterious / child-safe scary is allowed
-- no gore / body horror
+### Audience and expression
+
+- primary audience ages 5-8
+- preserve coolness, mystery and safe scariness; not every species uniformly cute
+- dark/ghost/poison not grotesque enough for young-child rejection
+- no universal sparkling friendly eyes; expression/pose follows personality
 
 ### Composition
 
-- primarily 2〜4 heads tall, family-specific exceptions allowed
-- front to slight 3/4
-- full body
-- no crop
-- transparent preferred; production-safe white acceptable during review where explicitly allowed
-- no baked text/UI labels in final species assets
-- face / type impression / signature feature readable at small size
+- primarily 2-4 heads tall
+- front to slight three-quarter view
+- full body visible
+- transparent or production-safe white during review where allowed
+- face/type/signature feature readable small
+- no text inside species image
 
-### Family continuity
+### Evolution continuity
 
-A family preserves at least two strong continuity signals, such as:
+- Stage 1: younger/rounder; immaturity visible
+- Stage 2: signature develops and reads intermediate
+- final: strength/role reads from silhouette without excessive decoration
+- family preserves at least two of face identity, color identity, signature body feature
 
-- face identity
-- palette identity
-- signature body feature
-- material / surface motif
-- structural motif
+### Originality and production
 
-Stage progression must read as:
+- do not imitate silhouette/face/markings/color arrangement/props/pose of a specific existing-IP character
+- do not mass-reuse one ear/horn/eye/limb template across unrelated families
+- different families distinguishable by silhouette
+- stable-ID asset naming
+- Giga/Burst assets separate variants preserving base-species identity; W-104 owns mechanics/targets
 
-- Stage 1: younger / incomplete / lighter mass
-- Stage 2: signature develops
-- final: role/strength reads from body and silhouette, not ornament spam alone
+## 6. Asset state model
 
-### Anti-template / originality
+Repository file existence is **not** approval evidence.
 
-- no specific existing-IP imitation
-- no repeated unrelated ear/horn/eye/limb template
-- no type represented only by recolor/aura
-- no universal sparkling-eye face
-- no universal glossy-plastic material
-- unrelated families must remain distinguishable by silhouette and mass
+### `FORMAL`
 
-## 6. Art states and three separate questions
+Reviewed against CURRENT + exact baseline brief, passed identity/family/originality/readability, and has explicit CURRENT approval evidence.
 
-The art system must never collapse these three questions into one:
+D-016 does **not** weaken FORMAL requirements.
 
-1. **Does a candidate binary exist in the repository / candidate history?**
-2. **Is that candidate explicitly visible in current production?**
-3. **Has that species been explicitly approved as FORMAL?**
+### `CANDIDATE`
 
-They are different states/evidence streams.
+A repository candidate revision exists but CURRENT FORMAL approval is pending. Historical `formal`, `formal-v1`, `temporary-formal` labels do not auto-upgrade it.
 
-### PLACEHOLDER
+D-016 allows some CANDIDATE revisions to be production-visible through an explicit allowlist after candidate gate. They remain CANDIDATE.
 
-No eligible production/formal species art is selected for this ID. Runtime uses the canonical placeholder while keeping correct species identity.
+### `PLACEHOLDER`
 
-### CANDIDATE
+No production/formal species art selected for that stable ID; use canonical placeholder while preserving correct identity.
 
-A candidate revision exists but has not been promoted to FORMAL.
+## 7. One MonsterArt resolution contract
 
-A candidate can be:
+All child-facing rendering must converge on one stable-ID resolver rather than screen-specific path guessing.
 
-- review-only / repository candidate;
-- production-visible candidate under D-016.
+Conceptually after D-016:
 
-Neither is FORMAL.
+```text
+resolveMonsterArt(speciesId) -> {
+  speciesId,
+  approvalState,        // PLACEHOLDER | CANDIDATE | FORMAL
+  productionVisible,
+  src,
+  isFormal,
+  approvalEvidence
+}
+```
 
-### FORMAL
+Current rules:
 
-Requires explicit CURRENT approval evidence for that species after identity/family/originality/readability review.
+1. FORMAL + valid approval evidence may render.
+2. Explicit D-016 production-visible CANDIDATE may render as candidate art.
+3. Review-only CANDIDATE does not become production-visible just because a file exists.
+4. Otherwise placeholder.
+5. Never infer approval/visibility from ID ranges or file extensions.
+6. Missing/broken selected asset fails safely.
+7. m239 never enters active resolution.
 
-FORMAL is not inferred from:
+The old W-109 rule “normal gameplay may render only FORMAL” is **superseded only by D-016's explicit production-CANDIDATE exception**. It remains true that arbitrary/review-only candidates may not silently render.
 
-- filename
-- branch/PR name
-- successful image load
-- production visibility
-- historical `formal-v1` labels
-- candidate QA PASS alone
+## 8. W-109 repository inventory snapshot — historical approval/inventory baseline
 
-## 7. W-302 state model: manifest, provenance and production overlay
+The original W-109 inventory on `rebuild/canonical-governance` was:
 
-The existing Phase 4 tooling deliberately separates state responsibilities.
+| IDs | Detected per-ID assets | Historical evidence | W-109 state |
+|---|---|---|---|
+| m001-m010 | `.webp` + `.svg` | temporary-formal / visual-QA marker | CANDIDATE / PENDING_AUDIT |
+| m011-m020 | `.svg` | no CURRENT approval record | CANDIDATE / PENDING_AUDIT |
+| m021-m238 | none | none | PLACEHOLDER |
 
-### 7.1 `monster-asset-manifest.json`
+Original manifest counts:
 
-`design/current/monster-asset-manifest.json` is the **W-109 approval-state / initial inventory companion used by W-302 tooling and FORMAL promotion guards**.
+- FORMAL: 0
+- CANDIDATE: 20
+- PLACEHOLDER: 218
+- active asset objects: 238
 
-Important current behavior:
+**These counts are not a live count of all later Phase 4 candidate binaries.** See §13.2.
 
-- candidate ingestion **does not rewrite this manifest just because a new CANDIDATE WebP is ingested**;
-- its historical `FORMAL / CANDIDATE / PLACEHOLDER` counts therefore must **not** be interpreted as a live count of every later generated candidate binary;
-- it remains useful for stable active scope and approval semantics;
-- explicit FORMAL promotion may update the per-ID FORMAL state / formal asset / approval evidence under the promotion workflow.
+Legacy sprite sheets are not one-per-stable-ID canonical assets and do not create FORMAL status.
 
-Therefore the old manifest count `FORMAL 0 / CANDIDATE 20 / PLACEHOLDER 218` is **not evidence that only 20 candidate binaries exist today**. It describes the pre-Phase-4 W-109 approval/inventory snapshot unless later promotion explicitly changes it.
+## 9. Runtime delta — historical note
 
-Do **not** "fix" this drift by blindly marking every ingested candidate FORMAL or by mutating manifest semantics without also redesigning the W-302 queue/tests/tooling.
+The original W-109 runtime delta about `PlaceholderMonster.jsx` and No.001-020 path heuristics was a 2026-08-25 implementation observation. Later D-016 rollout and candidate mapping changed runtime visibility behavior.
 
-### 7.2 Candidate provenance / binary evidence
+The enduring rule is not “use this specific old resolver”; it is:
 
-Actual later candidate revisions are evidenced by the relevant:
+- stable ID ownership
+- explicit production eligibility
+- no path/range-based approval inference
+- safe fallback
+- no automatic FORMAL promotion
 
-- candidate-ingestion output;
-- per-species candidate provenance/history where present;
-- exact `public/monsters/mNNN.webp` binary;
-- Work Item / PR artifact evidence;
-- checksum/refetch validation.
+## 10. Asset-manifest schema and W-302 semantics
 
-This evidence answers "candidate exists"; it still does not answer "FORMAL approved".
+`design/current/monster-asset-manifest.json` contains one asset object for every active stable ID m001-m238 and is used by W-302 tooling as the W-109 approval-state / initial-inventory companion.
 
-### 7.3 Production visibility
+Important Phase 4 behavior:
 
-D-016 production visibility is a third layer.
+- `candidate-ingestion.mjs` intentionally **does not rewrite this manifest merely because a new candidate WebP is ingested**;
+- therefore its original `FORMAL0 / CANDIDATE20 / PLACEHOLDER218` counts are not today's live candidate-binary inventory;
+- candidate existence is evidenced by candidate ingestion/provenance/history, actual `public/monsters/mNNN.webp`, and Work Item/PR validation;
+- production visibility is a separate D-016 allowlist/registry concern;
+- FORMAL promotion remains approval-evidence gated and may update FORMAL state/asset evidence through the promotion workflow.
 
-Current main uses the explicit production candidate overlay in `src/game/playtestCandidateArt.js`.
+Do not "synchronize" the manifest by marking every generated/production-visible image FORMAL. Do not silently redesign W-302 queue/test semantics just to make the old counts look like a live inventory counter.
 
-That allowlist answers "this CANDIDATE may appear in normal production gameplay" without changing it to FORMAL.
+When a species becomes FORMAL, its approval-state representation must carry explicit formal asset + approval evidence; file copy or successful load alone is insufficient.
 
-Long term, this allowlist should be generated/validated from a single candidate registry/provenance source so that one-species replacement does not require manually maintaining parallel lists. A generator must validate real bytes and exact IDs, and must never infer FORMAL approval.
+## 11. Validation / Acceptance
 
-## 8. Progressive production rollout — D-016
+W-109 + D-016 alignment requires:
 
-FORMAL completion of all 238 species is not required before useful art appears in production.
+- active IDs exactly m001-m238, count238
+- family count83
+- m239 absent active, retained reference
+- stable IDs independent of names
+- m236 official `ホシラディア`
+- identity provenance exact baseline, not runtime guesses
+- visual descriptions exact baseline briefs
+- art rules D-014 / Graphics Bible
+- every active ID represented in approval-state manifest
+- file existence never implies FORMAL
+- production-visible CANDIDATE never implies FORMAL
+- production eligibility explicit per species
+- no production state inferred merely from open PR inventory
+- missing/broken assets fail safely
 
-A species may become production-visible as CANDIDATE only when the relevant candidate-production gate has real evidence, including as applicable:
+## 12. Follow-up
 
-- actual candidate binary
-- correct species ownership
-- family/stage visual QA
-- candidate-safe WebP
-- exact scope validation
-- binary handoff/refetch integrity
-- provenance/checksum
-- explicit production allowlist inclusion
+Remaining work is asset review/repair/integration, not specification invention:
 
-Production candidate visibility must be explicit; never infer it from "a file exists" or an ID range.
+- audit candidates against exact family/stage brief
+- freeze/pass good candidates
+- normalize/repair only where safe
+- regenerate only failed/missing designs
+- cross-attribute QA before FORMAL promotion
+- FORMAL only with explicit approval evidence
 
-## 9. Current production art state
+---
 
-### Production-visible CANDIDATE overlay
+## 13. 2026-08-29 D-016 production visibility addendum
 
-Current `main` contains the PR #98 explicit overlay covering **184 species** from:
+### 13.1 Three separate questions
+
+The system must never collapse:
+
+1. **candidate binary exists?**
+2. **candidate is production-visible?**
+3. **species is FORMAL-approved?**
+
+These are separate evidence streams.
+
+### 13.2 Current production state on `main`
+
+PR #98 merged an explicit production CANDIDATE overlay covering **184 species** from:
 
 - W-303 grass
 - W-304 fire
@@ -233,7 +277,7 @@ Current `main` contains the PR #98 explicit overlay covering **184 species** fro
 - W-318 ghost
 - W-320 dragon
 
-Explicit PR #98 exclusions:
+PR #98 explicitly excluded:
 
 - W-306 electric
 - W-309 bug
@@ -241,104 +285,50 @@ Explicit PR #98 exclusions:
 - W-319 dark
 - m239
 
-Those exclusions remain **production facts** until a later candidate integration is actually merged into `main`.
+Current main's explicit runtime overlay is `src/game/playtestCandidateArt.js`.
 
-Open integration/review PRs are not production state merely because they contain more images.
+Open PRs containing more art do **not** become production state until merged.
 
-### Review-only legacy candidates
+`m019` and `m020` still have historical SVG candidate files in main but are not in PR #98's 184 production overlay; they demonstrate why repository candidate existence and production visibility must remain separate.
 
-`m019` and `m020` still have historical per-ID SVG candidate files in main, but they are not part of PR #98's 184-species production overlay.
+Current FORMAL count remains **0** until explicit promotion approval evidence exists.
 
-### FORMAL
+### 13.3 Candidate gate before production visibility
 
-Current FORMAL count remains `0` until explicit formal-approval/promotion evidence is recorded.
+Production-visible CANDIDATE must have real candidate evidence appropriate to its Work Item, such as:
 
-## 10. Runtime resolver contract
+- actual binary
+- correct species ownership
+- family/stage visual QA
+- candidate-safe WebP
+- exact scope validation
+- handoff/refetch integrity
+- checksum/provenance where applicable
+- explicit production allowlist/registry inclusion
 
-All child-facing monster rendering must converge on one stable-ID resolver or generated equivalent.
+`generation packet` or review text without an actual image is not candidate production completion.
 
-Conceptual result:
+### 13.4 Maintainability requirement
 
-```text
-resolveMonsterArt(speciesId) -> {
-  speciesId,
-  approvalState,         // PLACEHOLDER | CANDIDATE | FORMAL
-  productionVisible,
-  src,
-  isFormal,
-  approvalEvidence
-}
-```
+Future species replacement must remain one-species-addressable:
 
-Runtime rules:
+- stable `public/monsters/mNNN.webp`
+- auditable candidate revision/provenance
+- old revision recoverable where applicable
+- no unrelated species edits required for one replacement
+- candidate index/allowlist should be generated/validated from a single source rather than hand-maintained in parallel
+- generator may infer validated candidate **availability**, but never FORMAL approval
 
-1. FORMAL with valid approval evidence may render.
-2. Explicit D-016 production-visible CANDIDATE may render as candidate art.
-3. Review-only CANDIDATE must not become production-visible just because a file exists.
-4. Otherwise use placeholder.
-5. Missing/broken assets fail safely.
-6. Never infer approval/visibility from number ranges or file extensions.
-7. `m239` never enters active resolution.
+### 13.5 Cross-attribute / FORMAL gates
 
-Current `src/game/playtestCandidateArt.js` is an implementation layer for production visibility, not a replacement for approval semantics.
+Production CANDIDATE rollout does not eliminate:
 
-## 11. Candidate replacement / maintainability
-
-Future species image replacement must remain one-species-addressable.
-
-Required properties:
-
-- stable path `public/monsters/mNNN.webp`
-- provenance/checksum per candidate revision
-- previous candidate revision recoverable/auditable
-- replacing one species does not require editing unrelated species data
-- generated candidate index/allowlist validates actual bytes before exposing an asset
-- no automatic FORMAL promotion
-
-## 12. Phase 4 final gates
-
-Candidate production and production visibility do not eliminate later quality gates.
-
-### Cross-attribute QA
-
-Before broad FORMAL promotion, review across active species for:
-
-- duplicate silhouettes
-- type-internal template repetition
+- 238-scope cross-attribute visual QA
+- duplicate/template detection
 - family continuity
-- stage readability
 - small-size readability
-- background/crop/alpha issues
-- existing-IP similarity concerns
+- alpha/background/crop checks
+- IP-similarity review
+- explicit FORMAL approval/promotion
 
-### FORMAL promotion
-
-FORMAL promotion requires explicit approval evidence.
-
-Promotion must update the approval-state source expected by the promotion workflow, including:
-
-- per-ID FORMAL state
-- formal asset path/revision
-- approval evidence
-- generated runtime state if the final resolver requires it
-
-No worker may silently promote all production-visible candidates simply because they have been used successfully in playtest/production.
-
-## 13. Acceptance
-
-A conforming art system verifies:
-
-- active scope exactly m001〜m238 / 83 families;
-- m239 excluded;
-- m236 name guard preserved;
-- exact visual brief provenance used;
-- family continuity/originality/style rules preserved;
-- file existence ≠ FORMAL;
-- candidate ingestion ≠ FORMAL;
-- production-visible CANDIDATE ≠ FORMAL;
-- W-109 manifest snapshot is not misread as live candidate-binary inventory;
-- candidate existence and production visibility are tracked by their actual evidence streams;
-- current main production overlay is exactly the merged allowlist, not open-PR inventory;
-- broken/missing assets fail safely;
-- per-species replacement remains stable-ID based;
-- FORMAL promotion requires explicit approval evidence.
+Successful production use is not automatic FORMAL evidence.
