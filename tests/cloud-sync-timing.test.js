@@ -52,6 +52,13 @@ test('local progress remains authoritative while cloud delivery is pending', () 
   assert.match(shell, /同期待ち・端末には保存済み/)
 })
 
+test('normal child flow stays cloud-silent and only real attention states show save warning', () => {
+  assert.match(shell, /const childCloudAttention = !!session && !parentScreenOpen && \(!!conflict \|\| status\.includes\('同期エラー'\)\)/)
+  assert.match(shell, /const showAccountFab = !session \|\| recoveryMode \|\| parentScreenOpen \|\| childCloudAttention/)
+  assert.match(shell, /accountFabWarn \? '保存確認'/)
+  assert.doesNotMatch(shell, /childCloudAttention[\s\S]{0,100}同期待ち/)
+})
+
 test('CURRENT cloud use-case contract explicitly protects conflicts, offline recovery and in-flight races', () => {
   assert.match(useCases, /U6[\s\S]*CONFLICT/)
   assert.match(useCases, /U7[\s\S]*LOCAL ONLY/)
@@ -59,4 +66,6 @@ test('CURRENT cloud use-case contract explicitly protects conflicts, offline rec
   assert.match(useCases, /U12[\s\S]*Flush\/sync A before reload\/switch boundary/)
   assert.match(useCases, /U16[\s\S]*Coalesce\/serialize/)
   assert.match(useCases, /U20[\s\S]*Local save survives/)
+  assert.match(useCases, /Child-visible cloud status policy/)
+  assert.match(useCases, /保存確認/)
 })
