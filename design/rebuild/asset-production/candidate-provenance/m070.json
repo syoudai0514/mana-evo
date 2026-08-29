@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "speciesId": "m070",
+  "events": [
+    {
+      "timestamp": "2026-08-28T10:53:54.504Z",
+      "sourceLabel": "W-306 approved-for-candidate-review",
+      "previous": null,
+      "candidate": {
+        "repositoryPath": "public/monsters/m070.webp",
+        "sha256": "7f625f5c245fb5b5323e7660f9610a0f14e3369eb4381bc3b3f64197cb440267",
+        "bytes": 17182
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-29T10:07:52.275Z",
+      "sourceLabel": "W-306 electric ART READY ZIP replacement candidate review",
+      "previous": {
+        "repositoryPath": "public/monsters/m070.webp",
+        "sha256": "7f625f5c245fb5b5323e7660f9610a0f14e3369eb4381bc3b3f64197cb440267",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m070/7f625f5c245fb5b5323e7660f9610a0f14e3369eb4381bc3b3f64197cb440267.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m070.webp",
+        "sha256": "a83566087ded1cf5ff26a5afd7c21b29e016dd8e2815ddab158c04ac37bff3cd",
+        "bytes": 55766
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    }
+  ]
+}
