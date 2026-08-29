@@ -19,7 +19,7 @@ import { difficultyParams } from '../engine/difficulty.js'
 import { speak, cancelSpeak, hasEnglishVoice, subscribeEnglishVoice, speakEnglish, speakEnglishThenJapanese } from '../engine/tts.js'
 import { englishTaskForms, normalizeEnglishKey } from '../data/content/english.js'
 import { generatorReviewKey, reviewKeyFor, savedReviewQuestion, snapshotQuestion, withQuestionIds } from '../engine/reviewKey.js'
-import { nextLearningUnit, selectPracticeUnit, unitStatsFor, withLearningUnit, lessonForUnit } from '../engine/learningUnits.js'
+import { nextLearningUnit, selectPracticeUnit, unitStatsFor, unitReady, withLearningUnit, lessonForUnit } from '../engine/learningUnits.js'
 import { questionForUnit } from '../engine/unitQuestions.js'
 import { reinforcementExtraCount, reinforcementTargetIndex } from '../engine/reinforcement.js'
 import { sfx } from '../engine/sfx.js'
@@ -70,7 +70,7 @@ export default function ActivityPlayer({ task, onDone }) {
       const dId = task.domainId
       const seen = state.lessonSeen?.[`${g}:${dId}`] || 0
       const review = needsReviewLesson(state, dId, g)
-      const unitSeen = unitStatsFor(state, g, dId)[focusUnitRef.current]
+      const unitSeen = state.unitStats?.[g]?.[dId]?.[focusUnitRef.current]
       if (unitSeen?.attempts > 0 && seen > 0 && !review) return null
       // 既存レッスンを seed=0 で流用すると、分数の前にわり算を教える。
       // 単元専用が無い場合も、別単元の説明ではなくこの単元の導入を表示する。
@@ -172,6 +172,12 @@ export default function ActivityPlayer({ task, onDone }) {
     }
     setSupportHint(params.hint >= 2)
 
+    // A+ reward provenance is fixed when the question is presented. Reward
+    // settlement later trusts these fields instead of guessing from mutated
+    // learning state after the answer.
+    let learningIntent = 'adaptive'
+    let originQuestionInstanceId = null
+
     // 図鑑からの練習は4問すべて同じ語。形式だけを変えて結び付ける。
     let review = task.focusWordId ? `enw:${task.focusWordId}` : null
     let reinforcementSnapshot = null
@@ -183,6 +189,8 @@ export default function ActivityPlayer({ task, onDone }) {
         const reinforcement = reinforcementQueueRef.current.splice(reinforcementIndex, 1)[0]
         review = reinforcement.key
         reinforcementSnapshot = reinforcement.question
+        learningIntent = 'reinforcement'
+        originQuestionInstanceId = reinforcement.originQuestionInstanceId || reinforcement.question?.questionInstanceId || null
       }
     } else {
       // このタスクで間違えた問題は、2問ほど間を空けて同じ問題をもう一度。
@@ -192,6 +200,8 @@ export default function ActivityPlayer({ task, onDone }) {
         const reinforcement = reinforcementQueueRef.current.splice(reinforcementIndex, 1)[0]
         review = reinforcement.key
         reinforcementSnapshot = reinforcement.question
+        learningIntent = 'reinforcement'
+        originQuestionInstanceId = reinforcement.originQuestionInstanceId || reinforcement.question?.questionInstanceId || null
       }
       // 通常タスクでも、きょうが復習の期限になっている問題を混ぜる
       // （間隔反復: 忘れかけた ちょうどよい タイミングで もう一度 出会う）。
@@ -202,6 +212,7 @@ export default function ActivityPlayer({ task, onDone }) {
       // 新単元の導入直後2問には、期限復習を割り込ませない。
       if (!review && qIndex >= 2 && due.length && Math.random() < 0.45) {
         review = due[Math.floor(Math.random() * Math.min(due.length, 5))]
+        learningIntent = 'srs_due'
       }
     }
     // 英語の旧スナップショットには「問題と選択肢が同じ絵」の形式が残り得る。
@@ -234,6 +245,42 @@ export default function ActivityPlayer({ task, onDone }) {
     }
     // 旧セーブの「種類だけ」の復習キーも、そのまま復習として扱えるようにする。
     let q = review && !generatedWithIds.reviewKey ? { ...generatedWithIds, reviewKey: review } : generatedWithIds
+
+    // If a review key was already selected before the random due-SRS branch
+    // (for example a future learning-engine caller), freeze SRS provenance only
+    // when the canonical SRS entry is actually due at presentation.
+    if (learningIntent === 'adaptive' && review && !reinforcementSnapshot && !isReviewTask) {
+      const dueEntry = stateRef.current.srs?.[statsDomainId]?.[review]
+      if (isDue(dueEntry, dayNumber())) learningIntent = 'srs_due'
+    }
+
+    const unitStat = q?.unitId
+      ? unitStatsFor(stateRef.current, stateRef.current.grade, statsDomainId)[q.unitId]
+      : null
+    const masteredAtPresentation = q?.unitId ? unitReady(unitStat) : false
+    const ticketQualifyingAtPresentation = task.kind === 'extra' && (
+      learningIntent === 'srs_due' ||
+      learningIntent === 'reinforcement' ||
+      (learningIntent === 'adaptive' && !masteredAtPresentation)
+    )
+    const rewardEventId = [
+      stateRef.current.daily?.date || '',
+      task.kind || '',
+      Number(stateRef.current.daily?.extraIndex) || 0,
+      qIndex,
+      q?.questionInstanceId || '',
+      learningIntent,
+      originQuestionInstanceId || ''
+    ].join(':')
+    q = {
+      ...q,
+      learningIntent,
+      originQuestionInstanceId,
+      masteredAtPresentation,
+      ticketQualifyingAtPresentation,
+      rewardEventId
+    }
+
     // 未経験の書字は必ずお手本つき。別日に成功してから自由書きへ進む。
     if (q?.type === 'trace') {
       const stat = stateRef.current.writingStats?.[`${params.grade}:${q.target}`]
@@ -300,21 +347,16 @@ export default function ActivityPlayer({ task, onDone }) {
         rewardKey: monsterRewardKeyRef.current
       })
       sfx.reward()
-      // 追加問題でチケット条件を満たした場合は、この後に報酬オーバーレイが
-      // チケット獲得文を読み上げる。ここでも同じ文を読むと、完了音声の途中で
-      // 報酬音声へ切り替わったように聞こえるため、報酬画面へ任せる。
-      const earnsBattleTicket =
-        task.kind === 'extra' && accuracy >= 2 / 3 && !suspicious
+      // A+はタスク単位の2/3判定ではなくsemantic qualifying answerの
+      // 累積でticketを出す。ここではticket取得を予測せず、報酬overlayへ任せる。
       const line =
         task.kind === 'review'
           ? 'とっくん クリア！ まちがいが どんどん ちからに かわっていくよ！'
         : task.kind === 'extra'
-            ? earnsBattleTicket
-              ? ''
-              : 'ぜんぶ とけたね！ つぎも ゆっくり かんがえて いこう！'
+            ? 'ぜんぶ とけたね！ つぎも じぶんのペースで すすめよう！'
             : 'タスク クリア！ よくがんばったね！'
       // クリア時の言葉も、画面を切り替える前に最後まで聞かせる。
-      void (line ? speak(line) : Promise.resolve()).finally(() => {
+      void speak(line).finally(() => {
         feedbackTimerRef.current = setTimeout(onDone, 500)
       })
     }
@@ -392,15 +434,20 @@ export default function ActivityPlayer({ task, onDone }) {
     if (attempts >= 2) return
     reinforcementAttemptsRef.current[key] = attempts + 1
     // SRSは類題、タスク内の補強は「同じ設問」。算数も数値を保存して再出題する。
-    reinforcementQueueRef.current.push({ key, question: snapshotQuestion(question, key), after: reinforcementTargetIndex(qIndex) })
+    reinforcementQueueRef.current.push({
+      key,
+      question: snapshotQuestion(question, key),
+      originQuestionInstanceId: question.questionInstanceId || null,
+      after: reinforcementTargetIndex(qIndex)
+    })
     // 最終問でも「2問後」を置ける長さまでだけ末尾を延長する。
     setReinforcementCount((n) => reinforcementExtraCount(baseQuestionCount, n, qIndex))
   }
 
-  const recordAnswer = (correct) => {
+  const recordAnswer = (correct, choiceKey = null) => {
     if (!firstAttemptRef.current) return false
-    // 初回の3問だけをチケット判定に使う。誤答後の類題は、
-    // 思い出す練習として大切だが、報酬の合否には混ぜない。
+    // 初回の3問だけを旧タスク完了品質の集計に使う。A+ battle-ticket
+    // progressは各ANSWERのpresentation-time provenanceで別に判定する。
     const elapsed = Date.now() - shownAtRef.current
     const countsForTicket = task.kind !== 'extra' || tallyRef.current.total < task.questionCount
     if (countsForTicket) {
@@ -417,6 +464,8 @@ export default function ActivityPlayer({ task, onDone }) {
       domainId: domainIdRef.current,
       taskKind: task.kind,
       correct,
+      elapsedMs: elapsed,
+      choiceKey,
       itemKey,
       unitId: question.unitId,
       englishItemKey: question.itemKey,
@@ -432,7 +481,7 @@ export default function ActivityPlayer({ task, onDone }) {
     // iPhoneのタッチ終了や完了タイマーが重なっても、1問を二重採点しない。
     if (phaseRef.current === 'feedback' || traceHandledRef.current) return
     traceHandledRef.current = true
-    const conquer = recordAnswer(success)
+    const conquer = recordAnswer(success, success ? 'trace-success' : 'trace-fail')
     if (conquer) {
       setFeedback({ good: true, word: 'ちからに なった！', gold: true })
       sfx.levelUp()
@@ -451,7 +500,7 @@ export default function ActivityPlayer({ task, onDone }) {
   const handleAnswerId = (answerId) => {
     if (phase !== 'answering') return
     const correct = answerId === question.answerId
-    const conquer = recordAnswer(correct)
+    const conquer = recordAnswer(correct, answerId)
 
     if (correct) {
       setChosenId(answerId)
@@ -540,7 +589,7 @@ export default function ActivityPlayer({ task, onDone }) {
   // 記録上はミス扱い（＝とっくんキューに入って、あとで克服チャンスになる）。
   const handleDontKnow = () => {
     if (phase === 'feedback') return
-    recordAnswer(false) // 初回のみ有効。ミスとして復習キューへ
+    recordAnswer(false, 'dont-know') // 初回のみ有効。ミスとして復習キューへ
     comboRef.current = 0
     setChosenId(question.answerId) // 正解を光らせて見せる
     setWrongIds([])

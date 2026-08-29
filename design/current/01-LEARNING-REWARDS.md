@@ -1,12 +1,12 @@
 # ManaEvo CURRENT — Learning / Rewards
 
-Status: **CURRENT — W-101 + D-017/D-022 override**  
+Status: **CURRENT — W-101 + D-017/D-022/D-026 override**  
 Updated: 2026-08-29  
 Scope owner: learning rules and the learning → game reward bridge
 
 This document is sufficient for a later implementation worker to align the learning/reward bridge without treating old design documents or the current runtime as product authority.
 
-> **重要:** 本文のKids Quest/SRS/mastery/anti-spam/exploration契約は維持する。一方、2026-08-29 Battle V6（D-022）が旧「extra 1問clearごとticket+1」を **extra正解5回ごとticket+1** に後続置換している。child-facing `○○のわ` 名称はD-017により `○○ボール`へ変更済み。末尾overrideを必ず併読する。
+> **重要:** 本文のKids Quest/SRS/mastery/anti-spam/exploration契約は維持する。2026-08-29 Battle V6（D-022）が旧「extra 1問clearごとticket+1」を **extra正解5回ごとticket+1** に後続置換し、D-026がその「qualifying」をA+ semantic ruleとして確定する。child-facing `○○のわ` 名称はD-017により `○○ボール`へ変更済み。末尾overrideを必ず併読する。
 
 ## 1. Authority and boundary
 
@@ -121,7 +121,7 @@ Keep the Kids Quest **3-question extra task shape**. ManaEvo reward accounting d
 
 Historical rules such as `2/3 -> one ticket` and the pre-V6 `each extra clear -> ticket +1` are no longer the production ticket rule.
 
-Current production reward accounting is in §14.
+Current production reward accounting is in §14 and the later A+ override in §15.
 
 The following non-ticket rules remain:
 
@@ -132,12 +132,12 @@ The Kids Quest `OKAWARI_MAX = 6` limit belongs to `okawari`; it is **not** an ex
 
 ## 6. CURRENT learning → game reward matrix
 
-This base matrix is retained for non-superseded rewards; the ticket row for extra learning is replaced by §14.
+This base matrix is retained for non-superseded rewards; the ticket row for extra learning is replaced by §14/§15.
 
 | Learning event | Ticket | Capture item | Exploration points | Canonical note |
 |---|---:|---:|---:|---|
 | First daily transition to all 5 core tasks complete | `+3` | `star +3` | `+2` | once per day |
-| Each cleared extra question | **see §14** | — | `+1` | exploration per legitimate clear remains |
+| Each cleared extra question | **see §15** | — | `+1` | exploration per legitimate clear remains |
 | Every 3 correct answers in additional learning | — | `star +1` | — | cumulative milestone |
 | Normal unit becomes MASTER | — | `silver +1` | — | false -> true transition only |
 | Hard unit becomes MASTER | — | `gold +1` | — | false -> true transition only |
@@ -240,7 +240,7 @@ For per-answer/milestone rewards, implementation must use stable semantic comple
 
 The original W-101 delta ledger described pre-Battle-V6 runtime. It is historical evidence, not a current-runtime snapshot.
 
-Current production now implements the D-022 `extra 5 correct -> ticket +1` rate, while richer Learning Value / active-study-time ideas remain unapproved proposals unless later promoted.
+Current production before D-026 implemented the D-022 `extra 5 correct -> ticket +1` rate. D-026 now defines which correct answers may count toward those five; the rejected weighted-Learning-Value and hard-time-gate proposals are not CURRENT.
 
 Other canonical gaps (anti-spam fidelity, rainbow allocation, etc.) must still be judged against the relevant current code and this document, not this old ledger wording.
 
@@ -255,7 +255,8 @@ A conforming implementation keeps:
 - new battle entry locked until today's core complete
 - daily first core completion `ticket+3`, `star+3`, exploration `+2` exactly once
 - extra exploration `+1` per legitimate clear
-- **ticket +1 per 5 qualifying extra correct answers**
+- **ticket +1 per 5 A+ semantic qualifying extra correct answers**
+- **within the 5 answers composing one ticket, at most 3 may share one `knowledgeId`**
 - every 3 additional correct `star+1`
 - unit MASTER `silver+1`; hard MASTER `gold+1`
 - mastery milestone exploration `+2`; first chapter/star-trial pass exploration `+5`
@@ -269,19 +270,20 @@ A conforming implementation keeps:
 Highest-value evidence:
 
 - `REBUILD-START-HERE.md`
-- `design/rebuild/DECISION-LOG.md` — D-005 / D-006 / D-008 / D-009 / D-017 / D-022
+- `design/rebuild/DECISION-LOG.md` — D-005 / D-006 / D-008 / D-009 / D-017 / D-022 / D-023 / D-026
 - exact baseline `design/baseline/FINAL-CORRECTED/source/12-KIDS-QUEST-LEARNING-IMPORT-SPEC.md`
 - exact baseline `design/baseline/FINAL-CORRECTED/source/08-gameplay-state-spec.md`
 - exact baseline `design/baseline/FINAL-CORRECTED/source/scripts/rewards.mjs`
 - PR #5 explicit learning/reward decisions
 - PR #110 Battle V6 production decision
+- PR #115 two-pass independent A+ design review artifact
 - runtime inspected only as implementation evidence: `src/kids-quest-study/**`, `src/game/**`
 
 ## 14. 2026-08-29 Battle V6 additional-study ticket override — D-022
 
 This section supersedes only the older **extra-learning battle-ticket rate**. It does not change Kids Quest task generation, SRS/mastery, exploration grants, capture-item milestones or daily core +3.
 
-Current production rule:
+Baseline V6 shape:
 
 ```text
 for each qualifying correct answer in `extra` mode after daily core is complete:
@@ -291,24 +293,87 @@ for each newly crossed multiple of 5:
   battle ticket +1
 ```
 
-Canonical requirements:
+Canonical requirements retained by D-026:
 
-- threshold: **5 correct extra answers -> 1 ticket**
+- threshold: **5 qualifying correct extra answers -> 1 ticket**
 - daily core ticket reward remains `+3`
 - no direct ticket for `free`
 - do not treat `OKAWARI_MAX` as a ticket cap
 - extra correct still grants exploration `+1` per legitimate clear
 - every 3 additional correct still grants `star +1`
-- pending progress toward the next 5-correct milestone persists safely
+- pending progress persists safely
 - reload/replay/cloud conflict resolution must not duplicate a crossed milestone
-- fast correct answers must not be rejected merely because they are fast; anti-farming must distinguish genuine mastery from spam
+- fast correct answers must not be rejected merely because they are fast
 
-### Study-first invariant
+## 15. 2026-08-29 A+ semantic qualifying ticket rule — D-026
 
-The purpose of the 5-correct threshold is not arbitrary punishment. Production playtest showed game access could outgrow study time under the earlier rate.
+D-026 supersedes D-022 only in the definition of **qualifying extra correct** and in anti-farming composition. The simple threshold `5 -> 1 ticket` remains.
 
-ManaEvo's invariant is:
+### 15.1 Exact A+ rule
 
-> **reward optimization should not make low-value/easy farming the best way to reach more game time, and engaged learning time should remain greater than the battles it unlocks.**
+After daily core completion, only correct answers produced by `taskKind=extra` may advance battle-ticket progress.
 
-A richer Learning Value / active-study-time model may be reviewed later. It is **not CURRENT** until explicitly approved and merged with Decision Log + this contract under D-023.
+A correct answer contributes exactly `1` when the question provenance was fixed **at presentation time** as one of:
+
+- `adaptive` — legitimate current/unmastered practice selected by Kids Quest;
+- `srs_due` — a due spaced-retrieval item;
+- `reinforcement` — a genuine later retrieval after a prior miss/support step.
+
+The following contribute `0` to battle-ticket progress while ordinary learning records continue normally:
+
+- miss / `わからない`;
+- `free`;
+- `okawari`;
+- mastered non-due repeat;
+- revealed-answer acknowledgement / immediate revealed retry;
+- duplicate semantic reward event.
+
+No challenge, difficulty, speed, hint-use, recovery or time multiplier exists. **There is no minimum-time reward gate.** Learning time is telemetry only.
+
+### 15.2 Per-ticket same-knowledge guard
+
+The guard applies to the **specific partial set currently composing the next ticket**, not to a sliding “last five answers” window.
+
+```text
+one ticket bucket = 5 qualifying correct
+same knowledgeId within that bucket <= 3
+```
+
+If a `knowledgeId` already occupies three places in the current partial ticket bucket, another correct answer from that same knowledge:
+
+- updates Kids Quest learning state normally;
+- may still count for other approved non-ticket rewards;
+- does **not** enter the ticket bucket;
+- waits for a qualifying answer from another `knowledgeId` to complete the ticket.
+
+After a ticket is completed, the next ticket starts with a fresh composition bucket. A blocked semantic event itself is still considered already observed and cannot be replayed after the reset to count later.
+
+### 15.3 Presentation-time provenance and stable identity
+
+ManaEvo must not infer learning intent after the answer from mutated mastery/review state. At presentation, the learning question carries stable semantic metadata sufficient for reward settlement:
+
+- `learningIntent = adaptive | srs_due | reinforcement | revealed_retry`;
+- `knowledgeId`;
+- `unitId` / `skillId` where applicable;
+- `questionInstanceId`;
+- `originQuestionInstanceId` for reinforcement lineage;
+- stable `rewardEventId`;
+- presentation-time ticket eligibility/mastery state needed to distinguish legitimate current practice from mastered non-due repetition.
+
+Reward state is profile-owned and persists the current ticket-composition bucket plus already-observed semantic IDs. Reload, rerender, cloud roundtrip and profile switching must not duplicate or transfer progress between children.
+
+### 15.4 High performer / struggling learner fairness
+
+- A genuine 1–2 second correct answer is allowed to count if semantically qualifying; speed alone is not cheating.
+- A miss grants no ticket progress.
+- Support/explanation grants no ticket progress.
+- A later genuine reinforcement retrieval can count exactly `1`, never more than ordinary current-fit learning.
+- A revealed answer tapped immediately is not a reinforcement retrieval and counts `0`.
+
+### 15.5 Study-first invariant
+
+The product invariant is:
+
+> **A child optimizing for more game access should be led toward useful learning, not toward mastered-easy repetition, intentional miss loops, waiting, free/okawari leakage or replay.**
+
+Observed learning/battle time remains a release-health metric and should be reviewed as rolling telemetry. It is deliberately not converted into a hard per-ticket timer because waiting would become an optimization target and genuine high performers would be penalized.

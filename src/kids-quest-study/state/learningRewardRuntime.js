@@ -4,11 +4,15 @@ import {
   isAdditionalLearningTask,
   queueLearningReward,
   recordAdditionalLearningAnswer,
+  recordExtraQualifyingCorrect,
   releaseHeldLearningRewards
 } from './learningRewardPolicy.js'
 import { normalizeLearningRewardRuntime } from './learningRewardStore.js'
 
 export const EXTRA_CORRECT_PER_BATTLE_TICKET = 5
+export const MAX_SAME_KNOWLEDGE_PER_BATTLE_TICKET = 3
+
+const QUALIFYING_LEARNING_INTENTS = new Set(['adaptive', 'srs_due', 'reinforcement'])
 
 function statsIdFor(action = {}) {
   const domainId = String(action.domainId || '')
@@ -66,6 +70,44 @@ function dayKey(state) {
   return String(state?.daily?.date || '')
 }
 
+function semanticExtraQualification(action, nextLearning) {
+  if (action?.taskKind !== 'extra' || nextLearning?.daily?.coreDone !== true || action?.correct !== true) {
+    return { qualifies: false, reason: 'NOT_QUALIFYING_EXTRA' }
+  }
+  const question = action?.question || {}
+  const learningIntent = String(question.learningIntent || '')
+  if (!QUALIFYING_LEARNING_INTENTS.has(learningIntent)) {
+    return { qualifies: false, reason: learningIntent === 'revealed_retry' ? 'REVEALED_RETRY' : 'MISSING_OR_INVALID_PROVENANCE' }
+  }
+  if (question.ticketQualifyingAtPresentation !== true) {
+    return { qualifies: false, reason: 'NON_QUALIFYING_AT_PRESENTATION' }
+  }
+  const knowledgeId = String(question.knowledgeId || action.itemKey || '').trim()
+  const rewardEventId = String(question.rewardEventId || '').trim()
+  if (!knowledgeId || !rewardEventId) return { qualifies: false, reason: 'MISSING_SEMANTIC_ID' }
+  return { qualifies: true, knowledgeId, rewardEventId, learningIntent }
+}
+
+function recordExtraBattleTicketProgress(runtime, nextLearning, action) {
+  const semantic = semanticExtraQualification(action, nextLearning)
+  if (!semantic.qualifies) return runtime
+
+  const recorded = recordExtraQualifyingCorrect(runtime.learningRewardMeta, {
+    eventId: semantic.rewardEventId,
+    knowledgeId: semantic.knowledgeId
+  })
+  let result = { ...runtime, learningRewardMeta: recorded.meta }
+  if (!recorded.accepted || !recorded.ticketMilestones) return result
+
+  result = queueGame(result, {
+    id: `extra-ticket:${recorded.milestone}`,
+    ticketDelta: 1,
+    captureItemDelta: {},
+    kind: 'extra-learning-ticket'
+  }, true)
+  return result
+}
+
 function deriveAnswer(runtime, previous, next, action) {
   const grade = previous?.grade ?? next?.grade ?? 0
   const { hard, statsId } = statsIdFor(action)
@@ -82,6 +124,12 @@ function deriveAnswer(runtime, previous, next, action) {
     result = { ...result, learningRewardMeta: policy.meta }
     if (policy.justReleased) result = releaseHeld(result)
 
+    // A+ ticket economy: only an EXTRA answer whose semantic provenance was
+    // fixed at presentation may advance the ticket bucket. Free / okawari,
+    // revealed retries, mastered non-due repeats and duplicate semantic events
+    // cannot subsidize battle time.
+    result = recordExtraBattleTicketProgress(result, next, action)
+
     if (action.correct === true && action.taskKind === 'extra' && next?.daily?.coreDone === true) {
       const instanceId = questionInstanceId(action)
       if (instanceId) {
@@ -92,21 +140,6 @@ function deriveAnswer(runtime, previous, next, action) {
           explorationPointDelta: 1,
           worldProgressDelta: 0,
           dayKey: dayKey(next)
-        }, true)
-      }
-
-      // Study must remain the main activity. Real play telemetry showed an
-      // average learning answer at ~7.8s and a battle at ~15.5s before V6
-      // animations. Paying one battle per correct answer inverted the intended
-      // time budget. Five correct extra answers now earn one battle ticket.
-      const correctTotal = Math.max(0, Number(result.learningRewardMeta.additionalCorrectTotal) || 0)
-      if (correctTotal > 0 && correctTotal % EXTRA_CORRECT_PER_BATTLE_TICKET === 0) {
-        const milestone = Math.floor(correctTotal / EXTRA_CORRECT_PER_BATTLE_TICKET)
-        result = queueGame(result, {
-          id: `extra-ticket:${milestone}`,
-          ticketDelta: 1,
-          captureItemDelta: {},
-          kind: 'extra-learning-ticket'
         }, true)
       }
     }

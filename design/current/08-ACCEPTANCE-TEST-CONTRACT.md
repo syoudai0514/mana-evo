@@ -29,7 +29,8 @@ Current decisions that materially supersede the original W-108 snapshot include:
 - D-020 — Evolution pacing V5 Battle XP distribution and capture-level buffer;
 - D-021 — cloud conflict resolution is Parent-owned, not child gameplay responsibility;
 - D-022 — Battle V6 study-first pacing, played-ticket cost, fair-fight scaling, damage tuning, level-gap XP, post-KO capture and new world bands;
-- D-023 — protected product changes must keep CURRENT + Decision Log synchronized in the same PR/change set.
+- D-023 — protected product changes must keep CURRENT + Decision Log synchronized in the same PR/change set;
+- D-026 — A+ semantic extra-ticket qualification plus Battle V6 production-review conformance corrections.
 
 If this file conflicts with a more specific owning CURRENT contract, the owning contract plus later Decision Log entry wins. Fix this file in the same canonical-sync change; do not let the contradiction remain indefinitely.
 
@@ -86,19 +87,29 @@ Reopen/reload/replay must not repeat this package.
 
 ## AC-LRN-003 — Additional study is study-first
 
-After daily core completion, qualifying `extra` correct answers are cumulative for the Battle V6 ticket rule:
+After daily core completion, qualifying `extra` correct answers are cumulative for the Battle V6/A+ ticket rule:
 
-- **every 5 qualifying extra correct answers → battle ticket +1**;
-- free study does **not** directly mint battle tickets;
-- the earlier D-006 reward **every 3 correct additional-learning answers → star resource +1** remains;
-- qualifying extra correct answers continue to produce their approved exploration progress signal;
+- **every 5 A+ semantic qualifying extra correct answers → battle ticket +1**;
+- only `extra` can advance that ticket bucket; `free` and `okawari` contribute `0` to battle-ticket progress;
+- due SRS and genuine later reinforcement retrieval can qualify as ordinary `1`;
+- mastered non-due repetition, revealed-answer immediate retry, miss/`わからない`, and duplicate semantic events contribute `0`;
+- within the specific 5-answer set composing one ticket, one `knowledgeId` may occupy at most `3` places;
+- no minimum-time, difficulty, challenge, speed, hint-use or recovery multiplier exists;
+- the earlier D-006 reward **every 3 correct additional-learning answers → star resource +1** remains independent;
+- legitimate extra correct answers continue to produce their approved exploration progress signal;
 - unit MASTER / hard MASTER rewards remain owned by the learning/reward contract.
 
-The old per-extra-question `ticket +1` acceptance is superseded by D-022 and must not be restored by a stale test.
+The old per-extra-question `ticket +1`, raw-any-5-correct interpretation, and rejected 20-second hard gate are not CURRENT.
 
 ## AC-LRN-004 — Reward bridge is idempotent
 
 A semantic learning completion/question milestone has a stable completion identity. Reloading or receiving the same event twice cannot duplicate tickets, capture items, exploration progress or mastery rewards.
+
+## AC-LRN-005 — Presentation provenance is authoritative
+
+Ticket semantics are fixed when the question is presented, not reconstructed after the answer from mutated state. Regression coverage must verify stable `learningIntent` (`adaptive`, `srs_due`, `reinforcement`, `revealed_retry`), `knowledgeId`, question instance identity, reinforcement origin identity and stable reward-event identity across rerender/reload/profile boundaries.
+
+A same-knowledge answer rejected by the 3/5 ticket-bucket cap still updates normal Kids Quest learning/non-ticket rewards and cannot be replayed after the bucket resets to become ticket progress later.
 
 ---
 
@@ -153,7 +164,11 @@ Deterministic unit tests must cover lower/upper random boundaries and critical/n
 
 ## AC-BTL-002 — Weak bench cannot trivialize normal enemies
 
-Normal encounter reference power is anchored to the monster actually entering first and the strongest other current-team support. Current V6 policy is effectively 70% active / 30% strongest support. A high-level carry paired with low-level reserves must not average down into a trivial enemy.
+Normal encounter reference power is anchored to the monster actually entering first and the strongest other current-team support. The active battler is an absolute floor:
+
+`normalReferencePower = max(activePower, 0.70*activePower + 0.30*strongestSupportPower)`.
+
+A high-level carry paired with low-level reserves must never lower the reference below active-only power.
 
 ## AC-BTL-003 — Boss scaling preserves rematch growth
 
@@ -161,11 +176,13 @@ Boss first-normal-encounter snapshot remains authoritative for ordinary rematche
 
 ## AC-BTL-004 — Battle XP pacing V5 + V6
 
-The encounter reward pool remains the reporting source, but settlement follows D-020/D-022:
+The encounter reward pool remains the reporting source, but settlement follows D-020/D-022/D-026:
 
 - active battler receives 40% of the legacy pool;
 - other eligible teammates receive 40% of that active amount (16% of legacy pool before later modifiers, subject to established rounding);
-- level-gap multiplier is then applied per recipient;
+- level-gap multiplier is applied per recipient **before `gainXp` / evolution processing**, using the recipient's pre-settlement level;
+- the same level-gap policy applies to KO victory, pre-KO capture, duplicate pre-KO capture and evolution-crossing settlements;
+- post-KO capture gives no second Battle XP;
 - high-level farming of much weaker enemies is throttled;
 - fighting meaningfully stronger enemies may receive the approved positive multiplier;
 - loss/abandon grants no victory XP;
@@ -183,6 +200,10 @@ Current level-gap multipliers are:
 ## AC-BTL-005 — Turn/KO presentation gates input
 
 When an action resolves, HP change, move/KO presentation and the next actionable CTA remain synchronized. The UI must not expose post-KO capture, result dismissal or another combat action before the authoritative turn/KO presentation has reached the corresponding state.
+
+## AC-BTL-006 — End-turn KO settles immediately
+
+If poison/burn or another canonical end-turn effect reduces enemy HP to zero during move, Protect, switch or failed-capture paths, terminal victory resolves in that same turn. A 0-HP enemy cannot remain `fighting` and act on the next turn.
 
 ---
 
@@ -235,7 +256,9 @@ Required invariants:
 - the same battle-wide max-three-attempt counter applies;
 - the already-settled battle XP is **not awarded again** after post-KO capture success;
 - the newly caught instance receives no retroactive XP from that battle;
-- post-KO capture is not actionable before KO/turn presentation completes.
+- post-KO capture is not actionable before KO/turn presentation completes;
+- current persisted `game.activeBattle` is authoritative; stale prior/same-battle snapshots are rejected side-effect-free;
+- capture settlement/idempotency is checked before ball decrement, so replay cannot consume a second ball.
 
 ## AC-CAP-005 — Temporal ball presentation
 
@@ -455,6 +478,7 @@ For `Canonical-Impact: changed`:
 
 - every declared owning CURRENT contract is changed in the same PR;
 - `design/rebuild/DECISION-LOG.md` is changed in the same PR;
+- the owner-facing `design/current/USER-GUIDE.md` is updated in the same product-change when child/product behavior changes;
 - implementation/tests/generated state are updated as required;
 - CI rejects missing synchronization.
 
@@ -481,7 +505,8 @@ A release/merge claiming current canonical alignment requires, as applicable:
 7. active master guard: exactly 238 active species, m239 excluded from active scope but retained in baseline;
 8. art scope/integrity checks when image assets or production art eligibility changed;
 9. canonical-sync CI gate for protected product changes;
-10. concrete tangible evidence for any manual/visual/device acceptance claimed by the Work Item.
+10. owner-facing `USER-GUIDE.md` updated and shown before merge for product-design changes;
+11. concrete tangible evidence for any manual/visual/device acceptance claimed by the Work Item.
 
 CI PASS alone does not prove specification correctness. Final review must compare the actual changed behavior and tangible artifacts against the owning CURRENT contract and Decision Log.
 
@@ -491,7 +516,10 @@ CI PASS alone does not prove specification correctness. Final review must compar
 
 The following historical assertions are specifically superseded and must not be resurrected as product truth:
 
-- extra question `ticket +1` per clear — superseded by D-022 `5 correct → ticket +1`;
+- extra question `ticket +1` per clear — superseded by D-022/D-026 `5 A+ qualifying correct → ticket +1`;
+- raw “any five additional correct” including `free`/`okawari` — invalid under D-026;
+- hard 20-second per-ticket reward gate from unmerged Draft #111 — **never CURRENT** and explicitly rejected by the independent A+ design review;
+- weighted Learning Value multipliers — rejected by the A+ design review and never CURRENT;
 - loss/explicit abandon refund — superseded by D-022 played-ticket commit;
 - STAB 1.5 / crit 1.5 / random 0.90–1.00 — superseded by Battle V6 values;
 - old Area1–4/EX recommendation bands — superseded by D-022 bands;
@@ -503,3 +531,30 @@ The following historical assertions are specifically superseded and must not be 
 - Work Item/PR/CI completion text as sufficient Acceptance evidence — prohibited by D-015.
 
 If an existing test still asserts one of these, update or reclassify that test; do not roll production backward merely to make the stale test pass.
+
+---
+
+# 15. D-026 focused regression matrix
+
+Release is blocked unless automated or equivalent deterministic evidence covers at least:
+
+### Learning A+
+- 5 qualifying `extra` answers across a valid composition mint exactly one ticket;
+- four answers from one `knowledgeId` do not occupy four places in the same ticket bucket; the fourth still updates ordinary learning/non-ticket accounting;
+- after a ticket completes, the next bucket is fresh; the rule is **per ticket**, not a sliding last-five window;
+- an event rejected by the 3/5 guard cannot be replayed later to count after bucket reset;
+- `free 4 + extra 1` and analogous `okawari` mixtures do not mint a ticket;
+- due SRS and genuine reinforcement can qualify; mastered non-due and `revealed_retry` do not;
+- genuine fast correct is not time-gated;
+- semantic event replay/reload does not double-count;
+- profile isolation/cloud roundtrip preserves partial bucket and semantic IDs without cross-profile leakage.
+
+### Battle/capture conformance
+- Lv30 active + Lv5 bench reference is not below active-only;
+- KO and pre-KO capture use the same recipient level-gap XP ordering;
+- player `+6/+10/+15` and enemy `+3/+5` bands remain correct;
+- evolution crossing cannot bypass level-gap scaling;
+- Protect/switch/failed-capture end-turn DOT enemy KO settles immediately;
+- stale post-KO snapshots cannot consume a ball or rewrite authoritative `activeBattle`;
+- post-KO success gives no second XP;
+- loss/abandon exact reservation, FEFO and expiration behavior remain unchanged.

@@ -13,6 +13,10 @@ export const LEARNING_ANTI_SPAM = Object.freeze({
   uiMessage: 'ゆっくり もんだいを みて 3もん とこう！ できたら ごほうび さいかい！'
 })
 
+const EXTRA_TICKET_BUCKET_SIZE = 5
+const MAX_SAME_KNOWLEDGE_PER_TICKET = 3
+const MAX_SEMANTIC_EVENT_IDS = 4000
+
 function positiveInt(value) {
   return Math.max(0, Math.floor(Number(value) || 0))
 }
@@ -43,10 +47,34 @@ function normalizeRewardList(value) {
   })
 }
 
+function normalizeUniqueStringList(value, limit = MAX_SEMANTIC_EVENT_IDS) {
+  if (!Array.isArray(value)) return []
+  const seen = new Set()
+  const normalized = []
+  for (const raw of value) {
+    const item = stringOrNull(raw)
+    if (!item || seen.has(item)) continue
+    seen.add(item)
+    normalized.push(item)
+  }
+  return normalized.slice(-limit)
+}
+
+function normalizeTicketBucket(value) {
+  if (!Array.isArray(value)) return []
+  return value.map(stringOrNull).filter(Boolean).slice(-(EXTRA_TICKET_BUCKET_SIZE - 1))
+}
+
 export function createLearningRewardMeta(saved = {}) {
   const hold = saved?.hold && typeof saved.hold === 'object' ? saved.hold : {}
   return {
     additionalCorrectTotal: positiveInt(saved?.additionalCorrectTotal),
+    // A+ battle-ticket progress is separate from generic additional-learning
+    // totals. Only semantically qualifying EXTRA answers can enter this bucket.
+    extraQualifyingCorrectTotal: positiveInt(saved?.extraQualifyingCorrectTotal),
+    extraBattleTicketsIssued: positiveInt(saved?.extraBattleTicketsIssued),
+    extraTicketBucketKnowledgeIds: normalizeTicketBucket(saved?.extraTicketBucketKnowledgeIds),
+    extraSemanticEventIds: normalizeUniqueStringList(saved?.extraSemanticEventIds),
     answerWindow: Array.isArray(saved?.answerWindow)
       ? saved.answerWindow.slice(-LEARNING_ANTI_SPAM.signalWindow).map(normalizeAnswer)
       : [],
@@ -161,6 +189,51 @@ export function recordAdditionalLearningAnswer(savedMeta, answer) {
     starMilestones,
     justHeld,
     justReleased
+  }
+}
+
+// Record one semantic EXTRA answer for the A+ ticket economy. The event ID is
+// consumed even when the same-knowledge cap rejects the answer, so replaying a
+// previously rejected semantic event after a ticket boundary can never make it
+// count later.
+export function recordExtraQualifyingCorrect(savedMeta, { eventId, knowledgeId } = {}) {
+  const meta = createLearningRewardMeta(savedMeta)
+  const semanticId = stringOrNull(eventId)
+  const knowledge = stringOrNull(knowledgeId)
+  if (!semanticId || !knowledge) return { meta, accepted: false, ticketMilestones: 0, reason: 'MISSING_SEMANTIC_ID' }
+  if (meta.extraSemanticEventIds.includes(semanticId)) {
+    return { meta, accepted: false, ticketMilestones: 0, reason: 'DUPLICATE_SEMANTIC_EVENT' }
+  }
+
+  const extraSemanticEventIds = [...meta.extraSemanticEventIds, semanticId].slice(-MAX_SEMANTIC_EVENT_IDS)
+  const bucket = [...meta.extraTicketBucketKnowledgeIds]
+  const sameKnowledgeCount = bucket.filter((id) => id === knowledge).length
+  if (sameKnowledgeCount >= MAX_SAME_KNOWLEDGE_PER_TICKET) {
+    return {
+      meta: { ...meta, extraSemanticEventIds },
+      accepted: false,
+      ticketMilestones: 0,
+      reason: 'SAME_KNOWLEDGE_CAP'
+    }
+  }
+
+  bucket.push(knowledge)
+  const completedTicket = bucket.length >= EXTRA_TICKET_BUCKET_SIZE
+  const nextBucket = completedTicket ? [] : bucket
+  const extraQualifyingCorrectTotal = meta.extraQualifyingCorrectTotal + 1
+  const extraBattleTicketsIssued = meta.extraBattleTicketsIssued + (completedTicket ? 1 : 0)
+  return {
+    meta: {
+      ...meta,
+      extraQualifyingCorrectTotal,
+      extraBattleTicketsIssued,
+      extraTicketBucketKnowledgeIds: nextBucket,
+      extraSemanticEventIds
+    },
+    accepted: true,
+    ticketMilestones: completedTicket ? 1 : 0,
+    milestone: completedTicket ? extraBattleTicketsIssued : null,
+    reason: null
   }
 }
 
