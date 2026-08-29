@@ -27,6 +27,8 @@ const map = {
   }
 }
 
+const USER_GUIDE = 'design/current/USER-GUIDE.md'
+
 test('infers protected canonical domains from changed runtime paths', () => {
   const hits = inferCanonicalDomains([
     'src/game/balance.js',
@@ -48,7 +50,7 @@ Canonical-Reason: user-approved behavior change
   })
 })
 
-test('fails protected behavior change without CURRENT and decision-log updates', () => {
+test('fails protected behavior change without CURRENT, decision-log, and owner-guide updates', () => {
   const result = validateCanonicalSync({
     files: ['src/game/balance.js'],
     body: 'Canonical-Impact: changed\nCanonical-Domains: battle\nCanonical-Reason: balance change',
@@ -57,14 +59,30 @@ test('fails protected behavior change without CURRENT and decision-log updates',
   assert.equal(result.ok, false)
   assert.match(result.errors.join('\n'), /CURRENT docs were updated/)
   assert.match(result.errors.join('\n'), /DECISION-LOG/)
+  assert.match(result.errors.join('\n'), /USER-GUIDE/)
 })
 
-test('passes behavior change when owning CURRENT and decision log change together', () => {
+test('fails behavior change when technical canonical docs are synced but owner guide is omitted', () => {
   const result = validateCanonicalSync({
     files: [
       'src/game/balance.js',
       'design/current/02-BATTLE-TICKETS-BALANCE.md',
       'design/rebuild/DECISION-LOG.md'
+    ],
+    body: 'Canonical-Impact: changed\nCanonical-Domains: battle\nCanonical-Reason: approved battle contract change',
+    map
+  })
+  assert.equal(result.ok, false)
+  assert.match(result.errors.join('\n'), /USER-GUIDE/)
+})
+
+test('passes behavior change when owning CURRENT, decision log, and owner guide change together', () => {
+  const result = validateCanonicalSync({
+    files: [
+      'src/game/balance.js',
+      'design/current/02-BATTLE-TICKETS-BALANCE.md',
+      'design/rebuild/DECISION-LOG.md',
+      USER_GUIDE
     ],
     body: 'Canonical-Impact: changed\nCanonical-Domains: battle\nCanonical-Reason: approved battle contract change',
     map

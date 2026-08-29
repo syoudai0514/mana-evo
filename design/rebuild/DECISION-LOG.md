@@ -267,3 +267,28 @@
 - Reason: 司令塔の判断品質低下をユーザーが明示的に認定し、担当交代を決定したため。担当変更自体もD-023に従いCURRENTとDecision Logへ同じchange setで同期する。
 - Affected areas: commander assignment / handoff governance / CURRENT entry。gameplay、runtime、Monster Art rule、既存product decisionsは変更しない。
 - Tests required: governance review。後継司令塔によるD-015 recovery完了確認。
+
+## D-025 VOID — unmerged Draft #111 20秒rule
+- Status: VOID / NEVER CURRENT
+- Evidence: open Draft PR #111内で`5 correct + minimum 20s qualifying study time`がD-025名で提案・実装候補化されたがmainへmergeされていない。その後PR #115の二段階独立design reviewで、hard time gateはwaiting optimizationを作り高習熟児を不当に遅くするため却下された。
+- Decision: D-025という識別子を後からCURRENT仕様として引用しない。20秒hard reward gate、continuous weighted Learning Value、challenge/recovery multiplierはいずれも未承認proposalとして扱う。
+- Reason: unmerged draftの番号だけが将来検索で正本と誤認されることを防ぐため。
+- Affected areas: governance / historical review only。
+- Tests required: stale test prohibition。
+
+## D-026 A+ semantic learning economy + Battle V6 production-review conformance
+- Status: CONFIRMED_CHANGE / USER-DECISION / INDEPENDENT-DESIGN-REVIEW-PASS
+- Baseline / prior CURRENT: D-022はdaily core後`5 qualifying extra correct -> ticket+1`まで確定していたが、`qualifying`のsemantic境界が曖昧で、main runtimeでは`additionalCorrectTotal`をextra/free/okawari共通加算していたため`free 4 + extra 1 -> ticket`が成立し得た。formal masteryが2日必要なためmastery確定前のsame-knowledge farm余地もあった。Battle側にはweak-bench active floor未達、pre-KO capture level-gap XP bypass、stale post-KO replay、end-turn DOT terminal settlement driftが独立production reviewで確認された。
+- Design evidence: PR #115で学習→game economyを二段階独立review。weighted Learning Value / hard 20s gateを却下し、A+ binary semantic qualificationへ単純化。第二reviewのpromotion blockerだった(1) one ticket内same `knowledgeId` max3/5、(2) presentation-time provenance固定をproposalへ反映後、reviewer verdictは **DESIGN PASS — PROMOTE A+ TO CURRENT** に更新。2026-08-29 userがそのreview結果を提示し、実装・releaseを明示承認。
+- Decision — A+ threshold: daily core `ticket+3`は維持。daily core完了後、`taskKind=extra`の**semantic qualifying correct 5回でticket+1**。fractional Learning Valueやhard time gateは使わない。
+- Decision — qualifying intents: 出題提示時点で`learningIntent = adaptive | srs_due | reinforcement | revealed_retry`を固定する。`adaptive` current/unmastered、due SRS、genuine later reinforcement retrievalは各1。mastered non-due、revealed-answer immediate retry/acknowledgement、miss/`わからない`、free、okawari、duplicate semantic eventはticket progress 0。miss/support自体にbonusはなく、genuine recoveryも最大1。
+- Decision — per-ticket diversity: **1 ticketを構成中の5 qualifying correctのうち同一`knowledgeId`は最大3。** これは直近5問sliding windowではない。同一knowledgeが3件入った後の4件目はKids Quest learning/other approved rewardへ通常反映するがticket bucketへ積まない。ticket完成後はnew bucket。capでrejectされたsemantic eventは観測済みとして保持し、bucket reset後にreplayしてcountできない。
+- Decision — stable provenance/idempotency: reward bridgeへpresentation-time eligibility、`knowledgeId`、`unitId/skillId`、`questionInstanceId`、reinforcementの`originQuestionInstanceId`、stable `rewardEventId`を運ぶ。回答後のmutated mastery stateからintentを推測しない。partial ticket bucket/observed semantic IDsはprofile-ownedでreload/cloud/profile switchを跨いでexactly-once。
+- Decision — high performer/time: 1〜2秒のgenuine correctをspeedだけで無効化しない。時間はP10/P50/P90/rolling learning:game ratio等のtelemetryに使うがticket eligibilityへminimum secondsを入れない。
+- Decision — Battle conformance: D-022のproduct intentを実装へ一致させ、ordinary normal referenceは`max(activePower, 0.70*active + 0.30*strongestSupport)`。Battle XPはV5 distribution後にrecipient pre-settlement levelでV6 level-gap multiplierを適用してから`gainXp/evolution`へ渡し、KO/pre-KO capture/duplicate/evolution-crossingで同policy。post-KO captureはsecond XPなし。post-KO captureはcurrent persisted `game.activeBattle`/snapshotをauthorityとし、stale replayをball decrement/settlement前にside-effect-free reject。move/Protect/switch/failed capture/end-turn statusでenemy HP0ならsame-turn terminal settlement。Battle presentation中は次CTAをgate。
+- Decision — existing levels: runtime/migrationで既存production levelを自動downgrade/normalizeしない。以前の一回限りDB correction方針を維持。
+- Decision — owner-facing companion: product design変更PRではdeveloper canonicalと同時に`design/current/USER-GUIDE.md`を初心者向けに更新し、merge前に「これまで/変更後/理由/子どもへの影響/守ること」をuserへ表示する。最終再建releaseまでに全体版を完成し、その後も恒久的に最新化する。
+- History note: 2026-08-29にmainへ一時ファイル作成→即削除の2 no-op-equivalent commitsが入ったが、最終tree差分は0でproduct/runtime/canonical内容への変更なし。本product-changeはその後current mainから専用branchで実施する。
+- Reason: gameを多く遊びたい子が合理的に最適化しても、easy/mastered/replay/waiting/free-mode exploitではなくcurrent-fit retrieval、due SRS、genuine recoveryが最短経路になるようにし、同時にBattle側の既知runtime driftで学習economyを迂回できないようにするため。
+- Affected areas: W-101 learning rewards / W-102 Battle+XP/ticket / W-103 capture / W-108 acceptance / canonical governance + owner-facing companion。Monster Art、FORMAL/CANDIDATE、existing-save level correction、PR #107 cloud child UXは変更しない。
+- Tests required: A+ semantic qualification / per-ticket3-of-5 / free+okawari leakage / due SRS / reinforcement vs revealed retry / fast learner / semantic replay / profile+reload; weak-bench active floor; XP +6/+10/+15 and enemy +3/+5 across KO/capture/evolution; stale post-KO ball safety; end-turn DOT terminal convergence; exact reserved ticket loss/abandon/FEFO/expiration; cloud child UX regression; WebKit 375/390/430; full npm test/build/release readiness/canonical sync.

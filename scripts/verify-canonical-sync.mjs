@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const MAP_PATH = path.join(ROOT, 'design/current/canonical-sync-map.json')
+const USER_GUIDE_PATH = 'design/current/USER-GUIDE.md'
 
 export function loadSyncMap() {
   return JSON.parse(fs.readFileSync(MAP_PATH, 'utf8'))
@@ -89,6 +90,13 @@ export function validateCanonicalSync({ files = [], body = '', map = loadSyncMap
 
     if (!changed.includes(map.decisionLog)) {
       errors.push(`Canonical behavior changed but ${map.decisionLog} was not updated.`)
+    }
+
+    // Permanent owner-facing companion rule (D-026): any product/canonical
+    // behavior change must update the beginner-readable guide in the same PR so
+    // the owner can review “before/after/why/child impact/guardrails” before merge.
+    if (!changed.includes(USER_GUIDE_PATH)) {
+      errors.push(`Canonical behavior changed but owner-facing ${USER_GUIDE_PATH} was not updated.`)
     }
   }
 

@@ -1,5 +1,5 @@
 import * as shared from './engineSharedRuntime.js'
-import { battleXpLevelMultiplier, CAPTURE_EVOLUTION_LEVEL_BUFFER } from './balance.js'
+import { CAPTURE_EVOLUTION_LEVEL_BUFFER } from './balance.js'
 import { resolveCaptureRoll, settleCaptureSuccess } from './captureDomain.js'
 import { speciesOf } from './content.js'
 import { getEvolutionTransition } from './evolutionDomain.js'
@@ -52,24 +52,36 @@ function settlePlayedLoss(result, options = {}) {
   return { ...result, game, battle }
 }
 
-function attachTurnPresentation(beforeGame, beforeBattle, result, moveId) {
+function attachTurnPresentation(beforeGame, beforeBattle, result, {
+  moveId = null,
+  actionKind = 'move',
+  targetInstanceId = null
+} = {}) {
   if (!result?.ok || !result?.battle) return result
   const after = structuredClone(result.battle)
-  const beforePlayerHp = shared.currentPlayerHp(beforeBattle)
+  const presentedInstanceId = targetInstanceId || beforeBattle?.activeInstanceId
+  const beforePlayerHp = targetInstanceId
+    ? Math.max(0, Number(beforeBattle?.partyHp?.[targetInstanceId]) || 0)
+    : shared.currentPlayerHp(beforeBattle)
   const afterPlayerHp = shared.currentPlayerHp(after)
   const beforeEnemyHp = Math.max(0, Number(beforeBattle?.enemy?.hp) || 0)
   const afterEnemyHp = Math.max(0, Number(after?.enemy?.hp) || 0)
-  const playerName = speciesOf(beforeGame?.box?.[beforeBattle?.activeInstanceId]?.speciesId)?.name || 'なかま'
+  const playerName = speciesOf(beforeGame?.box?.[presentedInstanceId]?.speciesId)?.name || 'なかま'
   const enemyName = speciesOf(beforeBattle?.enemy?.speciesId)?.name || 'あいて'
   const turnLines = (after.log || []).slice(-5)
   const firstAttackLine = turnLines.find((line) => String(line).includes(' の ')) || ''
   const enemyFirst = firstAttackLine.startsWith(`${enemyName} の `)
   after.turnPresentation = {
-    id: `${after.battleId || after.stageId}:${after.turn}:${moveId || after.lastPlayerAction || 'turn'}`,
+    id: `${after.battleId || after.stageId}:${after.turn}:${actionKind}:${moveId || after.lastPlayerAction || 'turn'}`,
     moveId,
+    actionKind,
     enemyFirst,
     playerName,
     enemyName,
+    playerHpBefore: beforePlayerHp,
+    playerHpAfter: afterPlayerHp,
+    enemyHpBefore: beforeEnemyHp,
+    enemyHpAfter: afterEnemyHp,
     playerDamage: Math.max(0, beforePlayerHp - afterPlayerHp),
     enemyDamage: Math.max(0, beforeEnemyHp - afterEnemyHp),
     playerFainted: beforePlayerHp > 0 && afterPlayerHp <= 0,
@@ -80,55 +92,28 @@ function attachTurnPresentation(beforeGame, beforeBattle, result, moveId) {
   return { ...result, game, battle: after }
 }
 
-function applyLevelGapXp(originalGame, result) {
-  if (!result?.ok || result?.battle?.status !== 'won' || !result?.rewards?.xpByInstance) return result
-  const enemyLevel = Number(result.battle.enemy?.level) || 1
-  const next = structuredClone(result.game)
-  const xpByInstance = { ...result.rewards.xpByInstance }
-  const levelsByInstance = { ...(result.rewards.levelsByInstance || {}) }
-  let changed = false
+function battleSnapshotMatches(current, requested) {
+  if (!current?.battleId || !requested?.battleId || current.battleId !== requested.battleId) return false
+  return current.status === requested.status &&
+    Number(current.turn || 0) === Number(requested.turn || 0) &&
+    Number(current.captureAttempts || 0) === Number(requested.captureAttempts || 0) &&
+    Number(current.enemy?.hp || 0) === Number(requested.enemy?.hp || 0)
+}
 
-  for (const [instanceId, awardedRaw] of Object.entries(result.rewards.xpByInstance)) {
-    const before = originalGame?.box?.[instanceId]
-    if (!before) continue
-    // Never retroactively undo an evolution that legitimately happened in this
-    // battle. Level-gap throttling mainly targets high-level farming of old areas.
-    if (result.rewards?.evolutionsByInstance?.[instanceId]) continue
-    const awarded = Math.max(0, Number(awardedRaw) || 0)
-    const multiplier = battleXpLevelMultiplier(before.level, enemyLevel)
-    const desired = awarded > 0 ? Math.max(1, Math.round(awarded * multiplier)) : 0
-    if (desired >= awarded) continue
-    const gained = shared.gainXp(before, desired)
-    const current = next.box?.[instanceId]
-    if (!current) continue
-    next.box[instanceId] = { ...current, level: gained.monster.level, xp: gained.monster.xp }
-    xpByInstance[instanceId] = desired
-    levelsByInstance[instanceId] = gained.levels
-    changed = true
-  }
-  if (!changed) return result
-
-  const activeXp = xpByInstance[result.battle.activeInstanceId]
-  const battle = structuredClone(result.battle)
-  if (Number.isFinite(activeXp)) {
-    const logs = [...(battle.log || [])]
-    const index = logs.findLastIndex((line) => String(line).startsWith('かち！ XP +'))
-    if (index >= 0) logs[index] = `かち！ XP +${activeXp} / マナ +${result.rewards?.mana || 0}`
-    battle.log = logs
-  }
-  next.activeBattle = structuredClone(battle)
-  return {
-    ...result,
-    game: next,
-    battle,
-    rewards: { ...result.rewards, xpByInstance, levelsByInstance }
-  }
+function authoritativePostKoBattle(game, requestedBattle) {
+  const current = game?.activeBattle
+  if (!battleSnapshotMatches(current, requestedBattle)) return { battle: current || requestedBattle, reason: 'STALE_BATTLE' }
+  return { battle: current, reason: null }
 }
 
 function postKoCaptureAllowed(game, battle, itemType = 'star') {
-  const stage = shared.stageById(battle?.stageId)
-  return !!stage && stage.kind === 'wild' && !stage.captureDisabled && battle?.status === 'won' &&
-    Number(battle?.enemy?.hp) <= 0 && (Number(battle?.captureAttempts) || 0) < shared.MAX_CAPTURE_ATTEMPTS &&
+  const authoritative = authoritativePostKoBattle(game, battle)
+  if (authoritative.reason) return false
+  const current = authoritative.battle
+  const stage = shared.stageById(current?.stageId)
+  return !!stage && stage.kind === 'wild' && !stage.captureDisabled && current?.status === 'won' &&
+    current?.postKoCaptureAvailable === true && Number(current?.enemy?.hp) <= 0 &&
+    (Number(current?.captureAttempts) || 0) < shared.MAX_CAPTURE_ATTEMPTS &&
     (Number(game?.captureItems?.[itemType]) || 0) > 0
 }
 
@@ -153,17 +138,20 @@ function markPostKoOpportunity(result) {
 export function useMove(game, battle, moveId, options = {}) {
   let result = shared.useMove(game, battle, moveId, options)
   result = settlePlayedLoss(result, options)
-  result = applyLevelGapXp(game, result)
   result = markPostKoOpportunity(result)
-  return attachTurnPresentation(game, battle, result, moveId)
+  return attachTurnPresentation(game, battle, result, { moveId, actionKind: 'move' })
 }
 
 export function useProtect(game, battle, options = {}) {
-  return settlePlayedLoss(shared.useProtect(game, battle, options), options)
+  let result = settlePlayedLoss(shared.useProtect(game, battle, options), options)
+  result = markPostKoOpportunity(result)
+  return attachTurnPresentation(game, battle, result, { actionKind: 'protect' })
 }
 
 export function switchBattleMonster(game, battle, instanceId, options = {}) {
-  return settlePlayedLoss(shared.switchBattleMonster(game, battle, instanceId, options), options)
+  let result = settlePlayedLoss(shared.switchBattleMonster(game, battle, instanceId, options), options)
+  result = markPostKoOpportunity(result)
+  return attachTurnPresentation(game, battle, result, { actionKind: 'switch', targetInstanceId: instanceId })
 }
 
 export function abandonBattle(game, options = {}) {
@@ -182,8 +170,33 @@ export function canAttemptCapture(game, battle, itemType = 'star') {
   return postKoCaptureAllowed(game, battle, itemType) || shared.canAttemptCapture(game, battle, itemType)
 }
 
-function attemptPostKoCapture(game, battle, rolls, itemType) {
+function attemptPostKoCapture(game, requestedBattle, rolls, itemType) {
+  const authoritative = authoritativePostKoBattle(game, requestedBattle)
+  if (authoritative.reason) return { ok: false, game, battle: authoritative.battle, reason: authoritative.reason }
+  const battle = authoritative.battle
   if (!postKoCaptureAllowed(game, battle, itemType)) return { ok: false, game, battle, reason: 'CAPTURE_NOT_READY' }
+
+  const rewardResolutionId = battle.rewardResolutionId || `${battle.battleId || battle.stageId}:reward`
+  const captureResolutionId = `${rewardResolutionId}:capture`
+  const existingSettlement = game?.captureDomain?.settlements?.[captureResolutionId]
+  if (existingSettlement) {
+    return {
+      ok: true,
+      caught: true,
+      idempotent: true,
+      stars: 4,
+      captured: existingSettlement.capturedInstance,
+      xp: 0,
+      xpByInstance: {},
+      levelsByInstance: {},
+      evolutionsByInstance: {},
+      captureSettlement: existingSettlement,
+      duplicateChoiceRequired: existingSettlement.status === 'pending_duplicate_choice',
+      game,
+      battle
+    }
+  }
+
   const successRoll = Array.isArray(rolls) ? Number(rolls[0]) : (Number.isFinite(Number(rolls)) ? Number(rolls) : Math.random())
   const resolution = resolveCaptureRoll({
     baseChance: shared.baseCaptureChance(battle),
@@ -213,13 +226,13 @@ function attemptPostKoCapture(game, battle, rolls, itemType) {
     }
   }
 
-  nextBattle.rewardResolutionId ||= `${nextBattle.battleId || nextBattle.stageId}:reward`
+  nextBattle.rewardResolutionId = rewardResolutionId
   const captured = shared.makeMonster(
     battle.enemy.speciesId,
     pacedCaptureLevel(battle.enemy.speciesId, battle.enemy.level)
   )
   const settlement = settleCaptureSuccess(nextGame, {
-    resolutionId: `${nextBattle.rewardResolutionId}:capture`,
+    resolutionId: captureResolutionId,
     capturedMonster: captured,
     ringType: itemType,
     teamAtStart: battle.teamAtStart || []
@@ -248,9 +261,19 @@ function attemptPostKoCapture(game, battle, rolls, itemType) {
   }
 }
 
+function resemblesPostKoCapture(battle) {
+  return battle?.postKoCaptureAvailable === true || (battle?.status === 'won' && Number(battle?.enemy?.hp) <= 0)
+}
+
 // Preserve the public default while ensuring null means "no caller-supplied roll".
 // Number(null) is 0, which would otherwise make every default capture succeed.
 export function attemptCapture(game, battle, rolls = null, itemType = 'star', options = {}) {
-  if (postKoCaptureAllowed(game, battle, itemType)) return attemptPostKoCapture(game, battle, rolls, itemType)
-  return settlePlayedLoss(shared.attemptCapture(game, battle, rolls === null ? undefined : rolls, itemType, options), options)
+  if (resemblesPostKoCapture(battle)) return attemptPostKoCapture(game, battle, rolls, itemType)
+  let result = shared.attemptCapture(game, battle, rolls === null ? undefined : rolls, itemType, options)
+  result = settlePlayedLoss(result, options)
+  result = markPostKoOpportunity(result)
+  if (result?.ok && result?.caught !== true) {
+    return attachTurnPresentation(game, battle, result, { actionKind: 'capture-failed' })
+  }
+  return result
 }

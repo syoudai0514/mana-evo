@@ -44,20 +44,23 @@ export function BattleView({ game, setGame, onExitToMap, goStudy }) {
   const [evolutionQueue, setEvolutionQueue] = useState([])
   const [shardResult, setShardResult] = useState(null)
   const [turnCue, setTurnCue] = useState(null)
+  const [animatedHp, setAnimatedHp] = useState(null)
   const seenEvolutionKeys = useRef(new Set())
   const turnTimers = useRef([])
+  const observedTurnPresentationId = useRef(null)
 
   useEffect(() => () => {
     turnTimers.current.forEach((timer) => window.clearTimeout(timer))
   }, [])
 
+  const pendingTurnPresentation = !!battle.turnPresentation?.id && battle.turnPresentation.id !== observedTurnPresentationId.current
+  const resolvingTurn = !!turnCue || pendingTurnPresentation
   const captureResolutionId = battle.rewardResolutionId ? `${battle.rewardResolutionId}:capture` : null
   const captureSettlement = captureResolutionId ? game.captureDomain?.settlements?.[captureResolutionId] : null
   const duplicatePending = captureSettlement?.status === 'pending_duplicate_choice'
   const captureEligible = !forcedSwitch && CAPTURE_ITEM_IDS.some((id) => canAttemptCapture(game, battle, id))
-  const postKoCaptureEligible = battle.status === 'won' && captureEligible
+  const postKoCaptureEligible = battle.status === 'won' && captureEligible && !resolvingTurn
   const activeEvolutionReveal = !captureSequence && !duplicatePending ? evolutionQueue[0] || null : null
-  const resolvingTurn = !!turnCue
 
   const enqueueEvolutions = (evolutionsByInstance, nextGame) => {
     const reveals = []
@@ -80,10 +83,37 @@ export function BattleView({ game, setGame, onExitToMap, goStudy }) {
   const playTurnPresentation = (presentation) => {
     turnTimers.current.forEach((timer) => window.clearTimeout(timer))
     turnTimers.current = []
-    if (!presentation) { setTurnCue(null); return }
+    if (!presentation) {
+      setTurnCue(null)
+      setAnimatedHp(null)
+      return false
+    }
 
     const steps = []
-    if (presentation.enemyFirst) {
+    if (presentation.actionKind && presentation.actionKind !== 'move') {
+      const actionText = {
+        protect: `🛡️ ${presentation.playerName}は まもっている！`,
+        switch: `🔁 ${presentation.playerName}に こうたい！`,
+        'capture-failed': 'ボールから でてきた！ バトルは つづくよ。'
+      }[presentation.actionKind] || 'ターンが すすんだ！'
+      steps.push({ phase: 'player-action', text: actionText })
+      if (presentation.playerDamage > 0) {
+        steps.push({ phase: 'enemy-lunge', text: `${presentation.enemyName}の こうげき！` })
+        steps.push({
+          phase: presentation.playerFainted ? 'player-fainted' : 'player-hit',
+          text: `${presentation.playerName}に ${presentation.playerDamage} ダメージ！`
+        })
+      }
+      if (presentation.enemyDamage > 0) {
+        steps.push({
+          phase: presentation.enemyFainted ? 'enemy-fainted' : 'enemy-hit',
+          text: `${presentation.enemyName}は どく・やけどで ${presentation.enemyDamage} ダメージ！`
+        })
+      }
+      if (presentation.playerFainted && presentation.playerDamage <= 0) {
+        steps.push({ phase: 'player-fainted', text: `${presentation.playerName}は たおれた！` })
+      }
+    } else if (presentation.enemyFirst) {
       steps.push({ phase: 'enemy-lunge', text: `⚡ ${presentation.enemyName}のほうが はやい！` })
       if (presentation.playerDamage > 0) steps.push({ phase: 'player-hit', text: `${presentation.playerName}に ${presentation.playerDamage} ダメージ！` })
       if (presentation.playerFainted) {
@@ -100,13 +130,41 @@ export function BattleView({ game, setGame, onExitToMap, goStudy }) {
         if (presentation.playerDamage > 0) steps.push({ phase: presentation.playerFainted ? 'player-fainted' : 'player-hit', text: `${presentation.playerName}に ${presentation.playerDamage} ダメージ！` })
       }
     }
-    if (!steps.length) return
-    setTurnCue(steps[0])
-    steps.slice(1).forEach((step, index) => {
-      turnTimers.current.push(window.setTimeout(() => setTurnCue(step), (index + 1) * 430))
+    if (!steps.length) return false
+
+    let shownPlayerHp = Number.isFinite(Number(presentation.playerHpBefore)) ? Number(presentation.playerHpBefore) : playerHp
+    let shownEnemyHp = Number.isFinite(Number(presentation.enemyHpBefore)) ? Number(presentation.enemyHpBefore) : battle.enemy.hp
+    const sequenced = steps.map((step) => {
+      if (step.phase === 'player-hit' || step.phase === 'player-fainted') {
+        shownPlayerHp = Number.isFinite(Number(presentation.playerHpAfter)) ? Number(presentation.playerHpAfter) : playerHp
+      }
+      if (step.phase === 'enemy-hit' || step.phase === 'enemy-fainted') {
+        shownEnemyHp = Number.isFinite(Number(presentation.enemyHpAfter)) ? Number(presentation.enemyHpAfter) : battle.enemy.hp
+      }
+      return { ...step, playerHp: shownPlayerHp, enemyHp: shownEnemyHp }
     })
-    turnTimers.current.push(window.setTimeout(() => setTurnCue(null), Math.max(900, steps.length * 430 + 280)))
+
+    setTurnCue(sequenced[0])
+    setAnimatedHp({ playerHp: sequenced[0].playerHp, enemyHp: sequenced[0].enemyHp })
+    sequenced.slice(1).forEach((step, index) => {
+      turnTimers.current.push(window.setTimeout(() => {
+        setTurnCue(step)
+        setAnimatedHp({ playerHp: step.playerHp, enemyHp: step.enemyHp })
+      }, (index + 1) * 430))
+    })
+    turnTimers.current.push(window.setTimeout(() => {
+      setTurnCue(null)
+      setAnimatedHp(null)
+    }, Math.max(900, sequenced.length * 430 + 280)))
+    return true
   }
+
+  useEffect(() => {
+    const presentation = battle.turnPresentation
+    if (!presentation?.id || presentation.id === observedTurnPresentationId.current || captureSequence || turnCue) return
+    const started = playTurnPresentation(presentation)
+    if (started) observedTurnPresentationId.current = presentation.id
+  }, [battle.turnPresentation?.id, captureSequence, turnCue])
 
   const act = (moveId) => {
     if (resolvingTurn) return
@@ -116,12 +174,12 @@ export function BattleView({ game, setGame, onExitToMap, goStudy }) {
     setGame(result.game)
     setCaptureOpen(false)
     setSwitchOpen(false)
-    playTurnPresentation(result.battle?.turnPresentation)
   }
   const protect = () => {
     if (resolvingTurn) return
     const result = useProtect(game, battle)
-    if (result.ok) setGame(result.game)
+    if (!result.ok) return
+    setGame(result.game)
   }
   const specialAct = (type) => {
     if (resolvingTurn) return
@@ -129,6 +187,7 @@ export function BattleView({ game, setGame, onExitToMap, goStudy }) {
     if (result.ok) setGame(result.game)
   }
   const capture = (itemType) => {
+    if (resolvingTurn) return
     const result = attemptCapture(game, battle, null, itemType)
     if (!result.ok) return
     const frames = result.capturePresentation?.frames || result.battle?.capturePresentation || []
@@ -188,12 +247,21 @@ export function BattleView({ game, setGame, onExitToMap, goStudy }) {
 
   const battleMoves = availableBattleMoveIds(game, battle)
   const showNormalCommands = !finished && !forcedSwitch && !captureOpen && !switchOpen && !captureSequence
-  const showTeamChoice = !finished && !captureSequence && (forcedSwitch || switchOpen)
+  const showTeamChoice = !finished && !captureSequence && !resolvingTurn && (forcedSwitch || switchOpen)
   const showShardTools = finished && battle.status !== 'lost' && !duplicatePending && ((game.growthShards || 0) > 0 || captureSettlement?.choice === 'support')
   const playerArtClass = turnCue?.phase === 'player-lunge' ? 'v6-player-lunge' : turnCue?.phase === 'player-hit' ? 'v6-hit' : turnCue?.phase === 'player-fainted' ? 'v6-fainted' : ''
   const enemyArtClass = turnCue?.phase === 'enemy-lunge' ? 'v6-enemy-lunge' : turnCue?.phase === 'enemy-hit' ? 'v6-hit' : turnCue?.phase === 'enemy-fainted' ? 'v6-fainted' : ''
+  const displayedPlayerHp = animatedHp?.playerHp ?? playerHp
+  const displayedEnemyHp = animatedHp?.enemyHp ?? battle.enemy.hp
 
-  return <main className={`screen battle-screen-v2 area-theme-${stage?.adventureArea || stage?.area || 5}`}>
+  return <main
+    className={`screen battle-screen-v2 area-theme-${stage?.adventureArea || stage?.area || 5}`}
+    data-presentation-id={battle.turnPresentation?.id || ''}
+    data-observed-id={observedTurnPresentationId.current || ''}
+    data-capture-sequence={captureSequence ? '1' : '0'}
+    data-turn-cue={turnCue ? '1' : '0'}
+    data-battle-status={battle.status}
+  >
     <EvolutionCelebration reveal={activeEvolutionReveal} onClose={() => setEvolutionQueue((queue) => queue.slice(1))} />
     <CapturePresentation sequence={captureSequence} onComplete={() => setCaptureSequence(null)} />
 
@@ -211,13 +279,13 @@ export function BattleView({ game, setGame, onExitToMap, goStudy }) {
       <div className="battle-arena-glow enemy-glow" aria-hidden="true" />
       <div className="battle-arena-glow player-glow" aria-hidden="true" />
       <div className="fighter enemy-fighter">
-        <div className="fighter-info"><div className="fighter-name"><strong>{enemySpecies.name}</strong><span>Lv.{battle.enemy.level}</span></div><TypePills types={enemySpecies.types} /><HpBar value={battle.enemy.hp} max={battle.enemy.maxHp} /><small>HP {battle.enemy.hp}/{battle.enemy.maxHp}</small></div>
+        <div className="fighter-info"><div className="fighter-name"><strong>{enemySpecies.name}</strong><span>Lv.{battle.enemy.level}</span></div><TypePills types={enemySpecies.types} /><HpBar value={displayedEnemyHp} max={battle.enemy.maxHp} /><small>HP {displayedEnemyHp}/{battle.enemy.maxHp}</small></div>
         <div className={`fighter-art ${enemyArtClass}`}><PlaceholderMonster speciesId={battle.enemy.speciesId} size={140} /></div>
       </div>
       <div className="battle-versus" aria-hidden="true">VS</div>
       <div className="fighter player-fighter">
         <div className={`fighter-art ${playerArtClass}`}><PlaceholderMonster speciesId={active.speciesId} size={140} /></div>
-        <div className="fighter-info"><div className="fighter-name"><strong>{playerSpecies.name}</strong><span>Lv.{active.level}</span></div><TypePills types={playerSpecies.types} /><HpBar value={playerHp} max={playerMax} /><small>HP {playerHp}/{playerMax}</small></div>
+        <div className="fighter-info"><div className="fighter-name"><strong>{playerSpecies.name}</strong><span>Lv.{active.level}</span></div><TypePills types={playerSpecies.types} /><HpBar value={displayedPlayerHp} max={playerMax} /><small>HP {displayedPlayerHp}/{playerMax}</small></div>
       </div>
     </section>
 
@@ -246,9 +314,9 @@ export function BattleView({ game, setGame, onExitToMap, goStudy }) {
       </div>
     </section>}
 
-    {captureEligible && !forcedSwitch && captureOpen && !captureSequence && <CapturePanel game={game} battle={battle} captureDisabled={stage?.captureDisabled} onCapture={capture} onCancel={() => setCaptureOpen(false)} />}
+    {captureEligible && !forcedSwitch && !resolvingTurn && captureOpen && !captureSequence && <CapturePanel game={game} battle={battle} captureDisabled={stage?.captureDisabled} onCapture={capture} onCancel={() => setCaptureOpen(false)} />}
 
-    {forcedSwitch && !captureSequence && <section className="battle-result-card"><h2>つぎの なかまを えらぼう！</h2><p>まだ元気な仲間がいるから、バトルは続けられるよ。</p></section>}
+    {forcedSwitch && !captureSequence && !resolvingTurn && <section className="battle-result-card"><h2>つぎの なかまを えらぼう！</h2><p>まだ元気な仲間がいるから、バトルは続けられるよ。</p></section>}
 
     {showTeamChoice && <section className="team-switch"><h3>{forcedSwitch ? 'こうたい ひっす' : 'こうたいする なかまを えらぼう'}</h3><div>{game.team.map((id) => {
       const member = game.box[id]
@@ -266,11 +334,11 @@ export function BattleView({ game, setGame, onExitToMap, goStudy }) {
     {postKoCaptureEligible && !duplicatePending && !captureOpen && !captureSequence && <section className="battle-result-card post-ko-capture-card">
       <h2>たおした！ 🎉</h2>
       <p>{enemySpecies.name}は もう こうげきしてこないよ。いまなら ボールを なげて GETを ねらえる！</p>
-      <button className="capture-main-cta ready" onClick={() => setCaptureOpen(true)}><span className="mini-capture-ball" aria-hidden="true"/>ボールを なげる！<small>たおしたあとも GETチャンス</small></button>
-      <button className="secondary" onClick={exit}>GETせず マップへ</button>
+      <button className="capture-main-cta ready" disabled={resolvingTurn} onClick={() => setCaptureOpen(true)}><span className="mini-capture-ball" aria-hidden="true"/>ボールを なげる！<small>たおしたあとも GETチャンス</small></button>
+      <button className="secondary" disabled={resolvingTurn} onClick={exit}>GETせず マップへ</button>
     </section>}
 
-    {finished && !duplicatePending && !postKoCaptureEligible && !captureSequence && <section className="battle-result-card">
+    {finished && !duplicatePending && !postKoCaptureEligible && !captureSequence && !resolvingTurn && <section className="battle-result-card">
       <h2>{battle.status === 'won' ? 'かち！ 🎉' : battle.status === 'caught' ? 'ゲット！ ★★★★' : 'まけちゃった…'}</h2>
       {battle.status === 'won' && stage?.id === 'a1-boss' && <p>🔷 はじめてのクリアで ギガキーが ひらいた！</p>}
       {battle.status === 'won' && stage?.specialReward?.type === 'giga' && <p>🔷 {enemySpecies.name}のギガコアを解放！</p>}

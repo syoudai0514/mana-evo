@@ -6,9 +6,14 @@ import {
   createLearningRewardMeta,
   queueLearningReward,
   recordAdditionalLearningAnswer,
+  recordExtraQualifyingCorrect,
   releaseHeldLearningRewards
 } from '../src/kids-quest-study/state/learningRewardPolicy.js'
-import { deriveLearningRewardRuntime, EXTRA_CORRECT_PER_BATTLE_TICKET } from '../src/kids-quest-study/state/learningRewardRuntime.js'
+import {
+  deriveLearningRewardRuntime,
+  EXTRA_CORRECT_PER_BATTLE_TICKET,
+  MAX_SAME_KNOWLEDGE_PER_BATTLE_TICKET
+} from '../src/kids-quest-study/state/learningRewardRuntime.js'
 import {
   applyLearningGameReward,
   applyLearningGameRewards,
@@ -35,17 +40,31 @@ function learningState(overrides = {}) {
   }
 }
 
-function extraAnswer(id, correct = true) {
+function extraAnswer(id, correct = true, {
+  knowledgeId = `skill:${id}`,
+  learningIntent = 'adaptive',
+  ticketQualifyingAtPresentation = true,
+  rewardEventId = `reward:${id}`,
+  elapsedMs = 2200,
+  taskKind = 'extra'
+} = {}) {
   return {
     type: 'ANSWER',
     domainId: 'suuji',
-    taskKind: 'extra',
+    taskKind,
     correct,
-    itemKey: `skill:${id}`,
+    itemKey: knowledgeId,
     unitId: null,
-    elapsedMs: 2200,
+    elapsedMs,
     choiceKey: correct ? `ok-${id}` : `ng-${id}`,
-    question: { questionInstanceId: id, itemKey: `n:${id}` }
+    question: {
+      questionInstanceId: id,
+      knowledgeId,
+      itemKey: `n:${id}`,
+      learningIntent,
+      ticketQualifyingAtPresentation,
+      rewardEventId
+    }
   }
 }
 
@@ -116,22 +135,115 @@ test('daily core transition emits canonical reward exactly once plus exploration
   assert.equal(duplicate.pendingProgressionSignals.length, 2)
 })
 
-test('five correct extra questions pay one battle ticket while every correct extra still pays exploration', () => {
+test('A+ pays one ticket for five semantic qualifying EXTRA correct answers', () => {
   assert.equal(EXTRA_CORRECT_PER_BATTLE_TICKET, 5)
+  assert.equal(MAX_SAME_KNOWLEDGE_PER_BATTLE_TICKET, 3)
   const state = learningState()
   let runtime = {}
-  for (let index = 1; index <= 4; index += 1) runtime = deriveLearningRewardRuntime(runtime, state, state, extraAnswer(`q${index}`, true))
+  for (let index = 1; index <= 4; index += 1) runtime = deriveLearningRewardRuntime(runtime, state, state, extraAnswer(`q${index}`))
   assert.equal(runtime.pendingGameRewards.filter((reward) => reward.ticketDelta > 0).length, 0)
 
-  runtime = deriveLearningRewardRuntime(runtime, state, state, extraAnswer('q5', true))
+  runtime = deriveLearningRewardRuntime(runtime, state, state, extraAnswer('q5'))
   const tickets = runtime.pendingGameRewards.filter((reward) => reward.kind === 'extra-learning-ticket')
   const explore = runtime.pendingProgressionSignals.filter((signal) => signal.kind === 'extra-question-clear')
   assert.equal(tickets.length, 1)
   assert.equal(tickets[0].ticketDelta, 1)
   assert.equal(explore.reduce((sum, signal) => sum + signal.explorationPointDelta, 0), 5)
+})
 
-  runtime = deriveLearningRewardRuntime(runtime, state, state, extraAnswer('wrong', false))
+test('A+ same-knowledge 3/5 guard applies to the current ticket bucket, not the last five answers', () => {
+  let meta = createLearningRewardMeta()
+  for (const eventId of ['a1', 'a2', 'a3']) {
+    const recorded = recordExtraQualifyingCorrect(meta, { eventId, knowledgeId: 'skill:A' })
+    assert.equal(recorded.accepted, true)
+    meta = recorded.meta
+  }
+  const blocked = recordExtraQualifyingCorrect(meta, { eventId: 'a4', knowledgeId: 'skill:A' })
+  assert.equal(blocked.accepted, false)
+  assert.equal(blocked.reason, 'SAME_KNOWLEDGE_CAP')
+  meta = blocked.meta
+  assert.deepEqual(meta.extraTicketBucketKnowledgeIds, ['skill:A', 'skill:A', 'skill:A'])
+
+  meta = recordExtraQualifyingCorrect(meta, { eventId: 'b1', knowledgeId: 'skill:B' }).meta
+  const completes = recordExtraQualifyingCorrect(meta, { eventId: 'c1', knowledgeId: 'skill:C' })
+  assert.equal(completes.ticketMilestones, 1)
+  assert.deepEqual(completes.meta.extraTicketBucketKnowledgeIds, [])
+
+  // A is allowed again in the next ticket bucket. The cap is per ticket, not a
+  // sliding recent-answer window.
+  const nextTicketA = recordExtraQualifyingCorrect(completes.meta, { eventId: 'a5', knowledgeId: 'skill:A' })
+  assert.equal(nextTicketA.accepted, true)
+  assert.deepEqual(nextTicketA.meta.extraTicketBucketKnowledgeIds, ['skill:A'])
+
+  // The previously blocked semantic event is consumed and cannot be replayed
+  // after the bucket resets to sneak into the next ticket.
+  const replayBlocked = recordExtraQualifyingCorrect(nextTicketA.meta, { eventId: 'a4', knowledgeId: 'skill:A' })
+  assert.equal(replayBlocked.accepted, false)
+  assert.equal(replayBlocked.reason, 'DUPLICATE_SEMANTIC_EVENT')
+})
+
+test('same-knowledge blocked answers still count for generic learning rewards but not ticket progress', () => {
+  const state = learningState()
+  let runtime = {}
+  for (let i = 1; i <= 4; i += 1) {
+    runtime = deriveLearningRewardRuntime(runtime, state, state, extraAnswer(`same-${i}`, true, {
+      knowledgeId: 'skill:same', rewardEventId: `same-event-${i}`
+    }))
+  }
+  assert.equal(runtime.learningRewardMeta.additionalCorrectTotal, 4)
+  assert.equal(runtime.learningRewardMeta.extraQualifyingCorrectTotal, 3)
+  assert.equal(runtime.pendingGameRewards.filter((reward) => reward.kind === 'extra-learning-ticket').length, 0)
+})
+
+test('free and okawari never leak into A+ ticket progress', () => {
+  const state = learningState()
+  let runtime = {}
+  for (const id of ['free1', 'free2', 'free3', 'free4']) {
+    runtime = deriveLearningRewardRuntime(runtime, state, state, extraAnswer(id, true, { taskKind: 'free' }))
+  }
+  runtime = deriveLearningRewardRuntime(runtime, state, state, extraAnswer('ok1', true, { taskKind: 'okawari' }))
+  runtime = deriveLearningRewardRuntime(runtime, state, state, extraAnswer('extra1'))
+  assert.equal(runtime.learningRewardMeta.additionalCorrectTotal, 6)
+  assert.equal(runtime.learningRewardMeta.extraQualifyingCorrectTotal, 1)
+  assert.equal(runtime.pendingGameRewards.filter((reward) => reward.kind === 'extra-learning-ticket').length, 0)
+})
+
+test('A+ provenance distinguishes due SRS, reinforcement, mastered non-due, and revealed retry', () => {
+  const state = learningState()
+  let runtime = {}
+  runtime = deriveLearningRewardRuntime(runtime, state, state, extraAnswer('srs', true, {
+    learningIntent: 'srs_due', knowledgeId: 'skill:srs', rewardEventId: 'event:srs'
+  }))
+  runtime = deriveLearningRewardRuntime(runtime, state, state, extraAnswer('reinforce', true, {
+    learningIntent: 'reinforcement', knowledgeId: 'skill:reinforce', rewardEventId: 'event:reinforce'
+  }))
+  runtime = deriveLearningRewardRuntime(runtime, state, state, extraAnswer('mastered', true, {
+    learningIntent: 'adaptive', ticketQualifyingAtPresentation: false, knowledgeId: 'skill:mastered', rewardEventId: 'event:mastered'
+  }))
+  runtime = deriveLearningRewardRuntime(runtime, state, state, extraAnswer('revealed', true, {
+    learningIntent: 'revealed_retry', ticketQualifyingAtPresentation: false, knowledgeId: 'skill:revealed', rewardEventId: 'event:revealed'
+  }))
+  assert.equal(runtime.learningRewardMeta.additionalCorrectTotal, 4)
+  assert.equal(runtime.learningRewardMeta.extraQualifyingCorrectTotal, 2)
+})
+
+test('fast genuine mastery is not time-gated and semantic replay is exactly-once across reload', () => {
+  const state = learningState()
+  let runtime = {}
+  const answers = [
+    extraAnswer('f1', true, { elapsedMs: 100, knowledgeId: 'skill:A', rewardEventId: 'event:f1' }),
+    extraAnswer('f2', true, { elapsedMs: 100, knowledgeId: 'skill:A', rewardEventId: 'event:f2' }),
+    extraAnswer('f3', true, { elapsedMs: 100, knowledgeId: 'skill:A', rewardEventId: 'event:f3' }),
+    extraAnswer('f4', true, { elapsedMs: 100, knowledgeId: 'skill:B', rewardEventId: 'event:f4' }),
+    extraAnswer('f5', true, { elapsedMs: 100, knowledgeId: 'skill:C', rewardEventId: 'event:f5' })
+  ]
+  for (const action of answers) runtime = deriveLearningRewardRuntime(runtime, state, state, action)
   assert.equal(runtime.pendingGameRewards.filter((reward) => reward.kind === 'extra-learning-ticket').length, 1)
+
+  const reloaded = JSON.parse(JSON.stringify(runtime))
+  const replay = deriveLearningRewardRuntime(reloaded, state, state, answers[4])
+  assert.equal(replay.learningRewardMeta.extraQualifyingCorrectTotal, 5)
+  assert.equal(replay.pendingGameRewards.filter((reward) => reward.kind === 'extra-learning-ticket').length, 1)
 })
 
 test('every three correct additional-learning answers emits star +1 with a persisted counter', () => {
@@ -154,8 +266,7 @@ test('free study never mints battle tickets while still contributing to addition
   const state = learningState()
   let runtime = {}
   for (const id of ['free1', 'free2', 'free3']) {
-    const action = { ...extraAnswer(id, true), taskKind: 'free' }
-    runtime = deriveLearningRewardRuntime(runtime, state, state, action)
+    runtime = deriveLearningRewardRuntime(runtime, state, state, extraAnswer(id, true, { taskKind: 'free' }))
   }
   assert.equal(runtime.pendingGameRewards.filter((reward) => reward.ticketDelta > 0).length, 0)
   assert.equal(runtime.pendingGameRewards.filter((reward) => reward.kind === 'additional-learning-star').length, 1)
@@ -168,7 +279,7 @@ test('normal and hard MASTER transitions mint silver and gold once', () => {
   const prevNormal = learningState({ unitStats: { 0: { suuji: { u1: almost } } } })
   const nextNormal = learningState({ unitStats: { 0: { suuji: { u1: mastered } } } })
   const normal = deriveLearningRewardRuntime({}, prevNormal, nextNormal, {
-    ...extraAnswer('master-normal', true), taskKind: 'free', unitId: 'u1'
+    ...extraAnswer('master-normal', true, { taskKind: 'free' }), unitId: 'u1'
   })
   assert.equal(normal.pendingGameRewards.find((reward) => reward.kind === 'unit-master')?.captureItemDelta.silver, 1)
 

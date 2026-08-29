@@ -38,17 +38,23 @@ export function CapturePresentation({ sequence, onComplete, intervalMs = 520 }) 
   const frames = Array.isArray(sequence?.frames) ? sequence.frames : []
   const visualFrames = useMemo(() => frames.length ? [{ type: 'throw' }, { type: 'impact' }, ...frames] : [], [sequence?.id, frames])
   const [frameIndex, setFrameIndex] = useState(0)
+  const onCompleteRef = useRef(onComplete)
 
+  // Parent battle state legitimately re-renders while the capture cinematic is
+  // running. Keep the latest callback without making callback identity restart
+  // the current frame timer; otherwise the capture -> turn-presentation handoff
+  // can be delayed or lost on failed-capture terminal paths.
+  useEffect(() => { onCompleteRef.current = onComplete }, [onComplete])
   useEffect(() => { setFrameIndex(0) }, [sequence?.id])
   useEffect(() => {
     if (!visualFrames.length) return undefined
     const current = visualFrames[Math.min(frameIndex, visualFrames.length - 1)] || {}
     const timer = setTimeout(() => {
       if (frameIndex < visualFrames.length - 1) setFrameIndex((index) => index + 1)
-      else onComplete?.()
+      else onCompleteRef.current?.()
     }, frameDuration(current.type, intervalMs))
     return () => clearTimeout(timer)
-  }, [frameIndex, visualFrames, intervalMs, onComplete])
+  }, [frameIndex, visualFrames, intervalMs])
 
   if (!visualFrames.length) return null
   const frame = visualFrames[Math.min(frameIndex, visualFrames.length - 1)] || {}

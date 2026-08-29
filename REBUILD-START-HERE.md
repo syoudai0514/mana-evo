@@ -12,6 +12,8 @@ ManaEvo を、原本 `mana-evo-terra-FINAL-CORRECTED` から現在までの試�
 
 完成後も「実装だけ進み、設計書が古くなる」状態へ戻さないことを、この再建の恒久的な成果に含める。
 
+さらに、専門家向け正本だけでなく、IT初心者のオーナーが現在のゲーム仕様と変更理由を判断できる `design/current/USER-GUIDE.md` を恒久的に同期する。
+
 ## 2. 正本順位
 
 1. ユーザーの**明示決定**
@@ -28,6 +30,7 @@ ManaEvo を、原本 `mana-evo-terra-FINAL-CORRECTED` から現在までの試�
 - runtimeに存在するだけでは仕様承認の証拠にならない。
 - CI PASS、PR作成、merge、deployだけでも仕様承認の証拠にならない。
 - 原本へ機械的に戻すのも、最新runtimeを機械的に正とするのも禁止する。
+- `design/current/USER-GUIDE.md` はオーナー向け翻訳companionであり、domain contractと衝突した場合はdomain contractを正として同じchange setでUSER-GUIDEを修正する。
 
 ## 3. 最重要原則
 
@@ -41,6 +44,7 @@ ManaEvo を、原本 `mana-evo-terra-FINAL-CORRECTED` から現在までの試�
 8. 現在地は最大Work Item番号ではなく、**Acceptanceを満たした最後のgate**で判定する。
 9. 同じ変動進捗を複数の恒久資料へコピーしない。
 10. production host / deployment authorityのCURRENTはD-019に従い、**Vercel `https://mana-evo.vercel.app/` が唯一のproduction canonical**。GitHub Pagesをproduction canonicalとして復活させない。
+11. product designを変更したら、専門設計だけでなくオーナー向け `design/current/USER-GUIDE.md` と変更説明も同期する。
 
 ## 4. 司令塔 / Reviewer 復元プロトコル
 
@@ -120,9 +124,11 @@ machine-readable ownershipは `design/current/canonical-sync-map.json` を使用
 
 1. owning `design/current/**` contract
 2. `design/rebuild/DECISION-LOG.md`
-3. runtime / tests / derived data（必要な場合）
+3. `design/current/USER-GUIDE.md` の該当するオーナー向け説明
+4. runtime / tests / derived data（必要な場合）
+5. ユーザーへの変更説明（これまで / 変更後 / 理由 / 子どもへの影響 / 守ること）
 
-「コードを先にmergeして設計は後日」は禁止する。
+「コードを先にmergeして設計は後日」「専門設計だけ更新してオーナー説明は後日」は禁止する。
 
 ### 6.3 `Canonical-Impact: none`
 
@@ -141,6 +147,7 @@ CIは、protected path変更について次をfailさせる。
 - Canonical impact宣言なし
 - `changed`なのにowning CURRENT docが未更新
 - `changed`なのにDecision Logが未更新
+- `changed`なのに`design/current/USER-GUIDE.md`が未更新
 - `none`なのに具体理由なし
 
 CIは人間の意味判断を完全自動化するものではない。目的は、**設計同期の判断自体を忘れられなくすること**である。
@@ -154,22 +161,35 @@ asset manifest、generated master、runtime allowlistなど、実状態を表す
 - generated stateは承認意味を推測しない
 - state companionがruntimeと矛盾した場合はdriftとして修正する
 
+### 6.6 オーナー向け設計同期 Gate
+
+`design/current/USER-GUIDE.md` は恒久的なuser-facing CURRENT companionとする。
+
+- 再建の最終releaseまでにゲーム全体を網羅する初回完全版を完成させる。
+- それ以前でも、新たに変更した領域はそのproduct-change PRで更新する。
+- release後も全product design changeで更新する。
+- オーナーが内部ID、DB、関数名を理解しなくても判断できる文章にする。
+- 技術的正確性を失わない範囲で、具体例・実際の子どもの体験を優先する。
+- product design changeの完了報告では、USER-GUIDEの変更箇所をチャット上でも要約表示する。
+- USER-GUIDE未同期のproduct design changeはmerge-readyにしない。
+
 ## 7. 役割
 
 ### 司令塔 / Reviewer
 
 - 正本とGitHub実状態を横断して現在地を復元する。
 - Workerへscope / Acceptance / owning docs / 必須成果物 / 必要能力を渡す。
-- behavior change PRではCURRENT + Decision Logの同時更新を確認する。
+- behavior change PRではCURRENT + Decision Log + USER-GUIDEの同時更新を確認する。
 - 実成果物の存在を確認する。
 - 仕様変更が本当に必要な場合だけユーザー判断へ上げる。
+- 設計変更時、オーナーへ初心者向け変更説明を表示する。
 
 ### Worker / SOL
 
 - 指定Work Itemのみ実施する。
 - 着手時にowning CURRENT contractを読む。
 - 必須能力がなければ `BLOCKED CAPABILITY`。
-- product contractを変えたら、同じPRでCURRENT + Decision Logを更新する。
+- product contractを変えたら、同じPRでCURRENT + Decision Log + USER-GUIDEを更新する。
 - product contractを変えていないなら `Canonical-Impact: none` と理由を明示する。
 - scope外の再設計をしない。
 
@@ -178,6 +198,7 @@ asset manifest、generated master、runtime allowlistなど、実状態を表す
 ### CURRENT
 
 日常実装の入口は `design/current/00-START-HERE.md`。
+`design/current/USER-GUIDE.md` はオーナー向けCURRENT companionであり、専門CURRENTを置き換えない。
 
 ### Decision evidence
 
@@ -242,6 +263,7 @@ Worker分岐には `design/rebuild/HANDOFF-TEMPLATE.md` を使う。
 - 古いreview/Phase planをCURRENTとして読む
 - 変動進捗を複数の恒久handoffへコピーする
 - product behaviorを変更したのにCURRENTを更新しない
+- product designを変更したのにUSER-GUIDEとユーザー向け変更説明を更新しない
 - `Canonical-Impact: none` を理由なく使用する
 - 未承認proposalをCURRENTより上位へ置く
 - GitHub Pagesをproduction canonicalへ戻す
@@ -255,6 +277,8 @@ PRをmerge可能と判断する前に、必ず確認する。
 - [ ] product behavior change有無を宣言した
 - [ ] changeありならCURRENT更新済み
 - [ ] changeありならDecision Log更新済み
+- [ ] changeありならUSER-GUIDE更新済み
+- [ ] changeありならオーナーへ初心者向け変更内容を表示した
 - [ ] tests/runtimeだけを正本にしていない
 - [ ] 実成果物 / Acceptanceを確認した
 - [ ] production authorityを誤認していない
