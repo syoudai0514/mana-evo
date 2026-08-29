@@ -74,7 +74,10 @@ function preKoCapture({ playerLevel, enemyLevel, playerXp = 0, duplicate = false
   const prepared = preparedBattle({ playerLevel, playerXp, rainbow: 2 })
   const hp = Math.max(1, Math.floor(prepared.battle.enemy.maxHp * 0.4))
   const scenario = withEnemyState(prepared, { enemyLevel, hp, poison: false })
-  if (duplicate) scenario.game.dex.caught[scenario.battle.enemy.speciesId] = true
+  if (duplicate) {
+    const owned = makeMonster(scenario.battle.enemy.speciesId, 1, 'existing-pre-ko-duplicate')
+    scenario.game.box[owned.instanceId] = owned
+  }
   scenario.game.activeBattle = structuredClone(scenario.battle)
   const result = attemptCapture(scenario.game, scenario.battle, [0], 'rainbow', { today: TODAY })
   assert.equal(result.ok, true)
@@ -156,7 +159,8 @@ test('post-KO capture rejects stale replay and never consumes a second ball', ()
 
 test('duplicate post-KO stale replay cannot consume another ball while settlement is pending', () => {
   const won = dotKo({ playerLevel: 30, enemyLevel: 20 })
-  won.result.game.dex.caught[won.result.battle.enemy.speciesId] = true
+  const owned = makeMonster(won.result.battle.enemy.speciesId, 1, 'existing-post-ko-duplicate')
+  won.result.game.box[owned.instanceId] = owned
   const first = attemptCapture(won.result.game, won.result.battle, [0], 'rainbow', { today: TODAY })
   assert.equal(first.ok, true)
   assert.equal(first.captureSettlement.duplicate, true)
