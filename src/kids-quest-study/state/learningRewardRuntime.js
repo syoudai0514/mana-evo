@@ -1,5 +1,4 @@
 import { unitReady } from '../engine/learningUnits.js'
-import { dayNumber } from '../engine/srs.js'
 import {
   createLearningRewardMeta,
   isAdditionalLearningTask,
@@ -71,67 +70,63 @@ function dayKey(state) {
   return String(state?.daily?.date || '')
 }
 
-function profileDayNumber(state) {
-  const key = dayKey(state)
-  const match = key.match(/^(\d{4})-(\d{2})-(\d{2})$/)
-  if (!match) return dayNumber()
-  const [, year, month, day] = match
-  return dayNumber(new Date(Number(year), Number(month) - 1, Number(day), 12, 0, 0))
-}
-
-function englishProgressEntry(state, knowledgeId) {
-  const key = String(knowledgeId || '')
-  if (key.startsWith('enw:')) return state?.englishWordStats?.[key.slice(4)] || null
-  if (key.startsWith('ena:')) return state?.englishAlphabetStats?.[key.slice(4)] || null
-  if (key.startsWith('enp:')) return state?.englishPhraseStats?.[key.slice(4)] || null
-  if (key.startsWith('eng:')) return state?.englishPhraseStats?.[key.slice(4)] || null
-  return null
-}
-
-// English keeps its own Kids Quest SRS/mastery state instead of unitReady().
-// `previousLearning` is the immutable reducer snapshot immediately before the
-// ANSWER mutation, so this is a presentation/pre-answer safety validation, not
-// a post-answer inference from mutated mastery. It prevents mastered non-due
-// English pools from becoming an A+ farm while preserving due retrieval.
-function validateEnglishPresentationState(previousLearning, action, semantic) {
-  if (String(action?.domainId || '') !== 'english') return semantic
-  if (!semantic.qualifies || semantic.learningIntent === 'reinforcement') return semantic
-
-  const entry = englishProgressEntry(previousLearning, semantic.knowledgeId)
-  if (!entry) return semantic
-  const mastered = Number(entry.stage) >= 5
-  const due = Number(entry.nextDue) <= profileDayNumber(previousLearning)
-
-  if (mastered && !due) {
-    return { qualifies: false, reason: 'MASTERED_NON_DUE_ENGLISH' }
+// ActivityPlayer historically built rewardEventId with questionInstanceId.
+// questionInstanceId may legitimately change when a partially completed EXTRA
+// task is re-generated after reload. The semantic authority for exactly-once is
+// the persisted task occurrence + presentation slot, not the random question.
+// Keep accepting the historical shape while canonicalizing it to a stable slot.
+function stableExtraSlotId(question = {}) {
+  const raw = String(question.rewardEventId || '').trim()
+  if (!raw) return ''
+  const parts = raw.split(':')
+  if (parts.length >= 4 && parts[1] === 'extra') {
+    return `extra-slot:${parts[0]}:${parts[2]}:${parts[3]}`
   }
-  if (due) {
-    return { ...semantic, learningIntent: 'srs_due' }
-  }
-  return semantic
+  return raw
 }
 
 function semanticExtraQualification(action, nextLearning) {
   if (action?.taskKind !== 'extra' || nextLearning?.daily?.coreDone !== true || action?.correct !== true) {
     return { qualifies: false, reason: 'NOT_QUALIFYING_EXTRA' }
   }
+
   const question = action?.question || {}
-  const learningIntent = String(question.learningIntent || '')
-  if (!QUALIFYING_LEARNING_INTENTS.has(learningIntent)) {
-    return { qualifies: false, reason: learningIntent === 'revealed_retry' ? 'REVEALED_RETRY' : 'MISSING_OR_INVALID_PROVENANCE' }
+  let learningIntent = String(question.learningIntent || '')
+  let ticketQualifyingAtPresentation = question.ticketQualifyingAtPresentation === true
+
+  // Normal English uses a dedicated Kids Quest SRS/mastery store. Its
+  // classification is now frozen by the English generator while the question
+  // is being presented. Settlement consumes that metadata and never re-reads
+  // mastery/SRS state after the answer. Explicit reinforcement/revealed-retry
+  // provenance from ActivityPlayer remains authoritative for those two paths.
+  if (
+    String(action?.domainId || '') === 'english' &&
+    !String(question.itemKey || '').startsWith('hard:') &&
+    !['reinforcement', 'revealed_retry'].includes(learningIntent) &&
+    question.englishLearningIntentAtPresentation
+  ) {
+    learningIntent = String(question.englishLearningIntentAtPresentation)
+    ticketQualifyingAtPresentation = question.englishTicketQualifyingAtPresentation === true
   }
-  if (question.ticketQualifyingAtPresentation !== true) {
+
+  if (!QUALIFYING_LEARNING_INTENTS.has(learningIntent)) {
+    return {
+      qualifies: false,
+      reason: learningIntent === 'revealed_retry' ? 'REVEALED_RETRY' : 'MISSING_OR_INVALID_PROVENANCE'
+    }
+  }
+  if (!ticketQualifyingAtPresentation) {
     return { qualifies: false, reason: 'NON_QUALIFYING_AT_PRESENTATION' }
   }
+
   const knowledgeId = String(question.knowledgeId || action.itemKey || '').trim()
-  const rewardEventId = String(question.rewardEventId || '').trim()
+  const rewardEventId = stableExtraSlotId(question)
   if (!knowledgeId || !rewardEventId) return { qualifies: false, reason: 'MISSING_SEMANTIC_ID' }
   return { qualifies: true, knowledgeId, rewardEventId, learningIntent }
 }
 
-function recordExtraBattleTicketProgress(runtime, previousLearning, nextLearning, action) {
-  const baseSemantic = semanticExtraQualification(action, nextLearning)
-  const semantic = validateEnglishPresentationState(previousLearning, action, baseSemantic)
+function recordExtraBattleTicketProgress(runtime, nextLearning, action) {
+  const semantic = semanticExtraQualification(action, nextLearning)
   if (!semantic.qualifies) return runtime
 
   const recorded = recordExtraQualifyingCorrect(runtime.learningRewardMeta, {
@@ -168,14 +163,16 @@ function deriveAnswer(runtime, previous, next, action) {
 
     // A+ ticket economy: only an EXTRA answer whose semantic provenance was
     // fixed at presentation may advance the ticket bucket. Free / okawari,
-    // revealed retries, mastered non-due repeats and duplicate semantic events
+    // revealed retries, mastered non-due repeats and duplicate semantic slots
     // cannot subsidize battle time.
-    result = recordExtraBattleTicketProgress(result, previous, next, action)
+    result = recordExtraBattleTicketProgress(result, next, action)
 
     if (action.correct === true && action.taskKind === 'extra' && next?.daily?.coreDone === true) {
+      const stableSlot = stableExtraSlotId(action.question)
       const instanceId = questionInstanceId(action)
-      if (instanceId) {
-        const exploreId = `extra:${dayKey(next)}:${next.daily?.extraIndex || 0}:${instanceId}:explore`
+      const exploreIdentity = stableSlot || instanceId
+      if (exploreIdentity) {
+        const exploreId = `extra:${dayKey(next)}:${next.daily?.extraIndex || 0}:${exploreIdentity}:explore`
         result = queueProgression(result, {
           id: exploreId,
           kind: 'extra-question-clear',
