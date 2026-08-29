@@ -1,239 +1,314 @@
 # ManaEvo CURRENT — Learning / Rewards
 
-Status: **CURRENT**  
+Status: **CURRENT — W-101 + D-017/D-022 override**  
 Updated: 2026-08-29  
-Owner: learning rules and the learning → game reward bridge
+Scope owner: learning rules and the learning → game reward bridge
 
-## 1. Authority / boundary
+This document is sufficient for a later implementation worker to align the learning/reward bridge without treating old design documents or the current runtime as product authority.
 
-Apply `REBUILD-START-HERE.md` and `design/rebuild/DECISION-LOG.md` first.
+> **重要:** 本文のKids Quest/SRS/mastery/anti-spam/exploration契約は維持する。一方、2026-08-29 Battle V6（D-022）が旧「extra 1問clearごとticket+1」を **extra正解5回ごとticket+1** に後続置換している。child-facing `○○のわ` 名称はD-017により `○○ボール`へ変更済み。末尾overrideを必ず併読する。
 
-Learning-content authority remains Kids Quest under D-005 and the exact baseline import contract.
+## 1. Authority and boundary
 
-Kids Quest owns:
+Evidence precedence follows `REBUILD-START-HERE.md` and `design/rebuild/DECISION-LOG.md`.
 
-- grade / domain / unit structure
-- question content / generation
-- stable learning IDs
-- mastery / SRS / review / mistakes
-- `わからない`
-- star trial / promotion
-- English / TTS
-- grade controls / ahead learning
-- learning save behavior
+For learning behavior, the authoritative boundary is Decision D-005 plus the exact baseline `design/baseline/FINAL-CORRECTED/source/12-KIDS-QUEST-LEARNING-IMPORT-SPEC.md`:
 
-ManaEvo does **not** redesign those algorithms. ManaEvo owns the adapter from semantic learning events into game rewards, world-progress signals and ManaEvo-only UI/storage integration.
+- Kids Quest is the source of truth for grade/domain/unit structure, question content/generation, stable learning IDs, mastery, SRS/review, mistakes, star trial/promotion, English/TTS, grade controls, learning save behavior, and learning regression tests.
+- ManaEvo must not independently redesign those learning algorithms.
+- ManaEvo owns the adapter from learning events into game rewards and ManaEvo-only routing/storage/UI integration.
+- The migrated active snapshot is `src/kids-quest-study/**`, pinned by `src/kids-quest-study/SOURCE_COMMIT.txt` to Kids Quest commit `ddfe594789890aef6958bf169bf50dccb72f818e`.
+- `src/study/**` is legacy/compatibility/regression evidence only. It must not become an active second learning authority or be routed back into the child learning flow.
 
-Active learning source is `src/kids-quest-study/**`. `src/study/**` is legacy/regression evidence only.
+A future Kids Quest refresh must be a deliberate migration with an explicit source SHA and learning regression comparison. “Latest runtime happens to differ” is not a specification change.
 
-## 2. Daily core
+## 2. Daily core learning contract
 
-A normal day has **5 core tasks**. This means five tasks, not five questions.
+### 2.1 Core mission shape
 
-Question counts remain Kids Quest-owned. Current imported defaults include:
+A normal day has **5 core tasks**. “Daily complete” in this document always means all five core tasks are complete; it does **not** mean five questions total.
 
-- 国語 / `yomu`: 5
-- 算数 / `suuji`: 5
-- ordinary scheduled domain: 4
-- 道徳 when scheduled: 2
+Question counts come from the Kids Quest source:
 
-A **new battle may not start until today's core is complete**, even when the child owns a still-valid ticket from an earlier day.
+| Core task domain | Questions |
+|---|---:|
+| `yomu` / 国語 | 5 |
+| `suuji` / 算数 | 5 |
+| ordinary scheduled domain | 4 |
+| `doutoku` / 道徳, when scheduled | 2 |
 
-An already-active battle resumed after reload/crash is not a new battle and is not blocked by the new-day core gate.
+The domain selection, unit selection, adaptive difficulty, lessons, question generation and review mixing remain Kids Quest responsibilities.
 
-### Daily first-completion reward
+### 2.2 Daily core gate
 
-On the first transition to daily core complete for that day, exactly once:
+A **new battle may not start until today's five core tasks are complete**, even when the child still owns a valid ticket earned on an earlier day. This is the later explicit user-approved gate recorded by PR #5.
+
+The gate applies to **new battle entry**. It does not delete or shorten carried ticket lots, and it must not convert a technical reload/crash of an already-active battle into a new battle. Battle reservation/resume semantics are owned by W-102; current played-battle settlement is D-022.
+
+### 2.3 Core completion reward
+
+On the first transition to daily core complete for that day, grant exactly once:
 
 - battle ticket `+3`
-- stable capture item `star +3`（child-facing: ほしボール）
-- exploration point `+2`
+- stable capture item `star +3` — child-facing **ほしボール** under D-017
+- exploration points `+2` — baseline grant retained
 
-Each first-cleared core task also emits the existing world-progress signal `+1` for the owning area progression bridge.
+The old baseline `core task -> star +1` and `core all clear -> silver +1` capture-item grants are superseded by D-006 and must not be restored.
 
-## 3. Additional learning / free / extra / okawari
+## 3. `わからない`, mistakes and completion integrity
 
-### Free study
-
-Free study has **no direct battle-ticket reward**.
-
-It may still produce legitimate Kids Quest learning progress. A real mastery transition caused by free study still receives the mastery reward below.
-
-### Extra learning — Battle V6
-
-Battle V6 supersedes the older rule "each cleared extra question -> ticket +1".
-
-Current production rule:
-
-> **every 5 correct `extra` answers after daily core completion -> battle ticket +1**
-
-Implementation constant: `EXTRA_CORRECT_PER_BATTLE_TICKET = 5`.
-
-Rules:
-
-- count correct `extra` answers, not task completion UI events;
-- reward each 5-correct milestone exactly once;
-- no separate daily cap is added by ManaEvo;
-- `free` and unrelated `okawari` boundaries must not mint this ticket;
-- reload/replay must not duplicate the milestone reward;
-- the child must have completed daily core before an `extra` correct contributes the production ticket grant.
-
-Each legitimate cleared extra question still grants:
-
-- exploration point `+1`
-
-Separately, every **3 correct answers in additional learning** grants:
-
-- stable capture item `star +1`（child-facing: ほしボール）
-
-The 3-correct capture-item milestone and the 5-correct ticket milestone are independent cumulative counters.
-
-## 4. `わからない`, mistakes and completion integrity
-
-`わからない` remains available.
+`わからない` is a required Kids Quest learning action and must remain available.
 
 Canonical behavior:
 
-1. record it as a first-attempt miss;
-2. show support/explanation;
-3. return the item to reinforcement/review/SRS according to Kids Quest;
-4. do not turn explanation acknowledgement into a correct first attempt;
-5. where the Kids Quest task requires a correct re-answer, require it before protected completion/reward is released.
+1. Treat `わからない` as a first-attempt miss for learning records.
+2. Show the correct answer and explanation/support.
+3. Send the missed item into reinforcement/review/SRS according to Kids Quest rules.
+4. Do not convert acknowledgement of an explanation into a correct first attempt.
 
-ManaEvo must not remove `わからない` to simplify reward accounting.
+The later PR #5 decision also requires that a wrong answer followed only by explanation acknowledgement is not enough to claim a required daily item as solved; the child must make the required correct re-answer. When anti-spam suspicion is active, the required verification question must also be answered correctly before the protected completion/reward can be released.
 
-## 5. SRS / mastery / star trial / ahead learning
+Do not remove `わからない` to make reward accounting simpler.
 
-These remain Kids Quest-owned.
+## 4. SRS, mastery, star trial and ahead learning
 
-### Unit MASTER
+### 4.1 SRS / review
 
-Use the imported Kids Quest `unitReady` rule. The pinned source currently requires the established combination of attempts, first-attempt correct count, distinct-day evidence and multi-item exposure where applicable.
+Keep the Kids Quest SRS and review engine intact. Stable `knowledgeId` / `unitId` / `skillId` / question identity semantics must not be replaced by ManaEvo-specific IDs merely to support rewards.
 
-Reward only the **false -> true** transition:
+Wrong items, including qualifying star-trial mistakes, return to review/SRS according to Kids Quest. ManaEvo reward code may observe learning events but must not reschedule learning itself.
 
-- normal unit MASTER -> stable capture item `silver +1`（ぎんボール）
-- hard unit MASTER -> stable capture item `gold +1`（きんボール）
+### 4.2 Unit MASTER
 
-Do not grant again for later correct answers in an already-mastered unit.
+The current imported Kids Quest snapshot defines a unit as ready/MASTER when its source rule succeeds. In the pinned source, `unitReady` requires:
 
-### Mastery/world progression signal
+- attempts `>= 4`
+- first-attempt correct `>= 3`
+- success on at least `2` distinct days
+- where the unit requires multiple items, exposure to at least `2` distinct item keys
 
-When the canonical skill/mastery level advances by a qualifying milestone:
+Reward only the **false -> true MASTER transition**, not every later correct answer in an already-mastered unit.
 
-- exploration point `+2`
-- world-progress signal `+2`
+Hard-mode learning uses its separate hard namespace and must not be inserted into the required normal promotion-unit ledger.
 
-### Star/chapter trial first pass
+### 4.3 Star trial / grade promotion
 
-On the first qualifying pass for that grade/chapter:
+The pinned Kids Quest star trial contract is:
 
-- exploration point `+5`
-- world-progress signal `+3`
+- `6` questions per round
+- `2` rounds on different days; a second scored round is not run again on the same day
+- combined score at least `9 / 12`
+- every required promotion unit already satisfies the Kids Quest mastery gate
+- required learning domains are represented by correct answers across the two-round result, as enforced by the pinned Kids Quest promotion function
 
-Repeated replay does not re-grant.
+Only when all Kids Quest promotion conditions pass is the next grade unlocked by the learning engine. ManaEvo must not implement a second promotion formula.
 
-No learning-side `rainbow` grant is invented unless an explicit later decision defines it.
+### 4.4 Ahead learning / grade control
 
-## 6. Current reward matrix
+`grade`, `gradeMax` and the parent-controlled allowed grade range remain Kids Quest learning state. The child learning screen does not independently unlock arbitrary future grades. Ahead-learning access is changed through the parent-side Kids Quest control, while ordinary promotion is earned through the Kids Quest mastery + star-trial path.
 
-| Learning event | Battle ticket | Capture item | Exploration | World progress |
-|---|---:|---:|---:|---:|
-| First daily transition to all core tasks complete | `+3` | `star +3` | `+2` | — |
-| First clear of one core task | — | — | — | `+1` |
-| Each legitimate cleared extra question | — | — | `+1` | — |
-| Every 5 correct `extra` answers after core done | `+1` | — | — | — |
-| Every 3 correct additional-learning answers | — | `star +1` | — | — |
-| Normal unit becomes MASTER | — | `silver +1` | — | — |
-| Hard unit becomes MASTER | — | `gold +1` | — | — |
-| Qualifying mastery level advances | — | — | `+2` | `+2` |
-| First qualifying chapter/star-trial pass | — | unresolved rainbow | `+5` | `+3` |
+## 5. Free study, extra challenge and okawari
 
-Child-facing capture-item names are governed by D-017:
+### 5.1 Free study
 
-- star -> ほしボール
-- silver -> ぎんボール
-- gold -> きんボール
-- rainbow -> にじボール
+Free study is a Kids Quest learning mode and has **no direct battle-ticket grant**.
 
-Stable save/domain keys remain unchanged.
+It may still update legitimate Kids Quest learning state. If that learning causes a canonical mastery transition, the mastery reward rules below still apply; “free study has no ticket” must not be implemented by disabling learning progress.
 
-## 7. Ticket lifetime
+### 5.2 Extra challenge task shape
+
+Keep the Kids Quest **3-question extra task shape**. ManaEvo reward accounting does not redefine the Kids Quest task generator.
+
+Historical rules such as `2/3 -> one ticket` and the pre-V6 `each extra clear -> ticket +1` are no longer the production ticket rule.
+
+Current production reward accounting is in §14.
+
+The following non-ticket rules remain:
+
+- each legitimate cleared extra question grants `exploration point +1`
+- every **3 correct answers in additional learning** grants stable capture item `star +1`（child-facing ほしボール）
+
+The Kids Quest `OKAWARI_MAX = 6` limit belongs to `okawari`; it is **not** an extra-ticket daily cap and must not be reused as one.
+
+## 6. CURRENT learning → game reward matrix
+
+This base matrix is retained for non-superseded rewards; the ticket row for extra learning is replaced by §14.
+
+| Learning event | Ticket | Capture item | Exploration points | Canonical note |
+|---|---:|---:|---:|---|
+| First daily transition to all 5 core tasks complete | `+3` | `star +3` | `+2` | once per day |
+| Each cleared extra question | **see §14** | — | `+1` | exploration per legitimate clear remains |
+| Every 3 correct answers in additional learning | — | `star +1` | — | cumulative milestone |
+| Normal unit becomes MASTER | — | `silver +1` | — | false -> true transition only |
+| Hard unit becomes MASTER | — | `gold +1` | — | false -> true transition only |
+| Learning skill/mastery level advances by a qualifying milestone | — | — | `+2` | baseline exploration grant retained |
+| First qualifying chapter/star-trial pass corresponding to the learning chapter-test completion event | — | unresolved rainbow | `+5` | no reward for repeated replay |
+
+Child-facing names under D-017:
+
+- `star` -> ほしボール
+- `silver` -> ぎんボール
+- `gold` -> きんボール
+- `rainbow` -> にじボール
+
+Stable domain/save keys remain unchanged.
+
+### 6.1 Exploration interface boundary
+
+W-101 owns the **learning-side grants** above. Spending exploration points, 5-point exploration runs, evolution-item drop/pity rules and inventory are owned by W-104 / D-008.
+
+W-105 consumes separate learning-progression signals for the regional boss gate. W-101 must expose/retain the source learning events without redefining world progression:
+
+- core task first clear for that day: learning-progress signal `+1`
+- qualifying mastery milestone: `+2`
+- first chapter-test pass: `+3`
+- repeated same question and already-mastered easy-repeat farming: `+0`
+
+The regional storage/reset/unlock behavior is W-105 / D-009, not this file.
+
+## 7. Ticket lifetime and FEFO
 
 Every ticket grant is a dated lot.
 
-- valid for acquisition day plus the following six days;
-- expired when day `D+7` begins;
-- consumption selection is FEFO;
-- daily core gate never deletes a carried lot.
+- A ticket is valid for the acquisition day plus the following six days.
+- A lot earned on day `D` is valid through `D+6` and is expired when day `D+7` begins.
+- Consume the lot with the nearest expiry first (**FEFO**).
+- The daily core gate never erases a carried lot; it only prevents a new battle from starting until today's core is complete.
 
-Battle-time reservation and played-battle settlement are owned by `02-BATTLE-TICKETS-BALANCE.md`.
+Battle-time reserve/commit/resume is intentionally not duplicated here; see W-102 / D-022.
 
-Important Battle V6 dependency: once a battle has actually been played to win/capture/loss/explicit abandon, the reserved ticket is consumed. Reload/crash remains resume, not another reservation.
+## 8. Capture-item lifetime and learning allocation boundary
 
-## 8. Anti-spam / reward hold
+The approved learning capture-item economy is:
 
-Keep the imported multi-signal anti-spam design: suspicious behavior protects the **game bonus** without corrupting legitimate learning state.
+- daily core complete -> `star +3`
+- additional learning each 3 correct -> `star +1`
+- normal unit MASTER -> `silver +1`
+- hard unit MASTER -> `gold +1`
 
-Principles:
+These owned items do not expire unless a later explicit decision says otherwise. Capture multipliers/use are W-103.
 
-- one fast answer alone is not enough;
-- learning progress is not zeroed merely because reward protection is active;
-- protected additional-learning game bonuses may be held rather than deleted;
-- normal answers can release held rewards under the existing policy;
-- reward delivery remains idempotent.
+### BLOCKED DECISION W-101-01 — learning-side `rainbow` allocation
 
-The canonical policy uses recent-answer signals such as very-fast ratio, error ratio, repeated-question ratio, same-choice ratio and hard-question-fast ratio. Runtime implementation details must not be simplified into a single "fast = cheating" rule that punishes genuine mastery.
+PR #5 explicitly left the concrete chapter/grade reward allocation of rainbow unresolved. D-006 does not supply a later-approved rainbow-learning grant.
 
-## 9. Reward-delivery safety
+Therefore W-101 **does not mint `rainbow` from a learning event** until commander/user evidence resolves the exact trigger and quantity. Do not silently restore the baseline chapter-test rainbow grant, and do not invent a new grade reward.
 
-All reward events need stable semantic identities.
+This block does not prevent implementation of every non-rainbow rule in this document.
 
-Reload, rerender, cloud sync, conflict resolution and replay boundaries must not double-mint:
+## 9. Anti-spam / reward-hold contract
 
-- daily rewards;
-- 5-correct ticket milestones;
-- 3-correct star milestones;
-- mastery rewards;
-- exploration/world signals;
-- trial first-pass rewards.
+The baseline anti-spam design is retained. It separates learning progress from bonus-game-reward protection.
 
-`pendingGameRewards`, progression signals and applied reward IDs may be used as implementation mechanisms; their existence does not redefine reward amounts.
+### 9.1 Detection
 
-## 10. Study-first invariant
+Use the recent `8`-answer signal window. Suspicion requires at least **2 independent signals**; neither one fast answer nor one repeated choice is enough by itself.
 
-ManaEvo is a **learning-first** game.
+The exact baseline signal defaults from `scripts/rewards.mjs` are:
 
-The production Battle V6 change from one-ticket-per-extra-correct to one-ticket-per-five-correct was introduced because observed playtime showed the previous game-access rate could make game time dominate additional study time.
+- very-fast answer threshold: `< 650 ms`
+- very-fast ratio: `>= 0.75`
+- error ratio: `>= 0.55`
+- repeated-question ratio: `>= 0.50`
+- same-choice ratio: `>= 0.80`
+- hard-question-fast ratio: `>= 0.65`
 
-Current invariant:
+These are signals into the multi-signal decision, not standalone “reward zero” rules.
 
-- daily study should provide more engaged learning time than the battles it unlocks;
-- additional study must not become a trivial ticket farm;
-- game reward optimization should not encourage abandoning Kids Quest mastery/SRS behavior.
+### 9.2 Suspicious state
 
-Future Learning Value / active-time / anti-farming models are proposals until explicitly approved and promoted through Decision Log + this CURRENT contract.
+When the additional-answer stream is suspicious:
 
-## 11. Known future-review boundary
+- learning XP/progress remains `100%`; do not punish the learning record by zeroing it
+- hold the affected **additional-learning game bonuses** rather than deleting them
+- the held capture-item-side additional-learning bonus is `star +1 per 3 correct`, not hard-MASTER gold
+- require the PR #5 verification answer behavior before protected completion/reward release
+- after `3` normal answers, automatically release the held eligible bonus rewards
+- child UI must explain that rewards are temporarily held and what clears the hold
 
-An open design proposal may suggest replacing `5 correct -> 1 ticket` with a richer Learning Value model. Until explicit approval:
+The current runtime must not collapse this into a single “fast = cheating” rule that punishes genuine mastery.
 
-- production remains 5 correct -> 1 ticket;
-- do not implement the proposal merely because its document is newer;
-- if approved, update Decision Log + this file + runtime/tests in the same PR under the canonical-sync gate.
+## 10. Reward delivery safety
 
-## 12. Acceptance
+Reward delivery must be idempotent across rerender, reload and save boundaries. Re-delivery of the same semantic learning completion must not mint a second ticket/capture-item/exploration grant.
 
-A conforming implementation must preserve all of the following:
+A stable reward/completion ID plus acknowledgement after the ManaEvo game save is one valid implementation. `pendingGameRewards` / `appliedLearningRewardIds` may be retained for this safety property, but payload amounts are governed by this contract.
 
-- active child learning routes through `src/kids-quest-study/**`;
-- Kids Quest SRS/mastery/trial behavior remains intact;
-- daily core completion grants ticket +3 and star +3 exactly once;
-- new battle remains blocked until today's core is complete;
-- every 5 qualifying correct extra answers grants exactly one battle ticket;
-- every 3 additional correct answers grants star +1;
-- extra question clear grants exploration +1;
-- normal/hard mastery grants silver/gold once per transition;
-- mastery/chapter progression signals remain idempotent;
-- no unapproved rainbow-learning reward is invented;
-- no reload/replay/cloud boundary duplicates game rewards.
+For per-answer/milestone rewards, implementation must use stable semantic completion identity; do not derive uniqueness only from a transient UI index if that can replay after reload.
+
+## 11. Runtime delta ledger — historical note
+
+The original W-101 delta ledger described pre-Battle-V6 runtime. It is historical evidence, not a current-runtime snapshot.
+
+Current production now implements the D-022 `extra 5 correct -> ticket +1` rate, while richer Learning Value / active-study-time ideas remain unapproved proposals unless later promoted.
+
+Other canonical gaps (anti-spam fidelity, rainbow allocation, etc.) must still be judged against the relevant current code and this document, not this old ledger wording.
+
+## 12. Implementation checklist
+
+A conforming implementation keeps:
+
+- active child learning through `src/kids-quest-study/**`
+- `src/study/**` out of the active route
+- five core tasks and Kids Quest question counts
+- `わからない`, SRS, mastery, star trial and Parent-controlled ahead learning
+- new battle entry locked until today's core complete
+- daily first core completion `ticket+3`, `star+3`, exploration `+2` exactly once
+- extra exploration `+1` per legitimate clear
+- **ticket +1 per 5 qualifying extra correct answers**
+- every 3 additional correct `star+1`
+- unit MASTER `silver+1`; hard MASTER `gold+1`
+- mastery milestone exploration `+2`; first chapter/star-trial pass exploration `+5`
+- ticket expiration at start of `D+7`, FEFO
+- anti-spam multi-signal hold without corrupting learning progress
+- idempotency across reload/cloud boundaries
+- no unapproved rainbow-learning reward
+
+## 13. Evidence used
+
+Highest-value evidence:
+
+- `REBUILD-START-HERE.md`
+- `design/rebuild/DECISION-LOG.md` — D-005 / D-006 / D-008 / D-009 / D-017 / D-022
+- exact baseline `design/baseline/FINAL-CORRECTED/source/12-KIDS-QUEST-LEARNING-IMPORT-SPEC.md`
+- exact baseline `design/baseline/FINAL-CORRECTED/source/08-gameplay-state-spec.md`
+- exact baseline `design/baseline/FINAL-CORRECTED/source/scripts/rewards.mjs`
+- PR #5 explicit learning/reward decisions
+- PR #110 Battle V6 production decision
+- runtime inspected only as implementation evidence: `src/kids-quest-study/**`, `src/game/**`
+
+## 14. 2026-08-29 Battle V6 additional-study ticket override — D-022
+
+This section supersedes only the older **extra-learning battle-ticket rate**. It does not change Kids Quest task generation, SRS/mastery, exploration grants, capture-item milestones or daily core +3.
+
+Current production rule:
+
+```text
+for each qualifying correct answer in `extra` mode after daily core is complete:
+  extraCorrectCounter += 1
+
+for each newly crossed multiple of 5:
+  battle ticket +1
+```
+
+Canonical requirements:
+
+- threshold: **5 correct extra answers -> 1 ticket**
+- daily core ticket reward remains `+3`
+- no direct ticket for `free`
+- do not treat `OKAWARI_MAX` as a ticket cap
+- extra correct still grants exploration `+1` per legitimate clear
+- every 3 additional correct still grants `star +1`
+- pending progress toward the next 5-correct milestone persists safely
+- reload/replay/cloud conflict resolution must not duplicate a crossed milestone
+- fast correct answers must not be rejected merely because they are fast; anti-farming must distinguish genuine mastery from spam
+
+### Study-first invariant
+
+The purpose of the 5-correct threshold is not arbitrary punishment. Production playtest showed game access could outgrow study time under the earlier rate.
+
+ManaEvo's invariant is:
+
+> **reward optimization should not make low-value/easy farming the best way to reach more game time, and engaged learning time should remain greater than the battles it unlocks.**
+
+A richer Learning Value / active-study-time model may be reviewed later. It is **not CURRENT** until explicitly approved and merged with Decision Log + this contract under D-023.
