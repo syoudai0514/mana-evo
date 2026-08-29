@@ -13,6 +13,41 @@
       },
       "manifestStateBefore": "PLACEHOLDER",
       "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-29T23:25:39.691Z",
+      "sourceLabel": "ManaEvo Phase 2B parallel worker B checkpoint 1 safe background repair",
+      "previous": {
+        "repositoryPath": "public/monsters/m093.webp",
+        "sha256": "7f8414435d44125b259d337de934eec025ed77dfdf962556373b43bcff827eef",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m093/7f8414435d44125b259d337de934eec025ed77dfdf962556373b43bcff827eef.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m093.webp",
+        "sha256": "573f2c980a178380aea989bc41763b71c622ed90d9d26fd0aea5f46a6320946f",
+        "bytes": 65732
+      },
+      "manifestStateBefore": "CANDIDATE",
+      "operation": "repair",
+      "reason": "Remove only the border-connected flat white background plate and its conservative exterior edge matte; preserve the existing candidate subject.",
+      "repairType": "flat-white-background-plate-removal",
+      "alphaBackgroundOperation": {
+        "repairType": "flat-white-background-plate-removal",
+        "backgroundRgb": [
+          255,
+          255,
+          255
+        ],
+        "backgroundConnectivityThreshold": 18,
+        "edgeMatteRadiusPixels": 2,
+        "edgeMatteThreshold": 80,
+        "backgroundPixelsRemoved": 194375,
+        "edgePixelsMatted": 4425,
+        "pixelsChanged": 198800
+      },
+      "noSemanticArtChange": true,
+      "characterPixelPreservation": "PASS",
+      "formalPromotion": false
     }
   ]
 }
