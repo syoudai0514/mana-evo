@@ -1,0 +1,88 @@
+name: Monster Art Visual Audit
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'public/monsters/**'
+      - 'scripts/monster-art/**'
+      - 'design/current/monster-asset-manifest.json'
+      - 'design/current/monsters/**'
+      - 'design/rebuild/asset-production/candidate-provenance/**'
+      - 'design/rebuild/asset-production/final-visual-audit/**'
+      - '.github/workflows/monster-art-audit.yml'
+      - 'package.json'
+      - 'package-lock.json'
+
+jobs:
+  audit:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Snapshot protected candidate state
+        shell: bash
+        run: |
+          find public/monsters -maxdepth 1 -type f -name 'm*.webp' -print0 | sort -z | xargs -0 sha256sum > /tmp/candidate-before.sha256
+          find design/rebuild/asset-production/candidate-provenance -maxdepth 1 -type f -name 'm*.json' -print0 | sort -z | xargs -0 sha256sum > /tmp/provenance-before.sha256
+      - name: Run final visual audit
+        run: node scripts/monster-art/final-visual-audit.mjs
+      - name: Apply manual visual QA review
+        run: node scripts/monster-art/final-visual-audit-manual-review.mjs
+      - name: Candidate registry validation
+        run: node scripts/monster-art/generate-candidate-index.mjs
+      - name: Monster art tests
+        id: tests
+        continue-on-error: true
+        run: npm test
+      - name: Production build
+        id: build
+        continue-on-error: true
+        run: npm run build
+      - name: Verify protected candidate state unchanged
+        shell: bash
+        run: |
+          find public/monsters -maxdepth 1 -type f -name 'm*.webp' -print0 | sort -z | xargs -0 sha256sum > /tmp/candidate-after.sha256
+          find design/rebuild/asset-production/candidate-provenance -maxdepth 1 -type f -name 'm*.json' -print0 | sort -z | xargs -0 sha256sum > /tmp/provenance-after.sha256
+          diff -u /tmp/candidate-before.sha256 /tmp/candidate-after.sha256
+          diff -u /tmp/provenance-before.sha256 /tmp/provenance-after.sha256
+          git diff --exit-code -- public/monsters
+          git diff --exit-code -- design/rebuild/asset-production/candidate-provenance
+      - name: Upload final visual audit evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: monster-art-final-visual-audit
+          path: design/rebuild/asset-production/final-visual-audit/**
+          if-no-files-found: error
+      - name: Commit audit artifacts only
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add design/rebuild/asset-production/final-visual-audit
+          if git diff --cached --quiet; then
+            echo 'No audit artifact changes to commit.'
+          else
+            git commit -m 'audit: record final monster visual QA evidence'
+            git push origin HEAD:${{ github.head_ref }}
+          fi
+      - name: Surface validation failures
+        if: steps.tests.outcome != 'success' || steps.build.outcome != 'success'
+        shell: bash
+        run: |
+          echo "npm test outcome: ${{ steps.tests.outcome }}"
+          echo "npm run build outcome: ${{ steps.build.outcome }}"
+          exit 1

@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "speciesId": "m048",
+  "events": [
+    {
+      "timestamp": "2026-08-28T01:43:36.079Z",
+      "sourceLabel": "W-314 ART READY ZIP W-314-art-ready(1).zip 66a0464ef5c0aa36381955c506f8424a5ce181f11655b8e954a7442c23ee3309 approved-for-candidate-review",
+      "previous": null,
+      "candidate": {
+        "repositoryPath": "public/monsters/m048.webp",
+        "sha256": "3f8ba348fd0848f80b3aeb61e079f434a9a5b9ab21f3449f0e6631794a92c97d",
+        "bytes": 35618
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-29T12:48:47.640981+00:00",
+      "sourceLabel": "ManaEvo Phase 2B-2 SAFE REPAIR safe background repair cp1",
+      "previous": {
+        "repositoryPath": "public/monsters/m048.webp",
+        "sha256": "3f8ba348fd0848f80b3aeb61e079f434a9a5b9ab21f3449f0e6631794a92c97d",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m048/3f8ba348fd0848f80b3aeb61e079f434a9a5b9ab21f3449f0e6631794a92c97d.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m048.webp",
+        "sha256": "2aa0a8b5997cc620a3529d60805ee356ad506c9cd4d4bc5c27f4605fc2cc66c0",
+        "bytes": 142288
+      },
+      "manifestStateBefore": "CANDIDATE",
+      "operation": "repair",
+      "reason": "Remove only the border-connected flat white background plate and its conservative exterior edge matte; preserve the existing candidate subject.",
+      "repairType": "flat-white-background-plate-removal",
+      "alphaBackgroundOperation": {
+        "repairType": "flat-white-background-plate-removal",
+        "backgroundRgb": [
+          255,
+          255,
+          255
+        ],
+        "backgroundConnectivityThreshold": 18,
+        "edgeMatteRadiusPixels": 2,
+        "edgeMatteThreshold": 80,
+        "backgroundPixelsRemoved": 175074,
+        "edgePixelsMatted": 1214,
+        "pixelsChanged": 176288
+      },
+      "noSemanticArtChange": true,
+      "characterPixelPreservation": "PASS",
+      "formalPromotion": false
+    }
+  ]
+}

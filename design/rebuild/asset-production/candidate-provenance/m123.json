@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "speciesId": "m123",
+  "events": [
+    {
+      "timestamp": "2026-08-28T01:43:43.801Z",
+      "sourceLabel": "W-317 ART READY ZIP W-317-art-ready(1).zip",
+      "previous": null,
+      "candidate": {
+        "repositoryPath": "public/monsters/m123.webp",
+        "sha256": "e86c6dc34aa7f4e2189a22edceff4b2b02c94556cd21d017084aa4adea02044b",
+        "bytes": 44194
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    }
+  ]
+}

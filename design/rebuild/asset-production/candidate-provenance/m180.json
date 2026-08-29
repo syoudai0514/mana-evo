@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "speciesId": "m180",
+  "events": [
+    {
+      "timestamp": "2026-08-28T10:53:54.651Z",
+      "sourceLabel": "W-306 approved-for-candidate-review",
+      "previous": null,
+      "candidate": {
+        "repositoryPath": "public/monsters/m180.webp",
+        "sha256": "273a2fd7ccbb90b35708876381ca6943080d29dc469324c703826b4b00873b9b",
+        "bytes": 37708
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-29T10:07:52.607Z",
+      "sourceLabel": "W-306 electric ART READY ZIP replacement candidate review",
+      "previous": {
+        "repositoryPath": "public/monsters/m180.webp",
+        "sha256": "273a2fd7ccbb90b35708876381ca6943080d29dc469324c703826b4b00873b9b",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m180/273a2fd7ccbb90b35708876381ca6943080d29dc469324c703826b4b00873b9b.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m180.webp",
+        "sha256": "8f21eca0bbc24d6894493a98f95934b9eaa81bb9eb780e2dd1564af7f96765c6",
+        "bytes": 62116
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-29T11:23:18.843Z",
+      "sourceLabel": "ManaEvo Phase 2A presentation-only normalization checkpoint 3",
+      "previous": {
+        "repositoryPath": "public/monsters/m180.webp",
+        "sha256": "8f21eca0bbc24d6894493a98f95934b9eaa81bb9eb780e2dd1564af7f96765c6",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m180/8f21eca0bbc24d6894493a98f95934b9eaa81bb9eb780e2dd1564af7f96765c6.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m180.webp",
+        "sha256": "563f43a12e80944ab4865b1262df33e89070498b987a01ab6c5f59bb48a61918",
+        "bytes": 160044
+      },
+      "manifestStateBefore": "CANDIDATE",
+      "operation": "normalization",
+      "reason": "apparent character scale/transparent whitespace is outside preferred roster range",
+      "normalizationParameters": {
+        "sourceFullAlphaBbox": {
+          "minX": 46,
+          "minY": 117,
+          "maxXExclusive": 466,
+          "maxYExclusive": 394,
+          "width": 420,
+          "height": 277
+        },
+        "canvas": {
+          "width": 512,
+          "height": 512,
+          "transparent": true
+        },
+        "resizedContent": {
+          "width": 448,
+          "height": 295
+        },
+        "placement": {
+          "x": 26,
+          "y": 119
+        },
+        "scaleX": 1.06666667,
+        "scaleY": 1.06498195,
+        "resampling": "LANCZOS premultiplied-alpha",
+        "webpEncoding": {
+          "lossless": true,
+          "method": 6,
+          "exactTransparentRgb": true
+        }
+      },
+      "noSemanticArtChange": true,
+      "backgroundMutation": false,
+      "formalPromotion": false
+    }
+  ]
+}

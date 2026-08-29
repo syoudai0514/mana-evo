@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "speciesId": "m223",
+  "events": [
+    {
+      "timestamp": "2026-08-27T12:47:29.243Z",
+      "sourceLabel": "W-308 ART READY GitHub handoff (attached bundle sha256=dfe1452d45ede90e85b9a1b42b6f411100fe0d16b045b2ba8829e3b80a41f1db)",
+      "previous": null,
+      "candidate": {
+        "repositoryPath": "public/monsters/m223.webp",
+        "sha256": "fb11592178e2ffbf025cf70b455ef8948426ddea9a16979f8a1623977b031095",
+        "bytes": 197504
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    }
+  ]
+}

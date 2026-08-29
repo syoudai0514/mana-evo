@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "speciesId": "m230",
+  "events": [
+    {
+      "timestamp": "2026-08-28T07:55:10.398Z",
+      "sourceLabel": "W-313 ART READY ZIP W-313-art-ready(1).zip",
+      "previous": null,
+      "candidate": {
+        "repositoryPath": "public/monsters/m230.webp",
+        "sha256": "b9acc60c0b78f5e4c2104cabeeec52a934ebf5b0d9d6dbd5452be89b73d268fc",
+        "bytes": 107110
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "speciesId": "m144",
+  "events": [
+    {
+      "timestamp": "2026-08-28T01:43:32.304Z",
+      "sourceLabel": "W-316 ART READY W-316-art-ready(2).zip sha256=391e3b92e697aaf70f04f9109e7c7b967d03eb7359900104ee78198e36922f1b",
+      "previous": null,
+      "candidate": {
+        "repositoryPath": "public/monsters/m144.webp",
+        "sha256": "c571ff90d7629f1e4f2b6841263cbb17de929f0c82de2a4e7a1711bd75cd79b1",
+        "bytes": 51102
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    }
+  ]
+}

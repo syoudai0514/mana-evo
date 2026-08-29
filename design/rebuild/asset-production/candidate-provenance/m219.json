@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "speciesId": "m219",
+  "events": [
+    {
+      "timestamp": "2026-08-28T10:53:54.744Z",
+      "sourceLabel": "W-306 approved-for-candidate-review",
+      "previous": null,
+      "candidate": {
+        "repositoryPath": "public/monsters/m219.webp",
+        "sha256": "05f6be0d96c08c1b47eab678f15885f8b66e750a7de830d8de58824052567ac1",
+        "bytes": 29352
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-29T10:07:52.826Z",
+      "sourceLabel": "W-306 electric ART READY ZIP replacement candidate review",
+      "previous": {
+        "repositoryPath": "public/monsters/m219.webp",
+        "sha256": "05f6be0d96c08c1b47eab678f15885f8b66e750a7de830d8de58824052567ac1",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m219/05f6be0d96c08c1b47eab678f15885f8b66e750a7de830d8de58824052567ac1.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m219.webp",
+        "sha256": "b63717b26bbedb47d70aad88556b42862b95dc0946b8793f0385bfbabdea6776",
+        "bytes": 61562
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-29T12:07:15.618238+00:00",
+      "sourceLabel": "ManaEvo Phase 2A FINAL presentation-only normalization",
+      "previous": {
+        "repositoryPath": "public/monsters/m219.webp",
+        "sha256": "b63717b26bbedb47d70aad88556b42862b95dc0946b8793f0385bfbabdea6776",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m219/b63717b26bbedb47d70aad88556b42862b95dc0946b8793f0385bfbabdea6776.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m219.webp",
+        "sha256": "9e1061233b3746e8a65cce86c5ecfadb6aabcb9afaaf307fffc9e587b4fe6163",
+        "bytes": 197016
+      },
+      "manifestStateBefore": "CANDIDATE",
+      "operation": "normalization",
+      "reason": "Phase 1 final visual audit classified this existing candidate as NORMALIZE; adjust only transparent canvas scale and placement for card presence.",
+      "normalizationParameters": {
+        "scale": 1.28,
+        "placement": "center-full-alpha-bbox",
+        "xAdjust": -14,
+        "sourceBounds": "full-alpha-bbox",
+        "resampling": "premultiplied-alpha-lanczos",
+        "output": "lossless-webp-512x512"
+      },
+      "noSemanticArtChange": true,
+      "backgroundMutation": false,
+      "formalPromotion": false
+    }
+  ]
+}

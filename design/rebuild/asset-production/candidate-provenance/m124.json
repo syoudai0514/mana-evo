@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "speciesId": "m124",
+  "events": [
+    {
+      "timestamp": "2026-08-28T01:43:43.858Z",
+      "sourceLabel": "W-317 ART READY ZIP W-317-art-ready(1).zip",
+      "previous": null,
+      "candidate": {
+        "repositoryPath": "public/monsters/m124.webp",
+        "sha256": "d52a25b49c07652261a16a6c3237121ae62608d6c1f64dbe7d4229297fee0078",
+        "bytes": 64690
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    }
+  ]
+}

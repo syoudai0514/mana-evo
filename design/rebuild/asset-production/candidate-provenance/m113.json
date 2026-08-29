@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "speciesId": "m113",
+  "events": [
+    {
+      "timestamp": "2026-08-28T01:46:15.727Z",
+      "sourceLabel": "W-318 ghost ART READY ZIP W-318-art-ready(1).zip sha256=34750e50869c252af2cfe2102c0da47b2298df40c53236ffcaa90ad9126f15ca",
+      "previous": null,
+      "candidate": {
+        "repositoryPath": "public/monsters/m113.webp",
+        "sha256": "639e5e504a84ad042d899fb083eafcd2bd6ab35fb4c4e58edfb886b1e76fa4c3",
+        "bytes": 132548
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    }
+  ]
+}

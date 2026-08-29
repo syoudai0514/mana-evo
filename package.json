@@ -6,7 +6,7 @@
   "engines": { "node": ">=24.0.0" },
   "scripts": {
     "postinstall": "patch-package",
-    "generate:runtime": "node scripts/generate-runtime-master.mjs && node scripts/finalize-monster-runtime.mjs",
+    "generate:runtime": "node scripts/monster-art/generate-candidate-index.mjs && node scripts/generate-runtime-master.mjs && node scripts/finalize-monster-runtime.mjs",
     "generate:pwa-assets": "node scripts/generate-pwa-asset-revisions.mjs",
     "generate:cloud-config": "node scripts/fetch-shared-cloud-config.mjs",
     "predev": "npm run generate:cloud-config && npm run generate:runtime && npm run generate:pwa-assets",
@@ -17,6 +17,8 @@
     "preview": "vite preview",
     "test": "node --test tests/*.test.js",
     "test:e2e": "playwright test",
+    "audit:monster-art": "node scripts/monster-art/visual-audit.mjs",
+    "review:monster-art": "node scripts/monster-art/visual-contact-sheet.mjs",
     "verify:release": "node scripts/release-readiness.mjs",
     "verify:canonical-sync": "node scripts/verify-canonical-sync.mjs",
     "check": "npm test && npm run build && npm run verify:release"

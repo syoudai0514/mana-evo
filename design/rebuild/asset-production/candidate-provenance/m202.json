@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "speciesId": "m202",
+  "events": [
+    {
+      "timestamp": "2026-08-28T01:46:15.975Z",
+      "sourceLabel": "W-318 ghost ART READY ZIP W-318-art-ready(1).zip sha256=34750e50869c252af2cfe2102c0da47b2298df40c53236ffcaa90ad9126f15ca",
+      "previous": null,
+      "candidate": {
+        "repositoryPath": "public/monsters/m202.webp",
+        "sha256": "d57ba9cded206ee98ee1aa8d09bb4e70a35ca0a93bfbf2fce953967adfadd4c2",
+        "bytes": 48400
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-29T11:23:18.843Z",
+      "sourceLabel": "ManaEvo Phase 2A presentation-only normalization checkpoint 3",
+      "previous": {
+        "repositoryPath": "public/monsters/m202.webp",
+        "sha256": "d57ba9cded206ee98ee1aa8d09bb4e70a35ca0a93bfbf2fce953967adfadd4c2",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m202/d57ba9cded206ee98ee1aa8d09bb4e70a35ca0a93bfbf2fce953967adfadd4c2.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m202.webp",
+        "sha256": "7e38a8fb77b9531e0492d11767b16e51f6e770394600b14ed0c6b365bfe78616",
+        "bytes": 71350
+      },
+      "manifestStateBefore": "CANDIDATE",
+      "operation": "normalization",
+      "reason": "apparent character scale/transparent whitespace is outside preferred roster range; visible centroid is materially off-center",
+      "normalizationParameters": {
+        "sourceFullAlphaBbox": {
+          "minX": 161,
+          "minY": 106,
+          "maxXExclusive": 344,
+          "maxYExclusive": 461,
+          "width": 183,
+          "height": 355
+        },
+        "canvas": {
+          "width": 512,
+          "height": 512,
+          "transparent": true
+        },
+        "resizedContent": {
+          "width": 227,
+          "height": 440
+        },
+        "placement": {
+          "x": 158,
+          "y": 12
+        },
+        "scaleX": 1.24043716,
+        "scaleY": 1.23943662,
+        "resampling": "LANCZOS premultiplied-alpha",
+        "webpEncoding": {
+          "lossless": true,
+          "method": 6,
+          "exactTransparentRgb": true
+        }
+      },
+      "noSemanticArtChange": true,
+      "backgroundMutation": false,
+      "formalPromotion": false
+    }
+  ]
+}

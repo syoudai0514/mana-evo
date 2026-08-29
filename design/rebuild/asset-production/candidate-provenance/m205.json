@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "speciesId": "m205",
+  "events": [
+    {
+      "timestamp": "2026-08-28T07:56:09.240Z",
+      "sourceLabel": "W-319 dark ART READY ZIP candidate review",
+      "previous": null,
+      "candidate": {
+        "repositoryPath": "public/monsters/m205.webp",
+        "sha256": "f0de78f2d5a0fe87e16946b36708bb4123b3ba238d764f49907075b2e58693fe",
+        "bytes": 220312
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-29T12:26:34.122748+00:00",
+      "sourceLabel": "ManaEvo Phase 2B-1 safe repair pilot cp2",
+      "previous": {
+        "repositoryPath": "public/monsters/m205.webp",
+        "sha256": "f0de78f2d5a0fe87e16946b36708bb4123b3ba238d764f49907075b2e58693fe",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m205/f0de78f2d5a0fe87e16946b36708bb4123b3ba238d764f49907075b2e58693fe.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m205.webp",
+        "sha256": "5b521d751dffd080fdff856361d5aaeae4d6405d5f8b18785e15a409d9fc99e0",
+        "bytes": 229180
+      },
+      "manifestStateBefore": "CANDIDATE",
+      "operation": "repair",
+      "reason": "Remove only the border-connected flat white background plate and its conservative exterior edge matte; preserve the existing candidate subject.",
+      "repairType": "flat-white-background-plate-removal",
+      "alphaBackgroundOperation": {
+        "repairType": "flat-white-background-plate-removal",
+        "backgroundRgb": [
+          254,
+          254,
+          254
+        ],
+        "backgroundConnectivityThreshold": 18,
+        "edgeMatteRadiusPixels": 2,
+        "edgeMatteThreshold": 80,
+        "backgroundPixelsRemoved": 148855,
+        "edgePixelsMatted": 1761,
+        "pixelsChanged": 150616
+      },
+      "noSemanticArtChange": true,
+      "characterPixelPreservation": "PASS",
+      "formalPromotion": false
+    }
+  ]
+}
