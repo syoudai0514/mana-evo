@@ -104,8 +104,19 @@ test('failed capture DOT KO waits for capture sequence, then turn/HP/KO presenta
   await page.getByRole('button', { name: /ほしボールを なげる！/ }).click()
 
   const captureSequence = page.getByTestId('capture-sequence')
+  const cue = page.locator('.battle-turn-cue-v6')
+  const postKoCapture = page.getByRole('button', { name: /ボールを なげる！/ })
+
   await expect(captureSequence).toBeVisible()
-  await expect(page.getByRole('button', { name: /ボールを なげる！/ })).toHaveCount(0)
-  await expect(captureSequence).toBeHidden({ timeout: 12_000 })
-  await expectTerminalPresentationGate(page, 'ボールから でてきた')
+  await expect(postKoCapture).toHaveCount(0)
+
+  // Observe the next transient phase directly. Waiting for the capture node to
+  // disappear first can miss the short first cue under loaded WebKit CI.
+  await expect(cue).toBeVisible({ timeout: 12_000 })
+  await expect(captureSequence).toBeHidden()
+  await expect(postKoCapture).toHaveCount(0)
+
+  await expect(cue).toBeHidden({ timeout: 7_000 })
+  await expect(postKoCapture).toBeVisible()
+  await expect(page.getByText(/^HP 0\//).first()).toBeVisible()
 })
