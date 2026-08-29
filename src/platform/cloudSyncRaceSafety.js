@@ -12,6 +12,12 @@ export async function waitForRemoteWithLocalGuard({ capturedHash, captureLocal, 
   }
 }
 
+export function applyRemotePayloadIfLocalUnchanged({ capturedHash, captureLocal, remotePayload, applyRemote }) {
+  if (!localSnapshotStillCurrent(capturedHash, captureLocal)) return false
+  applyRemote(remotePayload)
+  return true
+}
+
 export function sameCloudSnapshot(left, right) {
   if (!left || !right) return left === right
   return Number(left.revision) === Number(right.revision)
