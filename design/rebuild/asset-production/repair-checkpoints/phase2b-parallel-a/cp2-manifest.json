@@ -1,0 +1,74 @@
+{
+  "worker": "A",
+  "checkpoint": 2,
+  "baseIntegrationHead": "dfbb2183e82c6502d6e9ca5c981a6bd748e06837",
+  "formalPromotion": false,
+  "species": [
+    {
+      "speciesId": "m097",
+      "family": "F033",
+      "stage": 1,
+      "sourceSha256": "37a0a4986062bc26dce7a0b8dbcf1f2e54d1865f32e5c06cf9c1240c45bdee27",
+      "repairedSha256": "f7dacf90997c29a715eb665021bb632ef334b98bda4a4be432f6c69a7f1ba8cd",
+      "sourceBytes": 47942,
+      "repairedBytes": 153078,
+      "repairType": "flat-white-background-plate-removal",
+      "backgroundModel": "border-connected uniform rgb(254,254,254)",
+      "alphaOperation": {
+        "backgroundConnectivityThreshold": 18,
+        "edgeMatteRadiusPixels": 2,
+        "edgeMatteThreshold": 80,
+        "backgroundPixelsRemoved": 186024,
+        "edgePixelsMatted": 4231,
+        "pixelsChanged": 190255
+      },
+      "characterPixelPreservation": "PASS",
+      "semanticArtChange": false,
+      "formalPromotion": false
+    },
+    {
+      "speciesId": "m098",
+      "family": "F033",
+      "stage": 2,
+      "sourceSha256": "a690c5ecd531d2208352ccbf68ba3d798d861f79afc2cfe1fb08af7ed07df5be",
+      "repairedSha256": "9d60820087ff5c3e3621d10f618fae0f84c366b5612dd571eecee02a13397c17",
+      "sourceBytes": 48808,
+      "repairedBytes": 158812,
+      "repairType": "flat-white-background-plate-removal",
+      "backgroundModel": "border-connected uniform rgb(254,254,254)",
+      "alphaOperation": {
+        "backgroundConnectivityThreshold": 18,
+        "edgeMatteRadiusPixels": 2,
+        "edgeMatteThreshold": 80,
+        "backgroundPixelsRemoved": 175250,
+        "edgePixelsMatted": 3639,
+        "pixelsChanged": 178889
+      },
+      "characterPixelPreservation": "PASS",
+      "semanticArtChange": false,
+      "formalPromotion": false
+    },
+    {
+      "speciesId": "m099",
+      "family": "F033",
+      "stage": 3,
+      "sourceSha256": "4aee3944a5b844f33246f04b2c1d52b95dc18c651c6083322bd5688a3dbbb941",
+      "repairedSha256": "f51c2b629ffb980c2aca42897496989c708ea9e5f54b8915966e1aca89bf046f",
+      "sourceBytes": 44244,
+      "repairedBytes": 145034,
+      "repairType": "flat-white-background-plate-removal",
+      "backgroundModel": "border-connected uniform rgb(254,254,254)",
+      "alphaOperation": {
+        "backgroundConnectivityThreshold": 18,
+        "edgeMatteRadiusPixels": 2,
+        "edgeMatteThreshold": 80,
+        "backgroundPixelsRemoved": 182482,
+        "edgePixelsMatted": 3935,
+        "pixelsChanged": 186417
+      },
+      "characterPixelPreservation": "PASS",
+      "semanticArtChange": false,
+      "formalPromotion": false
+    }
+  ]
+}

@@ -13,6 +13,41 @@
       },
       "manifestStateBefore": "PLACEHOLDER",
       "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-29T23:27:15.889Z",
+      "sourceLabel": "ManaEvo Phase 2B PARALLEL SAFE REPAIR — WORKER A checkpoint 1",
+      "previous": {
+        "repositoryPath": "public/monsters/m052.webp",
+        "sha256": "14a85bd2123f52d198de3f6f2526b0a36a3b7ba26adea39bf8c7114b4fa4b892",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m052/14a85bd2123f52d198de3f6f2526b0a36a3b7ba26adea39bf8c7114b4fa4b892.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m052.webp",
+        "sha256": "1ce9854179730a6ee13574961ea855c69c62fba3e0322710550b9ddea3750a3f",
+        "bytes": 149800
+      },
+      "manifestStateBefore": "CANDIDATE",
+      "operation": "repair",
+      "reason": "Remove only the border-connected flat white background plate and conservative exterior edge matte; preserve the existing candidate subject.",
+      "repairType": "flat-white-background-plate-removal",
+      "alphaBackgroundOperation": {
+        "repairType": "flat-white-background-plate-removal",
+        "backgroundRgb": [
+          254,
+          254,
+          254
+        ],
+        "backgroundConnectivityThreshold": 18,
+        "edgeMatteRadiusPixels": 2,
+        "edgeMatteThreshold": 80,
+        "backgroundPixelsRemoved": 149650,
+        "edgePixelsMatted": 5638,
+        "pixelsChanged": 155288
+      },
+      "noSemanticArtChange": true,
+      "characterPixelPreservation": "PASS",
+      "formalPromotion": false
     }
   ]
 }
