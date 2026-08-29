@@ -10,18 +10,25 @@ This is a concise owner-readable companion to `07A-CLOUD-SYNC-USE-CASES.md` and 
 - Reconnect, app resume/background boundaries and profile switching trigger an immediate reconciliation attempt.
 - Profile switching flushes the current profile before changing active profile.
 - Concurrent sync requests are serialized and rerun instead of racing.
+- If the child makes new progress while a cloud request is still running, that newer device progress is never overwritten by the older cloud decision.
 - Healthy cloud operation stays invisible in child gameplay. Only a real attention state may show a small `保存確認` warning.
 
 ## What happens when device and cloud differ
 
 - Only device changed → upload device progress.
-- Only cloud changed → download cloud progress.
+- Only cloud changed → download cloud progress, **but only if the device did not change while the cloud request was running**.
 - Fresh device + existing cloud → restore cloud, never overwrite it with empty defaults.
-- Different profiles changed on different devices → merge both safely.
+- Different profiles changed on different devices → merge both safely. If this device changes again while the merge write is running, the returned older merge is not applied over that newer progress; ManaEvo reconciles again.
 - Same profile changed differently on two devices → do not guess; keep local progress and ask Parent later.
 - Offline → keep playing with local save; reconcile after reconnect.
 - Sync fails → keep local save and retry later.
 - TEST mode → never send fixture data to family cloud save.
+
+### Example: child answers while syncing
+
+Suppose cloud reconciliation starts when the device has 10 completed questions. While the network request is still pending, the child completes question 11.
+
+ManaEvo treats question 11 as newer valid local progress. Even if the older sync result says "download cloud", it must not replace the device with the snapshot that only knew about the first 10 questions. The old decision is discarded and reconciliation is performed again from the current local state.
 
 ## When Parent must choose device or cloud
 
@@ -38,13 +45,21 @@ The Parent conflict screen shows both sides with judgment material:
 
 The timestamp is **evidence, not authority**. A later clock does not automatically win. For example, one device may have newer battle/capture progress while another has important learning progress. Parent should compare both the time and the progress summary before choosing.
 
-Choosing either side remains Parent-only. The current cloud copy is backed up before a destructive conflict resolution where practical.
+### The comparison cannot go stale
+
+Even after Parent has read the screen, another device may sync before Parent presses a button. Therefore both `クラウド側を使う` and `この端末側を使う` re-check the live cloud revision/content and the current device content at button time.
+
+If either side changed after the comparison was shown, ManaEvo **does not execute the old choice**. It refreshes the comparison and asks Parent to review the new information again. This prevents an unseen revision from being discarded by a decision made from an old screen.
+
+After the evidence is confirmed current, choosing either side remains Parent-only and the current cloud copy is backed up before destructive conflict resolution where practical.
 
 ## Child-facing behavior
 
 Normal autosync waiting, successful syncing and brief offline periods do not show cloud UI to the child.
 
-If a confirmed same-profile conflict or explicit persistent automatic sync error occurs, the child may see only a small `保存確認` warning. It does not show cloud-vs-device overwrite buttons. The message should make clear that the current device progress is still saved locally and a Parent should check it later.
+One temporary failure is also kept silent. ManaEvo promotes a child-visible `保存確認` only for a confirmed same-profile conflict or after **3 consecutive sync failures** without a successful sync in between. A successful reconciliation resets this count.
+
+The child warning never shows cloud-vs-device overwrite buttons. It only indicates that the current device data is still saved locally and a Parent should check it later.
 
 ## Safety principle
 
