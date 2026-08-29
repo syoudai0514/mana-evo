@@ -59,6 +59,18 @@ test('normal child flow stays cloud-silent and only real attention states show s
   assert.doesNotMatch(shell, /childCloudAttention[\s\S]{0,100}同期待ち/)
 })
 
+test('parent conflict resolution shows comparison evidence instead of blind overwrite choices', () => {
+  assert.match(shell, /LOCAL_SAVE_AT_KEY = 'manaevo:last-local-save-at:v1'/)
+  assert.match(shell, /localSavedAt: readJson\(LOCAL_SAVE_AT_KEY\)\?\.at \|\| null/)
+  assert.match(shell, /conflict\.cloud\?\.updated_at/)
+  assert.match(shell, /revision \{Number\(conflict\.cloud\?\.revision\) \|\| 0\}/)
+  assert.match(shell, /バトル勝利 \{summary\.battlesWon\}/)
+  assert.match(shell, /捕獲 \{summary\.monstersCaught\}/)
+  assert.match(shell, /所持 \{summary\.boxCount\}体/)
+  assert.match(shell, /図鑑捕獲 \{summary\.dexCaught\}種/)
+  assert.match(shell, /時刻が新しいだけで正しいとは限りません/)
+})
+
 test('CURRENT cloud use-case contract explicitly protects conflicts, offline recovery and in-flight races', () => {
   assert.match(useCases, /U6[\s\S]*CONFLICT/)
   assert.match(useCases, /U7[\s\S]*LOCAL ONLY/)
