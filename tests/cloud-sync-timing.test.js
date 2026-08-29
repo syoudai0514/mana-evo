@@ -1,0 +1,43 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import fs from 'node:fs'
+
+const shell = fs.readFileSync(new URL('../src/platform/CloudAccountShell.jsx', import.meta.url), 'utf8')
+const gameSave = fs.readFileSync(new URL('../src/game/saveStore.js', import.meta.url), 'utf8')
+const learningSave = fs.readFileSync(new URL('../src/kids-quest-study/engine/storage.js', import.meta.url), 'utf8')
+
+test('every local game and learning save emits the shared cloud-dirty event', () => {
+  assert.match(gameSave, /LOCAL_SAVE_CHANGED_EVENT = 'manaevo:local-save-changed'/)
+  assert.match(gameSave, /emitLocalSaveChanged\('game'\)/)
+  assert.match(learningSave, /LOCAL_SAVE_CHANGED_EVENT = 'manaevo:local-save-changed'/)
+  assert.match(learningSave, /emitLocalSaveChanged\('learning'\)/)
+})
+
+test('cloud autosync uses short debounce plus a hard maximum dirty window', () => {
+  assert.match(shell, /CLOUD_SYNC_DEBOUNCE_MS = 800/)
+  assert.match(shell, /CLOUD_SYNC_MAX_DIRTY_MS = 4000/)
+  assert.match(shell, /if \(!syncMaxTimer\.current\)/)
+  assert.match(shell, /setTimeout\(\(\) => \{[\s\S]*flushSync\(\{ quiet: true \}\)[\s\S]*CLOUD_SYNC_MAX_DIRTY_MS/)
+})
+
+test('cloud sync retries or flushes on resume, reconnect, background and page exit', () => {
+  assert.match(shell, /addEventListener\('online', flushQuietly\)/)
+  assert.match(shell, /addEventListener\('focus', flushQuietly\)/)
+  assert.match(shell, /addEventListener\('pagehide', flushQuietly\)/)
+  assert.match(shell, /document\.addEventListener\('visibilitychange', onVisibilityChange\)/)
+  assert.match(shell, /document\.visibilityState === 'hidden'/)
+})
+
+test('profile switch flushes cloud state before reloading the application', () => {
+  const start = shell.indexOf('const switchProfile')
+  const end = shell.indexOf('const startTest', start)
+  const block = shell.slice(start, end)
+  assert.match(block, /switchDeviceProfile\(profileId\)/)
+  assert.match(block, /await flushSync\(\{ quiet: true \}\)/)
+  assert.ok(block.indexOf('await flushSync') < block.indexOf('window.location.reload()'))
+})
+
+test('local progress remains authoritative while cloud delivery is pending', () => {
+  assert.match(shell, /クラウド同期待ち・端末には保存済み/)
+  assert.match(shell, /同期待ち・端末には保存済み/)
+})
