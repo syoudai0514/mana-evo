@@ -5,13 +5,13 @@ import fs from 'node:fs'
 const shell = fs.readFileSync(new URL('../src/platform/CloudAccountShell.jsx', import.meta.url), 'utf8')
 
 test('cloud conflict never auto-opens account UI during child play', () => {
-  const conflictStart = shell.indexOf('setConflict({')
-  const syncEnd = shell.indexOf('}, [config.configured, maybeBackupCloud, setMeta, testMode])', conflictStart)
+  const conflictStart = shell.indexOf('setConflict({\n      cloud,')
+  const conflictEnd = shell.indexOf("setStatus('同期保留・端末には保存済み')", conflictStart)
   assert.ok(conflictStart >= 0)
-  assert.ok(syncEnd > conflictStart)
-  const conflictTail = shell.slice(conflictStart, syncEnd)
-  assert.equal(conflictTail.includes('setOpen(true)'), false)
-  assert.match(conflictTail, /同期保留・端末には保存済み/)
+  assert.ok(conflictEnd > conflictStart)
+  const conflictBlock = shell.slice(conflictStart, conflictEnd)
+  assert.equal(conflictBlock.includes('setOpen(true)'), false)
+  assert.match(shell.slice(conflictEnd, conflictEnd + 80), /同期保留・端末には保存済み/)
 })
 
 test('healthy child flow stays cloud-silent while real attention may show only a save warning FAB', () => {
