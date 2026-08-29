@@ -253,7 +253,7 @@ function statusAdjustedStats(monster) {
   return {
     ...stats,
     attack: Math.max(1, Math.floor(stats.attack * statusAttackMultiplier(monster.battleStatus))),
-    speed: Math.max(1, Math.floor(stats.speed * statusSpeedMultiplier(monster.battleStatus))
+    speed: Math.max(1, Math.floor(stats.speed * statusSpeedMultiplier(monster.battleStatus)))
   }
 }
 
