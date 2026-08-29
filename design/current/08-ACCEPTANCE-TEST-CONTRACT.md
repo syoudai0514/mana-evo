@@ -30,7 +30,8 @@ Current decisions that materially supersede the original W-108 snapshot include:
 - D-021 — cloud conflict resolution is Parent-owned, not child gameplay responsibility;
 - D-022 — Battle V6 study-first pacing, played-ticket cost, fair-fight scaling, damage tuning, level-gap XP, post-KO capture and new world bands;
 - D-023 — protected product changes must keep CURRENT + Decision Log synchronized in the same PR/change set;
-- D-026 — A+ semantic extra-ticket qualification plus Battle V6 production-review conformance corrections.
+- D-026 — A+ semantic extra-ticket qualification plus Battle V6 production-review conformance corrections;
+- D-028 — local-first cloud autosync timing, reconciliation use cases, profile-switch ordering, serialized in-flight sync and child-safe abnormal-save visibility.
 
 If this file conflicts with a more specific owning CURRENT contract, the owning contract plus later Decision Log entry wins. Fix this file in the same canonical-sync change; do not let the contradiction remain indefinitely.
 
@@ -343,7 +344,7 @@ These are the current production tuning from D-022. A future tuning PR may chang
 
 # 8. Save / profile / cloud acceptance
 
-Detailed semantics are owned by `07-SAVE-PROFILES-PARENT-PWA.md` and D-018/D-021.
+Detailed semantics are owned by `07-SAVE-PROFILES-PARENT-PWA.md`, `07A-CLOUD-SYNC-USE-CASES.md` and D-018/D-021/D-028.
 
 ## AC-SAVE-001 — Account vs profile separation
 
@@ -357,14 +358,16 @@ Cloud persistence preserves the versioned profile registry plus each profile's l
 
 A stale revision may not silently destroy newer progress. Compatible disjoint-profile changes may merge according to the save contract. Same-profile conflicting changes require Parent-owned resolution/backup rather than silent last-write-wins.
 
-## AC-SAVE-004 — Child gameplay does not own cloud conflict UI
+## AC-SAVE-004 — Child gameplay does not own cloud conflict resolution
 
 When logged in and playing normally:
 
-- no persistent cloud/account conflict FAB is required in child gameplay;
-- conflict detection does not automatically force a child-facing conflict modal;
+- routine healthy cloud state is not shown in child gameplay;
+- conflict detection does not automatically force a child-facing destructive resolver;
 - local progress can continue while attention is pending;
 - overwrite/pull/resolve actions remain reachable through the protected Parent surface.
+
+A small child-facing `保存確認` warning is allowed only for a real attention state: confirmed same-profile conflict or an explicit persistent automatic sync error. Debounce waiting, in-flight sync, brief offline state and successful retries remain silent. The child warning must not offer cloud-vs-device overwrite choices and must communicate that current device progress is still locally saved.
 
 ## AC-SAVE-005 — TEST isolation
 
@@ -373,6 +376,20 @@ TEST mode does not become a normal family profile/cloud revision. Entering test 
 ## AC-SAVE-006 — Migration / stable IDs
 
 Migrations preserve stable player/species/instance/learning identities, are idempotent, and do not duplicate tickets, rewards, profiles or monsters. Adding later species must not reinterpret existing IDs by array position.
+
+## AC-SAVE-007 — Autosync is time-bounded and local-first
+
+Every learning/game mutation persists locally before cloud delivery. Normal cloud autosync uses an approximately `800ms` debounce after the latest local save, but continuous activity cannot defer delivery indefinitely: the first unsynced save in a burst establishes a `4000ms` maximum window before at least one reconciliation attempt.
+
+App/session start, network `online`, focus/foreground return, background/pagehide and profile-switch boundaries request immediate reconciliation. Network/server failure cannot roll back a valid local save; reconnect/resume retries.
+
+## AC-SAVE-008 — Profile switch and in-flight races are safe
+
+Before device-local active profile A changes to B, the runtime must attempt reconciliation of A/current household state first. The switch cannot copy A data into B or modify another device's active profile selection.
+
+Only one authoritative cloud reconciliation sequence may be in flight per app instance. A later sync request that arrives while one is in flight must cause a serialized rerun/coalesced reconciliation, not a competing write. Completion of an older captured payload must not falsely mark newer local changes as fully synced.
+
+Release evidence must cover fresh-device cloud adoption, local-only push, cloud-only pull, disjoint-profile merge, same-profile conflict, offline→reconnect, continuous-save max window, profile-switch ordering, in-flight rerun, TEST isolation and reload/crash before debounce completion.
 
 ---
 
@@ -456,7 +473,7 @@ Capture presents ball choice/ease/recommendation/remaining attempts as the focus
 
 ## AC-UI-007 — Cloud conflict remains adult-owned
 
-Normal child Home/Study/Adventure/Battle flow must not be obstructed by a cloud conflict resolver. Parent retains the protected management route.
+Normal child Home/Study/Adventure/Battle flow must not be obstructed by a cloud conflict resolver. A small non-destructive `保存確認` warning may appear only for the D-028 abnormal states; Parent retains the protected management route and destructive choices.
 
 ---
 
@@ -526,7 +543,7 @@ The following historical assertions are specifically superseded and must not be 
 - capture child-facing `○○のわ` — superseded by D-017 ball naming/presentation;
 - capture only while enemy alive — superseded by D-022 post-KO ordinary-wild opportunity;
 - GitHub Pages `/mana-evo/` as production canonical — superseded by D-019;
-- cloud conflict resolver as child-flow responsibility — superseded by D-021;
+- cloud conflict resolver as child-flow responsibility — superseded by D-021/D-028;
 - CANDIDATE forbidden from normal production gameplay in all cases — superseded within D-016's explicit allowlist scope;
 - Work Item/PR/CI completion text as sufficient Acceptance evidence — prohibited by D-015.
 
@@ -558,3 +575,23 @@ Release is blocked unless automated or equivalent deterministic evidence covers 
 - stale post-KO snapshots cannot consume a ball or rewrite authoritative `activeBattle`;
 - post-KO success gives no second XP;
 - loss/abandon exact reservation, FEFO and expiration behavior remain unchanged.
+
+---
+
+# 16. D-028 focused cloud-sync regression matrix
+
+Release is blocked unless automated or equivalent deterministic evidence covers at least:
+
+- local-only change → push when cloud revision is unchanged;
+- cloud-only change → pull when local has no unsynced change;
+- fresh/reinstalled device adopts existing cloud instead of overwriting it with defaults;
+- disjoint stable profiles changed on different devices → safe merge preserving each profile's learning + game + reward bridge;
+- same stable profile diverged → conflict, no silent overwrite;
+- offline local play → reconnect reconciliation without local rollback;
+- normal 800ms debounce plus maximum 4000ms dirty window;
+- current-profile flush before active-profile mutation;
+- overlapping sync requests serialize and cause rerun rather than competing writes;
+- reload/crash before debounce completion keeps local progress and reconciles on next launch;
+- TEST mode performs no normal cloud write;
+- healthy child gameplay shows no routine cloud UI;
+- confirmed conflict or explicit persistent automatic sync error may show only a small `保存確認` warning, with destructive resolution still Parent-owned.
