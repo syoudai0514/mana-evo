@@ -1,6 +1,7 @@
 # ManaEvo Cloud Sync — Review Checklist
 
 Target change: D-028 cloud sync timing and reconciliation safety
+Review target head: freeze the current PR head supplied in the review request; do not review a moving branch.
 
 Reviewer should validate design and implementation together.
 
@@ -22,7 +23,7 @@ Reviewer should validate design and implementation together.
 14. When Parent must choose cloud vs device, are enough judgment materials shown to avoid blind overwrite: local-save time estimate, cloud `updated_at`, cloud revision, affected profile and meaningful progress summaries?
 15. Is timestamp explicitly treated as evidence rather than automatic authority?
 16. When Parent presses either destructive choice, are both the live cloud revision/payload and current local payload revalidated against the evidence that was displayed?
-17. If either side changed after the conflict screen was shown, is the old choice cancelled and the comparison refreshed instead of acting on stale evidence?
+17. If either side changed after the conflict screen was shown or while its pre-resolution backup is running, is the old choice cancelled and the comparison refreshed instead of acting on stale evidence?
 
 ## Implementation questions
 
@@ -43,7 +44,8 @@ Reviewer should validate design and implementation together.
 - ordinary debounce/in-flight/brief-offline states do not expose cloud UI to the child
 - only conflict or 3 consecutive sync failures expose `保存確認` to the child; successful reconciliation resets the failure count
 - Parent conflict view displays both device and cloud evidence before overwrite buttons
-- both `クラウド側を使う` and `この端末側を使う` re-fetch live cloud and re-check current local before acting
+- both `クラウド側を使う` and `この端末側を使う` re-fetch live cloud through a local-mutation guard before acting
+- after backup, local evidence is checked again; cloud-choice also performs a final cloud re-fetch, while device-choice relies on optimistic revision update and refreshes on a lost race
 - stale displayed evidence cancels the action and refreshes the comparison
 - current live cloud is backed up before destructive choose-device / choose-cloud resolution where applicable
 - cloud-vs-device decision is never chosen automatically from wall-clock time alone
