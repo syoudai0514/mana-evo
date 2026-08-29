@@ -31,13 +31,27 @@ A later timestamp must not automatically win because:
 
 The automatic reconciliation authority remains revision/hash/per-profile divergence semantics. Once the system reaches same-profile CONFLICT, destructive selection belongs to Parent.
 
+## Evidence freshness at action time
+
+The comparison screen is a snapshot, not permanent authority. When Parent presses either destructive choice, runtime must revalidate both sides before changing data:
+
+- re-fetch the current cloud row;
+- compare current cloud revision **and semantic payload hash** with what Parent was shown;
+- re-capture the current local payload and compare its semantic hash with what Parent was shown.
+
+If either side changed after the comparison was displayed, the choice is cancelled. No destructive apply/write occurs. The UI refreshes the evidence and asks Parent to review again.
+
+This rule applies to both `クラウド側を使う` and `この端末側を使う`. A revision guard only on the device-overwrite path is insufficient because the cloud-choice path could otherwise apply a stale cloud snapshot that Parent never intended to choose.
+
 ## Child boundary
 
 The child-facing surface must not expose this comparison or the destructive choices. The child may only receive the D-028 minimal `保存確認` warning for a real attention state, while the Parent surface presents evidence and resolution controls.
 
 ## Backup boundary
 
-Before Parent chooses a destructive cloud-vs-device resolution, preserve the current cloud snapshot as a backup where the existing backup model supports it.
+After action-time evidence is confirmed fresh, and before Parent performs a destructive cloud-vs-device resolution, preserve the current cloud snapshot as a backup where the existing backup model supports it.
+
+Do not create the destructive-resolution backup from a stale previously displayed cloud row if the live cloud revision has advanced.
 
 ## Acceptance
 
@@ -47,4 +61,5 @@ Release is blocked if:
 - the UI labels a side as authoritative/newest based only on timestamp;
 - child UI exposes destructive resolution;
 - affected profile identity is ambiguous;
-- choosing a side bypasses backup/revision guards.
+- either destructive button acts on a cloud/local snapshot that changed after the displayed comparison;
+- choosing a side bypasses backup/revision/hash freshness guards.
