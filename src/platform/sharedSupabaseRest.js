@@ -49,6 +49,33 @@ async function authFetch(path, { method = 'POST', body = null, accessToken = nul
   return data
 }
 
+export function buildOAuthAuthorizeUrl(baseUrl, provider, redirectTo) {
+  const normalizedBase = String(baseUrl || '').replace(/\/$/, '')
+  if (!/^https:\/\//.test(normalizedBase)) throw new Error('クラウド保存がまだ設定されていません')
+  if (provider !== 'google') throw new Error('未対応のログイン方法です')
+  const target = new URL(`${normalizedBase}/auth/v1/authorize`)
+  target.searchParams.set('provider', provider)
+  if (redirectTo) target.searchParams.set('redirect_to', String(redirectTo))
+  return target.toString()
+}
+
+export async function getAuthProviderAvailability() {
+  const data = await authFetch('/settings', { method: 'GET' })
+  return {
+    google: data?.external?.google === true
+  }
+}
+
+export async function beginGoogleSignIn(redirectTo) {
+  const providers = await getAuthProviderAvailability()
+  if (!providers.google) throw new Error('Googleログインはまだ管理者設定が完了していません')
+  const { url } = cloudConfig()
+  const target = buildOAuthAuthorizeUrl(url, 'google', redirectTo)
+  if (typeof window === 'undefined') return target
+  window.location.assign(target)
+  return target
+}
+
 export async function signInWithPassword(email, password) {
   const session = await authFetch('/token?grant_type=password', { body: { email, password } })
   return storeSession(session)
