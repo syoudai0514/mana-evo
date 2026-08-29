@@ -320,8 +320,9 @@ export default function CloudAccountShell({ children }) {
   }
 
   const needsCloudAttention = !!conflict || status.includes('エラー') || status.includes('選んで') || status.includes('保留')
-  const showAccountFab = !session || recoveryMode || parentScreenOpen
-  const accountFabWarn = parentScreenOpen && needsCloudAttention
+  const childCloudAttention = !!session && !parentScreenOpen && (!!conflict || status.includes('同期エラー'))
+  const showAccountFab = !session || recoveryMode || parentScreenOpen || childCloudAttention
+  const accountFabWarn = (parentScreenOpen || childCloudAttention) && needsCloudAttention
 
   return <>
     {children}
