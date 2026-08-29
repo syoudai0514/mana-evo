@@ -52,21 +52,29 @@ function settlePlayedLoss(result, options = {}) {
   return { ...result, game, battle }
 }
 
-function attachTurnPresentation(beforeGame, beforeBattle, result, moveId) {
+function attachTurnPresentation(beforeGame, beforeBattle, result, {
+  moveId = null,
+  actionKind = 'move',
+  targetInstanceId = null
+} = {}) {
   if (!result?.ok || !result?.battle) return result
   const after = structuredClone(result.battle)
-  const beforePlayerHp = shared.currentPlayerHp(beforeBattle)
+  const presentedInstanceId = targetInstanceId || beforeBattle?.activeInstanceId
+  const beforePlayerHp = targetInstanceId
+    ? Math.max(0, Number(beforeBattle?.partyHp?.[targetInstanceId]) || 0)
+    : shared.currentPlayerHp(beforeBattle)
   const afterPlayerHp = shared.currentPlayerHp(after)
   const beforeEnemyHp = Math.max(0, Number(beforeBattle?.enemy?.hp) || 0)
   const afterEnemyHp = Math.max(0, Number(after?.enemy?.hp) || 0)
-  const playerName = speciesOf(beforeGame?.box?.[beforeBattle?.activeInstanceId]?.speciesId)?.name || 'なかま'
+  const playerName = speciesOf(beforeGame?.box?.[presentedInstanceId]?.speciesId)?.name || 'なかま'
   const enemyName = speciesOf(beforeBattle?.enemy?.speciesId)?.name || 'あいて'
   const turnLines = (after.log || []).slice(-5)
   const firstAttackLine = turnLines.find((line) => String(line).includes(' の ')) || ''
   const enemyFirst = firstAttackLine.startsWith(`${enemyName} の `)
   after.turnPresentation = {
-    id: `${after.battleId || after.stageId}:${after.turn}:${moveId || after.lastPlayerAction || 'turn'}`,
+    id: `${after.battleId || after.stageId}:${after.turn}:${actionKind}:${moveId || after.lastPlayerAction || 'turn'}`,
     moveId,
+    actionKind,
     enemyFirst,
     playerName,
     enemyName,
@@ -131,19 +139,19 @@ export function useMove(game, battle, moveId, options = {}) {
   let result = shared.useMove(game, battle, moveId, options)
   result = settlePlayedLoss(result, options)
   result = markPostKoOpportunity(result)
-  return attachTurnPresentation(game, battle, result, moveId)
+  return attachTurnPresentation(game, battle, result, { moveId, actionKind: 'move' })
 }
 
 export function useProtect(game, battle, options = {}) {
   let result = settlePlayedLoss(shared.useProtect(game, battle, options), options)
   result = markPostKoOpportunity(result)
-  return result
+  return attachTurnPresentation(game, battle, result, { actionKind: 'protect' })
 }
 
 export function switchBattleMonster(game, battle, instanceId, options = {}) {
   let result = settlePlayedLoss(shared.switchBattleMonster(game, battle, instanceId, options), options)
   result = markPostKoOpportunity(result)
-  return result
+  return attachTurnPresentation(game, battle, result, { actionKind: 'switch', targetInstanceId: instanceId })
 }
 
 export function abandonBattle(game, options = {}) {
@@ -264,5 +272,8 @@ export function attemptCapture(game, battle, rolls = null, itemType = 'star', op
   let result = shared.attemptCapture(game, battle, rolls === null ? undefined : rolls, itemType, options)
   result = settlePlayedLoss(result, options)
   result = markPostKoOpportunity(result)
+  if (result?.ok && result?.caught !== true) {
+    return attachTurnPresentation(game, battle, result, { actionKind: 'capture-failed' })
+  }
   return result
 }
