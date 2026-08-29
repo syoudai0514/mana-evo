@@ -12,6 +12,8 @@ ManaEvo を、原本 `mana-evo-terra-FINAL-CORRECTED` から現在までの試�
 
 完成後も「実装だけ進み、設計書が古くなる」状態へ戻さないことを、この再建の恒久的な成果に含める。
 
+さらに、専門家向け正本だけでなく、IT初心者のオーナーが現在のゲーム仕様と変更理由を判断できる `design/current/USER-GUIDE.md` を恒久的に同期する。
+
 ## 2. 正本順位
 
 1. ユーザーの**明示決定**
@@ -28,6 +30,7 @@ ManaEvo を、原本 `mana-evo-terra-FINAL-CORRECTED` から現在までの試�
 - runtimeに存在するだけでは仕様承認の証拠にならない。
 - CI PASS、PR作成、merge、deployだけでも仕様承認の証拠にならない。
 - 原本へ機械的に戻すのも、最新runtimeを機械的に正とするのも禁止する。
+- `design/current/USER-GUIDE.md` はオーナー向け翻訳companionであり、domain contractと衝突した場合はdomain contractを正として同じchange setでUSER-GUIDEを修正する。
 
 ## 3. 最重要原則
 
@@ -41,6 +44,7 @@ ManaEvo を、原本 `mana-evo-terra-FINAL-CORRECTED` から現在までの試�
 8. 現在地は最大Work Item番号ではなく、**Acceptanceを満たした最後のgate**で判定する。
 9. 同じ変動進捗を複数の恒久資料へコピーしない。
 10. production host / deployment authorityのCURRENTはD-019に従い、**Vercel `https://mana-evo.vercel.app/` が唯一のproduction canonical**。GitHub Pagesをproduction canonicalとして復活させない。
+11. product designを変更したら、専門設計だけでなくオーナー向け `design/current/USER-GUIDE.md` と変更説明も同期する。
 
 ## 4. 司令塔 / Reviewer 復元プロトコル
 
@@ -57,44 +61,11 @@ ManaEvo を、原本 `mana-evo-terra-FINAL-CORRECTED` から現在までの試�
 9. 必要に応じてCommander Review / Final Review
 10. 最後に最新ユーザー発言を評価する
 
-現在Work Itemが不明なら最新会話から推測しない。GitHub実状態を照合し、
-
-- Acceptanceを満たした最後のgate
-- まだ満たしていない最初のgate
-
-を特定する。
-
-司令塔は作戦を出す前に、最低限次を説明できなければならない。
-
-- なぜこの作業をしているか
-- 正本順位
-- owning CURRENT contract
-- 現在のproduction / phase / gate
-- 実成果物が何か
-- 何が設計だけで、何が実装・生成済みか
-- 必要実行能力
-- 既決事項 / 未決事項
-- 最新発言が仕様変更なのか、確認・懸念なのか
-
-説明できなければ、推測せず復元を続ける。
+現在Work Itemが不明なら最新会話から推測しない。GitHub実状態を照合し、Acceptanceを満たした最後のgateと、まだ満たしていない最初のgateを特定する。
 
 ## 5. ユーザー発言の分類
 
-仕様・scope・計画に関係する発言はまず次に分類する。
-
-1. **質問 / 確認**
-2. **懸念 / リスク指摘**
-3. **提案 / 候補案**
-4. **明示的な変更決定**
-
-1〜3だけでは新しい正本決定にしない。CURRENT / DECISION-LOG /既承認事項と照合し、
-
-- 既に対策済み
-- 説明不足
-- 実際の計画穴
-- 新しい明示決定が必要
-
-のどれかを判断する。
+仕様・scope・計画に関係する発言はまず、質問 / 確認、懸念 / リスク指摘、提案 / 候補案、明示的な変更決定に分類する。質問・懸念・提案だけでは新しい正本決定にしない。
 
 ## 6. 恒久 Canonical Sync Gate
 
@@ -120,128 +91,65 @@ machine-readable ownershipは `design/current/canonical-sync-map.json` を使用
 
 1. owning `design/current/**` contract
 2. `design/rebuild/DECISION-LOG.md`
-3. runtime / tests / derived data（必要な場合）
+3. `design/current/USER-GUIDE.md` の該当するオーナー向け説明
+4. runtime / tests / derived data（必要な場合）
+5. ユーザーへの変更説明（これまで / 変更後 / 理由 / 子どもへの影響 / 守ること）
 
-「コードを先にmergeして設計は後日」は禁止する。
+「コードを先にmergeして設計は後日」「専門設計だけ更新してオーナー説明は後日」は禁止する。
 
 ### 6.3 `Canonical-Impact: none`
 
-refactor、既存契約への単純適合、テスト強化等で製品契約が変わらない場合のみ使用できる。
-
-- `Canonical-Reason:` に具体理由を書く。
-- CIが通っても、Reviewerは本当にcontract changeがないか確認する。
-- `none` を設計更新回避の抜け道に使わない。
+refactor、既存契約への単純適合、テスト強化等で製品契約が変わらない場合のみ使用できる。`none` を設計更新回避の抜け道に使わない。
 
 ### 6.4 CI drift guard
 
-`.github/workflows/ci.yml` はPRで `scripts/verify-canonical-sync.mjs` を実行する。
+`.github/workflows/ci.yml` はPRで `scripts/verify-canonical-sync.mjs` を実行する。CIは設計同期の判断自体を忘れられなくするためのguardであり、人間の意味判断を完全自動化するものではない。
 
-CIは、protected path変更について次をfailさせる。
+### 6.5 オーナー向け設計同期 Gate
 
-- Canonical impact宣言なし
-- `changed`なのにowning CURRENT docが未更新
-- `changed`なのにDecision Logが未更新
-- `none`なのに具体理由なし
+`design/current/USER-GUIDE.md` は恒久的なuser-facing CURRENT companionとする。
 
-CIは人間の意味判断を完全自動化するものではない。目的は、**設計同期の判断自体を忘れられなくすること**である。
-
-### 6.5 stateful companions
-
-asset manifest、generated master、runtime allowlistなど、実状態を表すmachine-readable companionは、可能な限り自動生成/検証する。
-
-- file existence ≠ approval
-- production visibility ≠ FORMAL
-- generated stateは承認意味を推測しない
-- state companionがruntimeと矛盾した場合はdriftとして修正する
+- 再建の最終releaseまでにゲーム全体を網羅する初回完全版を完成させる。
+- それ以前でも、新たに変更した領域はそのproduct-change PRで更新する。
+- release後も全product design changeで更新する。
+- オーナーが内部ID、DB、関数名を理解しなくても判断できる文章にする。
+- 技術的正確性を失わない範囲で、具体例・実際の子どもの体験を優先する。
+- product design changeの完了報告では、USER-GUIDEの変更箇所をチャット上でも要約表示する。
+- USER-GUIDE未同期のproduct design changeはmerge-readyにしない。
 
 ## 7. 役割
 
 ### 司令塔 / Reviewer
 
 - 正本とGitHub実状態を横断して現在地を復元する。
-- Workerへscope / Acceptance / owning docs / 必須成果物 / 必要能力を渡す。
-- behavior change PRではCURRENT + Decision Logの同時更新を確認する。
-- 実成果物の存在を確認する。
-- 仕様変更が本当に必要な場合だけユーザー判断へ上げる。
+- behavior change PRではCURRENT + Decision Log + USER-GUIDEの同時更新を確認する。
+- 設計変更時、オーナーへ初心者向け変更説明を表示する。
 
 ### Worker / SOL
 
 - 指定Work Itemのみ実施する。
-- 着手時にowning CURRENT contractを読む。
-- 必須能力がなければ `BLOCKED CAPABILITY`。
-- product contractを変えたら、同じPRでCURRENT + Decision Logを更新する。
-- product contractを変えていないなら `Canonical-Impact: none` と理由を明示する。
+- product contractを変えたら、同じPRでCURRENT + Decision Log + USER-GUIDEを更新する。
 - scope外の再設計をしない。
 
 ## 8. CURRENT / historical / progress の分離
 
-### CURRENT
-
-日常実装の入口は `design/current/00-START-HERE.md`。
-
-### Decision evidence
-
-`design/rebuild/DECISION-LOG.md` は「なぜCURRENTが変わったか」を残す。
-
-### Historical
-
-以下は履歴・evidenceであり、現在進捗のライブ正本ではない。
-
-- `design/rebuild/WORK-QUEUE.md`
-- old Phase plans
-- Commander Reviews
-- Final Reviews
-- old PR review docs
-
-`WORK-QUEUE.md` に「現在W-xxx」を再び持たせない。
-
-### Dynamic progress
-
-現在地はGitHubから毎回復元する。
-
-- production/main HEAD
-- relevant branch / PR
-- actual artifacts
-- Acceptance / review gate
+日常実装の入口は `design/current/00-START-HERE.md`。`design/current/USER-GUIDE.md` はオーナー向けCURRENT companion。`design/rebuild/DECISION-LOG.md` は「なぜCURRENTが変わったか」を残す。現在地はGitHub実状態から毎回復元する。
 
 ## 9. Release / production authority
 
-現在の責務分離:
-
-- **GitHub**: source / PR / CI
-- **Vercel**: 唯一のproduction canonical + PR Preview
-- **Supabase**: Auth / DB / Cloud Save
-
-production canonical:
-
-`https://mana-evo.vercel.app/`
-
-Vercel Previewは検証環境でありcanonical URLではない。
+GitHubはsource / PR / CI、Vercelは唯一のproduction canonical + PR Preview、SupabaseはAuth / DB / Cloud Saveを担当する。production canonicalは `https://mana-evo.vercel.app/`。
 
 ## 10. チャット分岐
 
-Workerは次の場合、新しいチャットへ分岐する。
-
-- 1 Work Itemが複数大領域へ広がる
-- 仕様判断が3件以上
-- 変更ファイルが概ね10ファイル超
-- 同じ説明を繰り返し始める
-- 正本順位に迷う
-- PRレビューで根本方針の再確認が必要
-
-Worker分岐には `design/rebuild/HANDOFF-TEMPLATE.md` を使う。
-司令塔交代はWorker handoffだけで済ませず、本書の復元プロトコルを実行する。
+Workerは大領域化、仕様判断増加、変更ファイル増加、正本順位への迷い等があれば新しいチャットへ分岐し、司令塔は本書の復元プロトコルを実行する。
 
 ## 11. 禁止事項
 
 - 「今のコードがそうだから」で仕様を決める
 - 最新チャットだけで承認済み計画を変更する
 - 設計資料を実成果物の代わりにする
-- CI PASSを仕様承認にする
-- 必要能力のないWorkerに作業を抱えさせ続ける
-- 古いreview/Phase planをCURRENTとして読む
-- 変動進捗を複数の恒久handoffへコピーする
 - product behaviorを変更したのにCURRENTを更新しない
+- product designを変更したのにUSER-GUIDEとユーザー向け変更説明を更新しない
 - `Canonical-Impact: none` を理由なく使用する
 - 未承認proposalをCURRENTより上位へ置く
 - GitHub Pagesをproduction canonicalへ戻す
@@ -255,6 +163,8 @@ PRをmerge可能と判断する前に、必ず確認する。
 - [ ] product behavior change有無を宣言した
 - [ ] changeありならCURRENT更新済み
 - [ ] changeありならDecision Log更新済み
+- [ ] changeありならUSER-GUIDE更新済み
+- [ ] changeありならオーナーへ初心者向け変更内容を表示した
 - [ ] tests/runtimeだけを正本にしていない
 - [ ] 実成果物 / Acceptanceを確認した
 - [ ] production authorityを誤認していない
