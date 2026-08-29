@@ -257,3 +257,13 @@
 - Reason: 「あとで設計書を直す」を通常経路から排除し、司令塔が変わっても実装と正本の同期判断自体を忘れられないようにするため。
 - Affected areas: all PR governance / commander / worker / CURRENT maintenance / CI。D-023導入だけではgameplay ruleを変更しない。
 - Tests required: canonical-sync unit test / PR CI gate / full normal CI。意味判断はReviewer responsibilityとして残す。
+
+## D-024 司令塔担当変更
+- Status: CONFIRMED / USER-DECISION
+- Baseline / prior state: D-015は司令塔交代時の復元手順を定義していたが、直近の旧司令塔チャット自体はactive commanderとして作業していた。
+- Runtime: 影響なし。
+- Evidence of approval: 2026-08-29 ユーザーが旧司令塔について「司令塔出来ません。司令塔切り替えます」と明示し、続けてPR #113のCanonical Syncルールを確認した上で「担当変更をCURRENT設計とDecision Logまで同期してから続けてください」と指示。
+- Decision: ManaEvoのactive commander / Reviewer責務は旧司令塔チャットから後継司令塔へ移管する。旧司令塔チャットはactive planning authorityではなくhistorical evidenceとして扱う。後継司令塔はD-015 / `REBUILD-START-HERE.md` の復元プロトコルを実行し、旧司令塔の直近結論を無条件に継承せず、GitHub実状態とAcceptance evidenceから現在地を再判定する。
+- Reason: 司令塔の判断品質低下をユーザーが明示的に認定し、担当交代を決定したため。担当変更自体もD-023に従いCURRENTとDecision Logへ同じchange setで同期する。
+- Affected areas: commander assignment / handoff governance / CURRENT entry。gameplay、runtime、Monster Art rule、既存product decisionsは変更しない。
+- Tests required: governance review。後継司令塔によるD-015 recovery完了確認。
