@@ -43,10 +43,30 @@ function normalizeRewardList(value) {
   })
 }
 
+function normalizeStringList(value, limit = 128) {
+  if (!Array.isArray(value)) return []
+  const seen = new Set()
+  const normalized = []
+  for (const raw of value) {
+    const item = stringOrNull(raw)
+    if (!item || seen.has(item)) continue
+    seen.add(item)
+    normalized.push(item)
+  }
+  return normalized.slice(-limit)
+}
+
 export function createLearningRewardMeta(saved = {}) {
   const hold = saved?.hold && typeof saved.hold === 'object' ? saved.hold : {}
   return {
     additionalCorrectTotal: positiveInt(saved?.additionalCorrectTotal),
+    // Battle-ticket progress is intentionally isolated from the generic
+    // additional-learning counter. Only qualifying `extra` study may advance
+    // these fields; free / okawari can still earn their normal non-ticket rewards.
+    extraBattleCorrectTotal: positiveInt(saved?.extraBattleCorrectTotal),
+    extraBattleActiveMs: positiveInt(saved?.extraBattleActiveMs),
+    extraBattleTicketsIssued: positiveInt(saved?.extraBattleTicketsIssued),
+    extraBattleAnswerIds: normalizeStringList(saved?.extraBattleAnswerIds),
     answerWindow: Array.isArray(saved?.answerWindow)
       ? saved.answerWindow.slice(-LEARNING_ANTI_SPAM.signalWindow).map(normalizeAnswer)
       : [],
