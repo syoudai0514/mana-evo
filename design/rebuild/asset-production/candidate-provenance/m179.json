@@ -29,6 +29,57 @@
       },
       "manifestStateBefore": "PLACEHOLDER",
       "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-29T11:21:31.894Z",
+      "sourceLabel": "ManaEvo Phase 2A presentation-only normalization checkpoint 2",
+      "previous": {
+        "repositoryPath": "public/monsters/m179.webp",
+        "sha256": "bf01213107cadfd9817253e12ce002ffba586d85732689660ec11e69ccd183e2",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m179/bf01213107cadfd9817253e12ce002ffba586d85732689660ec11e69ccd183e2.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m179.webp",
+        "sha256": "7203379f870bc3ba886599983568714c2081c183ce9479ad1c26cb211c669540",
+        "bytes": 187444
+      },
+      "manifestStateBefore": "CANDIDATE",
+      "operation": "normalization",
+      "reason": "apparent character scale/transparent whitespace is outside preferred roster range",
+      "normalizationParameters": {
+        "sourceFullAlphaBbox": {
+          "minX": 46,
+          "minY": 116,
+          "maxXExclusive": 466,
+          "maxYExclusive": 396,
+          "width": 420,
+          "height": 280
+        },
+        "canvas": {
+          "width": 512,
+          "height": 512,
+          "transparent": true
+        },
+        "resizedContent": {
+          "width": 448,
+          "height": 299
+        },
+        "placement": {
+          "x": 31,
+          "y": 123
+        },
+        "scaleX": 1.06666667,
+        "scaleY": 1.06785714,
+        "resampling": "LANCZOS premultiplied-alpha",
+        "webpEncoding": {
+          "lossless": true,
+          "method": 6,
+          "exactTransparentRgb": true
+        }
+      },
+      "noSemanticArtChange": true,
+      "backgroundMutation": false,
+      "formalPromotion": false
     }
   ]
 }

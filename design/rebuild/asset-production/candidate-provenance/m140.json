@@ -13,6 +13,57 @@
       },
       "manifestStateBefore": "PLACEHOLDER",
       "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-29T11:21:31.894Z",
+      "sourceLabel": "ManaEvo Phase 2A presentation-only normalization checkpoint 2",
+      "previous": {
+        "repositoryPath": "public/monsters/m140.webp",
+        "sha256": "0455c4c120068ca233dfd5c514d0a6023be637cdf90a7495861959082f8e65cb",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m140/0455c4c120068ca233dfd5c514d0a6023be637cdf90a7495861959082f8e65cb.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m140.webp",
+        "sha256": "66bd4a672a635297ba8d78771907b2089ea0b048da20ad64c300df1df0e8e66e",
+        "bytes": 190752
+      },
+      "manifestStateBefore": "CANDIDATE",
+      "operation": "normalization",
+      "reason": "visible centroid is materially off-center",
+      "normalizationParameters": {
+        "sourceFullAlphaBbox": {
+          "minX": 4,
+          "minY": 5,
+          "maxXExclusive": 512,
+          "maxYExclusive": 507,
+          "width": 508,
+          "height": 502
+        },
+        "canvas": {
+          "width": 512,
+          "height": 512,
+          "transparent": true
+        },
+        "resizedContent": {
+          "width": 435,
+          "height": 430
+        },
+        "placement": {
+          "x": 19,
+          "y": 66
+        },
+        "scaleX": 0.85629921,
+        "scaleY": 0.85657371,
+        "resampling": "LANCZOS premultiplied-alpha",
+        "webpEncoding": {
+          "lossless": true,
+          "method": 6,
+          "exactTransparentRgb": true
+        }
+      },
+      "noSemanticArtChange": true,
+      "backgroundMutation": false,
+      "formalPromotion": false
     }
   ]
 }
