@@ -1,6 +1,6 @@
 # ManaEvo CURRENT — Save / Profiles / Parent / Cloud / PWA
 
-Status: **CURRENT normative contract (W-107 + D-018 + D-019 normalization)**  
+Status: **CURRENT normative contract (W-107 + D-018 + D-019 + D-028 normalization)**  
 Phase: Rebuild / platform normalization  
 Scope: save ownership, profiles, Parent controls, Kids Quest isolation/import, cloud persistence, backups, migrations, test-mode isolation, Vercel production/PWA, monster-asset cache/versioning
 
@@ -18,7 +18,7 @@ Authority order follows `REBUILD-START-HERE.md` and `design/rebuild/DECISION-LOG
 6. runtime implementation;
 7. review/completion history.
 
-This normalization incorporates the later explicit decisions in **D-018** (shared account/cloud save/test data) and **D-019** (Vercel as the sole production canonical host). Those decisions supersede the earlier W-107 GitHub Pages/local-only assumptions where they conflict.
+This normalization incorporates the later explicit decisions in **D-018** (shared account/cloud save/test data), **D-019** (Vercel as the sole production canonical host), and **D-028** (bounded-latency cloud autosync). Those decisions supersede the earlier W-107 GitHub Pages/local-only assumptions where they conflict.
 
 Runtime files named later are implementation evidence. They do not outrank the contract.
 
@@ -222,6 +222,23 @@ Stable player profiles are independent conflict domains inside the family snapsh
 If the **same stable profile** changed differently on both devices, or a registry/schema change cannot be proven compatible, stop and surface an adult conflict decision rather than guessing. Before destructive overwrite/pull/restore boundaries, preserve a backup according to the backup contract.
 
 Silent last-write-wins that can destroy another device's progress is prohibited.
+
+### 5.7 Autosync timing and delivery guarantees
+
+Every normal learning save and game save first persists to local storage and emits the shared local-save-changed signal. Cloud delivery is then attempted automatically while signed in and online.
+
+CURRENT timing policy:
+
+- ordinary bursts use a short **800 ms debounce** so several writes caused by one user action can be combined into one cloud revision;
+- continuous activity must not postpone cloud delivery indefinitely: the first dirty event starts a **hard 4 second maximum dirty window**, after which sync is attempted even if more local writes keep arriving;
+- app/session startup with a valid Auth session performs an immediate reconciliation attempt;
+- network reconnect and window focus perform an immediate reconciliation attempt;
+- when the document moves to background/hidden state or receives `pagehide`, ManaEvo makes a best-effort immediate flush before suspension/navigation;
+- profile switching must perform a cloud flush attempt after the local profile transition and **before** reloading the application;
+- a browser may terminate background network work before it completes; therefore local persistence remains the safety authority, and the next startup/focus/online event retries reconciliation automatically;
+- TEST mode remains excluded from normal cloud writes.
+
+The product promise is therefore **bounded-latency autosync while active/online, plus durable local fallback and automatic retry**, not “every keystroke must complete a network round-trip before the child may continue.” Child gameplay must never block on ordinary cloud latency.
 
 ---
 
@@ -429,6 +446,7 @@ These observations are useful for locating reusable implementation and are not i
 | Profiles | stable profile snapshots | aligns; selected device profile stays local |
 | Parent gate | local 4-digit PIN + adult check | valid local safety boundary |
 | Cloud | generic Supabase `app_id=mana-evo` + revisioned snapshot | D-018 direction |
+| Cloud timing | local-first + 800ms debounce + 4s maximum dirty window + lifecycle retry | D-028 CURRENT |
 | Backup | manual/destructive-boundary cloud snapshots | D-018 direction |
 | TEST | local-only exact return snapshot and fixtures | D-018 direction |
 | Hosting | Vercel stable production domain + Preview deployments | D-019 production authority |
@@ -476,7 +494,12 @@ W-107 owns platform/save/hosting boundaries and does not redefine other domain r
 - [ ] disjoint edits to different stable profiles merge without losing either profile;
 - [ ] divergent edits to the same stable profile surface a conflict rather than silent overwrite;
 - [ ] session persists/refreshes correctly;
-- [ ] email confirmation and password recovery return to Vercel production for production flows.
+- [ ] email confirmation and password recovery return to Vercel production for production flows;
+- [ ] each normal learning/game local write signals autosync without blocking the child flow;
+- [ ] autosync uses 800ms burst debounce but cannot remain dirty beyond the 4s active-online maximum window merely because more saves keep arriving;
+- [ ] startup, focus, reconnect and background/pagehide boundaries attempt reconciliation;
+- [ ] profile switch flushes before application reload;
+- [ ] failed/suspended network delivery never erases already-saved local progress and is retried on the next eligible lifecycle event.
 
 ### TEST / backup / migrations
 
