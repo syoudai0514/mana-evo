@@ -1,4 +1,5 @@
 import { unitReady } from '../engine/learningUnits.js'
+import { dayNumber } from '../engine/srs.js'
 import {
   createLearningRewardMeta,
   isAdditionalLearningTask,
@@ -70,6 +71,46 @@ function dayKey(state) {
   return String(state?.daily?.date || '')
 }
 
+function profileDayNumber(state) {
+  const key = dayKey(state)
+  const match = key.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  if (!match) return dayNumber()
+  const [, year, month, day] = match
+  return dayNumber(new Date(Number(year), Number(month) - 1, Number(day), 12, 0, 0))
+}
+
+function englishProgressEntry(state, knowledgeId) {
+  const key = String(knowledgeId || '')
+  if (key.startsWith('enw:')) return state?.englishWordStats?.[key.slice(4)] || null
+  if (key.startsWith('ena:')) return state?.englishAlphabetStats?.[key.slice(4)] || null
+  if (key.startsWith('enp:')) return state?.englishPhraseStats?.[key.slice(4)] || null
+  if (key.startsWith('eng:')) return state?.englishPhraseStats?.[key.slice(4)] || null
+  return null
+}
+
+// English keeps its own Kids Quest SRS/mastery state instead of unitReady().
+// `previousLearning` is the immutable reducer snapshot immediately before the
+// ANSWER mutation, so this is a presentation/pre-answer safety validation, not
+// a post-answer inference from mutated mastery. It prevents mastered non-due
+// English pools from becoming an A+ farm while preserving due retrieval.
+function validateEnglishPresentationState(previousLearning, action, semantic) {
+  if (String(action?.domainId || '') !== 'english') return semantic
+  if (!semantic.qualifies || semantic.learningIntent === 'reinforcement') return semantic
+
+  const entry = englishProgressEntry(previousLearning, semantic.knowledgeId)
+  if (!entry) return semantic
+  const mastered = Number(entry.stage) >= 5
+  const due = Number(entry.nextDue) <= profileDayNumber(previousLearning)
+
+  if (mastered && !due) {
+    return { qualifies: false, reason: 'MASTERED_NON_DUE_ENGLISH' }
+  }
+  if (due) {
+    return { ...semantic, learningIntent: 'srs_due' }
+  }
+  return semantic
+}
+
 function semanticExtraQualification(action, nextLearning) {
   if (action?.taskKind !== 'extra' || nextLearning?.daily?.coreDone !== true || action?.correct !== true) {
     return { qualifies: false, reason: 'NOT_QUALIFYING_EXTRA' }
@@ -88,8 +129,9 @@ function semanticExtraQualification(action, nextLearning) {
   return { qualifies: true, knowledgeId, rewardEventId, learningIntent }
 }
 
-function recordExtraBattleTicketProgress(runtime, nextLearning, action) {
-  const semantic = semanticExtraQualification(action, nextLearning)
+function recordExtraBattleTicketProgress(runtime, previousLearning, nextLearning, action) {
+  const baseSemantic = semanticExtraQualification(action, nextLearning)
+  const semantic = validateEnglishPresentationState(previousLearning, action, baseSemantic)
   if (!semantic.qualifies) return runtime
 
   const recorded = recordExtraQualifyingCorrect(runtime.learningRewardMeta, {
@@ -128,7 +170,7 @@ function deriveAnswer(runtime, previous, next, action) {
     // fixed at presentation may advance the ticket bucket. Free / okawari,
     // revealed retries, mastered non-due repeats and duplicate semantic events
     // cannot subsidize battle time.
-    result = recordExtraBattleTicketProgress(result, next, action)
+    result = recordExtraBattleTicketProgress(result, previous, next, action)
 
     if (action.correct === true && action.taskKind === 'extra' && next?.daily?.coreDone === true) {
       const instanceId = questionInstanceId(action)
