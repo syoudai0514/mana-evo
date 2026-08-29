@@ -16,6 +16,9 @@ Reviewer should validate design and implementation together.
 8. Could a stale sync completion mark newer local changes as fully synced?
 9. Are child flows kept non-blocking while Parent owns conflict decisions?
 10. Are learning/game/reward-bridge slices kept together per stable profile?
+11. Does healthy child gameplay stay cloud-silent while only a real attention state may show a small non-destructive `保存確認` warning?
+12. When Parent must choose cloud vs device, are enough judgment materials shown to avoid blind overwrite: local-save time estimate, cloud `updated_at`, cloud revision, affected profile and meaningful progress summaries?
+13. Is timestamp explicitly treated as evidence rather than automatic authority?
 
 ## Implementation questions
 
@@ -28,10 +31,15 @@ Reviewer should validate design and implementation together.
 - reconnect/focus/pagehide/visibility hidden call reconciliation
 - TEST mode short-circuits cloud writes
 - conflict semantics remain Parent-owned and no silent overwrite is introduced
+- ordinary debounce/in-flight/brief-offline states do not expose cloud UI to the child
+- conflict/persistent automatic sync error may expose only a `保存確認` warning to the child
+- Parent conflict view displays both device and cloud evidence before overwrite buttons
+- current cloud is backed up before destructive choose-device / choose-cloud resolution where applicable
+- cloud-vs-device decision is never chosen automatically from wall-clock time alone
 
 ## Required verdict
 
-If any data-loss, stale-metadata, wrong-profile, race or silent-overwrite path remains:
+If any data-loss, stale-metadata, wrong-profile, race, blind-overwrite or silent-overwrite path remains:
 
 `DESIGN / IMPLEMENTATION BLOCKED — DO NOT MERGE`
 
