@@ -6,9 +6,9 @@ export const NORMAL_REPEAT_MASTERY_FLOOR = 0.70
 // Evolution pacing V5 keeps the reviewed stage reward values as the encounter
 // reward pool, then applies these multipliers when XP is settled to monsters.
 // The active battler receives 40% of the legacy pool; teammates receive 40% of
-// that active amount. Battle V6 adds a level-gap factor at the public engine
-// boundary so farming enemies far below the current monster stops being an
-// efficient way to level while slightly stronger opponents stay rewarding.
+// that active amount. Battle V6 adds a level-gap factor at the canonical XP
+// settlement boundary so farming enemies far below the current monster stops
+// being an efficient way to level while slightly stronger opponents stay rewarding.
 export const BATTLE_XP_GLOBAL_MULTIPLIER = 0.40
 export const BATTLE_XP_TEAMMATE_MULTIPLIER = 0.40
 export const CAPTURE_EVOLUTION_LEVEL_BUFFER = 5
@@ -109,11 +109,9 @@ function rosterPowers(game, speciesOf) {
     .sort((a, b) => b - a)
 }
 
-// Battle V6: a weak bench must not make an over-levelled carry farm trivial
-// enemies. Normal encounters are anchored 70% to the monster that will actually
-// enter first and 30% to the strongest other current-team member. This still
-// lets a newly caught monster be trained, but no longer averages a Lv30 carry
-// together with two Lv5 reserves into a misleadingly weak enemy.
+// Battle V6 hotfix: a weak bench must never lower the normal encounter below
+// the active monster's solo reference. A stronger support member can still raise
+// the target through the reviewed 70/30 blend, preserving useful team scaling.
 export function normalReferencePower(game, speciesOf) {
   const team = teamMonsters(game)
   if (team.length) {
@@ -124,7 +122,7 @@ export function normalReferencePower(game, speciesOf) {
       .map((monster) => monsterCombatPower(monster, speciesOf))
       .filter((value) => value > 0)
       .sort((a, b) => b - a)[0] || activePower
-    return Math.max(1, activePower * 0.70 + supportPower * 0.30)
+    return Math.max(1, activePower, activePower * 0.70 + supportPower * 0.30)
   }
   const roster = rosterPowers(game, speciesOf)
   return Math.max(1, roster[0] || 1)
