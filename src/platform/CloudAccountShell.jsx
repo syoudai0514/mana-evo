@@ -28,6 +28,8 @@ import AdultCloudControls from './AdultCloudControls.jsx'
 
 const LOCAL_SAVE_EVENT = 'manaevo:local-save-changed'
 const DAILY_BACKUP_KEY = 'manaevo:cloud-daily-backup:v1'
+export const CLOUD_SYNC_DEBOUNCE_MS = 800
+export const CLOUD_SYNC_MAX_DIRTY_MS = 4000
 
 function readJson(key) {
   try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : null } catch { return null }
@@ -55,6 +57,7 @@ export default function CloudAccountShell({ children }) {
   const [busy, setBusy] = useState(false)
   const [parentScreenOpen, setParentScreenOpen] = useState(false)
   const syncTimer = useRef(null)
+  const syncMaxTimer = useRef(null)
   const testMode = getTestMode()
   const config = cloudConfig()
   const profileInfo = useMemo(() => getLocalProfiles(), [open, status, testMode?.kind])
@@ -144,22 +147,45 @@ export default function CloudAccountShell({ children }) {
       return
     }
     setConflict({ cloud, localPayload })
-    // Same-profile divergence must never interrupt a child flow. The device
-    // remains safely saved locally until an adult explicitly resolves it.
     setStatus('同期保留・端末には保存済み')
   }, [config.configured, maybeBackupCloud, setMeta, testMode])
 
+  const clearSyncTimers = useCallback(() => {
+    if (syncTimer.current) clearTimeout(syncTimer.current)
+    if (syncMaxTimer.current) clearTimeout(syncMaxTimer.current)
+    syncTimer.current = null
+    syncMaxTimer.current = null
+  }, [])
+
+  const flushSync = useCallback(async ({ quiet = true } = {}) => {
+    clearSyncTimers()
+    try {
+      await syncNow({ quiet })
+    } catch (error) {
+      setStatus('同期待ち・端末には保存済み')
+      throw error
+    }
+  }, [clearSyncTimers, syncNow])
+
   const scheduleSync = useCallback(() => {
     if (syncTimer.current) clearTimeout(syncTimer.current)
-    syncTimer.current = setTimeout(() => syncNow({ quiet: true }).catch(() => setStatus('同期待ち・端末には保存済み')), 1400)
-  }, [syncNow])
+    syncTimer.current = setTimeout(() => {
+      flushSync({ quiet: true }).catch(() => {})
+    }, CLOUD_SYNC_DEBOUNCE_MS)
+    if (!syncMaxTimer.current) {
+      syncMaxTimer.current = setTimeout(() => {
+        flushSync({ quiet: true }).catch(() => {})
+      }, CLOUD_SYNC_MAX_DIRTY_MS)
+    }
+    setStatus((current) => current.includes('保留') ? current : 'クラウド同期待ち・端末には保存済み')
+  }, [flushSync])
 
   useEffect(() => {
     const auth = consumeAuthHash()
     if (auth?.type === 'recovery') { setRecoveryMode(true); setOpen(true) }
     getValidSession().then((value) => {
       setSession(value)
-      if (value) syncNow().catch((error) => { setStatus('同期エラー・端末には保存済み'); setMessage(error.message) })
+      if (value) flushSync({ quiet: false }).catch((error) => { setStatus('同期エラー・端末には保存済み'); setMessage(error.message) })
       else setStatus(config.configured ? '未ログイン・端末保存' : 'クラウド未設定・端末保存')
     })
   }, [])
@@ -175,17 +201,22 @@ export default function CloudAccountShell({ children }) {
 
   useEffect(() => {
     const onSave = () => scheduleSync()
-    const onOnline = () => syncNow({ quiet: true }).catch(() => {})
+    const flushQuietly = () => flushSync({ quiet: true }).catch(() => {})
+    const onVisibilityChange = () => { if (document.visibilityState === 'hidden') flushQuietly() }
     window.addEventListener(LOCAL_SAVE_EVENT, onSave)
-    window.addEventListener('online', onOnline)
-    window.addEventListener('focus', onOnline)
+    window.addEventListener('online', flushQuietly)
+    window.addEventListener('focus', flushQuietly)
+    window.addEventListener('pagehide', flushQuietly)
+    document.addEventListener('visibilitychange', onVisibilityChange)
     return () => {
       window.removeEventListener(LOCAL_SAVE_EVENT, onSave)
-      window.removeEventListener('online', onOnline)
-      window.removeEventListener('focus', onOnline)
-      if (syncTimer.current) clearTimeout(syncTimer.current)
+      window.removeEventListener('online', flushQuietly)
+      window.removeEventListener('focus', flushQuietly)
+      window.removeEventListener('pagehide', flushQuietly)
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+      clearSyncTimers()
     }
-  }, [scheduleSync, syncNow])
+  }, [clearSyncTimers, flushSync, scheduleSync])
 
   useEffect(() => { if (open && session) refreshBackups() }, [open, session, refreshBackups])
 
@@ -198,13 +229,13 @@ export default function CloudAccountShell({ children }) {
   const doSignIn = () => run(async () => {
     const value = await signInWithPassword(email.trim(), password)
     setSession(value); setPassword(''); setMessage('ログインしました')
-    await syncNow()
+    await flushSync({ quiet: false })
   })
   const doSignUp = () => run(async () => {
     const redirect = `${window.location.origin}${window.location.pathname}`
     const value = await signUpWithPassword(email.trim(), password, redirect)
     if (value?.access_token) {
-      setSession(await getValidSession()); setMessage('アカウントを作成しました'); await syncNow()
+      setSession(await getValidSession()); setMessage('アカウントを作成しました'); await flushSync({ quiet: false })
     } else setMessage('確認メールを送りました。メールのリンクを開いて登録を完了してください。')
   })
   const doReset = () => run(async () => {
@@ -254,11 +285,12 @@ export default function CloudAccountShell({ children }) {
     window.location.reload()
   })
 
-  const switchProfile = (profileId) => {
+  const switchProfile = (profileId) => run(async () => {
     if (profileId === profileInfo.activeProfileId) return
     switchDeviceProfile(profileId)
+    await flushSync({ quiet: true })
     window.location.reload()
-  }
+  })
   const startTest = (kind) => {
     if (!window.confirm('実データを退避してテストモードへ入ります。テスト中はクラウド同期されません。')) return
     beginTestMode(kind); window.location.reload()
@@ -268,8 +300,6 @@ export default function CloudAccountShell({ children }) {
   }
 
   const needsCloudAttention = !!conflict || status.includes('エラー') || status.includes('選んで') || status.includes('保留')
-  // Child play must stay distraction-free. Sync warnings are adult-owned and
-  // surface only on the Parent screen; recovery/login remain reachable when needed.
   const showAccountFab = !session || recoveryMode || parentScreenOpen
   const accountFabWarn = parentScreenOpen && needsCloudAttention
 
@@ -289,12 +319,12 @@ export default function CloudAccountShell({ children }) {
 
         {recoveryMode && <div className="cloud-card"><h3>🔑 新しいパスワード</h3><input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="新しいパスワード"/><button disabled={busy || newPassword.length < 8} onClick={doUpdatePassword}>パスワードを変更</button></div>}
 
-        {!session ? <div className="cloud-card"><h3>☁️ 保護者アカウント</h3><label>メールアドレス<input type="email" autoCapitalize="none" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)}/></label><label>パスワード<input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)}/></label><div className="cloud-actions"><button disabled={busy || !config.configured || !email || !password} onClick={doSignIn}>ログイン</button><button className="secondary" disabled={busy || !config.configured || !email || password.length < 8} onClick={doSignUp}>新規登録</button></div><button className="cloud-link" disabled={busy || !config.configured || !email} onClick={doReset}>パスワードを忘れた</button><small>一度ログインした端末はセッションを保持します。</small></div> : <div className="cloud-card"><div className="cloud-row"><div><h3>👤 {sessionLabel(session)}</h3><small>共通アカウント</small></div><span>☁️</span></div>{conflict ? <p><strong>同期は保護者確認待ちです。</strong><br/><small>端末のデータは保存されています。下の「保護者専用」で残すデータを選んでください。</small></p> : <button disabled={busy || !!testMode} onClick={() => run(() => syncNow())}>☁️ 今すぐ同期</button>}</div>}
+        {!session ? <div className="cloud-card"><h3>☁️ 保護者アカウント</h3><label>メールアドレス<input type="email" autoCapitalize="none" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)}/></label><label>パスワード<input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)}/></label><div className="cloud-actions"><button disabled={busy || !config.configured || !email || !password} onClick={doSignIn}>ログイン</button><button className="secondary" disabled={busy || !config.configured || !email || password.length < 8} onClick={doSignUp}>新規登録</button></div><button className="cloud-link" disabled={busy || !config.configured || !email} onClick={doReset}>パスワードを忘れた</button><small>一度ログインした端末はセッションを保持します。</small></div> : <div className="cloud-card"><div className="cloud-row"><div><h3>👤 {sessionLabel(session)}</h3><small>共通アカウント</small></div><span>☁️</span></div>{conflict ? <p><strong>同期は保護者確認待ちです。</strong><br/><small>端末のデータは保存されています。下の「保護者専用」で残すデータを選んでください。</small></p> : <button disabled={busy || !!testMode} onClick={() => run(() => flushSync({ quiet: false }))}>☁️ 今すぐ同期</button>}</div>}
 
         <AdultCloudControls>
           {session && conflict && <div className="cloud-card cloud-conflict"><h3>⚠️ iPhone/iPadの同じプレイヤーに両方の変更があります</h3><p>別プレイヤー同士なら自動統合します。同じプレイヤーを両端末で変更した場合だけ、自動で上書きせず止めます。残したい方を選んでください。</p><button disabled={busy} onClick={chooseCloud}>☁️ クラウド側を使う</button><button className="secondary" disabled={busy} onClick={chooseLocal}>📱 この端末側を使う</button></div>}
 
-          <div className="cloud-card"><h3>👨‍👩‍👧 プレイヤー</h3><p>この端末で開く人だけを切り替えます。他の端末の選択は変わりません。</p><div className="cloud-profile-list">{Object.entries(profileInfo.profiles || {}).map(([id, profile]) => <button key={id} className={id === profileInfo.activeProfileId ? 'active' : ''} onClick={() => switchProfile(id)}>{id === profileInfo.activeProfileId ? '✓ ' : ''}{profile.name || id}</button>)}</div><small>パパ・まさき・ウタノなどのプロフィール追加は保護者メニューからできます。</small></div>
+          <div className="cloud-card"><h3>👨‍👩‍👧 プレイヤー</h3><p>この端末で開く人だけを切り替えます。他の端末の選択は変わりません。</p><div className="cloud-profile-list">{Object.entries(profileInfo.profiles || {}).map(([id, profile]) => <button key={id} className={id === profileInfo.activeProfileId ? 'active' : ''} disabled={busy} onClick={() => switchProfile(id)}>{id === profileInfo.activeProfileId ? '✓ ' : ''}{profile.name || id}</button>)}</div><small>パパ・まさき・ウタノなどのプロフィール追加は保護者メニューからできます。</small></div>
 
           <div className="cloud-card"><h3>🧪 テストデータ</h3>{testMode ? <><p><b>{testMode.label}</b> で確認中。実データとクラウドは変更されません。</p><button onClick={stopTest}>テストを終了して実データへ戻る</button></> : <div className="test-fixture-grid"><button onClick={() => startTest('all')}>全開放・全キャラ</button><button onClick={() => startTest('stage1')}>第1形態・進化直前</button><button onClick={() => startTest('stage2')}>第2形態・最終進化直前</button></div>}<small>進化fixtureはレベル進化/持ち物進化を次の1XP直前、石進化は必要アイテム所持にします。</small></div>
 
