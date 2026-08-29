@@ -3,7 +3,7 @@ F001,grass,m001|m002|m003,1|2|3,0.9374,0.9547,false,none detected by silhouette/
 F002,fire,m004|m005|m006,1|2|3,0.7736,0.9892,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
 F003,water,m007|m008|m009,1|2|3,0.8648,0.9897,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
 F004,normal,m010|m011|m012,1|2|3,0.7685,0.8875,false,none detected by silhouette/palette/stage heuristics,true,"Manual visual QA: stage2 m011 and stage3 m012 are effectively duplicate in body, pose and detail, so final-stage differentiation is not established.",VISUAL_CONCERN
-F005,normal,m013|m014|m015,1|2|3,0.7964,0.9139,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
+F005,normal,m013|m014|m015,1|2|3,0.8009,0.9143,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
 F006,flying,m016|m017|m018,1|2|3,0.8182,0.9812,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
 F007,bug,m019|m020|m021,1|2|3,0.9129,0.9793,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
 F008,bug,m022|m023|m024,1|2|3,0.8023,0.9774,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
@@ -46,7 +46,7 @@ F044,water,m128|m129|m130,1|2|3,0.8662,0.9734,false,none detected by silhouette/
 F045,water,m131|m132|m133,1|2|3,0.9252,0.9872,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
 F046,grass,m134|m135|m136,1|2|3,1,0.996,true,"adjacent stages unusually similar: m134-m135, m135-m136",false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
 F047,bug,m137|m138|m139,1|2|3,0.8587,0.9972,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
-F048,bug,m140|m141|m142,1|2|3,0.9283,0.9929,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
+F048,bug,m140|m141|m142,1|2|3,0.8768,0.9929,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
 F049,psychic,m143|m144,1|2,1,0.999,true,adjacent stages unusually similar: m143-m144,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
 F050,ghost,m145|m146|m147,1|2|3,0.8486,0.9031,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
 F051,dark,m148|m149|m150,1|2|3,1,0.9806,true,adjacent stages unusually similar: m149-m150,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
@@ -59,7 +59,7 @@ F057,poison,m166|m167|m168,1|2|3,0.7649,0.747,false,none detected by silhouette/
 F058,fight,m169|m170|m171,1|2|3,1,0.9919,true,adjacent stages unusually similar: m170-m171,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
 F059,flying,m172|m173|m174,1|2|3,0.9318,0.9953,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
 F060,fairy,m175|m176|m177,1|2|3,1,0.9962,true,"adjacent stages unusually similar: m175-m176, m176-m177",false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
-F061,electric,m178|m179|m180,1|2|3,0.9041,0.9304,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
+F061,electric,m178|m179|m180,1|2|3,0.9326,0.9303,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
 F062,normal,m181|m182|m183,1|2|3,0.7609,0.9854,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
 F063,dragon,m184|m185|m186,1|2|3,1,0.5191,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
 F064,dragon,m187|m188|m189,1|2|3,1,0.5244,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
@@ -67,7 +67,7 @@ F065,dragon,m190|m191|m192,1|2|3,1,0.5979,false,none detected by silhouette/pale
 F066,psychic,m193|m194|m195,1|2|3,1,0.9896,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
 F067,steel,m196|m197|m198,1|2|3,0.7262,0.9716,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
 F068,steel,m199|m200|m201,1|2|3,0.7893,0.9072,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
-F069,ghost,m202|m203|m204,1|2|3,0.7683,0.9619,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
+F069,ghost,m202|m203|m204,1|2|3,0.8158,0.962,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
 F070,dark,m205|m206|m207,1|2|3,1,0.9582,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
 F071,fairy,m208|m209|m210,1|2|3,1,0.994,true,"adjacent stages unusually similar: m208-m209, m209-m210",false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
 F072,fire,m211|m212|m213,1|2|3,0.7728,0.9464,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR

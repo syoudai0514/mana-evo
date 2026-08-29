@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-29T10:47:53.534Z",
+  "generatedAt": "2026-08-29T11:24:51.221Z",
   "scope": {
     "first": "m001",
     "last": "m238",
@@ -201,8 +201,8 @@
       "provenancePath": "design/rebuild/asset-production/candidate-provenance/m013.json",
       "provenanceExists": true,
       "provenanceCandidateMatches": true,
-      "rawBytes": 3270,
-      "sha256": "1f49b1275456654cf259b0b737f0f5b436dab56e6860801c5a0db8e326da884e",
+      "rawBytes": 67416,
+      "sha256": "e7c5295b9945e799a038edeaf8f897a3195de181e738b9ac1bc03fcb287a6d01",
       "headerFormat": "WEBP"
     },
     {
@@ -215,8 +215,8 @@
       "provenancePath": "design/rebuild/asset-production/candidate-provenance/m014.json",
       "provenanceExists": true,
       "provenanceCandidateMatches": true,
-      "rawBytes": 3988,
-      "sha256": "b6a58b35abaa165c18233f6672a2f6bba81ed790996066c995810b5ddc77bc29",
+      "rawBytes": 69676,
+      "sha256": "451c5b894976e70bbde1cc5719163a9c492be2d86da5e383ee834ad1e3897f62",
       "headerFormat": "WEBP"
     },
     {
@@ -229,8 +229,8 @@
       "provenancePath": "design/rebuild/asset-production/candidate-provenance/m015.json",
       "provenanceExists": true,
       "provenanceCandidateMatches": true,
-      "rawBytes": 6944,
-      "sha256": "8310c6f68641092dddb1e4a0d601c5c3a35d4f3669750aedc8253a1abfd2fec3",
+      "rawBytes": 113750,
+      "sha256": "35761e3489ab1d220802f1399a31a857fbc7084216c74583edbb6031cea32e33",
       "headerFormat": "WEBP"
     },
     {
@@ -1979,8 +1979,8 @@
       "provenancePath": "design/rebuild/asset-production/candidate-provenance/m140.json",
       "provenanceExists": true,
       "provenanceCandidateMatches": true,
-      "rawBytes": 241120,
-      "sha256": "0455c4c120068ca233dfd5c514d0a6023be637cdf90a7495861959082f8e65cb",
+      "rawBytes": 190752,
+      "sha256": "66bd4a672a635297ba8d78771907b2089ea0b048da20ad64c300df1df0e8e66e",
       "headerFormat": "WEBP"
     },
     {
@@ -2511,8 +2511,8 @@
       "provenancePath": "design/rebuild/asset-production/candidate-provenance/m178.json",
       "provenanceExists": true,
       "provenanceCandidateMatches": true,
-      "rawBytes": 66012,
-      "sha256": "bc7da19777b70c34efa3cb468b20641d188a0934029069b804d2dbba33d329ee",
+      "rawBytes": 184610,
+      "sha256": "5ab88a2311fee2d74259600a7464726ee2a77fc27e1af6c6206068d5cbf1d105",
       "headerFormat": "WEBP"
     },
     {
@@ -2525,8 +2525,8 @@
       "provenancePath": "design/rebuild/asset-production/candidate-provenance/m179.json",
       "provenanceExists": true,
       "provenanceCandidateMatches": true,
-      "rawBytes": 68666,
-      "sha256": "bf01213107cadfd9817253e12ce002ffba586d85732689660ec11e69ccd183e2",
+      "rawBytes": 187444,
+      "sha256": "7203379f870bc3ba886599983568714c2081c183ce9479ad1c26cb211c669540",
       "headerFormat": "WEBP"
     },
     {
@@ -2539,8 +2539,8 @@
       "provenancePath": "design/rebuild/asset-production/candidate-provenance/m180.json",
       "provenanceExists": true,
       "provenanceCandidateMatches": true,
-      "rawBytes": 62116,
-      "sha256": "8f21eca0bbc24d6894493a98f95934b9eaa81bb9eb780e2dd1564af7f96765c6",
+      "rawBytes": 160044,
+      "sha256": "563f43a12e80944ab4865b1262df33e89070498b987a01ab6c5f59bb48a61918",
       "headerFormat": "WEBP"
     },
     {
@@ -2847,8 +2847,8 @@
       "provenancePath": "design/rebuild/asset-production/candidate-provenance/m202.json",
       "provenanceExists": true,
       "provenanceCandidateMatches": true,
-      "rawBytes": 48400,
-      "sha256": "d57ba9cded206ee98ee1aa8d09bb4e70a35ca0a93bfbf2fce953967adfadd4c2",
+      "rawBytes": 71350,
+      "sha256": "7e38a8fb77b9531e0492d11767b16e51f6e770394600b14ed0c6b365bfe78616",
       "headerFormat": "WEBP"
     },
     {
@@ -2861,8 +2861,8 @@
       "provenancePath": "design/rebuild/asset-production/candidate-provenance/m203.json",
       "provenanceExists": true,
       "provenanceCandidateMatches": true,
-      "rawBytes": 81378,
-      "sha256": "ebed98347208b38e63bd8d200669f3899c274f313a3f0d5993f574b9013bb883",
+      "rawBytes": 115496,
+      "sha256": "9bef5165d6d0f7c9fd74fbaafc3c69511b7daeba4cf70c6979ed1254aa203a43",
       "headerFormat": "WEBP"
     },
     {
