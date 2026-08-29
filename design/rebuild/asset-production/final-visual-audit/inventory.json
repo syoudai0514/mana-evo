@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-29T12:28:01.931Z",
+  "generatedAt": "2026-08-29T12:51:43.533Z",
   "scope": {
     "first": "m001",
     "last": "m238",
@@ -579,8 +579,8 @@
       "provenancePath": "design/rebuild/asset-production/candidate-provenance/m040.json",
       "provenanceExists": true,
       "provenanceCandidateMatches": true,
-      "rawBytes": 16216,
-      "sha256": "ca43770168ac4f1b8630f34566d8010cb574fd98a3105faf51191983fd551e57",
+      "rawBytes": 61600,
+      "sha256": "c405c6f485b6cf6536ff9740f5f3a3d40d8b90c77f027afa25d2720b2a81471d",
       "headerFormat": "WEBP"
     },
     {
@@ -593,8 +593,8 @@
       "provenancePath": "design/rebuild/asset-production/candidate-provenance/m041.json",
       "provenanceExists": true,
       "provenanceCandidateMatches": true,
-      "rawBytes": 19482,
-      "sha256": "b953e108a9935bddcf0ee4279e53a740305b8a30739ad1963682efe372ea3fe5",
+      "rawBytes": 72128,
+      "sha256": "f3e6e66a07cd948778438e77b3a5343e2b1991699b0f451d8507628b9ad4a517",
       "headerFormat": "WEBP"
     },
     {
@@ -607,8 +607,8 @@
       "provenancePath": "design/rebuild/asset-production/candidate-provenance/m042.json",
       "provenanceExists": true,
       "provenanceCandidateMatches": true,
-      "rawBytes": 34694,
-      "sha256": "8ae7e762c467f817c99e91c3c645fba8d05bfcc648fd9d1c141d1e25c351a6db",
+      "rawBytes": 131834,
+      "sha256": "a3850ea7adb796061dc98a438d3f305f3d0b97d7037fbc044779d7b61861effc",
       "headerFormat": "WEBP"
     },
     {
@@ -663,8 +663,8 @@
       "provenancePath": "design/rebuild/asset-production/candidate-provenance/m046.json",
       "provenanceExists": true,
       "provenanceCandidateMatches": true,
-      "rawBytes": 20438,
-      "sha256": "a0a9171922bd74e2285936cfab871e2855657bfe5e9820d0b93787adc463e9c4",
+      "rawBytes": 85384,
+      "sha256": "114169672ac45e55c144369742799cb2faf5847b08667adeb60c82efd68e2cbf",
       "headerFormat": "WEBP"
     },
     {
@@ -677,8 +677,8 @@
       "provenancePath": "design/rebuild/asset-production/candidate-provenance/m047.json",
       "provenanceExists": true,
       "provenanceCandidateMatches": true,
-      "rawBytes": 31058,
-      "sha256": "506308e30b77418903a84fd506269c017d56d33f5c2743a8d37ab571ff4ba951",
+      "rawBytes": 118740,
+      "sha256": "3f1e07fc6751c9fa7bce79033a2a4da823a1fe69ce00cdc116d49c26df73d7e1",
       "headerFormat": "WEBP"
     },
     {
@@ -691,8 +691,8 @@
       "provenancePath": "design/rebuild/asset-production/candidate-provenance/m048.json",
       "provenanceExists": true,
       "provenanceCandidateMatches": true,
-      "rawBytes": 35618,
-      "sha256": "3f8ba348fd0848f80b3aeb61e079f434a9a5b9ab21f3449f0e6631794a92c97d",
+      "rawBytes": 142288,
+      "sha256": "2aa0a8b5997cc620a3529d60805ee356ad506c9cd4d4bc5c27f4605fc2cc66c0",
       "headerFormat": "WEBP"
     },
     {
