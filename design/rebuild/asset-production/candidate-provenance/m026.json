@@ -13,6 +13,22 @@
       },
       "manifestStateBefore": "PLACEHOLDER",
       "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-29T10:07:51.993Z",
+      "sourceLabel": "W-306 electric ART READY ZIP replacement candidate review",
+      "previous": {
+        "repositoryPath": "public/monsters/m026.webp",
+        "sha256": "a7ad176b299b7c6a15da0e1fa34766d8f781ae5e0c22ed23470609df73c67213",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m026/a7ad176b299b7c6a15da0e1fa34766d8f781ae5e0c22ed23470609df73c67213.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m026.webp",
+        "sha256": "b7f6d095ba17d5dfea03a7db270a3c503841df06e3dcd4364296464564eea33c",
+        "bytes": 72258
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
     }
   ]
 }
