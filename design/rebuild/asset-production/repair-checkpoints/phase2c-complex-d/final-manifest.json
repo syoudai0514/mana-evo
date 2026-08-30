@@ -1,0 +1,94 @@
+{
+  "worker": "D",
+  "family": "F066",
+  "baseIntegrationHead": "e38fade5bd8b79e9d7fd90ca8a5a5bdf302eea11",
+  "status": "PASS",
+  "method": "border-connected flat background removal; threshold=18; no edge matte",
+  "formalPromotion": false,
+  "species": [
+    {
+      "speciesId": "m193",
+      "disposition": "REPAIRED",
+      "sourceSha256": "102d76fcb1b3bec5c37f69c772cf44c3a77560ba87cc7d3247e9bcd561fe1e57",
+      "repairedSha256": "07eb0dd16253d1de78a326bcd4c41340c36ab81612fc0d541471e8431f7cd255",
+      "sourceBytes": 53634,
+      "repairedBytes": 192254,
+      "repairType": "flat-white-background-plate-removal",
+      "backgroundModel": "border-connected uniform rgb(254,254,254)",
+      "alphaOperation": {
+        "backgroundRgb": [
+          254,
+          254,
+          254
+        ],
+        "backgroundConnectivityThreshold": 18,
+        "backgroundPixelsRemoved": 170471,
+        "edgePixelsMatted": 0,
+        "pixelsChanged": 170471,
+        "canvas": [
+          512,
+          512
+        ]
+      },
+      "characterPixelPreservation": "PASS",
+      "semanticArtChange": false,
+      "formalPromotion": false
+    },
+    {
+      "speciesId": "m194",
+      "disposition": "REPAIRED",
+      "sourceSha256": "4f28e1bc9d4e153a06a3b487a0733eabb5e999c505edb20867c4c6ddea79a28f",
+      "repairedSha256": "3b4f0f5879c04976a8dc217a9d0680381968120a7083e289dd9ffabaf7f03d90",
+      "sourceBytes": 51482,
+      "repairedBytes": 188218,
+      "repairType": "flat-white-background-plate-removal",
+      "backgroundModel": "border-connected uniform rgb(254,254,254)",
+      "alphaOperation": {
+        "backgroundRgb": [
+          254,
+          254,
+          254
+        ],
+        "backgroundConnectivityThreshold": 18,
+        "backgroundPixelsRemoved": 174693,
+        "edgePixelsMatted": 0,
+        "pixelsChanged": 174693,
+        "canvas": [
+          512,
+          512
+        ]
+      },
+      "characterPixelPreservation": "PASS",
+      "semanticArtChange": false,
+      "formalPromotion": false
+    },
+    {
+      "speciesId": "m195",
+      "disposition": "REPAIRED",
+      "sourceSha256": "e0658be9b2478370bc1b7acabd8caaee1e728c7e5f922404f57149a7adf93545",
+      "repairedSha256": "879710440ffbca813770a99e3a5c9fb7362ceb36f0e3683b2ee858553b6cb2dd",
+      "sourceBytes": 45372,
+      "repairedBytes": 167096,
+      "repairType": "flat-white-background-plate-removal",
+      "backgroundModel": "border-connected uniform rgb(254,254,254)",
+      "alphaOperation": {
+        "backgroundRgb": [
+          254,
+          254,
+          254
+        ],
+        "backgroundConnectivityThreshold": 18,
+        "backgroundPixelsRemoved": 186648,
+        "edgePixelsMatted": 0,
+        "pixelsChanged": 186648,
+        "canvas": [
+          512,
+          512
+        ]
+      },
+      "characterPixelPreservation": "PASS",
+      "semanticArtChange": false,
+      "formalPromotion": false
+    }
+  ]
+}

@@ -13,6 +13,43 @@
       },
       "manifestStateBefore": "PLACEHOLDER",
       "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-30T06:07:04.412Z",
+      "sourceLabel": "ManaEvo Phase 2C-D FINAL F066 safe background repair",
+      "previous": {
+        "repositoryPath": "public/monsters/m194.webp",
+        "sha256": "4f28e1bc9d4e153a06a3b487a0733eabb5e999c505edb20867c4c6ddea79a28f",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m194/4f28e1bc9d4e153a06a3b487a0733eabb5e999c505edb20867c4c6ddea79a28f.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m194.webp",
+        "sha256": "3b4f0f5879c04976a8dc217a9d0680381968120a7083e289dd9ffabaf7f03d90",
+        "bytes": 188218
+      },
+      "manifestStateBefore": "CANDIDATE",
+      "operation": "repair",
+      "reason": "Remove only the border-connected uniform #FEFEFE background plate; preserve all non-background decoded RGBA values and canvas geometry.",
+      "repairType": "flat-white-background-plate-removal",
+      "alphaBackgroundOperation": {
+        "repairType": "flat-white-background-plate-removal",
+        "backgroundRgb": [
+          254,
+          254,
+          254
+        ],
+        "backgroundConnectivityThreshold": 18,
+        "backgroundPixelsRemoved": 174693,
+        "edgePixelsMatted": 0,
+        "pixelsChanged": 174693,
+        "canvas": [
+          512,
+          512
+        ]
+      },
+      "noSemanticArtChange": true,
+      "characterPixelPreservation": "PASS",
+      "formalPromotion": false
     }
   ]
 }
