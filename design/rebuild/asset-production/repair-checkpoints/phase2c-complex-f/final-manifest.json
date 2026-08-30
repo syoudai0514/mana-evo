@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "title": "Phase 2C-F F012/F054/F075",
+  "worker": "F",
+  "workerBranch": "repair/phase2c-complex-f",
+  "baseIntegrationHeadAtWorkerCreation": "5354cba99dd7cfc3f52a3ce1e587778e356fe4ca",
+  "targetPR": 108,
+  "assigned": 9,
+  "counts": {
+    "REPAIRED": 0,
+    "NEEDS_GENERATION": 6,
+    "MANUAL_REVIEW": 3
+  },
+  "checkpoints": [
+    {
+      "checkpoint": 1,
+      "familyId": "F012",
+      "species": [
+        "m034",
+        "m035",
+        "m036"
+      ],
+      "decisions": {
+        "NEEDS_GENERATION": 3
+      },
+      "commit": "c8141a21efe6f9507623c365449da1cb8b31c25c",
+      "zip": "checkpoint-1/monster-art-phase2c-f-cp1.zip",
+      "zipReopen": "PASS"
+    },
+    {
+      "checkpoint": 2,
+      "familyId": "F054",
+      "species": [
+        "m157",
+        "m158",
+        "m159"
+      ],
+      "decisions": {
+        "NEEDS_GENERATION": 3
+      },
+      "commit": "7d39c9401c4ddb03eb51b53dc53ebf1cb8829081",
+      "zip": "checkpoint-2/monster-art-phase2c-f-cp2.zip",
+      "zipReopen": "PASS"
+    },
+    {
+      "checkpoint": 3,
+      "familyId": "F075",
+      "species": [
+        "m220",
+        "m221",
+        "m222"
+      ],
+      "decisions": {
+        "MANUAL_REVIEW": 3
+      },
+      "commit": "SELF",
+      "zip": "checkpoint-3/monster-art-phase2c-f-cp3.zip",
+      "zipReopen": "PASS"
+    }
+  ],
+  "candidateChanges": [],
+  "provenanceChanges": [],
+  "unexpectedChanges": 0,
+  "diagnosticSummary": {
+    "F012": "BACKGROUND_GRADIENT — radial/blurred luminance/chroma variance merges into the rock silhouette; existing pixels cannot support a safe matte without reconstruction.",
+    "F054": "BACKGROUND_GRADIENT + GLOW_PARTICLE_OVERLAP — warm vignette/amber glow overlaps the crystal/armor boundary with subject-color similarity; protected glow/particles cannot be safely separated.",
+    "F075": "BACKGROUND_UNIFORM + GLOW_PARTICLE_OVERLAP + semantic ambiguity — white border is separable, but ragged purple exterior fragments/energy may be intended VFX; human classification is required before removal."
+  },
+  "validation": {
+    "method": "No runtime, candidate, provenance, canonical monster manifest, source, or test files are modified by this worker; validation is inherited from the successful GitHub Actions run that produced the worker base via an audit-artifacts-only commit, and final diff scope is rechecked against the base.",
+    "validatedSourceCommit": "2b8d99d26cf033b290dd0ee919f4c7c4069ad416",
+    "baseAuditCommit": "5354cba99dd7cfc3f52a3ce1e587778e356fe4ca",
+    "githubActions": {
+      "runId": 33283396970,
+      "jobId": 99182272650,
+      "node": "24.19.0"
+    },
+    "registry": "PASS — candidate art registry: 238 species; runtime generation: 238 species.",
+    "provenanceValidation": "PASS — test 'every generated candidate has an exact WebP/provenance pair'; protected candidate and candidate-provenance SHA snapshots unchanged.",
+    "npmTest": "PASS — 290/290, fail 0.",
+    "viteBuild": "PASS — Vite 8.2.2 production build completed successfully."
+  },
+  "formalPromotion": 0,
+  "integrationMerge": "NO",
+  "mainMerge": "NO",
+  "deploy": "NO",
+  "generationPerformed": false,
+  "finalZip": "monster-art-phase2c-f-final.zip"
+}

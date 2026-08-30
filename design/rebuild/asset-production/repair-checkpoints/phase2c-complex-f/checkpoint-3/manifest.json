@@ -1,0 +1,138 @@
+{
+  "schemaVersion": 1,
+  "title": "Phase 2C-F F012/F054/F075",
+  "worker": "F",
+  "checkpoint": 3,
+  "familyId": "F075",
+  "baseIntegrationHead": "5354cba99dd7cfc3f52a3ce1e587778e356fe4ca",
+  "parentWorkerHead": "7d39c9401c4ddb03eb51b53dc53ebf1cb8829081",
+  "formalPromotion": false,
+  "generationPerformed": false,
+  "candidateChanges": [],
+  "species": [
+    {
+      "speciesId": "m220",
+      "familyId": "F075",
+      "stage": 1,
+      "initialAudit": [
+        "BACKGROUND_UNIFORM",
+        "white rectangular background suspicion"
+      ],
+      "diagnosis": [
+        "BACKGROUND_UNIFORM",
+        "GLOW_PARTICLE_OVERLAP",
+        "OTHER"
+      ],
+      "finalDecision": "MANUAL_REVIEW",
+      "evidence": {
+        "fullyOpaque": true,
+        "transparentPixelRatio": 0,
+        "meanLuminance": 211.128,
+        "meanSaturation": 0.127,
+        "priorRequalification": "Uniform white border exists, but ragged thin exterior fragments/purple energy require semantic classification before cleanup."
+      },
+      "safetyFinding": "The border-connected white plate is separable, but thin exterior purple fragments/energy are adjacent to the extraction boundary and cannot be proven to be background or non-character artifacts from pixels/family evidence alone.",
+      "repairAttempted": false,
+      "candidateChanged": false,
+      "protectedRisk": [
+        "glow",
+        "particles",
+        "thin outline"
+      ],
+      "manualQuestion": "Classify the ragged exterior purple fragments/energy as intended character VFX versus removable artifact. Only after that decision can a non-generative matte be safely bounded.",
+      "reason": "Do not erase protected thin/particle features without semantic proof. Preserve the current candidate unchanged."
+    },
+    {
+      "speciesId": "m221",
+      "familyId": "F075",
+      "stage": 2,
+      "initialAudit": [
+        "BACKGROUND_UNIFORM",
+        "white rectangular background suspicion"
+      ],
+      "diagnosis": [
+        "BACKGROUND_UNIFORM",
+        "GLOW_PARTICLE_OVERLAP",
+        "OTHER"
+      ],
+      "finalDecision": "MANUAL_REVIEW",
+      "evidence": {
+        "fullyOpaque": true,
+        "transparentPixelRatio": 0,
+        "meanLuminance": 219.717,
+        "meanSaturation": 0.116,
+        "priorRequalification": "Uniform white border exists, but ragged thin exterior fragments/purple energy require semantic classification before cleanup."
+      },
+      "safetyFinding": "The border-connected white plate is separable, but thin exterior purple fragments/energy are adjacent to the extraction boundary and cannot be proven to be background or non-character artifacts from pixels/family evidence alone.",
+      "repairAttempted": false,
+      "candidateChanged": false,
+      "protectedRisk": [
+        "glow",
+        "particles",
+        "thin outline"
+      ],
+      "manualQuestion": "Classify the ragged exterior purple fragments/energy as intended character VFX versus removable artifact. Only after that decision can a non-generative matte be safely bounded.",
+      "reason": "Do not erase protected thin/particle features without semantic proof. Preserve the current candidate unchanged."
+    },
+    {
+      "speciesId": "m222",
+      "familyId": "F075",
+      "stage": 3,
+      "initialAudit": [
+        "BACKGROUND_UNIFORM",
+        "white rectangular background suspicion"
+      ],
+      "diagnosis": [
+        "BACKGROUND_UNIFORM",
+        "GLOW_PARTICLE_OVERLAP",
+        "OTHER"
+      ],
+      "finalDecision": "MANUAL_REVIEW",
+      "evidence": {
+        "fullyOpaque": true,
+        "transparentPixelRatio": 0,
+        "meanLuminance": 207.411,
+        "meanSaturation": 0.126,
+        "priorRequalification": "Uniform white border exists, but ragged thin exterior fragments/purple energy require semantic classification before cleanup."
+      },
+      "safetyFinding": "The border-connected white plate is separable, but thin exterior purple fragments/energy are adjacent to the extraction boundary and cannot be proven to be background or non-character artifacts from pixels/family evidence alone.",
+      "repairAttempted": false,
+      "candidateChanged": false,
+      "protectedRisk": [
+        "glow",
+        "particles",
+        "thin outline"
+      ],
+      "manualQuestion": "Classify the ragged exterior purple fragments/energy as intended character VFX versus removable artifact. Only after that decision can a non-generative matte be safely bounded.",
+      "reason": "Do not erase protected thin/particle features without semantic proof. Preserve the current candidate unchanged."
+    }
+  ],
+  "safetyPolicy": {
+    "allowed": [
+      "border/region based background extraction",
+      "safe gradient modeling",
+      "alpha matting",
+      "minimal edge cleanup",
+      "provably non-character artifact removal"
+    ],
+    "prohibited": [
+      "generation",
+      "regeneration",
+      "repaint",
+      "inpainting",
+      "reconstruction",
+      "anatomy/pose/color/light redesign",
+      "crop",
+      "FORMAL",
+      "main merge",
+      "deploy"
+    ],
+    "protected": [
+      "semi-transparent wings",
+      "glow",
+      "particles",
+      "thin outline"
+    ],
+    "rule": "If subject/background separation cannot be proven safe, do not modify the candidate."
+  }
+}
