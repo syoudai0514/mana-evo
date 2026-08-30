@@ -6,142 +6,83 @@ on:
     branches: [main]
     paths:
       - 'public/monsters/**'
+      - 'scripts/monster-art/**'
+      - 'design/current/monster-asset-manifest.json'
+      - 'design/current/monsters/**'
       - 'design/rebuild/asset-production/candidate-provenance/**'
-      - 'design/rebuild/asset-production/candidate-history/**'
-      - 'scripts/monster-art/final-closeout-n1a.py'
+      - 'design/rebuild/asset-production/final-visual-audit/**'
       - '.github/workflows/monster-art-audit.yml'
-      - 'src/game/**'
-      - 'public/sw.js'
+      - 'package.json'
+      - 'package-lock.json'
 
 jobs:
-  n1a:
-    if: github.actor != 'github-actions[bot]' && github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'normalize/final-closeout-scale'
+  audit:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.ref }}
+          ref: ${{ github.head_ref || github.ref_name }}
           fetch-depth: 0
-
-      - name: Gate one-shot setup commit
-        id: gate
-        shell: bash
-        run: |
-          subject="$(git log -1 --pretty=%s)"
-          if [ "$subject" = "chore: run N1A normalization worker" ]; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "run=false" >> "$GITHUB_OUTPUT"
-            echo "Skip: head subject is $subject"
-          fi
-
       - uses: actions/setup-node@v4
-        if: steps.gate.outputs.run == 'true'
         with:
           node-version: 24
-
       - name: Install dependencies
-        if: steps.gate.outputs.run == 'true'
-        run: |
-          npm ci
-          python3 -m pip install --disable-pip-version-check pillow
-
-      - name: Snapshot CURRENT candidate state
-        if: steps.gate.outputs.run == 'true'
+        run: npm ci
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Snapshot protected candidate state
         shell: bash
         run: |
-          python3 - <<'PY'
-          import hashlib, json
-          from pathlib import Path
-          out={}
-          for p in sorted(Path("public/monsters").glob("m*.webp")):
-              out[p.stem]=hashlib.sha256(p.read_bytes()).hexdigest()
-          Path("/tmp/n1a-candidates-before.json").write_text(json.dumps(out, indent=2)+"\n")
-          print("candidate count", len(out))
-          print("m160", out.get("m160"))
-          print("m161", out.get("m161"))
-          print("m162", out.get("m162"))
-          print("m235", out.get("m235"))
-          PY
-
-      - name: CP1 normalize m160 m161
-        if: steps.gate.outputs.run == 'true'
-        run: python3 scripts/monster-art/final-closeout-n1a.py cp1
-
-      - name: CP1 registry and commit
-        if: steps.gate.outputs.run == 'true'
-        shell: bash
-        run: |
-          node scripts/monster-art/generate-candidate-index.mjs
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add \
-            public/monsters/m160.webp public/monsters/m161.webp \
-            design/rebuild/asset-production/candidate-provenance/m160.json \
-            design/rebuild/asset-production/candidate-provenance/m161.json \
-            design/rebuild/asset-production/candidate-history/m160 \
-            design/rebuild/asset-production/candidate-history/m161 \
-            src/game/candidateArt.generated.js
-          git commit -m 'normalize: final closeout N1A CP1 m160 m161'
-          echo "CP1_HEAD=$(git rev-parse HEAD)" | tee -a "$GITHUB_ENV"
-          git push origin HEAD:${{ github.event.pull_request.head.ref }}
-
-      - name: CP2 normalize m162
-        if: steps.gate.outputs.run == 'true'
-        run: python3 scripts/monster-art/final-closeout-n1a.py cp2
-
-      - name: CP2 generate runtime and commit
-        if: steps.gate.outputs.run == 'true'
-        shell: bash
-        run: |
-          npm run generate:runtime
-          npm run generate:pwa-assets
-          git add \
-            public/monsters/m162.webp \
-            design/rebuild/asset-production/candidate-provenance/m162.json \
-            design/rebuild/asset-production/candidate-history/m162 \
-            src/game public/sw.js
-          git commit -m 'normalize: final closeout N1A CP2 m162'
-          echo "CP2_HEAD=$(git rev-parse HEAD)" | tee -a "$GITHUB_ENV"
-          git push origin HEAD:${{ github.event.pull_request.head.ref }}
-
-      - name: Final pixel and hard diff gate
-        if: steps.gate.outputs.run == 'true'
-        run: python3 scripts/monster-art/final-closeout-n1a.py validate
-
-      - name: Registry 238/238
-        if: steps.gate.outputs.run == 'true'
+          find public/monsters -maxdepth 1 -type f -name 'm*.webp' -print0 | sort -z | xargs -0 sha256sum > /tmp/candidate-before.sha256
+          find design/rebuild/asset-production/candidate-provenance -maxdepth 1 -type f -name 'm*.json' -print0 | sort -z | xargs -0 sha256sum > /tmp/provenance-before.sha256
+      - name: Run final visual audit
+        run: node scripts/monster-art/final-visual-audit.mjs
+      - name: Apply manual visual QA review
+        run: node scripts/monster-art/final-visual-audit-manual-review.mjs
+      - name: Candidate registry validation
         run: node scripts/monster-art/generate-candidate-index.mjs
-
-      - name: CURRENT test suite
-        if: steps.gate.outputs.run == 'true'
+      - name: Monster art tests
+        id: tests
+        continue-on-error: true
         run: npm test
-
-      - name: Direct Vite production build
-        if: steps.gate.outputs.run == 'true'
-        run: npx vite build
-
-      - name: Clean working tree gate
-        if: steps.gate.outputs.run == 'true'
+      - name: Production build
+        id: build
+        continue-on-error: true
+        run: npm run build
+      - name: Verify protected candidate state unchanged
         shell: bash
         run: |
-          git diff --exit-code
-          test -z "$(git status --porcelain)"
-
-      - name: Report checkpoint heads
-        if: steps.gate.outputs.run == 'true'
-        shell: bash
-        run: |
-          echo "CP1_HEAD=$CP1_HEAD"
-          echo "CP2_HEAD=$CP2_HEAD"
-          cat /tmp/n1a-report.json
-
-      - name: Upload N1A QA report
-        if: steps.gate.outputs.run == 'true'
+          find public/monsters -maxdepth 1 -type f -name 'm*.webp' -print0 | sort -z | xargs -0 sha256sum > /tmp/candidate-after.sha256
+          find design/rebuild/asset-production/candidate-provenance -maxdepth 1 -type f -name 'm*.json' -print0 | sort -z | xargs -0 sha256sum > /tmp/provenance-after.sha256
+          diff -u /tmp/candidate-before.sha256 /tmp/candidate-after.sha256
+          diff -u /tmp/provenance-before.sha256 /tmp/provenance-after.sha256
+          git diff --exit-code -- public/monsters
+          git diff --exit-code -- design/rebuild/asset-production/candidate-provenance
+      - name: Upload final visual audit evidence
         uses: actions/upload-artifact@v4
         with:
-          name: final-closeout-n1a-report
-          path: /tmp/n1a-report.json
+          name: monster-art-final-visual-audit
+          path: design/rebuild/asset-production/final-visual-audit/**
           if-no-files-found: error
+      - name: Commit audit artifacts only
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add design/rebuild/asset-production/final-visual-audit
+          if git diff --cached --quiet; then
+            echo 'No audit artifact changes to commit.'
+          else
+            git commit -m 'audit: record final monster visual QA evidence'
+            git push origin HEAD:${{ github.head_ref }}
+          fi
+      - name: Surface validation failures
+        if: steps.tests.outcome != 'success' || steps.build.outcome != 'success'
+        shell: bash
+        run: |
+          echo "npm test outcome: ${{ steps.tests.outcome }}"
+          echo "npm run build outcome: ${{ steps.build.outcome }}"
+          exit 1
