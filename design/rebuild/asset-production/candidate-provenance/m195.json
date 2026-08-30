@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "speciesId": "m195",
+  "events": [
+    {
+      "timestamp": "2026-08-28T01:43:32.499Z",
+      "sourceLabel": "W-316 ART READY W-316-art-ready(2).zip sha256=391e3b92e697aaf70f04f9109e7c7b967d03eb7359900104ee78198e36922f1b",
+      "previous": null,
+      "candidate": {
+        "repositoryPath": "public/monsters/m195.webp",
+        "sha256": "e0658be9b2478370bc1b7acabd8caaee1e728c7e5f922404f57149a7adf93545",
+        "bytes": 45372
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-30T06:07:04.412Z",
+      "sourceLabel": "ManaEvo Phase 2C-D FINAL F066 safe background repair",
+      "previous": {
+        "repositoryPath": "public/monsters/m195.webp",
+        "sha256": "e0658be9b2478370bc1b7acabd8caaee1e728c7e5f922404f57149a7adf93545",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m195/e0658be9b2478370bc1b7acabd8caaee1e728c7e5f922404f57149a7adf93545.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m195.webp",
+        "sha256": "879710440ffbca813770a99e3a5c9fb7362ceb36f0e3683b2ee858553b6cb2dd",
+        "bytes": 167096
+      },
+      "manifestStateBefore": "CANDIDATE",
+      "operation": "repair",
+      "reason": "Remove only the border-connected uniform #FEFEFE background plate; preserve all non-background decoded RGBA values and canvas geometry.",
+      "repairType": "flat-white-background-plate-removal",
+      "alphaBackgroundOperation": {
+        "repairType": "flat-white-background-plate-removal",
+        "backgroundRgb": [
+          254,
+          254,
+          254
+        ],
+        "backgroundConnectivityThreshold": 18,
+        "backgroundPixelsRemoved": 186648,
+        "edgePixelsMatted": 0,
+        "pixelsChanged": 186648,
+        "canvas": [
+          512,
+          512
+        ]
+      },
+      "noSemanticArtChange": true,
+      "characterPixelPreservation": "PASS",
+      "formalPromotion": false
+    }
+  ]
+}

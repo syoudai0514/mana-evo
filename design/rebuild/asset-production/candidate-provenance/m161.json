@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "speciesId": "m161",
+  "events": [
+    {
+      "timestamp": "2026-08-28T00:35:19.115Z",
+      "sourceLabel": "W-310 ART READY GitHub handoff (attached bundle sha256=727e5de704b85593ed2ae47afa17139a055905d72095f25bd5844b408f3b1983)",
+      "previous": null,
+      "candidate": {
+        "repositoryPath": "public/monsters/m161.webp",
+        "sha256": "75f1cae7aec05cb8465ce676d52bfacd25d8ed44a8e415ff3982423f6bedd906",
+        "bytes": 19670
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-30T14:27:24.173Z",
+      "sourceLabel": "ManaEvo final repair K actual-pixel repair",
+      "previous": {
+        "repositoryPath": "public/monsters/m161.webp",
+        "sha256": "75f1cae7aec05cb8465ce676d52bfacd25d8ed44a8e415ff3982423f6bedd906",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m161/75f1cae7aec05cb8465ce676d52bfacd25d8ed44a8e415ff3982423f6bedd906.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m161.webp",
+        "sha256": "e267acd7071d63de92f906bb9b9dae3b486d54f0e3b202ee3b41336756abf510",
+        "bytes": 28852
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    }
+  ]
+}

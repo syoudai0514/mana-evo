@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "speciesId": "m106",
+  "events": [
+    {
+      "timestamp": "2026-08-28T07:56:06.355Z",
+      "sourceLabel": "W-319 dark ART READY ZIP candidate review",
+      "previous": null,
+      "candidate": {
+        "repositoryPath": "public/monsters/m106.webp",
+        "sha256": "ef3603f86b8729db956749dd60481d1660df819137c4f101210b83ffc1de5e6d",
+        "bytes": 185116
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-29T21:00:05.681383+00:00",
+      "sourceLabel": "ManaEvo Phase 2B-3 SAFE REPAIR SCALE-UP safe background repair cp1",
+      "previous": {
+        "repositoryPath": "public/monsters/m106.webp",
+        "sha256": "ef3603f86b8729db956749dd60481d1660df819137c4f101210b83ffc1de5e6d",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m106/ef3603f86b8729db956749dd60481d1660df819137c4f101210b83ffc1de5e6d.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m106.webp",
+        "sha256": "d45bb40aef1295b9a286337c725cd921ad8cb179c59139afeaf55887d2b6ea27",
+        "bytes": 194778
+      },
+      "manifestStateBefore": "CANDIDATE",
+      "operation": "repair",
+      "reason": "Remove only the border-connected flat white background plate and its conservative exterior edge matte; preserve the existing candidate subject.",
+      "repairType": "flat-white-background-plate-removal",
+      "alphaBackgroundOperation": {
+        "repairType": "flat-white-background-plate-removal",
+        "backgroundRgb": [
+          254,
+          254,
+          254
+        ],
+        "backgroundConnectivityThreshold": 18,
+        "edgeMatteRadiusPixels": 2,
+        "edgeMatteThreshold": 80,
+        "backgroundPixelsRemoved": 162270,
+        "edgePixelsMatted": 1535,
+        "pixelsChanged": 163805
+      },
+      "noSemanticArtChange": true,
+      "characterPixelPreservation": "PASS",
+      "formalPromotion": false
+    }
+  ]
+}

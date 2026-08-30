@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "speciesId": "m015",
+  "events": [
+    {
+      "timestamp": "2026-08-27T12:37:21.211Z",
+      "sourceLabel": "W-307 ART READY GitHub handoff (attached bundle sha256=fe464bccc94ad437e07af1ddeb6a57f81a4a3f4a889dbb0ced2aa0ff339721db)",
+      "previous": {
+        "repositoryPath": "public/monsters/m015.svg",
+        "sha256": "422951e591a4155cda6ad608c13edefd472b948eb88120f70cc13097a6b6aaa3",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m015/422951e591a4155cda6ad608c13edefd472b948eb88120f70cc13097a6b6aaa3.svg"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m015.webp",
+        "sha256": "8310c6f68641092dddb1e4a0d601c5c3a35d4f3669750aedc8253a1abfd2fec3",
+        "bytes": 6944
+      },
+      "manifestStateBefore": "CANDIDATE",
+      "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-29T11:18:29.954Z",
+      "sourceLabel": "ManaEvo Phase 2A presentation-only normalization checkpoint 1",
+      "previous": {
+        "repositoryPath": "public/monsters/m015.webp",
+        "sha256": "8310c6f68641092dddb1e4a0d601c5c3a35d4f3669750aedc8253a1abfd2fec3",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m015/8310c6f68641092dddb1e4a0d601c5c3a35d4f3669750aedc8253a1abfd2fec3.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m015.webp",
+        "sha256": "35761e3489ab1d220802f1399a31a857fbc7084216c74583edbb6031cea32e33",
+        "bytes": 113750
+      },
+      "manifestStateBefore": "CANDIDATE",
+      "operation": "normalization",
+      "reason": "apparent character scale/transparent whitespace is outside preferred roster range",
+      "normalizationParameters": {
+        "sourceFullAlphaBbox": {
+          "minX": 233,
+          "minY": 207,
+          "maxXExclusive": 407,
+          "maxYExclusive": 433,
+          "width": 174,
+          "height": 226
+        },
+        "canvas": {
+          "width": 512,
+          "height": 512,
+          "transparent": true
+        },
+        "resizedContent": {
+          "width": 308,
+          "height": 400
+        },
+        "placement": {
+          "x": 104,
+          "y": 50
+        },
+        "scaleX": 1.77011494,
+        "scaleY": 1.7699115,
+        "resampling": "LANCZOS premultiplied-alpha",
+        "webpEncoding": {
+          "lossless": true,
+          "method": 6,
+          "exactTransparentRgb": true
+        }
+      },
+      "noSemanticArtChange": true,
+      "backgroundMutation": false,
+      "formalPromotion": false
+    }
+  ]
+}

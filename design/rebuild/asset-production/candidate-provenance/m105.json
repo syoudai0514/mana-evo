@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "speciesId": "m105",
+  "events": [
+    {
+      "timestamp": "2026-08-28T01:43:43.515Z",
+      "sourceLabel": "W-317 ART READY ZIP W-317-art-ready(1).zip",
+      "previous": null,
+      "candidate": {
+        "repositoryPath": "public/monsters/m105.webp",
+        "sha256": "cad0fd4963fdcb66790500d4df50d0ba727047b4621a1fed63890a60a7bea676",
+        "bytes": 61624
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-30T11:32:26.407Z",
+      "sourceLabel": "ManaEvo-F035 ART READY regeneration",
+      "previous": {
+        "repositoryPath": "public/monsters/m105.webp",
+        "sha256": "cad0fd4963fdcb66790500d4df50d0ba727047b4621a1fed63890a60a7bea676",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m105/cad0fd4963fdcb66790500d4df50d0ba727047b4621a1fed63890a60a7bea676.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m105.webp",
+        "sha256": "3673be3280065437adc3274bf19872f26f236ef6d5baee8836f1fa1c35016558",
+        "bytes": 227616
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    }
+  ]
+}

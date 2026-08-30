@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "speciesId": "m233",
+  "events": [
+    {
+      "timestamp": "2026-08-27T12:37:24.896Z",
+      "sourceLabel": "W-307 ART READY GitHub handoff (attached bundle sha256=fe464bccc94ad437e07af1ddeb6a57f81a4a3f4a889dbb0ced2aa0ff339721db)",
+      "previous": null,
+      "candidate": {
+        "repositoryPath": "public/monsters/m233.webp",
+        "sha256": "1ccf6d7a21f81eb109bf9c08711ec2172e26ed1e58e9e2db4a4bd7fbe525eb7d",
+        "bytes": 4902
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-30T09:52:17.076Z",
+      "sourceLabel": "ManaEvo manual-review repaired batch 3: non-generative background/artifact alpha repair",
+      "previous": {
+        "repositoryPath": "public/monsters/m233.webp",
+        "sha256": "1ccf6d7a21f81eb109bf9c08711ec2172e26ed1e58e9e2db4a4bd7fbe525eb7d",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m233/1ccf6d7a21f81eb109bf9c08711ec2172e26ed1e58e9e2db4a4bd7fbe525eb7d.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m233.webp",
+        "sha256": "23da7dd5876b23cd266fefa756757931a4086089e77d10597e28176ea10302bd",
+        "bytes": 28338
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    }
+  ]
+}

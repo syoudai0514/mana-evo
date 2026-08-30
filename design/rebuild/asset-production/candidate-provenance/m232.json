@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "speciesId": "m232",
+  "events": [
+    {
+      "timestamp": "2026-08-27T12:37:24.536Z",
+      "sourceLabel": "W-307 ART READY GitHub handoff (attached bundle sha256=fe464bccc94ad437e07af1ddeb6a57f81a4a3f4a889dbb0ced2aa0ff339721db)",
+      "previous": null,
+      "candidate": {
+        "repositoryPath": "public/monsters/m232.webp",
+        "sha256": "cbec17f576fed62d600dfcade16239764455481f56867b09e5483ab9d31a1293",
+        "bytes": 4732
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-29T12:07:15.618238+00:00",
+      "sourceLabel": "ManaEvo Phase 2A FINAL presentation-only normalization",
+      "previous": {
+        "repositoryPath": "public/monsters/m232.webp",
+        "sha256": "cbec17f576fed62d600dfcade16239764455481f56867b09e5483ab9d31a1293",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m232/cbec17f576fed62d600dfcade16239764455481f56867b09e5483ab9d31a1293.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m232.webp",
+        "sha256": "484990140a0dbf7e552541788d39d4854088c6841d1eb4b2befafc91ad2a95b7",
+        "bytes": 102092
+      },
+      "manifestStateBefore": "CANDIDATE",
+      "operation": "normalization",
+      "reason": "Phase 1 final visual audit classified this existing candidate as NORMALIZE; adjust only transparent canvas scale and placement for card presence.",
+      "normalizationParameters": {
+        "scale": 2.4,
+        "placement": "center-full-alpha-bbox",
+        "sourceBounds": "full-alpha-bbox",
+        "resampling": "premultiplied-alpha-lanczos",
+        "output": "lossless-webp-512x512"
+      },
+      "noSemanticArtChange": true,
+      "backgroundMutation": false,
+      "formalPromotion": false
+    }
+  ]
+}

@@ -56,18 +56,23 @@ test('W-114 normalized descriptions expose the same lossless schema across shard
   }
 })
 
-test('W-207 runtime art resolution never promotes CANDIDATE or PLACEHOLDER', () => {
+test('W-207 runtime art resolves FORMAL assets while retaining CANDIDATE and PLACEHOLDER safeguards', () => {
   assert.equal(Object.keys(RUNTIME_MONSTER_ASSETS).length, 238)
-  assert.equal(RUNTIME_MONSTER_ASSETS.m001.state, 'CANDIDATE')
-  assert.equal(RUNTIME_MONSTER_ASSETS.m020.state, 'CANDIDATE')
-  assert.equal(RUNTIME_MONSTER_ASSETS.m021.state, 'PLACEHOLDER')
+  assert.equal(RUNTIME_MONSTER_ASSETS.m001.state, 'FORMAL')
+  assert.equal(RUNTIME_MONSTER_ASSETS.m011.state, 'CANDIDATE')
+  assert.equal(RUNTIME_MONSTER_ASSETS.m229.state, 'PLACEHOLDER')
 
-  const candidate = resolveMonsterArt('m001')
+  const formal = resolveMonsterArt('m001')
+  assert.equal(formal.state, 'FORMAL')
+  assert.equal(formal.src, '/monsters/m001.webp')
+  assert.equal(formal.isFormal, true)
+
+  const candidate = resolveMonsterArt('m011')
   assert.equal(candidate.state, 'CANDIDATE')
   assert.equal(candidate.src, null)
   assert.equal(candidate.isFormal, false)
 
-  const placeholder = resolveMonsterArt('m021')
+  const placeholder = resolveMonsterArt('m229')
   assert.equal(placeholder.state, 'PLACEHOLDER')
   assert.equal(placeholder.src, null)
   assert.equal(placeholder.isFormal, false)

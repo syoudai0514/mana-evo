@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "speciesId": "m053",
+  "events": [
+    {
+      "timestamp": "2026-08-28T01:43:31.977Z",
+      "sourceLabel": "W-316 ART READY W-316-art-ready(2).zip sha256=391e3b92e697aaf70f04f9109e7c7b967d03eb7359900104ee78198e36922f1b",
+      "previous": null,
+      "candidate": {
+        "repositoryPath": "public/monsters/m053.webp",
+        "sha256": "506df2100b98688814cd9882a50e5d50d223a3c7b06f8795fc039decd3692ba9",
+        "bytes": 46214
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-29T23:27:15.894Z",
+      "sourceLabel": "ManaEvo Phase 2B PARALLEL SAFE REPAIR — WORKER A checkpoint 1",
+      "previous": {
+        "repositoryPath": "public/monsters/m053.webp",
+        "sha256": "506df2100b98688814cd9882a50e5d50d223a3c7b06f8795fc039decd3692ba9",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m053/506df2100b98688814cd9882a50e5d50d223a3c7b06f8795fc039decd3692ba9.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m053.webp",
+        "sha256": "07097c4fc24998b9db4a203adda1adf3509a7bf7a7bb3ed7d6230589ec7407b0",
+        "bytes": 157260
+      },
+      "manifestStateBefore": "CANDIDATE",
+      "operation": "repair",
+      "reason": "Remove only the border-connected flat white background plate and conservative exterior edge matte; preserve the existing candidate subject.",
+      "repairType": "flat-white-background-plate-removal",
+      "alphaBackgroundOperation": {
+        "repairType": "flat-white-background-plate-removal",
+        "backgroundRgb": [
+          254,
+          254,
+          254
+        ],
+        "backgroundConnectivityThreshold": 18,
+        "edgeMatteRadiusPixels": 2,
+        "edgeMatteThreshold": 80,
+        "backgroundPixelsRemoved": 173510,
+        "edgePixelsMatted": 7096,
+        "pixelsChanged": 180606
+      },
+      "noSemanticArtChange": true,
+      "characterPixelPreservation": "PASS",
+      "formalPromotion": false
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "speciesId": "m123",
+  "events": [
+    {
+      "timestamp": "2026-08-28T01:43:43.801Z",
+      "sourceLabel": "W-317 ART READY ZIP W-317-art-ready(1).zip",
+      "previous": null,
+      "candidate": {
+        "repositoryPath": "public/monsters/m123.webp",
+        "sha256": "e86c6dc34aa7f4e2189a22edceff4b2b02c94556cd21d017084aa4adea02044b",
+        "bytes": 44194
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-30T11:32:26.517Z",
+      "sourceLabel": "ManaEvo-F042 ART READY regeneration correction",
+      "previous": {
+        "repositoryPath": "public/monsters/m123.webp",
+        "sha256": "e86c6dc34aa7f4e2189a22edceff4b2b02c94556cd21d017084aa4adea02044b",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m123/e86c6dc34aa7f4e2189a22edceff4b2b02c94556cd21d017084aa4adea02044b.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m123.webp",
+        "sha256": "d4ce2d9fe4aa45f76dc49b4eed4e9c75fbe2520c07b1a65c2f7682fde73d8829",
+        "bytes": 227154
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    }
+  ]
+}

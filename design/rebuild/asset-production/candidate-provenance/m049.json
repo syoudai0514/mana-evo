@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "speciesId": "m049",
+  "events": [
+    {
+      "timestamp": "2026-08-28T01:43:37.852Z",
+      "sourceLabel": "W-315 ART READY ZIP: W-315-art-ready(1).zip",
+      "previous": null,
+      "candidate": {
+        "repositoryPath": "public/monsters/m049.webp",
+        "sha256": "387fa20fe5f63c9002f2295f22c26fde0343dbdc99a0ae3d9fc286a0d5ccb277",
+        "bytes": 34400
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-30T00:31:24.000Z",
+      "sourceLabel": "ManaEvo Phase 2B REQUALIFICATION + SAFE REPAIR — WORKER C checkpoint 1",
+      "previous": {
+        "repositoryPath": "public/monsters/m049.webp",
+        "sha256": "387fa20fe5f63c9002f2295f22c26fde0343dbdc99a0ae3d9fc286a0d5ccb277",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m049/387fa20fe5f63c9002f2295f22c26fde0343dbdc99a0ae3d9fc286a0d5ccb277.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m049.webp",
+        "sha256": "c1c580af098caf00c33d3e475bafca0e9b372ccbd6700fe6661a6455ca336b76",
+        "bytes": 146348
+      },
+      "manifestStateBefore": "CANDIDATE",
+      "operation": "repair",
+      "reason": "Remove only the border-connected flat white background plate and conservative exterior edge matte; preserve the existing candidate subject.",
+      "repairType": "flat-white-background-plate-removal",
+      "alphaBackgroundOperation": {
+        "repairType": "flat-white-background-plate-removal",
+        "backgroundRgb": [255, 255, 255],
+        "backgroundConnectivityThreshold": 18,
+        "edgeMatteRadiusPixels": 2,
+        "edgeMatteThreshold": 80,
+        "backgroundPixelsRemoved": 137050,
+        "edgePixelsMatted": 2798,
+        "pixelsChanged": 139848
+      },
+      "noSemanticArtChange": true,
+      "characterPixelPreservation": "PASS",
+      "formalPromotion": false
+    }
+  ]
+}

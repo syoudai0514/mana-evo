@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "speciesId": "m080",
+  "events": [
+    {
+      "timestamp": "2026-08-28T07:55:09.878Z",
+      "sourceLabel": "W-313 ART READY ZIP W-313-art-ready(1).zip",
+      "previous": null,
+      "candidate": {
+        "repositoryPath": "public/monsters/m080.webp",
+        "sha256": "a58141b8a13785ddfedee232f72bf6adb46d911b581e4714abcbf5004f15bca3",
+        "bytes": 140238
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    }
+  ]
+}

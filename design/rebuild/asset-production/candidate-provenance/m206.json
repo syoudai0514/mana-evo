@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "speciesId": "m206",
+  "events": [
+    {
+      "timestamp": "2026-08-28T07:56:09.315Z",
+      "sourceLabel": "W-319 dark ART READY ZIP candidate review",
+      "previous": null,
+      "candidate": {
+        "repositoryPath": "public/monsters/m206.webp",
+        "sha256": "36ec58bef3369f1e31f4a7c195995dfd601e960d511f5d6a67fde0c71d8fe32a",
+        "bytes": 225768
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-29T12:26:34.122748+00:00",
+      "sourceLabel": "ManaEvo Phase 2B-1 safe repair pilot cp2",
+      "previous": {
+        "repositoryPath": "public/monsters/m206.webp",
+        "sha256": "36ec58bef3369f1e31f4a7c195995dfd601e960d511f5d6a67fde0c71d8fe32a",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m206/36ec58bef3369f1e31f4a7c195995dfd601e960d511f5d6a67fde0c71d8fe32a.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m206.webp",
+        "sha256": "2fb05ba1e0e32b283633d64d3b28f19b88c33d0b234bbd1362a203d6d1a489f6",
+        "bytes": 252750
+      },
+      "manifestStateBefore": "CANDIDATE",
+      "operation": "repair",
+      "reason": "Remove only the border-connected flat white background plate and its conservative exterior edge matte; preserve the existing candidate subject.",
+      "repairType": "flat-white-background-plate-removal",
+      "alphaBackgroundOperation": {
+        "repairType": "flat-white-background-plate-removal",
+        "backgroundRgb": [
+          253,
+          252,
+          252
+        ],
+        "backgroundConnectivityThreshold": 18,
+        "edgeMatteRadiusPixels": 2,
+        "edgeMatteThreshold": 80,
+        "backgroundPixelsRemoved": 165724,
+        "edgePixelsMatted": 1759,
+        "pixelsChanged": 167483
+      },
+      "noSemanticArtChange": true,
+      "characterPixelPreservation": "PASS",
+      "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-30T00:27:33.076Z",
+      "sourceLabel": "ManaEvo PHASE 2A-EXT current normalize cleanup checkpoint 5",
+      "previous": {
+        "repositoryPath": "public/monsters/m206.webp",
+        "sha256": "2fb05ba1e0e32b283633d64d3b28f19b88c33d0b234bbd1362a203d6d1a489f6",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m206/2fb05ba1e0e32b283633d64d3b28f19b88c33d0b234bbd1362a203d6d1a489f6.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m206.webp",
+        "sha256": "d6bfafb5166570b4c69859a77f6a35e8de8ee76c24e5c5d829f759406294dd7e",
+        "bytes": 154404
+      },
+      "manifestStateBefore": "CANDIDATE",
+      "operation": "normalization",
+      "reason": "current audit identified presentation scale, transparent whitespace, or placement as outside preferred roster range",
+      "normalizationParameters": {
+        "sourceFullAlphaBbox": {
+          "minX": 7,
+          "minY": 116,
+          "maxXExclusive": 503,
+          "maxYExclusive": 434,
+          "width": 496,
+          "height": 318
+        },
+        "canvas": {
+          "width": 512,
+          "height": 512,
+          "transparent": true
+        },
+        "resizedContent": {
+          "width": 496,
+          "height": 318
+        },
+        "placement": {
+          "x": 8,
+          "y": 97
+        },
+        "scaleX": 1,
+        "scaleY": 1,
+        "resampling": "LANCZOS premultiplied-alpha",
+        "webpEncoding": {
+          "lossless": true,
+          "method": 6,
+          "exactTransparentRgb": true
+        }
+      },
+      "noSemanticArtChange": true,
+      "backgroundMutation": false,
+      "formalPromotion": false
+    }
+  ]
+}

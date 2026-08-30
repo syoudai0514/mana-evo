@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "speciesId": "m222",
+  "events": [
+    {
+      "timestamp": "2026-08-28T01:43:36.672Z",
+      "sourceLabel": "W-314 ART READY ZIP W-314-art-ready(1).zip 66a0464ef5c0aa36381955c506f8424a5ce181f11655b8e954a7442c23ee3309 approved-for-candidate-review",
+      "previous": null,
+      "candidate": {
+        "repositoryPath": "public/monsters/m222.webp",
+        "sha256": "dca379585ab3dfd36c949d6b1cca66a70e2984e73c02642bc97c4a1235731716",
+        "bytes": 56354
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-30T09:52:16.874Z",
+      "sourceLabel": "ManaEvo manual-review repaired batch 2: non-generative border-connected background alpha repair",
+      "previous": {
+        "repositoryPath": "public/monsters/m222.webp",
+        "sha256": "dca379585ab3dfd36c949d6b1cca66a70e2984e73c02642bc97c4a1235731716",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m222/dca379585ab3dfd36c949d6b1cca66a70e2984e73c02642bc97c4a1235731716.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m222.webp",
+        "sha256": "bc9457af39941c243f00891b76e1b971e535b35ba9d7f527894ef73ee4168be8",
+        "bytes": 211006
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    }
+  ]
+}

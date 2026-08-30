@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "speciesId": "m144",
+  "events": [
+    {
+      "timestamp": "2026-08-28T01:43:32.304Z",
+      "sourceLabel": "W-316 ART READY W-316-art-ready(2).zip sha256=391e3b92e697aaf70f04f9109e7c7b967d03eb7359900104ee78198e36922f1b",
+      "previous": null,
+      "candidate": {
+        "repositoryPath": "public/monsters/m144.webp",
+        "sha256": "c571ff90d7629f1e4f2b6841263cbb17de929f0c82de2a4e7a1711bd75cd79b1",
+        "bytes": 51102
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-29T23:29:30.811Z",
+      "sourceLabel": "ManaEvo Phase 2B parallel worker B checkpoint 2 safe background repair",
+      "previous": {
+        "repositoryPath": "public/monsters/m144.webp",
+        "sha256": "c571ff90d7629f1e4f2b6841263cbb17de929f0c82de2a4e7a1711bd75cd79b1",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m144/c571ff90d7629f1e4f2b6841263cbb17de929f0c82de2a4e7a1711bd75cd79b1.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m144.webp",
+        "sha256": "aa99e716905f731f6091f9225d8fc8e810262459ebcbea057ad832a15f618fa0",
+        "bytes": 97334
+      },
+      "manifestStateBefore": "CANDIDATE",
+      "operation": "repair",
+      "reason": "Remove only the border-connected flat white background plate and its conservative exterior edge matte; preserve the existing candidate subject.",
+      "repairType": "flat-white-background-plate-removal",
+      "alphaBackgroundOperation": {
+        "repairType": "flat-white-background-plate-removal",
+        "backgroundRgb": [
+          254,
+          254,
+          254
+        ],
+        "backgroundConnectivityThreshold": 18,
+        "edgeMatteRadiusPixels": 2,
+        "edgeMatteThreshold": 80,
+        "backgroundPixelsRemoved": 185349,
+        "edgePixelsMatted": 11714,
+        "pixelsChanged": 197063
+      },
+      "noSemanticArtChange": true,
+      "characterPixelPreservation": "PASS",
+      "formalPromotion": false
+    }
+  ]
+}

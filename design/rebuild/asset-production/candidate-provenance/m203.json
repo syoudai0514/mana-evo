@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "speciesId": "m203",
+  "events": [
+    {
+      "timestamp": "2026-08-28T01:46:16.024Z",
+      "sourceLabel": "W-318 ghost ART READY ZIP W-318-art-ready(1).zip sha256=34750e50869c252af2cfe2102c0da47b2298df40c53236ffcaa90ad9126f15ca",
+      "previous": null,
+      "candidate": {
+        "repositoryPath": "public/monsters/m203.webp",
+        "sha256": "ebed98347208b38e63bd8d200669f3899c274f313a3f0d5993f574b9013bb883",
+        "bytes": 81378
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-29T11:23:18.843Z",
+      "sourceLabel": "ManaEvo Phase 2A presentation-only normalization checkpoint 3",
+      "previous": {
+        "repositoryPath": "public/monsters/m203.webp",
+        "sha256": "ebed98347208b38e63bd8d200669f3899c274f313a3f0d5993f574b9013bb883",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m203/ebed98347208b38e63bd8d200669f3899c274f313a3f0d5993f574b9013bb883.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m203.webp",
+        "sha256": "9bef5165d6d0f7c9fd74fbaafc3c69511b7daeba4cf70c6979ed1254aa203a43",
+        "bytes": 115496
+      },
+      "manifestStateBefore": "CANDIDATE",
+      "operation": "normalization",
+      "reason": "apparent character scale/transparent whitespace is outside preferred roster range",
+      "normalizationParameters": {
+        "sourceFullAlphaBbox": {
+          "minX": 138,
+          "minY": 101,
+          "maxXExclusive": 372,
+          "maxYExclusive": 445,
+          "width": 234,
+          "height": 344
+        },
+        "canvas": {
+          "width": 512,
+          "height": 512,
+          "transparent": true
+        },
+        "resizedContent": {
+          "width": 268,
+          "height": 394
+        },
+        "placement": {
+          "x": 130,
+          "y": 57
+        },
+        "scaleX": 1.14529915,
+        "scaleY": 1.14534884,
+        "resampling": "LANCZOS premultiplied-alpha",
+        "webpEncoding": {
+          "lossless": true,
+          "method": 6,
+          "exactTransparentRgb": true
+        }
+      },
+      "noSemanticArtChange": true,
+      "backgroundMutation": false,
+      "formalPromotion": false
+    }
+  ]
+}
