@@ -12,7 +12,7 @@
     "F054": "Warm vignette background and amber glow overlap the crystal/armor boundary; removing it would depend on subject-color similarity.",
     "F060": "White border is uniform, but translucent crystal wings, halo-like arcs, and sparse particles cannot be separated without erosion risk.",
     "F063": "Although outer border pixels are uniform, each image contains an interior dark plate plus fire glow/aura; there is no single safe uniform background model.",
-    "F066": "Near-uniform off-white border is present, but thin orbit rings, glow, detached shards, and semi-transparent aura overlap into the background.",
+    "F066": "Near-uniform off-white border is present, but thin orbit rings, glow, detached shards, and semi-transparent aura overlap the background.",
     "F075": "Uniform white border is present, but ragged thin exterior fragments and overlapping purple energy require semantic classification to distinguish anatomy from incidental marks.",
     "F081": "Near-uniform off-white border is present, but the single candidate has thin orbit/ribbon/particle features that cannot be losslessly retained by safe alpha cleanup."
   },
