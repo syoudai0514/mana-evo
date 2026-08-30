@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "phase": "2C-C",
+  "worker": "C",
+  "checkpoint": 3,
+  "baseIntegrationHead": "5354cba99dd7cfc3f52a3ce1e587778e356fe4ca",
+  "assigned": ["m192", "m233", "m234"],
+  "REPAIRED": [],
+  "NEEDS_GENERATION": [],
+  "MANUAL_REVIEW": ["m192", "m233", "m234"],
+  "species": [
+    {"speciesId":"m192","family":"F065","diagnosis":"BACKGROUND_UNIFORM","decision":"MANUAL_REVIEW","sourceSha256":"0ba9a5883ef4bcd2d6fab41e7fa692883847d73d572c385ad4ea8cb8bd281881","sourceBytes":55312,"evidence":"opaque gray-border evidence; subject-edge separation not proven","candidateMutation":false},
+    {"speciesId":"m233","family":"F079","diagnosis":"DETACHED_ARTIFACT","decision":"MANUAL_REVIEW","sourceSha256":"1ccf6d7a21f81eb109bf9c08711ec2172e26ed1e58e9e2db4a4bd7fbe525eb7d","sourceBytes":4902,"evidence":"manual visual: left stray fragment; 11 components, largest=0.919118; exact removable component identity not proven","candidateMutation":false},
+    {"speciesId":"m234","family":"F079","diagnosis":"TEXT_LABEL_ARTIFACT","decision":"MANUAL_REVIEW","sourceSha256":"547a96030f47d146b4728d62773c44e30cbd0ad0795abf7a8b560970807baf97","sourceBytes":6822,"evidence":"manual visual: marks above creature; 13 components, largest=0.98631; exact removable component identity not proven","candidateMutation":false}
+  ],
+  "qa": {"status":"PASS","candidateMutationCount":0,"unexpected":0,"zipReopen":"PASS"},
+  "formalPromotion": false
+}

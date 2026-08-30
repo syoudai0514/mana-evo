@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "title": "Phase 2C-C F030/F058/F065/F079",
+  "phase": "2C-C",
+  "worker": "C",
+  "baseIntegrationHead": "5354cba99dd7cfc3f52a3ce1e587778e356fe4ca",
+  "assigned": 9,
+  "REPAIRED": 0,
+  "NEEDS_GENERATION": 0,
+  "MANUAL_REVIEW": 9,
+  "artifactDecisions": {
+    "m233": "MANUAL_REVIEW: detached fragment suspected; exact removable component not proven",
+    "m234": "MANUAL_REVIEW: text/label marks suspected; exact removable component not proven"
+  },
+  "candidateChanges": [],
+  "unexpected": 0,
+  "formalPromotion": 0,
+  "integrationMerge": false,
+  "mainMerge": false,
+  "deploy": false
+}
