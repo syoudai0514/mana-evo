@@ -1,0 +1,32 @@
+name: N1A Image ZIP
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  zip:
+    if: github.head_ref == 'normalize/final-closeout-scale'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: normalize/final-closeout-scale
+      - name: Verify final image SHA and make ZIP
+        shell: bash
+        run: |
+          echo '3e02a725de56956d8d79a4cf23f43289a6b1003456e21815c1e88082fa5b199f  public/monsters/m160.webp' | sha256sum -c -
+          echo '7fc318aa263c7ccb07fc4262d0d961abc66f6b5f70f4030dddb4fc33e814da4b  public/monsters/m161.webp' | sha256sum -c -
+          echo '8349198cdec027846821fc70695b1a46cab28edf68c69c9801c80cc0a04c94e0  public/monsters/m162.webp' | sha256sum -c -
+          mkdir -p /tmp/n1a_zip
+          cp public/monsters/m160.webp /tmp/n1a_zip/
+          cp public/monsters/m161.webp /tmp/n1a_zip/
+          cp public/monsters/m162.webp /tmp/n1a_zip/
+          cd /tmp/n1a_zip
+          zip -9 ManaEvo-final-closeout-N1A-images.zip m160.webp m161.webp m162.webp
+          sha256sum ManaEvo-final-closeout-N1A-images.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ManaEvo-final-closeout-N1A-images
+          path: /tmp/n1a_zip/ManaEvo-final-closeout-N1A-images.zip
+          if-no-files-found: error
