@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "phase": "2C-B",
+  "worker": "B",
+  "checkpoint": 1,
+  "baseIntegrationHead": "5354cba99dd7cfc3f52a3ce1e587778e356fe4ca",
+  "assigned": ["m064", "m065", "m066"],
+  "status": "PASS",
+  "formalPromotion": false,
+  "repaired": [],
+  "needsGeneration": [],
+  "manualReview": ["m064", "m065", "m066"],
+  "species": [
+    {"speciesId":"m064","family":"F022","stage":1,"sourceSha256":"7d4c1316a0a8e0fb7441c844319084c41d23bcbe3bd28590a4084648b1bd06b6","sourceBytes":32924,"diagnosis":"BACKGROUND_COMPLEX","repairConfidence":"LOW","decision":"MANUAL_REVIEW","reason":"CURRENT decoded-pixel audit shows a fully opaque full-canvas rectangular background. Family visual QA is clear, but uniform/gradient border modelling and subject-edge separation are not proven; automated removal could erase rock fragments, thin features, or antialias pixels.","evidence":{"canvas":"512x512","alphaMin":255,"alphaMax":255,"transparentPixelRatio":0,"opaqueCornerCount":4,"rectangularBackgroundSuspicion":true,"grayRectangleSuspicion":false,"meanLuminance":98.733335,"meanSaturation":0.340152},"candidateMutation":false,"formalPromotion":false},
+    {"speciesId":"m065","family":"F022","stage":2,"sourceSha256":"d2e8b9780c12ad434b261fce72fe9926aab54eb3f39fd2788e242661ec191c31","sourceBytes":36484,"diagnosis":"BACKGROUND_COMPLEX","repairConfidence":"LOW","decision":"MANUAL_REVIEW","reason":"CURRENT decoded-pixel audit shows a fully opaque full-canvas rectangular background. Family visual QA is clear, but uniform/gradient border modelling and subject-edge separation are not proven; automated removal could erase rock fragments, thin features, or antialias pixels.","evidence":{"canvas":"512x512","alphaMin":255,"alphaMax":255,"transparentPixelRatio":0,"opaqueCornerCount":4,"rectangularBackgroundSuspicion":true,"grayRectangleSuspicion":false,"meanLuminance":100.903283,"meanSaturation":0.364135},"candidateMutation":false,"formalPromotion":false},
+    {"speciesId":"m066","family":"F022","stage":3,"sourceSha256":"3d845a9db0441c490f6e1b089d173b0eb2ae0137bfe7ef6a6e8b9ca56c8c3da2","sourceBytes":38154,"diagnosis":"BACKGROUND_COMPLEX","repairConfidence":"LOW","decision":"MANUAL_REVIEW","reason":"CURRENT decoded-pixel audit shows a fully opaque full-canvas rectangular background. Family visual QA is clear, but uniform/gradient border modelling and subject-edge separation are not proven; automated removal could erase rock fragments, thin features, or antialias pixels.","evidence":{"canvas":"512x512","alphaMin":255,"alphaMax":255,"transparentPixelRatio":0,"opaqueCornerCount":4,"rectangularBackgroundSuspicion":true,"grayRectangleSuspicion":true,"meanLuminance":106.017091,"meanSaturation":0.296663},"candidateMutation":false,"formalPromotion":false}
+  ],
+  "qa": {"diagnosis":"PASS","machineQa":"PASS (CURRENT decoded-pixel metrics and SHA/bytes recorded; candidates retained byte-for-byte)","visualQa":"PASS for disposition (CURRENT family visual review is VISUAL_CLEAR; no new pixel mutation; repair withheld because character-safe segmentation is unproven)","familyQa":"PASS (family continuity is VISUAL_CLEAR; no unsafe stage-specific exception introduced)","characterPreservation":"PASS by zero candidate mutation","unexpectedCandidateChanges":0},
+  "zipValidation": {"zipReopen":"PASS","expectedWebpCount":0,"riffWebp":"N/A (no REPAIRED species in checkpoint ZIP)","dimensions512x512":"N/A (no REPAIRED species in checkpoint ZIP)","shaBytes":"PASS (decision manifest only; archive verified after creation)","missing":0,"duplicate":0,"extra":0},
+  "zip": "monster-art-phase2c-b-cp1.zip"
+}
