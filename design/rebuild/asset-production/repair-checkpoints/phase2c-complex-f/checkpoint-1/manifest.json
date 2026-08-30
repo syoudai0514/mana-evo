@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "title": "Phase 2C-F F012/F054/F075",
+  "worker": "F",
+  "checkpoint": 1,
+  "familyId": "F012",
+  "baseIntegrationHead": "5354cba99dd7cfc3f52a3ce1e587778e356fe4ca",
+  "parentWorkerHead": "5354cba99dd7cfc3f52a3ce1e587778e356fe4ca",
+  "formalPromotion": false,
+  "generationPerformed": false,
+  "candidateChanges": [],
+  "species": [
+    {
+      "speciesId": "m034",
+      "familyId": "F012",
+      "stage": 1,
+      "initialAudit": [
+        "BACKGROUND_UNIFORM",
+        "gray rectangular background suspicion"
+      ],
+      "diagnosis": [
+        "BACKGROUND_GRADIENT"
+      ],
+      "finalDecision": "NEEDS_GENERATION",
+      "evidence": {
+        "fullyOpaque": true,
+        "transparentPixelRatio": 0,
+        "meanLuminance": 150.767,
+        "meanSaturation": 0.103,
+        "priorRequalification": "Material radial/blurred luminance/chroma variance merges into the rock silhouette; not a safe flat region."
+      },
+      "safetyFinding": "A background matte cannot be derived from border/region luminance or chroma without crossing subject pixels at the rock silhouette.",
+      "repairAttempted": false,
+      "candidateChanged": false,
+      "protectedRisk": [
+        "thin outline / low-contrast silhouette edge"
+      ],
+      "reason": "Non-generative separation is not provably safe; preserve the current candidate unchanged."
+    },
+    {
+      "speciesId": "m035",
+      "familyId": "F012",
+      "stage": 2,
+      "initialAudit": [
+        "BACKGROUND_UNIFORM",
+        "opaque rectangular canvas"
+      ],
+      "diagnosis": [
+        "BACKGROUND_GRADIENT"
+      ],
+      "finalDecision": "NEEDS_GENERATION",
+      "evidence": {
+        "fullyOpaque": true,
+        "transparentPixelRatio": 0,
+        "meanLuminance": 154.441,
+        "meanSaturation": 0.154,
+        "priorRequalification": "Material radial/blurred luminance/chroma variance merges into the rock silhouette; not a safe flat region."
+      },
+      "safetyFinding": "Family-consistent gradient/studio illumination merges into silhouette values, so a matte would require semantic reconstruction rather than background extraction.",
+      "repairAttempted": false,
+      "candidateChanged": false,
+      "protectedRisk": [
+        "thin outline / low-contrast silhouette edge"
+      ],
+      "reason": "Non-generative separation is not provably safe; preserve the current candidate unchanged."
+    },
+    {
+      "speciesId": "m036",
+      "familyId": "F012",
+      "stage": 3,
+      "initialAudit": [
+        "BACKGROUND_UNIFORM",
+        "opaque rectangular canvas"
+      ],
+      "diagnosis": [
+        "BACKGROUND_GRADIENT"
+      ],
+      "finalDecision": "NEEDS_GENERATION",
+      "evidence": {
+        "fullyOpaque": true,
+        "transparentPixelRatio": 0,
+        "meanLuminance": 157.474,
+        "meanSaturation": 0.134,
+        "priorRequalification": "Material radial/blurred luminance/chroma variance merges into the rock silhouette; not a safe flat region."
+      },
+      "safetyFinding": "The same family gradient/blur crosses the evolved silhouette boundary; alpha matting cannot distinguish background from subject solely from existing pixels.",
+      "repairAttempted": false,
+      "candidateChanged": false,
+      "protectedRisk": [
+        "thin outline / low-contrast silhouette edge"
+      ],
+      "reason": "Non-generative separation is not provably safe; preserve the current candidate unchanged."
+    }
+  ],
+  "safetyPolicy": {
+    "allowed": [
+      "border/region based background extraction",
+      "safe gradient modeling",
+      "alpha matting",
+      "minimal edge cleanup",
+      "provably non-character artifact removal"
+    ],
+    "prohibited": [
+      "generation",
+      "regeneration",
+      "repaint",
+      "inpainting",
+      "reconstruction",
+      "anatomy/pose/color/light redesign",
+      "crop",
+      "FORMAL",
+      "main merge",
+      "deploy"
+    ],
+    "protected": [
+      "semi-transparent wings",
+      "glow",
+      "particles",
+      "thin outline"
+    ],
+    "rule": "If subject/background separation cannot be proven safe, do not modify the candidate."
+  }
+}
