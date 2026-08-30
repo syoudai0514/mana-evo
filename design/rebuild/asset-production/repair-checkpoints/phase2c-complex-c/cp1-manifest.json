@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "phase": "2C-C",
+  "worker": "C",
+  "checkpoint": 1,
+  "baseIntegrationHead": "5354cba99dd7cfc3f52a3ce1e587778e356fe4ca",
+  "assigned": ["m090", "m169", "m170"],
+  "REPAIRED": [],
+  "NEEDS_GENERATION": [],
+  "MANUAL_REVIEW": ["m090", "m169", "m170"],
+  "species": [
+    {"speciesId":"m090","family":"F030","diagnosis":"BACKGROUND_UNIFORM","decision":"MANUAL_REVIEW","sourceSha256":"06ee2343c5cd6f397f0fd2d45078f91624ec82be72839bc7722bc810dfdf9760","sourceBytes":38840,"evidence":"opaque white-border evidence; subject-edge separation not proven","candidateMutation":false},
+    {"speciesId":"m169","family":"F058","diagnosis":"BACKGROUND_UNIFORM","decision":"MANUAL_REVIEW","sourceSha256":"a873476fb60ef9c2d91482be9adade297ade62a408a1064014c9505db9fa6a60","sourceBytes":33490,"evidence":"opaque white-border evidence; subject-edge separation not proven","candidateMutation":false},
+    {"speciesId":"m170","family":"F058","diagnosis":"BACKGROUND_UNIFORM","decision":"MANUAL_REVIEW","sourceSha256":"ea0735eb5dfff7ff122ef71883379e344c4ed77b414d64efce3370319b39cfa0","sourceBytes":40142,"evidence":"opaque white-border evidence; subject-edge separation not proven","candidateMutation":false}
+  ],
+  "qa": {"status":"PASS","candidateMutationCount":0,"unexpected":0,"zipReopen":"PASS"},
+  "formalPromotion": false
+}

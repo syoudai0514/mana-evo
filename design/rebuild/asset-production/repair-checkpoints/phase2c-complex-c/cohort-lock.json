@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "phase": "2C-C",
+  "worker": "C",
+  "baseIntegrationHead": "5354cba99dd7cfc3f52a3ce1e587778e356fe4ca",
+  "canonicalIntegrationBranch": "integration/monster-art-candidate-system",
+  "workerBranch": "repair/phase2c-complex-c",
+  "targetPr": 108,
+  "assigned": [
+    "m090",
+    "m169",
+    "m170",
+    "m171",
+    "m190",
+    "m191",
+    "m192",
+    "m233",
+    "m234"
+  ],
+  "absoluteExclusions": [
+    "all non-assigned species",
+    "FORMAL promotion",
+    "integration direct push",
+    "main merge",
+    "deploy",
+    "image generation",
+    "regeneration",
+    "repaint",
+    "inpaint",
+    "reconstruction",
+    "crop"
+  ],
+  "candidateMutationPolicy": "REPAIRED only; ambiguity routes to MANUAL_REVIEW"
+}
