@@ -1,0 +1,65 @@
+{
+  "phase": "2C-E",
+  "worker_branch": "repair/phase2c-complex-e",
+  "canonical_integration_branch": "integration/monster-art-candidate-system",
+  "base_integration_sha": "5354cba99dd7cfc3f52a3ce1e587778e356fe4ca",
+  "target_pr": 108,
+  "assigned": {
+    "F039": [
+      "m115",
+      "m116"
+    ],
+    "F060": [
+      "m175",
+      "m176",
+      "m177"
+    ],
+    "F081": [
+      "m236"
+    ]
+  },
+  "cp1": [
+    "m115",
+    "m116",
+    "m175"
+  ],
+  "cp2": [
+    "m176",
+    "m177",
+    "m236"
+  ],
+  "source_audit": {
+    "title": "Phase 1 §6-7 Visual and Forbidden Audit",
+    "github_comment_id": 3256657563,
+    "audit_commit_sha": "18fc2899eb4e1c5f48727368a55bfda0fbe9aa74",
+    "current_comment_fetch": "404_NOT_FOUND"
+  },
+  "allowed_operations": [
+    "safe_non_generation_only",
+    "verbatim_copy_of_authoritative_candidate_bytes",
+    "metadata_only_checkpoint_evidence"
+  ],
+  "forbidden_operations": [
+    "generation",
+    "regeneration",
+    "repaint",
+    "inpainting",
+    "reconstruction",
+    "semantic_redesign",
+    "crop",
+    "FORMAL",
+    "integration_push",
+    "main_merge",
+    "deploy"
+  ],
+  "protected": [
+    "character",
+    "wing",
+    "glow",
+    "particle",
+    "semi_transparent_edge"
+  ],
+  "repair_gate": "REPAIRED requires authoritative safe pixel-mask/index evidence or byte-exact trusted repaired candidate supplied in GitHub; otherwise candidate remains unchanged and status is MANUAL_REVIEW / NEEDS_GENERATION.",
+  "candidate_policy": "Only REPAIRED species may change candidate bytes; other candidate changes must remain 0.",
+  "global_audit_policy": "Canonical/global audit remains unchanged until integration."
+}

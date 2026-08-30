@@ -1,0 +1,57 @@
+{
+  "phase": "2C-E",
+  "checkpoint": "CP1",
+  "species": [
+    {
+      "species": "m115",
+      "failure_id": "F039",
+      "diagnosis": ["OTHER"],
+      "diagnosis_basis": "Subtype is not asserted without authoritative per-pixel audit evidence; OTHER is used conservatively rather than guessing a background/glow/artifact class.",
+      "final": "MANUAL_REVIEW",
+      "candidate_path": "public/monsters/m115.webp",
+      "candidate_blob_sha": "3677ff5f885f8271a75ebbb1fda5f375ecc342ef",
+      "candidate_changed": false,
+      "repair_action": "none",
+      "reason": "CURRENT GitHub confirms the candidate bytes but does not provide an authoritative safe pixel mask/index or byte-exact trusted repaired candidate for this species. Editing could alter protected character, wing, glow, particle, or semi-transparent edge pixels; no non-generative pixel change is therefore authorized."
+    },
+    {
+      "species": "m116",
+      "failure_id": "F039",
+      "diagnosis": ["OTHER"],
+      "diagnosis_basis": "Subtype is not asserted without authoritative per-pixel audit evidence; OTHER is used conservatively rather than guessing a background/glow/artifact class.",
+      "final": "MANUAL_REVIEW",
+      "candidate_path": "public/monsters/m116.webp",
+      "candidate_blob_sha": "afb57bb15e908cb62cd66ce3bc11fee09ce4cc86",
+      "candidate_changed": false,
+      "repair_action": "none",
+      "reason": "CURRENT GitHub confirms the candidate bytes but does not provide an authoritative safe pixel mask/index or byte-exact trusted repaired candidate for this species. Editing could alter protected character, wing, glow, particle, or semi-transparent edge pixels; no non-generative pixel change is therefore authorized."
+    },
+    {
+      "species": "m175",
+      "failure_id": "F060",
+      "diagnosis": ["OTHER"],
+      "diagnosis_basis": "Subtype is not asserted without authoritative per-pixel audit evidence; OTHER is used conservatively rather than guessing a background/glow/artifact class.",
+      "final": "MANUAL_REVIEW",
+      "candidate_path": "public/monsters/m175.webp",
+      "candidate_blob_sha": "3d78974eb09e3f3332d7aa71d24346cc9f016984",
+      "candidate_changed": false,
+      "repair_action": "none",
+      "reason": "CURRENT GitHub confirms the candidate bytes but does not provide an authoritative safe pixel mask/index or byte-exact trusted repaired candidate for this species. Editing could alter protected character, wing, glow, particle, or semi-transparent edge pixels; no non-generative pixel change is therefore authorized."
+    }
+  ],
+  "qa": {
+    "assigned_accounting": "3/3",
+    "candidate_policy": "PASS",
+    "protected_edge_policy": "PASS",
+    "unexpected_candidate_changes": 0,
+    "FORMAL": 0,
+    "integration_merge": "NO",
+    "main_merge": "NO",
+    "deploy": "NO"
+  },
+  "zip": {
+    "name": "monster-art-phase2c-e-cp1.zip",
+    "status": "CREATED_AND_REOPENED_EXECUTION_ARTIFACT",
+    "committed_to_github": false
+  }
+}
