@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "worker": "A",
+  "baseHead": "277abc055d207bd2aa6f566ab3a1f1c36dc7d55d",
+  "selected": [],
+  "repaired": [],
+  "checkpoints": {
+    "cp1": "NOT_USED",
+    "cp2": "NOT_USED",
+    "cp3": "NOT_USED"
+  },
+  "qualificationEvidence": "No candidate satisfied every SAFE_REQUALIFIED condition. The zero-selection result is intentional: background variance or preservation risk remains for every A-partition REPAIR family.",
+  "candidateBinaryChanges": [],
+  "semanticArtChange": false,
+  "formalPromotion": false
+}

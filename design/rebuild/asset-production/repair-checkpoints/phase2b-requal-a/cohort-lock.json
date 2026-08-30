@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "worker": "A",
+  "baseIntegrationHead": "277abc055d207bd2aa6f566ab3a1f1c36dc7d55d",
+  "selected": [],
+  "requalifiedFamilies": [],
+  "qualificationRejected": {
+    "F012": "Border-connected backdrop has material gradient/blur variance and merges with the rock silhouette; a uniform background mask cannot preserve the full exterior edge without semantic judgment.",
+    "F030": "Only m090 remains REPAIR while m088/m089 are CURRENT NORMALIZE; m090 also has white smoke/aura overlap, so family continuity and semi-transparent edge preservation are not provable.",
+    "F039": "White border is uniform, but both members rely on translucent wings, antennae, and detached fine particles that blend into the plate.",
+    "F042": "Blue backdrop has strong gradient/reflection variance and overlaps the ice/water silhouette at the lower edge.",
+    "F054": "Warm vignette background and amber glow overlap the crystal/armor boundary; removing it would depend on subject-color similarity.",
+    "F060": "White border is uniform, but translucent crystal wings, halo-like arcs, and sparse particles cannot be separated without erosion risk.",
+    "F063": "Although outer border pixels are uniform, each image contains an interior dark plate plus fire glow/aura; there is no single safe uniform background model.",
+    "F066": "Near-uniform off-white border is present, but thin orbit rings, glow, detached shards, and semi-transparent aura overlap into the background.",
+    "F075": "Uniform white border is present, but ragged thin exterior fragments and overlapping purple energy require semantic classification to distinguish anatomy from incidental marks.",
+    "F081": "Near-uniform off-white border is present, but the single candidate has thin orbit/ribbon/particle features that cannot be losslessly retained by safe alpha cleanup."
+  },
+  "lockResult": "NO_SAFE_REQUALIFIED_FAMILY",
+  "semanticArtChange": false,
+  "formalPromotion": false,
+  "candidateBinaryChanges": []
+}
