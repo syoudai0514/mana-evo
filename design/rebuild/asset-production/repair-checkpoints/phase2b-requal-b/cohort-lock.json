@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "worker": "B",
+  "baseIntegrationHead": "76ecbe89d15b0ddb5956e4bbff7453d3b0b4da71",
+  "partition": "family number % 3 == 1",
+  "currentRepairCandidates": [
+    "m064",
+    "m065",
+    "m066",
+    "m125",
+    "m126",
+    "m127",
+    "m160",
+    "m161",
+    "m162",
+    "m169",
+    "m170",
+    "m171",
+    "m187",
+    "m188",
+    "m189"
+  ],
+  "currentNormalizeExclusion": "All CURRENT NORMALIZE species were excluded before qualification.",
+  "manualReviewExclusion": [
+    "m233",
+    "m234"
+  ],
+  "selected": [
+    "m160"
+  ],
+  "qualificationRejected": [
+    {
+      "family": "F022",
+      "species": [
+        "m064",
+        "m065",
+        "m066"
+      ],
+      "reason": "non-uniform warm blurred background; corner spread exceeds safe uniform-background qualification"
+    },
+    {
+      "family": "F043",
+      "species": [
+        "m125",
+        "m126",
+        "m127"
+      ],
+      "reason": "uniform corner tone but threshold flood-fill leaves embedded blue gradient/background; subject cannot be safely isolated"
+    },
+    {
+      "family": "F055",
+      "species": [
+        "m161",
+        "m162"
+      ],
+      "reason": "detached label-like/stray raster marks remain outside the subject; exclusion avoids non-background mutation"
+    },
+    {
+      "family": "F058",
+      "species": [
+        "m169",
+        "m170",
+        "m171"
+      ],
+      "reason": "many detached foreground fragments and edge-adjacent residuals; no safe isolated-subject qualification"
+    },
+    {
+      "family": "F064",
+      "species": [
+        "m187",
+        "m188",
+        "m189"
+      ],
+      "reason": "uniform corners but embedded multitone/gradient background remains after border-connected threshold pass; subject cannot be safely isolated"
+    },
+    {
+      "family": "F079",
+      "species": [
+        "m233",
+        "m234"
+      ],
+      "reason": "CURRENT MANUAL_REVIEW, not REPAIR; excluded from this work"
+    }
+  ]
+}

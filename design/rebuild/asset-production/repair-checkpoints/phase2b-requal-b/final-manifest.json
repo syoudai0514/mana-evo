@@ -1,0 +1,130 @@
+{
+  "schemaVersion": 1,
+  "worker": "B",
+  "baseIntegrationHead": "76ecbe89d15b0ddb5956e4bbff7453d3b0b4da71",
+  "partition": "family number % 3 == 1",
+  "eligibleFamilies": [
+    "F022",
+    "F043",
+    "F055",
+    "F058",
+    "F064"
+  ],
+  "selected": [
+    "m160"
+  ],
+  "repaired": [
+    "m160"
+  ],
+  "qualificationRejected": [
+    {
+      "family": "F022",
+      "species": [
+        "m064",
+        "m065",
+        "m066"
+      ],
+      "reason": "non-uniform warm blurred background; corner spread exceeds safe uniform-background qualification"
+    },
+    {
+      "family": "F043",
+      "species": [
+        "m125",
+        "m126",
+        "m127"
+      ],
+      "reason": "uniform corner tone but threshold flood-fill leaves embedded blue gradient/background; subject cannot be safely isolated"
+    },
+    {
+      "family": "F055",
+      "species": [
+        "m161",
+        "m162"
+      ],
+      "reason": "detached label-like/stray raster marks remain outside the subject; exclusion avoids non-background mutation"
+    },
+    {
+      "family": "F058",
+      "species": [
+        "m169",
+        "m170",
+        "m171"
+      ],
+      "reason": "many detached foreground fragments and edge-adjacent residuals; no safe isolated-subject qualification"
+    },
+    {
+      "family": "F064",
+      "species": [
+        "m187",
+        "m188",
+        "m189"
+      ],
+      "reason": "uniform corners but embedded multitone/gradient background remains after border-connected threshold pass; subject cannot be safely isolated"
+    },
+    {
+      "family": "F079",
+      "species": [
+        "m233",
+        "m234"
+      ],
+      "reason": "CURRENT MANUAL_REVIEW, not REPAIR; excluded from this work"
+    }
+  ],
+  "checkpoints": [
+    {
+      "checkpoint": 1,
+      "status": "PASS",
+      "species": [
+        "m160"
+      ],
+      "zip": "monster-art-requal-b-cp1.zip"
+    },
+    {
+      "checkpoint": 2,
+      "status": "NOT USED"
+    },
+    {
+      "checkpoint": 3,
+      "status": "NOT USED"
+    }
+  ],
+  "formalPromotion": false,
+  "species": [
+    {
+      "speciesId": "m160",
+      "family": "F055",
+      "stage": 1,
+      "sourceSha256": "2723c2df407ea635de67b03ccfa897618af5a3168844cf78afffdcaeeca0119a",
+      "repairedSha256": "5d374f7a64fc07c2a2f829ff50c2862d6f5532b85c2c94ce5e2fda5114aa608e",
+      "sourceBytes": 10392,
+      "repairedBytes": 40468,
+      "repairType": "flat-off-white-background-plate-removal",
+      "backgroundModel": "border-connected near-uniform rgb(245,245,240); corner spread 1.6771",
+      "alphaOperation": {
+        "backgroundConnectivityThreshold": 18,
+        "edgeMatteRadiusPixels": 2,
+        "edgeMatteThreshold": 80,
+        "backgroundPixelsRemoved": 1027928,
+        "edgePixelsMatted": 642,
+        "pixelsChanged": 1028570
+      },
+      "characterPixelPreservation": "PASS",
+      "semanticArtChange": false,
+      "formalPromotion": false,
+      "postRepairValidation": {
+        "webpSignature": true,
+        "transparentCorners": true,
+        "edgeVisiblePixels": 0,
+        "visualResult": "PASS (direct RGBA validation and checkerboard review)"
+      }
+    }
+  ],
+  "validation": {
+    "candidateProvenance": "PASS",
+    "webpSignature": "PASS",
+    "directAlphaAndCheckerboardReview": "PASS",
+    "npmTest": "PASS (290/290)",
+    "productionCompile": "PASS (vite build; npm build cloud bootstrap preflight unavailable in this environment)"
+  },
+  "finalZip": "monster-art-requal-b-final.zip"
+}

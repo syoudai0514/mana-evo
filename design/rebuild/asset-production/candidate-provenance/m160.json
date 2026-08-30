@@ -13,6 +13,41 @@
       },
       "manifestStateBefore": "PLACEHOLDER",
       "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-30T00:26:36.040Z",
+      "sourceLabel": "ManaEvo Phase 2B requalification worker B checkpoint 1 safe background repair",
+      "previous": {
+        "repositoryPath": "public/monsters/m160.webp",
+        "sha256": "2723c2df407ea635de67b03ccfa897618af5a3168844cf78afffdcaeeca0119a",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m160/2723c2df407ea635de67b03ccfa897618af5a3168844cf78afffdcaeeca0119a.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m160.webp",
+        "sha256": "5d374f7a64fc07c2a2f829ff50c2862d6f5532b85c2c94ce5e2fda5114aa608e",
+        "bytes": 40468
+      },
+      "manifestStateBefore": "CANDIDATE",
+      "operation": "repair",
+      "reason": "Remove only the border-connected near-uniform off-white background plate and conservative exterior edge matte; preserve the existing candidate subject.",
+      "repairType": "flat-off-white-background-plate-removal",
+      "alphaBackgroundOperation": {
+        "repairType": "flat-off-white-background-plate-removal",
+        "backgroundRgb": [
+          245,
+          245,
+          240
+        ],
+        "backgroundConnectivityThreshold": 18,
+        "edgeMatteRadiusPixels": 2,
+        "edgeMatteThreshold": 80,
+        "backgroundPixelsRemoved": 1027928,
+        "edgePixelsMatted": 642,
+        "pixelsChanged": 1028570
+      },
+      "noSemanticArtChange": true,
+      "characterPixelPreservation": "PASS",
+      "formalPromotion": false
     }
   ]
 }
