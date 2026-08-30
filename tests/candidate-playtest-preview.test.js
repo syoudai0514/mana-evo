@@ -48,17 +48,17 @@ test('every generated candidate has an exact WebP/provenance pair', () => {
   }
 })
 
-test('FINAL ART CLOSEOUT promotes every completed active asset except m235 to FORMAL', () => {
+test('FINAL ART CLOSEOUT promotes every active asset to FORMAL', () => {
   const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'design/current/monster-asset-manifest.json'), 'utf8'))
   const assets = Object.values(manifest.assets)
   const formal = Object.entries(manifest.assets).filter(([, asset]) => asset.state === 'FORMAL')
-  assert.equal(formal.length, 237)
+  assert.equal(formal.length, 238)
   assert.equal(assets.filter((asset) => asset.state === 'CANDIDATE').length, 0)
-  assert.equal(assets.filter((asset) => asset.state === 'PLACEHOLDER').length, 1)
+  assert.equal(assets.filter((asset) => asset.state === 'PLACEHOLDER').length, 0)
   for (const [speciesId, asset] of formal) {
     assert.equal(asset.formalAsset, `/monsters/${speciesId}.webp`)
     assert.equal(asset.approvalEvidence?.approved, true)
     assert.equal(asset.approvalEvidence?.approvalType, 'CURRENT_FORMAL')
   }
-  assert.equal(manifest.assets.m235.state, 'PLACEHOLDER')
+  assert.equal(manifest.assets.m235.state, 'FORMAL')
 })

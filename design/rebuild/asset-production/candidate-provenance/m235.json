@@ -13,6 +13,22 @@
       },
       "manifestStateBefore": "PLACEHOLDER",
       "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-30T23:37:35.428Z",
+      "sourceLabel": "FINAL CLOSEOUT last7: m235 authoritative registration",
+      "previous": {
+        "repositoryPath": "public/monsters/m235.webp",
+        "sha256": "a5c1defafa948bba4e46bfa1548a1ec72dfb09a165279c9c3225827fb8afb95d",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m235/a5c1defafa948bba4e46bfa1548a1ec72dfb09a165279c9c3225827fb8afb95d.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m235.webp",
+        "sha256": "df07f6d99ab1ed33c4f7cb0fcc668b0254443c10405fb769f03682b87e728991",
+        "bytes": 398768
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
     }
   ]
 }
