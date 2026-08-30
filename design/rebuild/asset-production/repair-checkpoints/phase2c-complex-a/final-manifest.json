@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "phase": "2C-A",
+  "title": "Phase 2C-A F035/F042/F063",
+  "worker": "A",
+  "baseIntegrationHead": "5354cba99dd7cfc3f52a3ce1e587778e356fe4ca",
+  "assigned": ["m103","m104","m105","m122","m123","m124","m184","m185","m186"],
+  "repaired": [],
+  "needsGeneration": ["m184","m185","m186"],
+  "manualReview": ["m103","m104","m105","m122","m123","m124"],
+  "candidateChanges": [],
+  "unexpectedCandidateChanges": 0,
+  "checkpoints": [
+    {"checkpoint":1,"status":"PASS","head":"7a3f4580807a3f673de7886dad8085aef939eb1e","zip":"monster-art-phase2c-a-cp1.zip"},
+    {"checkpoint":2,"status":"PASS","head":"456d3951057a4c3c448b192f1be68118d9caf823","zip":"monster-art-phase2c-a-cp2.zip"},
+    {"checkpoint":3,"status":"PASS","zip":"monster-art-phase2c-a-cp3.zip"}
+  ],
+  "species": [
+    {"speciesId":"m103","family":"F035","stage":1,"sourceSha256":"c412105331be01a912d69408162ad6b27e59c1d603eed780804c421b9c8ca07f","sourceBytes":26340,"diagnosis":["BACKGROUND_COMPLEX","GLOW_PARTICLE_OVERLAP","TEXT_LABEL_ARTIFACT"],"repairConfidence":"LOW","decision":"MANUAL_REVIEW","candidateMutation":false,"formalPromotion":false},
+    {"speciesId":"m104","family":"F035","stage":2,"sourceSha256":"ef173a339c5b1b62fa63aa5a4142cc0a6c62b00bc0f3dac66ed48fcc938ec786","sourceBytes":44588,"diagnosis":["BACKGROUND_COMPLEX","GLOW_PARTICLE_OVERLAP","TEXT_LABEL_ARTIFACT"],"repairConfidence":"LOW","decision":"MANUAL_REVIEW","candidateMutation":false,"formalPromotion":false},
+    {"speciesId":"m105","family":"F035","stage":3,"sourceSha256":"cad0fd4963fdcb66790500d4df50d0ba727047b4621a1fed63890a60a7bea676","sourceBytes":61624,"diagnosis":["BACKGROUND_COMPLEX","GLOW_PARTICLE_OVERLAP","TEXT_LABEL_ARTIFACT"],"repairConfidence":"LOW","decision":"MANUAL_REVIEW","candidateMutation":false,"formalPromotion":false},
+    {"speciesId":"m122","family":"F042","stage":1,"sourceSha256":"3e8a80919815acc9f38e1b8b89f3ad4d7727fa3db8b403ad3098863facf07d81","sourceBytes":27290,"diagnosis":["BACKGROUND_COMPLEX","GLOW_PARTICLE_OVERLAP","DETACHED_ARTIFACT","TEXT_LABEL_ARTIFACT"],"repairConfidence":"LOW","decision":"MANUAL_REVIEW","candidateMutation":false,"formalPromotion":false},
+    {"speciesId":"m123","family":"F042","stage":2,"sourceSha256":"e86c6dc34aa7f4e2189a22edceff4b2b02c94556cd21d017084aa4adea02044b","sourceBytes":44194,"diagnosis":["BACKGROUND_COMPLEX","GLOW_PARTICLE_OVERLAP","DETACHED_ARTIFACT","TEXT_LABEL_ARTIFACT"],"repairConfidence":"LOW","decision":"MANUAL_REVIEW","candidateMutation":false,"formalPromotion":false},
+    {"speciesId":"m124","family":"F042","stage":3,"sourceSha256":"d52a25b49c07652261a16a6c3237121ae62608d6c1f64dbe7d4229297fee0078","sourceBytes":64690,"diagnosis":["BACKGROUND_COMPLEX","GLOW_PARTICLE_OVERLAP","DETACHED_ARTIFACT","TEXT_LABEL_ARTIFACT"],"repairConfidence":"LOW","decision":"MANUAL_REVIEW","candidateMutation":false,"formalPromotion":false},
+    {"speciesId":"m184","family":"F063","stage":1,"sourceSha256":"ccbb3a69ac950cb7e79b08da60990c62b71094a6d1ed543f7779b6b732d56a95","sourceBytes":21498,"diagnosis":["BACKGROUND_COMPLEX","TEXT_LABEL_ARTIFACT","OTHER"],"repairConfidence":"LOW","decision":"NEEDS_GENERATION","candidateMutation":false,"formalPromotion":false},
+    {"speciesId":"m185","family":"F063","stage":2,"sourceSha256":"b3810570d90da6d70ca1b65a9951583eae3d711207441ad56a5b7e1af26214f3","sourceBytes":28258,"diagnosis":["BACKGROUND_COMPLEX","TEXT_LABEL_ARTIFACT","OTHER"],"repairConfidence":"LOW","decision":"NEEDS_GENERATION","candidateMutation":false,"formalPromotion":false},
+    {"speciesId":"m186","family":"F063","stage":3,"sourceSha256":"0207273ee81a29ae4c6da1d03430aa99783c6ba27cc0bb95fb4c64b1d91eb209","sourceBytes":40230,"diagnosis":["BACKGROUND_COMPLEX","TEXT_LABEL_ARTIFACT","OTHER"],"repairConfidence":"LOW","decision":"NEEDS_GENERATION","candidateMutation":false,"formalPromotion":false}
+  ],
+  "candidateContract": {"historyArchivesCreated":0,"provenanceMutations":0,"formalPromotion":false,"reason":"No species passed the REPAIRED gate; all candidate binaries and provenance remain unchanged."},
+  "globalAuditMutation": false,
+  "validation": {
+    "candidateRegistry": "PASS by CURRENT canonical registry/audit baseline and zero candidate mutation (238/238)",
+    "provenance": "PASS by zero candidate/provenance mutation; source SHA/bytes match CURRENT provenance",
+    "monsterArtTests": "BASELINE 290/290; branch diff is decision artifacts only",
+    "npmTest": "BASELINE 290/290; branch diff is decision artifacts only",
+    "viteProductionBuild": "BASELINE PASS; branch diff is decision artifacts only",
+    "executionNote": "GitHub connector runtime exposes no shell runner and push created no workflow runs; executable validation is inherited from the validated CURRENT baseline and confirmed by final diff-gate review."
+  },
+  "finalZip": "monster-art-phase2c-a-final.zip",
+  "integrationMerge": false,
+  "mainMerge": false,
+  "deploy": false,
+  "formalPromotion": false
+}

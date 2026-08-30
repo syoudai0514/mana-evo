@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "phase": "2C-A",
+  "worker": "A",
+  "checkpoint": 3,
+  "baseIntegrationHead": "5354cba99dd7cfc3f52a3ce1e587778e356fe4ca",
+  "parentWorkerHead": "456d3951057a4c3c448b192f1be68118d9caf823",
+  "assigned": ["m184", "m185", "m186"],
+  "status": "PASS",
+  "formalPromotion": false,
+  "repaired": [],
+  "needsGeneration": ["m184", "m185", "m186"],
+  "manualReview": [],
+  "species": [
+    {"speciesId":"m184","family":"F063","stage":1,"sourceSha256":"ccbb3a69ac950cb7e79b08da60990c62b71094a6d1ed543f7779b6b732d56a95","sourceBytes":21498,"diagnosis":["BACKGROUND_COMPLEX","TEXT_LABEL_ARTIFACT","OTHER"],"repairConfidence":"LOW","decision":"NEEDS_GENERATION","reason":"CURRENT audit says the face itself must be rescued in addition to text cleanup. Face/anatomy reconstruction is explicitly outside allowed non-generative repair, so segmentation alone cannot make this production-ready.","candidateMutation":false,"formalPromotion":false},
+    {"speciesId":"m185","family":"F063","stage":2,"sourceSha256":"b3810570d90da6d70ca1b65a9951583eae3d711207441ad56a5b7e1af26214f3","sourceBytes":28258,"diagnosis":["BACKGROUND_COMPLEX","TEXT_LABEL_ARTIFACT","OTHER"],"repairConfidence":"LOW","decision":"NEEDS_GENERATION","reason":"Face rescue plus text removal is required by CURRENT audit evidence. The necessary semantic reconstruction cannot be achieved with safe alpha/background operations only.","candidateMutation":false,"formalPromotion":false},
+    {"speciesId":"m186","family":"F063","stage":3,"sourceSha256":"0207273ee81a29ae4c6da1d03430aa99783c6ba27cc0bb95fb4c64b1d91eb209","sourceBytes":40230,"diagnosis":["BACKGROUND_COMPLEX","TEXT_LABEL_ARTIFACT","OTHER"],"repairConfidence":"LOW","decision":"NEEDS_GENERATION","reason":"The final stage has the same face/text rescue requirement with high text risk. Any repair that reconstructs occluded/compromised face pixels would be repaint/inpainting/anatomy reconstruction and is prohibited.","candidateMutation":false,"formalPromotion":false}
+  ],
+  "qa": {"diagnosis":"PASS","machineQa":"PASS (CURRENT candidates retained byte-for-byte; provenance SHA/bytes recorded; CURRENT audit reports 512x512 opaque WebP canvases)","visualQa":"PASS (CURRENT final-visual-audit evidence reviewed; no new pixel mutation performed)","familyQa":"PASS (F063 consistently rejected from non-generative repair because face rescue/reconstruction is required)","characterPreservation":"PASS by zero candidate mutation","unexpectedCandidateChanges":0},
+  "zipValidation": {"zipReopen":"PASS","expectedWebpCount":0,"riffWebp":"N/A (no REPAIRED species in checkpoint ZIP)","dimensions512x512":"N/A (no REPAIRED species in checkpoint ZIP)","shaBytes":"PASS (decision manifest only; archive SHA recorded separately)","missing":0,"duplicate":0,"extra":0},
+  "zip": "monster-art-phase2c-a-cp3.zip"
+}
