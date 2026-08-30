@@ -1,0 +1,148 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Machine-readable ownership map for CI drift detection. This file is process metadata, not a product-spec authority.",
+  "governanceEntry": "REBUILD-START-HERE.md",
+  "currentEntry": "design/current/00-START-HERE.md",
+  "decisionLog": "design/rebuild/DECISION-LOG.md",
+  "impactMarkers": {
+    "impact": "Canonical-Impact",
+    "domains": "Canonical-Domains",
+    "reason": "Canonical-Reason"
+  },
+  "domains": {
+    "learning": {
+      "runtimePrefixes": [
+        "src/kids-quest-study/",
+        "src/study/"
+      ],
+      "runtimeFiles": [],
+      "currentDocs": [
+        "design/current/01-LEARNING-REWARDS.md"
+      ]
+    },
+    "battle": {
+      "runtimePrefixes": [
+        "src/game/screens/BattleScreen"
+      ],
+      "runtimeFiles": [
+        "src/game/balance.js",
+        "src/game/battleRules.js",
+        "src/game/engine.js",
+        "src/game/engineCore.js",
+        "src/game/engineSharedRuntime.js"
+      ],
+      "currentDocs": [
+        "design/current/02-BATTLE-TICKETS-BALANCE.md"
+      ]
+    },
+    "capture": {
+      "runtimePrefixes": [
+        "src/game/screens/Capture"
+      ],
+      "runtimeFiles": [
+        "src/game/captureDisplay.js",
+        "src/game/captureDomain.js",
+        "src/game/engine.js",
+        "src/game/engineCore.js",
+        "src/game/engineSharedRuntime.js"
+      ],
+      "currentDocs": [
+        "design/current/03-CAPTURE-DUPLICATES.md"
+      ]
+    },
+    "evolution": {
+      "runtimePrefixes": [
+        "src/game/screens/Evolution"
+      ],
+      "runtimeFiles": [
+        "src/game/evolutionDomain.js",
+        "src/game/explorationDomain.js",
+        "src/game/engineCore.js",
+        "src/game/engineSharedRuntime.js"
+      ],
+      "currentDocs": [
+        "design/current/04-EVOLUTION-ITEMS-SPECIAL-FORMS.md",
+        "design/current/08-EVOLUTION-PACING.md"
+      ]
+    },
+    "world": {
+      "runtimePrefixes": [
+        "src/game/screens/Adventure"
+      ],
+      "runtimeFiles": [
+        "src/game/content.js",
+        "src/game/worldProgression.js",
+        "src/game/progression.js"
+      ],
+      "currentDocs": [
+        "design/current/05-WORLD-PROGRESSION.md"
+      ]
+    },
+    "ui": {
+      "runtimePrefixes": [
+        "src/game/screens/",
+        "src/navigation/",
+        "src/ui/"
+      ],
+      "runtimeFiles": [
+        "src/App.jsx",
+        "src/HowToPlay.jsx",
+        "src/main.jsx",
+        "src/styles.css",
+        "src/how-to-play.css",
+        "src/parent-controls.css",
+        "src/premium-ui-v4.css",
+        "src/game/GameScreens.jsx",
+        "src/game/runtime.css",
+        "src/game/game.css",
+        "src/game/battle-v6.css"
+      ],
+      "currentDocs": [
+        "design/current/06-UI-SCREEN-CONTRACT.md"
+      ]
+    },
+    "save-platform": {
+      "runtimePrefixes": [
+        "src/platform/",
+        "src/parent/",
+        "src/game/save",
+        "src/game/profile",
+        "supabase/"
+      ],
+      "runtimeFiles": [
+        "public/manifest.webmanifest",
+        "public/sw.js",
+        "index.html",
+        "vite.config.js",
+        "vercel.json"
+      ],
+      "currentDocs": [
+        "design/current/07-SAVE-PROFILES-PARENT-PWA.md"
+      ]
+    },
+    "acceptance": {
+      "runtimePrefixes": [
+        "e2e/",
+        "tests/"
+      ],
+      "runtimeFiles": [],
+      "currentDocs": [
+        "design/current/08-ACCEPTANCE-TEST-CONTRACT.md"
+      ]
+    },
+    "monster-art": {
+      "runtimePrefixes": [
+        "public/monsters/",
+        "design/rebuild/asset-production/candidate-provenance/"
+      ],
+      "runtimeFiles": [
+        "src/game/playtestCandidateArt.js",
+        "src/game/PlaceholderMonster.jsx"
+      ],
+      "currentDocs": [
+        "design/current/09-MONSTER-MASTER-ART-SPEC.md",
+        "design/current/monster-asset-manifest.json"
+      ]
+    }
+  }
+}

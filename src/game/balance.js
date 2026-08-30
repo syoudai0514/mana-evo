@@ -1,4 +1,4 @@
-export const BALANCE_VERSION = 4
+export const BALANCE_VERSION = 6
 export const MAX_MONSTER_LEVEL = 100
 export const NORMAL_REPEAT_CAP = 1.10
 export const NORMAL_REPEAT_MASTERY_FLOOR = 0.70
@@ -6,26 +6,27 @@ export const NORMAL_REPEAT_MASTERY_FLOOR = 0.70
 // Evolution pacing V5 keeps the reviewed stage reward values as the encounter
 // reward pool, then applies these multipliers when XP is settled to monsters.
 // The active battler receives 40% of the legacy pool; teammates receive 40% of
-// that active amount. This preserves learning-earned play opportunities without
-// letting a long first-day session evolve an entire three-monster party at once.
+// that active amount. Battle V6 adds a level-gap factor at the canonical XP
+// settlement boundary so farming enemies far below the current monster stops
+// being an efficient way to level while slightly stronger opponents stay rewarding.
 export const BATTLE_XP_GLOBAL_MULTIPLIER = 0.40
 export const BATTLE_XP_TEAMMATE_MULTIPLIER = 0.40
 export const CAPTURE_EVOLUTION_LEVEL_BUFFER = 5
 
 export const NORMAL_DIFFICULTY = Object.freeze({
-  weak: { targetMultiplier: 0.82, label: 'いけそう', xp: 90 },
-  normal: { targetMultiplier: 0.92, label: 'いけそう', xp: 110 },
-  strong: { targetMultiplier: 1.02, label: 'いいしょうぶ', xp: 125 },
-  rare: { targetMultiplier: 1.065, label: 'いいしょうぶ', xp: 145 },
-  elite: { targetMultiplier: 1.12, label: 'かなりつよい', xp: 165 }
+  weak: { targetMultiplier: 0.86, label: 'いけそう', xp: 90 },
+  normal: { targetMultiplier: 0.96, label: 'いいしょうぶ', xp: 110 },
+  strong: { targetMultiplier: 1.03, label: 'いいしょうぶ', xp: 125 },
+  rare: { targetMultiplier: 1.08, label: 'かなりつよい', xp: 145 },
+  elite: { targetMultiplier: 1.13, label: 'かなりつよい', xp: 165 }
 })
 
 export const BOSS_RANKS = Object.freeze({
-  C: { targetMultiplier: 1.02, hp: 1.20, attack: 1.02, defense: 1.00, xp: 180, bigMovePower: 100 },
-  B: { targetMultiplier: 1.08, hp: 1.35, attack: 1.04, defense: 1.03, xp: 200, bigMovePower: 120 },
-  A: { targetMultiplier: 1.14, hp: 1.50, attack: 1.07, defense: 1.05, xp: 220, bigMovePower: 140 },
-  S: { targetMultiplier: 1.20, hp: 1.65, attack: 1.10, defense: 1.08, xp: 250, bigMovePower: 155 },
-  EX: { targetMultiplier: 1.28, hp: 1.80, attack: 1.12, defense: 1.10, xp: 300, bigMovePower: 170 }
+  C: { targetMultiplier: 1.04, hp: 1.30, attack: 1.00, defense: 1.02, xp: 180, bigMovePower: 100 },
+  B: { targetMultiplier: 1.10, hp: 1.45, attack: 1.03, defense: 1.05, xp: 200, bigMovePower: 120 },
+  A: { targetMultiplier: 1.16, hp: 1.60, attack: 1.05, defense: 1.07, xp: 220, bigMovePower: 140 },
+  S: { targetMultiplier: 1.22, hp: 1.75, attack: 1.08, defense: 1.10, xp: 250, bigMovePower: 155 },
+  EX: { targetMultiplier: 1.30, hp: 1.90, attack: 1.10, defense: 1.12, xp: 300, bigMovePower: 170 }
 })
 
 const clamp = (min, value, max) => Math.max(min, Math.min(max, value))
@@ -82,11 +83,6 @@ export function monsterCombatPower(monster, speciesOf) {
   return combatPowerFromStats(statsFromBase(species.base, monster.level, monster.statMultipliers))
 }
 
-function average(values) {
-  if (!values.length) return 0
-  return values.reduce((sum, value) => sum + value, 0) / values.length
-}
-
 function weightedTop(values, weights = [0.5, 0.3, 0.2]) {
   const picked = values.slice(0, weights.length)
   if (!picked.length) return 0
@@ -95,10 +91,12 @@ function weightedTop(values, weights = [0.5, 0.3, 0.2]) {
   return picked.reduce((sum, value, index) => sum + value * activeWeights[index], 0) / weightSum
 }
 
+function teamMonsters(game) {
+  return (game?.team || []).map((id) => game?.box?.[id]).filter(Boolean)
+}
+
 function teamPowers(game, speciesOf) {
-  return (game?.team || [])
-    .map((id) => game?.box?.[id])
-    .filter(Boolean)
+  return teamMonsters(game)
     .map((monster) => monsterCombatPower(monster, speciesOf))
     .filter((value) => value > 0)
     .sort((a, b) => b - a)
@@ -111,18 +109,28 @@ function rosterPowers(game, speciesOf) {
     .sort((a, b) => b - a)
 }
 
-// Normal encounters intentionally use the current team only so newly caught
-// monsters can still be trained without the entire box making enemies too hard.
+// Battle V6 hotfix: a weak bench must never lower the normal encounter below
+// the active monster's solo reference. A stronger support member can still raise
+// the target through the reviewed 70/30 blend, preserving useful team scaling.
 export function normalReferencePower(game, speciesOf) {
-  const team = teamPowers(game, speciesOf)
-  if (team.length) return Math.max(1, average(team.slice(0, 3)))
+  const team = teamMonsters(game)
+  if (team.length) {
+    const active = team.find((monster) => monster.instanceId === game?.activeMonsterId) || team[0]
+    const activePower = monsterCombatPower(active, speciesOf)
+    const supportPower = team
+      .filter((monster) => monster.instanceId !== active?.instanceId)
+      .map((monster) => monsterCombatPower(monster, speciesOf))
+      .filter((value) => value > 0)
+      .sort((a, b) => b - a)[0] || activePower
+    return Math.max(1, activePower, activePower * 0.70 + supportPower * 0.30)
+  }
   const roster = rosterPowers(game, speciesOf)
   return Math.max(1, roster[0] || 1)
 }
 
-// Story bosses must not become trivial just because a Lv80 carry is paired with
-// two weak monsters, nor should swapping to a deliberately weak team lower the
-// first-encounter snapshot. We therefore include a softened roster/carry floor.
+// Story bosses must not become trivial just because a high-level carry is paired
+// with two weak monsters, nor should swapping to a deliberately weak team lower
+// the first-encounter snapshot. We therefore include a softened roster/carry floor.
 export function bossReferencePower(game, speciesOf) {
   const team = teamPowers(game, speciesOf)
   const roster = rosterPowers(game, speciesOf)
@@ -139,6 +147,16 @@ export function referencePower(game, speciesOf) {
 export function battleXpForStage(stage) {
   if (stage?.bossRank) return (BOSS_RANKS[stage.bossRank] || BOSS_RANKS.A).xp
   return (NORMAL_DIFFICULTY[stage?.enemyDifficulty] || NORMAL_DIFFICULTY.normal).xp
+}
+
+export function battleXpLevelMultiplier(playerLevel, enemyLevel) {
+  const gap = Math.floor(Number(playerLevel) || 1) - Math.floor(Number(enemyLevel) || 1)
+  if (gap >= 15) return 0.15
+  if (gap >= 10) return 0.25
+  if (gap >= 6) return 0.50
+  if (gap <= -5) return 1.25
+  if (gap <= -3) return 1.15
+  return 1
 }
 
 export function levelForTargetPower(species, targetPower, multipliers = null) {
@@ -167,15 +185,12 @@ function validBossSnapshot(snapshot, stage) {
 }
 
 function validNormalSnapshot(snapshot, stage) {
-  return !!snapshot && snapshot.stageId === stage?.id && Number(snapshot.firstClearReferencePower) > 0
+  return !!snapshot && snapshot.stageId === stage?.id && Number(snapshot.balanceVersion) === BALANCE_VERSION && Number(snapshot.firstClearReferencePower) > 0
 }
 
 function repeatMasteryMultipliers(currentRef, firstClearReferencePower) {
   const growthRatio = currentRef / Math.max(1, firstClearReferencePower)
   if (growthRatio <= 1) return normalizeStatMultipliers()
-  // When the team has genuinely grown, old cleared stages should feel easier.
-  // At roughly +20% combat power this reaches 0.75 HP/DEF, while enemy attack
-  // stays intact so repeat farming is faster without becoming consequence-free.
   const ease = clamp(NORMAL_REPEAT_MASTERY_FLOOR, 1 - (growthRatio - 1) * 1.25, 1)
   return normalizeStatMultipliers({ hp: ease, attack: 1, defense: ease, speed: 1 })
 }
@@ -246,9 +261,6 @@ export function buildEnemyPlan(game, stage, speciesOf, existingSnapshot = null, 
 
   const difficulty = NORMAL_DIFFICULTY[stage.enemyDifficulty] || NORMAL_DIFFICULTY.normal
   const targetPower = ref * difficulty.targetMultiplier
-  // Pick the normal level from the capped reference first, then apply repeat
-  // mastery HP/DEF easing. Including easing in level search would cancel the
-  // intended "I got stronger" feeling by raising the enemy level again.
   const level = clampStageLevel(stage, levelForTargetPower(species, targetPower))
   const actualPower = combatPowerFromStats(statsFromBase(species.base, level, statMultipliers))
   return {

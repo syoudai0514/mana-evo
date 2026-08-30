@@ -20,6 +20,7 @@
     "audit:monster-art": "node scripts/monster-art/visual-audit.mjs",
     "review:monster-art": "node scripts/monster-art/visual-contact-sheet.mjs",
     "verify:release": "node scripts/release-readiness.mjs",
+    "verify:canonical-sync": "node scripts/verify-canonical-sync.mjs",
     "check": "npm test && npm run build && npm run verify:release"
   },
   "dependencies": {

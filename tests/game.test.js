@@ -103,19 +103,17 @@ test('normal stage soft-scales to current team instead of legacy fixed level', (
   assert.deepEqual(result.battle.teamAtStart, [game.activeMonsterId])
 })
 
-test('explicit quit refunds the reserved ticket with original expiry', () => {
+test('explicit quit spends the reserved ticket', () => {
   const day = 1400
   const started = start(addTickets(createGameState(), 1, day), STAGE, day)
-  const source = started.battle.ticketSource
   const abandoned = abandonBattle(started.game, { today: day })
   assert.equal(abandoned.ok, true)
-  assert.equal(abandoned.refunded, true)
+  assert.equal(abandoned.refunded, false)
   assert.equal(abandoned.game.activeBattle, null)
-  assert.equal(availableTicketCount(abandoned.game, day), 1)
-  assert.equal(abandoned.game.ticketGrants[0].expiresDay, source.expiresDay)
+  assert.equal(availableTicketCount(abandoned.game, day), 0)
 })
 
-test('loss refunds reserved ticket exactly once', () => {
+test('loss spends reserved ticket exactly once', () => {
   const day = 1500
   let game = createGameState()
   game.box[game.activeMonsterId].level = 1
@@ -124,15 +122,17 @@ test('loss refunds reserved ticket exactly once', () => {
   for (let seed = 0; seed < 200 && !result; seed += 1) {
     const battle = structuredClone(started.battle)
     battle.partyHp[battle.activeInstanceId] = 1
-    battle.rngSeed = `loss-refund-${seed}`
+    battle.rngSeed = `loss-spend-${seed}`
     const candidate = useMove(started.game, battle, 'm004-stable')
     if (candidate.battle.status === 'lost') result = candidate
   }
   assert.ok(result, 'a deterministic enemy-hit seed should produce a loss')
-  assert.equal(result.battle.ticketRefunded, true)
-  assert.equal(availableTicketCount(result.game, day), 1)
+  assert.equal(result.battle.ticketRefunded, false)
+  assert.equal(result.battle.ticketSettlement, 'committed')
+  assert.equal(result.battle.ticketCommitted, true)
+  assert.equal(availableTicketCount(result.game, day), 0)
   const cleared = clearFinishedBattle(result.game, { today: day })
-  assert.equal(availableTicketCount(cleared.game, day), 1)
+  assert.equal(availableTicketCount(cleared.game, day), 0)
 })
 
 test('win keeps ticket consumed and awards full XP to battle-start team', () => {

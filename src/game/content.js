@@ -128,12 +128,56 @@ export const RUNTIME_META = Object.freeze({
   itemTrialCount: 0
 })
 
+// Battle V6 world bands are based on the current XP curve and the new study-time
+// budget: daily core study gives three battles and additional study gives one
+// battle per five correct answers. The old 5-22 / 18-38 / 32-58 / 50-80 bands
+// assumed the much faster legacy XP economy and made Area 3 look trivial after a
+// single long first-day session.
+const BALANCED_WORLD_AREA_META = Object.freeze([
+  { area: 1, name: 'ひかりの のはら', icon: '🌿', levelMin: 5, levelMax: 16, levelLabel: 'おすすめ Lv.5〜16', zones: [
+    { id: 'meadow', name: 'はじまりの そうげん', icon: '🌱', minLevel: 5, maxLevel: 8 },
+    { id: 'forest', name: 'こもれびの もり', icon: '🌳', minLevel: 9, maxLevel: 12 },
+    { id: 'deep', name: 'ひかりの おくち', icon: '✨', minLevel: 13, maxLevel: 16 }
+  ] },
+  { area: 2, name: 'ほのおの かざん・すなの たに', icon: '🌋', levelMin: 14, levelMax: 27, levelLabel: 'おすすめ Lv.14〜27', zones: [
+    { id: 'foothill', name: 'かざんの ふもと', icon: '🔥', minLevel: 14, maxLevel: 18 },
+    { id: 'magma', name: 'マグマどうくつ', icon: '🌋', minLevel: 19, maxLevel: 23 },
+    { id: 'deep', name: 'すなあらしの おくち', icon: '🏜️', minLevel: 24, maxLevel: 27 }
+  ] },
+  { area: 3, name: 'こおりの うみ・ふかい もり', icon: '❄️', levelMin: 24, levelMax: 40, levelLabel: 'おすすめ Lv.24〜40', zones: [
+    { id: 'coast', name: 'こおりの かいがん', icon: '🧊', minLevel: 24, maxLevel: 29 },
+    { id: 'frost', name: 'じゅひょうの もり', icon: '🌲', minLevel: 30, maxLevel: 35 },
+    { id: 'deep', name: 'ふかい もりの おく', icon: '🌌', minLevel: 36, maxLevel: 40 }
+  ] },
+  { area: 4, name: 'ぎんがの みやこ・そらの はて', icon: '🌠', levelMin: 37, levelMax: 58, levelLabel: 'おすすめ Lv.37〜58', zones: [
+    { id: 'city', name: 'ほしの みやこ', icon: '🌃', minLevel: 37, maxLevel: 44 },
+    { id: 'skyway', name: 'てんくう かいろう', icon: '☁️', minLevel: 45, maxLevel: 51 },
+    { id: 'deep', name: 'ぎんがの はて', icon: '🌌', minLevel: 52, maxLevel: 58 }
+  ] },
+  { area: 5, name: 'EX いせかい', icon: '🌀', levelMin: 55, levelMax: 100, levelLabel: 'おすすめ Lv.55〜100', zones: [
+    { id: 'ex', name: 'EX いせかい', icon: '🌀', minLevel: 55, maxLevel: 100 }
+  ] }
+])
+
+function balancedStageBand(stage) {
+  if (!stage || stage.legacy) return stage
+  const meta = BALANCED_WORLD_AREA_META.find((entry) => entry.area === Number(stage.adventureArea || stage.area))
+  const zone = meta?.zones?.find((entry) => entry.id === stage.zoneId)
+  if (!zone) return stage
+  return {
+    ...stage,
+    minEnemyLevel: zone.minLevel,
+    maxEnemyLevel: zone.maxLevel,
+    levelLabel: `Lv.${zone.minLevel}〜${zone.maxLevel}`
+  }
+}
+
 const BASE_STAGES = [...RUNTIME_STAGES, ...LEGACY_STAGES]
-export const STAGES = BASE_STAGES.map((stage) => stage.legacy ? stage : enrichStage(stage, SPECIES[stage.enemySpeciesId]))
+export const STAGES = BASE_STAGES.map((stage) => stage.legacy ? stage : balancedStageBand(enrichStage(stage, SPECIES[stage.enemySpeciesId])))
 export { pickDailyEncounterStages }
 
-export const AREA_META = WORLD_AREA_META.filter((meta) => meta.area <= 4).map((meta) => ({ ...meta }))
-export const EX_AREA_META = { ...WORLD_AREA_META.find((meta) => meta.area === 5) }
+export const AREA_META = BALANCED_WORLD_AREA_META.filter((meta) => meta.area <= 4).map((meta) => ({ ...meta, zones: meta.zones.map((zone) => ({ ...zone })) }))
+export const EX_AREA_META = { ...BALANCED_WORLD_AREA_META.find((meta) => meta.area === 5) }
 
 export function speciesOf(id) { return SPECIES[id] || LEGACY_SPECIES[id] || null }
 export function moveOf(id) { return MOVES[id] || null }

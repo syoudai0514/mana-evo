@@ -1,138 +1,163 @@
-# ManaEvo 正本設計 — 現行runtime
+# ManaEvo design — runtime summary / compatibility index
 
-更新日: 2026-08-25
-状態: **IMPLEMENTED / MAIN運用中**
+更新日: 2026-08-29  
+状態: **RUNTIME SUMMARY — NOT TOP-LEVEL SPEC AUTHORITY**
 
-この `design/00-README.md` を、ManaEvo の設計を読むときの唯一の入口とする。
-PR #4 / #5 / #15 時点のレビュー文書に残る `NO-GO`、`runtime実装ロック`、`未実装` 等の記述は、その時点の履歴であり現行状態を上書きしない。
+このファイルは、古い `design/*` 資料と現在のruntimeをつなぐための要約です。
+**設計の唯一の入口ではありません。**
 
-## 現在の正本
+現在の正本入口は次です。
 
-実装と仕様が競合した場合は、以下の順で確認する。
+1. `REBUILD-START-HERE.md` — 権威順位 / 司令塔復元 / canonical sync governance
+2. `design/rebuild/DECISION-LOG.md` — 承認された変更理由
+3. `design/current/00-START-HERE.md` — 現在のdomain contracts
 
-1. この文書 — 現在の実装状態と優先ルール
-2. `design/19-sol-pr15-runtime-completion.md` — 238体runtime完成時の最終判定
-3. `design/09-special-forms-master.md` — ギガシンカ12体 / キョダイバースト8体の対象割当
-4. `design/12-detailed-balance-design-for-sol-review.md` — 戦闘バランス原則
-5. `design/13*` / `design/14*` — 238体成長・155進化・32アイテム取得master
-6. `README.md` — 利用者・開発者向け現行仕様
+`design/19-*`、`design/12-*`、`design/13*`、`design/14*`、過去review文書は履歴・derived masterとして参照できますが、CURRENTや後続の明示決定を上書きしません。
 
-`design/16-sol-pr15-full-review.md` 以前のレビュー文書は履歴として参照してよいが、現在の実装可否判定には使わない。
+## 現在productionの大枠
 
-## 現在実装済み
+- active monster: No.001〜238 / 83系列 / 18タイプ
+- No.239はreference only
+- Kids Quest学習runtimeを学習source of truthとして維持
+- Home / Study / Adventure / Monster / HowToをchild-facing top-levelとして運用
+- production canonical: `https://mana-evo.vercel.app/`
+- GitHub = source / PR / CI
+- Vercel = production + PR Preview
+- Supabase = Auth / DB / Cloud Save
 
-- No.001〜238 正式runtime master（No.239は対象外）
-- 83系列 / 18タイプ / 155進化
-- 960技（238体×通常4技 + バースト専用8技）
-- 32種類の進化アイテム取得試練
-- 4エリア、エリアボス、ギガ/バースト専用試練、イベント、EX
-- Lv1〜100、XP、Battle XP、ゾーンLv帯クランプ、ボスsnapshot/challenge
-- エリア→入口/中盤/奥地の順次解放、プロフィール別の実現在地保存
-- 自力進化記録 `evolutionDiscoveries` と、捕獲直後進化を防ぐワールド進化Lv補正
-- 手持ち3体、交代、個体別HP、まもる、ボス予告大技
-- 4種類の「わ」による捕獲。敵HP50%以下から1バトル最大3投
-- 学習→チケット→探索/バトル→捕獲→育成→進化の循環
-- Kids Quest完成済み学習runtime（5教科、SRS、授業、自由勉強、ほしのしれん、先取り、つくよみちゃん）
-- 保護者PIN、複数子どもプロフィール
-- GitHub Pages PWA (`https://syoudai0514.github.io/mana-evo/`)
+## Learning / ticket — production behavior
 
-## 学習仕様
+Kids Questの学習内容・SRS・mastery・試練等をManaEvo都合で簡略化しません。
 
-Kids Quest学習基盤を正本とし、ManaEvo都合で簡略化しない。
+現在productionのgame reward bridge:
 
-- 今日の基本は5教科タスク
-- 国語・算数は各5問、通常教科は各4問、道徳は該当日2問
-- 基本5教科完了でバトルチケット3枚 + ほしのわ3個
-- 自由勉強はチケット0枚
-- 追加チャレンジ3問中2問正解でチケット1枚
-- `わからない` を残し、誤答→解説→補強→後日復習へつなぐ
-- 単元MASTERでぎんのわ、むずかしいMASTERできんのわ
-- 前日までのチケットを持っていても、当日の基本学習完了前は新規バトル不可
+- daily coreは5 task
+- daily core完了でbattle ticket `+3`
+- daily core完了で`star` capture item `+3`
+- additional learningの`extra`は、**正解5回ごとにbattle ticket +1**（Battle V6）
+- additional learningの正解3回ごとに`star` capture item +1
+- normal unit MASTERで`silver` +1
+- hard unit MASTERで`gold` +1
+- free studyは直接battle ticketを付与しない
+- 前日以前のticketを持っていても、当日のdaily core未完了では新規battleを開始しない
 
-## セーブ・プロフィール
+将来のLearning Value等の設計案は、明示承認されてDecision Log + CURRENTへ昇格するまでproduction contractではありません。
 
-- 学習状態とゲーム状態は子どもプロフィール単位で分離する。
-- ゲーム状態にはモンスター、レベル、図鑑、チケット、マナ、進化アイテム、特殊形態所有権、ステージ進行を含む。
-- 旧 `mana-evo-save-v1` は初回利用時に現在プロフィールへ自動移行する。
-- 保護者メニューのバックアップ/復元は学習とゲームをまとめたManaEvo全体セーブとして扱う。
-- 学習報酬はreward IDで冪等化し、再起動境界でも同じ報酬を二重付与しない。
+## Battle — production behavior
 
-## 「わ」・捕獲
+Battle V6の主要事項:
 
-- ほしのわ: ×1.00
-- ぎんのわ: ×1.20
-- きんのわ: ×1.50
-- にじのわ: 100%
-- 非にじは成功率92%上限
-- 捕獲可能な通常戦では、敵HPが50%以下になると「わを なげる」操作を解放する。
-- 1バトル最大3投。失敗すると敵が1回行動する。
-- ボス/進化試練/特殊試練など `captureDisabled` の戦闘では投げられないことを画面に明示する。
+- battle開始時にticketをreserve
+- **実際にプレイして勝利 / 捕獲成功 / 敗北 / 明示離脱したbattleは、そのreserved ticketを消費する**
+- reload / Safari終了 / crashは同じactiveBattleをresumeし、二重消費しない
+- normal enemy scalingは、強いactive + 弱い控えで敵が不自然に弱くならないことを目的にする
+- current runtimeはactive power 70% + strongest support 30%をreferenceに使用しているが、active-onlyより下げないという意図を満たすかは継続review対象
+- STAB `1.25`
+- critical `1/16`, multiplier `1.35`
+- damage random `0.92〜1.00`
+- Battle XPはV5のactive/team配分に加え、V6でplayer-enemy level gapを反映
+- playerが敵より15Lv以上高い: XP multiplier `0.15`
+- 10Lv以上高い: `0.25`
+- 6Lv以上高い: `0.50`
+- 敵が3Lv以上高い: `1.15`
+- 敵が5Lv以上高い: `1.25`
 
-## 通常進化
+Battle詳細のownerは `design/current/02-BATTLE-TICKETS-BALANCE.md`。
 
-- `level`: 指定Lv以上
-- `stone`: 対応する専用シンカしれん初回クリアで石を1個取得し、進化時に1個消費
-- `held_item_levelup`: 専用シンカしれんで取得 → 装備 → その後の実レベルアップで進化Ready。固定Lv条件なし
+## Capture — production behavior
 
-32件のアイテム進化は `design/14e-evolution-item-acquisition-master.csv` を正とする。
+stable domain keys:
 
-## ギガシンカ
+- `star`
+- `silver`
+- `gold`
+- `rainbow`
 
-対象12体は `design/09-special-forms-master.md` を正とする。
+child-facing names:
 
-- エリア1ボス初回クリア相当でギガキーを永久解放
-- 対象種族を最終進化まで育成し、専用ギガしれん勝利で種族別ギガコアを永久解放
-- ギガキー/ギガコアは非消費
-- 1バトルで特殊形態は合計1回
-- バトル終了まで全能力×1.35
-- HP割合維持
-- 初回発動で同じ図鑑枠にギガ登録を記録する
+- ほしボール
+- ぎんボール
+- きんボール
+- にじボール
 
-正式な特殊形態画像は画像制作工程で追加する。画像未完成でも戦闘ロジックと登録は動作させる。
+倍率 / guarantee:
 
-## キョダイバースト
+- star `1.0`
+- silver `1.2`
+- gold `1.5`
+- rainbow `100%`
+- non-rainbow cap `92%`
+- 通常の戦闘中capture gateはenemy HP `<= 50%`
+- 最大3投
 
-対象8体は `design/09-special-forms-master.md` を正とする。
+Battle V6では、wild monsterをKOした後にもcapture opportunityを残す。
+post-KO capture成功は、そのbattleで既にsettleされたBattle XPを再付与しない。
 
-- 最終進化後、専用バーストしれん勝利で種族別のしるしを永久解放
-- 3ターン。技、まもる、捕獲失敗、自主交代などプレイヤーの1行動ごとに進む
-- HP×2.0 / 攻撃×1.2
-- 主力技1枠を威力110 / 命中95%の専用バースト技へ置換する（5技にはしない）
-- HP割合維持
-- 初回発動で同じ図鑑枠にバースト登録を記録する
+## World recommendation bands — Battle V6 production
 
-## PWA / 公開
+現在のproduction recommendation bands:
 
-- 正式公開先はGitHub Pages `/mana-evo/`。
-- VercelのGit deploymentは無効化済み。
-- manifest / canonical / iOS icon / service workerをCIで検証する。
-- navigationはnetwork-first、hash付きapp assets・モンスター画像はcache-first。
-- つくよみちゃんの巨大音声runtime/modelは初回PWA installで強制取得せず、保護者が利用開始したときだけ読み込む。
+- Area 1: Lv.5〜16
+  - 5〜8 / 9〜12 / 13〜16
+- Area 2: Lv.14〜27
+  - 14〜18 / 19〜23 / 24〜27
+- Area 3: Lv.24〜40
+  - 24〜29 / 30〜35 / 36〜40
+- Area 4: Lv.37〜58
+  - 37〜44 / 45〜51 / 52〜58
+- EX: Lv.55〜100
 
-## 画像
+これらはBattle V6のslower XP / study-first budgetに合わせたproduction bandsです。
 
-- 正式画像が存在する個体は `/public/monsters/{id}.webp` を使う。
-- 未完成個体だけ準備中placeholderを使う。
-- ゲームロジックを画像完成待ちにしない。
-- 238体の正式画像制作は別工程で順次追加する。
+## Evolution pacing
 
-## 変更ルール
+`design/current/08-EVOLUTION-PACING.md` がproduction tuning contractです。
 
-- `スター覚醒` は不採用。復活させない。
-- ギガ/バースト対象種族をレビュー担当の好みで変更しない。
-- Kids Quest学習仕様をManaEvo側だけで簡略化しない。
-- ゲーム思想や報酬条件を変更する場合は、先にこの正本を更新して意図を明記する。
-- 実装変更には回帰テストを追加し、CI成功後にmainへ反映する。
+V5の基本:
 
+- encounter XP poolをそのまま全員へ与えない
+- active battlerはlegacy poolの40%
+- eligible teammateはactive受取量の40%
+- level-evolution speciesを高Lvで捕獲した場合、次のlevel evolution thresholdの少なくとも5Lv手前へcapture levelをbufferする
+- 既存saveを自動巻き戻ししない
 
-## 2026-08-25 ワールド・進化・育成コンセプト
+## Save / account / hosting
 
-正本: [`20-world-map-evolution-progression.md`](./20-world-map-evolution-progression.md)
+D-018 / D-019を優先します。
 
-当初設計の「エリア固定寄りの敵Lv・最終形は野生入手不可」を復活し、さらに「第2形態の初回入手は自力進化、初進化後に上級ゾーン野生解禁」を正式採用する。完全手持ち追従ではなく、ゾーンLv帯でクランプするハイブリッド制を正とする。
+- Auth accountとplayer profileは別
+- 1 account内に複数player profile
+- 端末で普段開くprofileはdevice-local preference
+- cloud saveはlearning + game + reward bridgeをversioned snapshotとして保持
+- same-profile conflictはsilent last-write-winsを避け、adult-owned resolution
+- child gameplay中にcloud conflict UIを割り込ませず、Parent側で扱う
+- local storageはoffline/cacheとして残す
+- Vercel production origin `/` にPWA/Auth redirectを統一
 
+## Monster Art
 
-## UIビジュアル正本
+D-016により、FORMAL完成を待たず、candidate gateを通過した実画像を段階的にproduction表示してよい。
 
-- `design/21-mockup-ui-visual-system.md` — 承認済みモックアップを基準にした現行UI
-- [22-premium-ui-v4.md](./22-premium-ui-v4.md) — iPhone safe-area / premium adventure map / monster-base visual standard
+現在mainのexplicit production candidate overlayはPR #98由来の**184 species**です。
+
+- FORMAL promotionではない
+- `m239`は除外
+- production visibilityとFORMAL approvalを混同しない
+- W-306 / W-309 / W-313 / W-319はPR #98 overlayから除外
+- 後続integration PRがopenでも、mergeされるまではproduction事実にしない
+
+Monster Art詳細は `design/current/09-MONSTER-MASTER-ART-SPEC.md` とmanifestを参照します。
+
+## Canonical sync
+
+今後、protected runtime/art pathを変更するPRは、CIでcanonical impact declarationを要求します。
+
+```text
+Canonical-Impact: changed | none
+Canonical-Domains: ...
+Canonical-Reason: ...
+```
+
+product behaviorが変わる場合は、同じPRでowning `design/current/**` と `design/rebuild/DECISION-LOG.md` を更新します。
+
+このファイルはruntime summaryであり、ここだけ更新してdomain contract更新を省略してはいけません。

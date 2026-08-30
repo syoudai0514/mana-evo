@@ -1,12 +1,14 @@
 # ManaEvo CURRENT — Battle / Tickets / Boss Balance
 
-更新日: 2026-08-25  
+更新日: 2026-08-29  
 Work Item: W-102  
-状態: **PHASE 2 CURRENT CANONICAL CANDIDATE**  
+状態: **CURRENT — read the 2026-08-29 D-022 override at the end before implementing superseded sections**  
 対象: バトル開始条件、戦闘ルール、ticket lifecycle、battle XP、boss balance / rematch
 
 > この文書は、W-102 の実装に必要な CURRENT 契約を一か所に集約する。runtime は実装状況の確認にのみ使い、仕様根拠にはしない。
 > 捕獲の成功率・「わ」・重複捕獲・捕獲演出は W-103 (`design/current/03-CAPTURE-DUPLICATES.md`) の責務であり、この文書では定義しない。
+>
+> **重要:** 2026-08-29のBattle V6明示決定（Decision D-022）が、本文中の旧ticket settlement / STAB・critical・random / Battle XP / enemy scaling tuningの該当箇所を後続置換している。本文の非競合ルールは維持し、末尾の「Battle V6 override」を必ず併読する。
 
 ---
 
@@ -128,7 +130,7 @@ team全員のbattle HPが0なら敗北。
 
 - battle報酬は0。
 - stage clearにはしない。
-- reserve ticketは §5 に従い返却する。
+- reserve ticket settlementは**末尾のD-022 overrideを優先**する。
 - 次の新規battleでは通常の開始状態へ戻す。敗北を理由に恒久ペナルティを付けない。
 
 ---
@@ -197,26 +199,19 @@ ticketReservation = {
 }
 ```
 
-### 5.3 terminal outcome
+### 5.3 terminal outcome — D-022で一部置換
 
-| outcome | ticket |
-|---|---|
-| 勝利 | reserveを**消費確定** |
-| 捕獲成功 | reserveを**消費確定** |
-| 敗北 | 元lot / 元期限で**1枚返却** |
-| 明示的な `にげる / やめる / abandon` | 元lot / 元期限で**1枚返却** |
-| reload / crash / Safari終了 | **返却も追加reserveもしない**。同じactiveBattleをresume |
+この節の旧refund表はD-022で後続置換された。**現在は末尾overrideのplayed-battle settlementを正とする。**
 
-返却時点ですでに元ticket期限を過ぎている場合、期限を延長して復活させない。
+旧D-007では敗北/明示abandonでrefundしていたが、Battle V6ではplayed loss / explicit abandonもcommitする。
 
 ### 5.4 exactly-once
 
 同じbattleについて:
 
 - reserveは1回だけ
-- refundは最大1回
-- commitは最大1回
-- reward resolutionも最大1回
+- terminal settlementは1回だけ
+- reward resolutionも1回だけ
 
 `battleId / battleResolutionId` 等の冪等キー、または同等の永続状態で二重処理を防ぐ。
 
@@ -232,7 +227,7 @@ ticketReservation = {
 
 は自動abandonにしない。
 
-boss画面で子ども向け文言を `にげる` にするか `やめる` にするかはW-106のUI責務。domainには明示abandon + refund契約を持たせる。
+boss画面で子ども向け文言を `にげる` にするか `やめる` にするかはW-106のUI責務。
 
 ---
 
@@ -266,18 +261,13 @@ CURRENTの基礎bandは exact baselineを継承する。
 - immunity (`0`) は必ず0 damage。最低1damageの下駄を入れない。
 - 複合typeをdataが持つ場合は各defender type倍率の積で計算できるengine構造にするが、active monster masterのtype構成自体はW-109を正とする。
 
-### 6.4 STAB
+### 6.4 STAB — D-022で置換
 
-**STAB = 1.5**。
+旧値1.5はBattle V6で置換。現在値は末尾overrideの`1.25`。
 
-自分のtypeとmove typeが一致するとdamageへ×1.5。一致しなければ×1.0。
+### 6.5 critical / random — D-022で置換
 
-### 6.5 critical / random
-
-- critical: **1/16**
-- critical multiplier: **1.5**
-- player / enemyとも同率
-- damage random: **0.90〜1.00**
+旧 `critical multiplier 1.5 / random 0.90〜1.00` はBattle V6で置換。現在値は末尾overrideを正とする。
 
 ### 6.6 damage formula
 
@@ -363,8 +353,8 @@ enemyLevel = clamp(zone.minLv, softScaledLevel, zone.maxLv)
 
 - zone Lv帯が上下限。
 - 強いteamで過去zoneへ戻ったときは敵が無限追従せず、育成差を実感できる。
-- 現行の具体zone Lv帯はW-105で `TUNING-DEFAULT` として管理する。
-- `NORMAL_DIFFICULTY` のtarget multiplier、repeat cap等の現在値はplaytest用実装値であり、ユーザー決定として固定しない。
+- current production zone Lv帯はW-105末尾のBattle V6 overrideを正とする。
+- normal difficultyのtarget multiplier、repeat cap等はplaytest tuningであり、変更時はcanonical-sync gateで本書を同PR更新する。
 
 ### 9.3 AI input readingは禁止
 
@@ -388,21 +378,13 @@ baselineのAI方針:
 
 ## 10. Battle XP / Mana
 
-### 10.1 共通XP contract
+### 10.1 Battle XP — D-020 / D-022で置換
 
-- victoryでbattle XPを得る。
-- battle開始時teamにいた最大3体へ **同額**付与する。
-- activeに出なかった個体も `teamAtStart` にいれば同額。
-- defeat / explicit abandonではbattle XPを付与しない。
+旧本文の「teamAtStart全員へ同額」「baseline 40〜80 / boss300」記述は、Evolution pacing V5（D-020）とBattle V6（D-022）で後続置換された。
 
-exact baselineの初期balance値:
+現在の配分・level-gap multiplierは末尾overrideを正とする。
 
-- 通常battle勝利: **40〜80 XP（相手Lvによる）**
-- boss勝利: **300 XP（初回のみ）**
-
-PR #5では最終XP値はplaytest調整対象として明示されているため、40〜80 / 300を「永久固定の製品数値」にはしない。ただし後続で別の正式XP式が承認された証拠はないので、runtimeの90〜165等をユーザー決定へ昇格させてもいけない。
-
-実装時はXP値をconfig化し、**team全員同額 / defeat 0 / boss初回bonusをrepeatへ無条件複製しない**という構造を守る。
+defeat / explicit abandonではBattle XPを付与しないという構造は維持する。
 
 ### 10.2 Mana
 
@@ -456,7 +438,7 @@ challenge再戦だけはcurrent player powerを使って再scaleしてよい。
 - challenge planは通常snapshotを上書きしない。
 - challengeを終えた後の通常再戦は、元のnormal snapshotへ戻る。
 
-challenge modeの個別reward / ticket価格はD-012では確定していない。battle ticketを使用するbattleとして扱う場合は §5 lifecycleを必ず適用するが、challenge専用追加costを勝手に作らない。
+challenge modeの個別reward / ticket価格はD-012では確定していない。battle ticketを使用するbattleとして扱う場合は current ticket lifecycleを必ず適用するが、challenge専用追加costを勝手に作らない。
 
 ### 11.5 balanceVersion replacement
 
@@ -482,11 +464,11 @@ baselineの検証値は:
 - 大技 accuracy 90%
 - boss HP目安 同Lv帯の1.6倍
 
-一方、PR #5は最終のenemy HP / move power等をplaytest調整対象としている。したがってこれらの**数値**はbalance configとして扱い、構造を壊さない範囲で調整可能。現在runtimeのrank別 multiplierをユーザー決定として固定しない。
+一方、最終のenemy HP / move power等はplaytest調整対象。構造を壊さない範囲でconfig調整可能で、current rank別 tuningは末尾overrideを参照する。
 
 ---
 
-## 12. Defeat / abandon / crash state contract
+## 12. Defeat / abandon / crash state contract — D-022で一部置換
 
 ### defeat
 
@@ -499,14 +481,14 @@ fighting
 `lost` 到達時:
 
 - reward 0
-- ticket refund exactly once
-- clear/retry後に新battle開始可能
+- **ticketはBattle V6でcommit**
+- result clear後のretryは新battleとして新しいticket gateを通る
 
 ### explicit abandon
 
 `fighting / needs_switch` からユーザーが明示的にやめる:
 
-- ticket refund exactly once
+- **reserved ticketをcommit**
 - `activeBattle` を終了
 - 次回は新規battle gateを通る
 
@@ -522,74 +504,224 @@ fighting
 
 ---
 
-## 13. Runtime delta ledger — 実装時に合わせる箇所
+## 13. Runtime delta ledger — historical note
 
-この表はruntimeを正本化するためではなく、CURRENTへ実装を合わせるための差分一覧。
+この旧ledgerは2026-08-25時点の差分記録であり、D-020/D-022後のruntimeに対してそのまま「現runtime」と読んではいけない。
 
-| 項目 | CURRENT | 現runtime | 判定 |
-|---|---|---|---|
-| daily gate | 当日daily core未完了なら新規battle不可 | domain gateあり | ALIGN |
-| ticket start | reserve | inventoryから減算しsourceをactiveBattleへ保持 | 挙動は概ねALIGN。`ticketCommitted=true`等の名前を仕様根拠にしない |
-| loss / abandon | 元期限でrefund | refund実装あり | ALIGN |
-| reload/crash | same activeBattle resume | activeBattle保存あり | ALIGN |
-| STAB | **1.5** | **1.2** | **IMPLEMENTATION_DRIFT** |
-| critical | 1/16 ×1.5 | damage計算に存在しない | **IMPLEMENTATION_DRIFT** |
-| damage random | 0.90〜1.00 | damage計算に存在しない | **IMPLEMENTATION_DRIFT** |
-| speed tie | random | `>=`でplayer先手 | **IMPLEMENTATION_DRIFT** |
-| protect | 4 move枠内の正式move | speciesの4 movesとは別action | **IMPLEMENTATION_DRIFT / model mismatch** |
-| status 4種 | burn/paralysis/poison/sleep | battle engineに一式未接続 | **IMPLEMENTATION_DRIFT** |
-| AI input read | 禁止 | switch後のactiveを見てenemy move選択 | **IMPLEMENTATION_DRIFT** |
-| boss normal rematch | snapshot lock | valid snapshotはlock | ALIGN |
-| old balanceVersion | 1回replacementして再lock | new planを作れても旧snapshot存在時は保存しない | **IMPLEMENTATION_DRIFT (D-012)** |
-| boss big move | telegraph構造、数値はtuning | rank別power、accuracy 100 | STRUCTURE概ねALIGN / tuning要監査 |
-| normal enemy scaling | zone clamp + old-area growth feel | soft scale + repeat cap | 構造候補。具体倍率はTUNINGでありcanonical固定しない |
-| battle XP | team同額、baseline 40〜80 / boss初回300、数値tuning可 | normal 90〜165 / boss 180〜300を毎勝利 | **BALANCE / REWARD ALIGNMENT REQUIRED** |
-| battle Mana | 正式式の根拠不足 | stage.mana付与 | **NOT CANONICALIZED** |
+特にSTAB / critical / random / ticket loss settlement / XPは後続で意図的に変更済み。
 
-特にD-012 drift:
-
-```js
-if (balancePlan?.snapshot && !challenge && !existingSnapshot) {
-  // old-version existingSnapshot が truthy だと replacement を保存できない
-}
-```
-
-実装では「existing snapshotが存在するか」ではなく「**current versionとして有効か / replacementが必要か**」で保存判定する。
+D-012 snapshot replacement、AI input-read禁止、move/status model等の非競合事項は引き続き監査対象。
 
 ---
 
-## 14. Implementation acceptance for W-102 consumer
+## 14. BLOCKED DECISION
 
-W-102を実装するworkerは、古いdesign文書を読み直さなくても少なくとも次をtestできること。
-
-1. daily未完了 + 有効持越しticket => new battle拒否。
-2. daily完了 + unlocked stage + ticket => FEFO lotを1枚reserve。
-3. reload => same activeBattle、ticket追加減算なし。
-4. defeat => 元期限lotへ1枚refund、reward 0。
-5. explicit abandon => 元期限lotへ1枚refund。
-6. win => refundなし、reserve消費確定、reward exactly once。
-7. capture success => ticket消費確定だけをW-103結果から受け取る。
-8. team最大3 / active1 / voluntary switch 1 action / forced switch free。
-9. 4stat式・XP curveが本書どおり。
-10. STAB 1.5、type0=0damage、critical、0.90〜1.00 randomをtest。
-11. speed tieが固定player先手にならない。
-12. protect 100% block + next turn unavailable。
-13. status 4種とbattle終了clear。
-14. enemy AIがplayer inputを後読みしない。
-15. boss初回通常battleでsnapshot保存。
-16. player育成後の通常boss再戦は同snapshotで相対的に楽になる。
-17. challengeだけcurrent powerへrescaleし、normal snapshotを壊さない。
-18. old `balanceVersion` snapshot => replacementを1回保存し、その後再lock。
-19. boss first-clear XPを通常再戦へ無条件に再付与しない。
-20. battle Manaは別canonical根拠確定まで新規仕様を創作しない。
-
----
-
-## 15. BLOCKED DECISION
-
-W-102のcore implementationを止めない未確定は2点。
+W-102 coreを止めない未確定:
 
 1. **製品上の最終level cap** — runtime互換値100はあるが、明示product decisionとしては未回収。
 2. **battle由来Manaの正式付与式** — runtime値のみでは正本化しない。
 
-この2点以外は、本文のCURRENT contractに従って実装可能。
+---
+
+## 15. 2026-08-29 Battle V6 override — D-020 / D-022
+
+この節は上の旧節と競合する場合に**後勝ち**するCURRENT overrideである。非競合のmove slots / type / Protect / status / AI boundary / boss snapshot等は上の本文を維持する。
+
+### 15.1 Study-first ticket settlement
+
+- battle start: exact FEFO ticketを1枚reserve。
+- win: commit。
+- capture success: commit。
+- **played loss: commit。refundしない。**
+- **explicit voluntary abandon: commit。refundしない。**
+- reload / Safari終了 / crash: same activeBattle resume。追加reserve/commitしない。
+
+目的はloss/abandonによるfree retry/reroll loopを防ぐこと。技術中断をabandon扱いしてはいけない。
+
+### 15.2 Battle V6 damage tuning
+
+- STAB: **1.25**
+- critical chance: **1/16**
+- critical multiplier: **1.35**
+- damage random: **0.92〜1.00**
+- type effectiveness: `2 / 1 / 0.5 / 0`
+- immunity: 0 damage
+
+formula構造は本文§6.6を維持する。
+
+### 15.3 Normal fair-fight invariant
+
+product invariant:
+
+```text
+normalReferencePower >= activeMonsterPower
+```
+
+強いactive1体 + 弱いbenchを入れることで、通常enemyをactive単体基準より弱くしてはいけない。
+
+Current main #110 implementationは `0.70 * active + 0.30 * strongestSupport` を使うため、supportが弱い場合にactive-onlyを下回り得る。これは**既知のimplementation drift**であり、product ruleではない。open PR #111がこのhotfixを扱っているが、mergeされるまではruntime修正済みとは扱わない。
+
+Current V6 normal tuning:
+
+| difficulty | target | encounter XP pool |
+|---|---:|---:|
+| weak | 0.86 | 90 |
+| normal | 0.96 | 110 |
+| strong | 1.03 | 125 |
+| rare | 1.08 | 145 |
+| elite | 1.13 | 165 |
+
+already-cleared normal stageはfirst-clear referenceを基準にrepeat capを持ち、育成後に旧areaが相対的に楽になる。Current repeat reference capは約`1.10`、defensive mastery floorは約`0.70`。
+
+### 15.4 Boss V6 tuning
+
+Boss referenceはteam/roster/carry floorを考慮し、弱い入替でfirst snapshotを不当に下げない。
+
+Current tuning:
+
+| rank | target | HP | ATK | DEF | XP pool |
+|---|---:|---:|---:|---:|---:|
+| C | 1.04 | 1.30 | 1.00 | 1.02 | 180 |
+| B | 1.10 | 1.45 | 1.03 | 1.05 | 200 |
+| A | 1.16 | 1.60 | 1.05 | 1.07 | 220 |
+| S | 1.22 | 1.75 | 1.08 | 1.10 | 250 |
+| EX | 1.30 | 1.90 | 1.10 | 1.12 | 300 |
+
+Current carry floorはおよそ`0.80 * strongest roster power`、softened roster referenceはおよそ`0.85 * weighted roster power`。数値はplaytest tuningで、変更時はこのCURRENTも同PR更新する。
+
+balance version: **6**。
+
+### 15.5 Evolution pacing V5 + Battle XP V6
+
+D-020 base distribution:
+
+- active battler: encounter poolの`40%`
+- other eligible teammate: active受取量の`40%`（poolの16% before later modifiers）
+
+D-022 level-gap multiplier:
+
+| player minus enemy level | multiplier |
+|---|---:|
+| `>= +15` | 0.15 |
+| `>= +10` | 0.25 |
+| `>= +6` | 0.50 |
+| normal band | 1.00 |
+| enemy >= player +3 | 1.15 |
+| enemy >= player +5 | 1.25 |
+
+old-area easy farmingを最速育成経路にしない。XP throttlingはfinal XP/level/evolution settlementの一部として扱い、表示だけ後補正にしない。
+
+### 15.6 Post-KO capture bridge
+
+通常capturable wildをKOした後にもpost-KO capture opportunityを残す。
+
+- boss / captureDisabled / special battleは対象外。
+- KO時にsettleしたBattle XPはexactly once。
+- post-KO capture successでBattle XPを再付与しない。
+- newly captured monsterへそのbattle XPをretroactive付与しない。
+- turn/KO presentation完了前にpost-KO CTAをactionableにしない。
+
+Capture probability/items/duplicate settlementはW-103を正とする。
+
+### 15.7 Common terminal settlement
+
+move / Protect / voluntary switch / failed capture / end-turn DOT等、どのaction pathからwin/loss/KOへ到達しても同じauthoritative settlementを通す。
+
+UIの表示順序の違いでticket/reward/outcomeが変わってはいけない。
+
+### 15.8 Acceptance addendum
+
+- played loss/explicit abandon consumes exact reservation。
+- crash/reloadはdouble consumeなし。
+- STAB1.25 / crit1.35 / random0.92〜1.00。
+- normal referenceはactive-only floorを下回らない。
+- weak bench exploit不可。
+- V5 XP distribution + V6 level-gap multiplier。
+- post-KO capture no double XP。
+- terminal settlement converges across all action paths。
+- KO presentation完了前にpost-KO CTAを進めない。
+
+## 16. 2026-08-29 Battle V6 production-review hotfix — D-025
+
+This section is a later explicit clarification/override of the D-022 Battle V6 settlement boundaries identified by the independent production review. It does not change damage constants, boss tuning, world bands, ticket lifetime or existing-player levels.
+
+### 16.1 Normal reference floor
+
+For ordinary encounters the active battler is an absolute floor while the reviewed stronger-support contribution remains available:
+
+```text
+normalReferencePower = max(
+  activeMonsterPower,
+  0.70 * activeMonsterPower + 0.30 * strongestSupportPower
+)
+```
+
+Therefore adding a weaker bench member can never reduce the encounter reference below the same active monster fighting without that bench. A support monster stronger than the active can still raise the reference through the 30% support contribution.
+
+### 16.2 Canonical Battle XP settlement order
+
+Battle V6 level-gap scaling is part of the canonical recipient XP settlement **before any XP mutation or evolution check**.
+
+For each eligible battle-start recipient:
+
+```text
+base encounter Battle XP pool
+→ V5 global multiplier 0.40
+→ teammate multiplier 0.40 when recipient is not the active battler
+→ Battle V6 level-gap multiplier using the recipient's pre-settlement level
+→ gainXp
+→ resulting level-up / evolution processing
+```
+
+The same policy applies to:
+
+- normal KO victory;
+- pre-KO capture success;
+- duplicate pre-KO capture success;
+- a settlement that crosses an evolution threshold;
+- all D-022 level-gap bands including player `+6 / +10 / +15` and enemy `+3 / +5`.
+
+An evolution that happens because of the awarded XP must **not** exempt that recipient from level-gap scaling. The level-gap factor must not be simulated by a later wrapper that rewrites already-awarded XP.
+
+Post-KO capture remains a continuation after the KO victory settlement and grants **0 additional Battle XP**.
+
+### 16.3 Common end-turn outcome resolver
+
+After any action path that can advance a turn or apply end-turn status damage, terminal outcome is resolved at one authoritative boundary.
+
+This includes at least:
+
+- normal move;
+- Protect;
+- voluntary switch;
+- failed in-battle capture;
+- poison/burn or other canonical end-turn damage.
+
+If end-turn status damage reduces enemy HP to 0, victory settlement occurs immediately in that same turn. A 0-HP enemy must not remain in `fighting` until another player action.
+
+### 16.4 Ticket invariants retained
+
+D-022 ticket behavior is unchanged by this hotfix:
+
+- start reserves the exact FEFO ticket;
+- win/capture/loss/explicit abandon commit the played reservation exactly once;
+- reload/crash resume the same active battle without an additional reservation or settlement;
+- expiration boundary and original lot identity remain authoritative.
+
+### 16.5 Cross-owner boundaries
+
+- Extra-study ticket qualification and minimum active-study time are owned by W-101 / D-025 Learning CURRENT.
+- Post-KO stale-battle/item idempotency is owned by W-103 / D-025 Capture CURRENT.
+- HP/KO presentation and post-KO CTA gating must continue to obey D-022/D-017 UI ordering; the hotfix is an implementation correction of that already-approved presentation contract, not a new navigation model.
+
+### 16.6 Hotfix acceptance
+
+At minimum verify:
+
+- Lv30 active + Lv5 bench reference is never below active-only;
+- KO and pre-KO capture use the same level-gap XP policy;
+- `+6 / +10 / +15` and enemy `+3 / +5` bands;
+- evolution crossings cannot bypass the XP multiplier;
+- Protect/switch/failed-capture end-turn DOT enemy KO settles victory immediately;
+- loss/abandon exact reservation, FEFO and expiration semantics remain unchanged;
+- post-KO capture grants no second XP settlement.
