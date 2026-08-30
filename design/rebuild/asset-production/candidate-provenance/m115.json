@@ -13,6 +13,22 @@
       },
       "manifestStateBefore": "PLACEHOLDER",
       "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-30T14:27:23.945Z",
+      "sourceLabel": "ManaEvo final repair K actual-pixel repair",
+      "previous": {
+        "repositoryPath": "public/monsters/m115.webp",
+        "sha256": "e9a311c545dd483d00b952fc697a54311c9f36054d92fd1aca9f127fda8e2498",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m115/e9a311c545dd483d00b952fc697a54311c9f36054d92fd1aca9f127fda8e2498.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m115.webp",
+        "sha256": "bdf9d7b15242ebe4f67d7b05a252dc407ee37b47a06938adbc98ad270d13c8f5",
+        "bytes": 134442
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
     }
   ]
 }
