@@ -13,6 +13,22 @@
       },
       "manifestStateBefore": "PLACEHOLDER",
       "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-30T13:05:10.195Z",
+      "sourceLabel": "ManaEvo F022 ART READY full-reset regeneration",
+      "previous": {
+        "repositoryPath": "public/monsters/m066.webp",
+        "sha256": "3d845a9db0441c490f6e1b089d173b0eb2ae0137bfe7ef6a6e8b9ca56c8c3da2",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m066/3d845a9db0441c490f6e1b089d173b0eb2ae0137bfe7ef6a6e8b9ca56c8c3da2.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m066.webp",
+        "sha256": "8aae68a18621301bfbd6b4904584da573c5febb08a93971032004bdcfeb1afac",
+        "bytes": 165526
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
     }
   ]
 }
