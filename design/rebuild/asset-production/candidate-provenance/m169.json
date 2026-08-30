@@ -13,6 +13,22 @@
       },
       "manifestStateBefore": "PLACEHOLDER",
       "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-30T09:52:16.943Z",
+      "sourceLabel": "ManaEvo manual-review repaired batch 3: non-generative background/artifact alpha repair",
+      "previous": {
+        "repositoryPath": "public/monsters/m169.webp",
+        "sha256": "a873476fb60ef9c2d91482be9adade297ade62a408a1064014c9505db9fa6a60",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m169/a873476fb60ef9c2d91482be9adade297ade62a408a1064014c9505db9fa6a60.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m169.webp",
+        "sha256": "3de5d0b00782cea75c5106fee6ece2353b891ccebdf9b8a216c4b0fd10315e04",
+        "bytes": 150824
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
     }
   ]
 }

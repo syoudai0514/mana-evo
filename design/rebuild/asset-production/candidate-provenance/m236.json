@@ -13,6 +13,22 @@
       },
       "manifestStateBefore": "PLACEHOLDER",
       "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-30T09:52:16.567Z",
+      "sourceLabel": "ManaEvo manual-review repaired batch 1: non-generative border-connected background alpha repair",
+      "previous": {
+        "repositoryPath": "public/monsters/m236.webp",
+        "sha256": "a7dc19a20cb53432bce2877562e35bfd557b4ffa9aa045e2bff9df5b58f1d511",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m236/a7dc19a20cb53432bce2877562e35bfd557b4ffa9aa045e2bff9df5b58f1d511.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m236.webp",
+        "sha256": "2301c11ba9d297d3b43228561aed4df0f67b7d5e2ce69a80c4e757ee71bf543b",
+        "bytes": 170454
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
     }
   ]
 }
