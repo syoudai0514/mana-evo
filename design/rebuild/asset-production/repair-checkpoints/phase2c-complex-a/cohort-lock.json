@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "phase": "2C-A",
+  "worker": "A",
+  "baseIntegrationHead": "5354cba99dd7cfc3f52a3ce1e587778e356fe4ca",
+  "branch": "repair/phase2c-complex-a",
+  "assignedFamilies": {
+    "F035": ["m103", "m104", "m105"],
+    "F042": ["m122", "m123", "m124"],
+    "F063": ["m184", "m185", "m186"]
+  },
+  "assignedSpecies": ["m103", "m104", "m105", "m122", "m123", "m124", "m184", "m185", "m186"],
+  "scopeRule": "Only assigned species may be considered; only REPAIRED species may mutate candidate WebP.",
+  "globalAuditMutation": false,
+  "formalPromotion": false,
+  "integrationMerge": false,
+  "mainMerge": false,
+  "deploy": false
+}

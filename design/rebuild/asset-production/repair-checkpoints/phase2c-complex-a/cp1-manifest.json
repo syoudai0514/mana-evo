@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "phase": "2C-A",
+  "worker": "A",
+  "checkpoint": 1,
+  "baseIntegrationHead": "5354cba99dd7cfc3f52a3ce1e587778e356fe4ca",
+  "assigned": ["m103", "m104", "m105"],
+  "status": "PASS",
+  "formalPromotion": false,
+  "repaired": [],
+  "needsGeneration": [],
+  "manualReview": ["m103", "m104", "m105"],
+  "species": [
+    {
+      "speciesId": "m103", "family": "F035", "stage": 1,
+      "sourceSha256": "c412105331be01a912d69408162ad6b27e59c1d603eed780804c421b9c8ca07f", "sourceBytes": 26340,
+      "diagnosis": ["BACKGROUND_COMPLEX", "GLOW_PARTICLE_OVERLAP", "TEXT_LABEL_ARTIFACT"],
+      "repairConfidence": "LOW", "decision": "MANUAL_REVIEW",
+      "reason": "CURRENT audit requires simultaneous text, glow, and background cleanup. Glow/subject versus background separation is not proven, so automated matting risks effect or antialias loss.",
+      "candidateMutation": false, "formalPromotion": false
+    },
+    {
+      "speciesId": "m104", "family": "F035", "stage": 2,
+      "sourceSha256": "ef173a339c5b1b62fa63aa5a4142cc0a6c62b00bc0f3dac66ed48fcc938ec786", "sourceBytes": 44588,
+      "diagnosis": ["BACKGROUND_COMPLEX", "GLOW_PARTICLE_OVERLAP", "TEXT_LABEL_ARTIFACT"],
+      "repairConfidence": "LOW", "decision": "MANUAL_REVIEW",
+      "reason": "CURRENT audit requires simultaneous text, glow, and background cleanup. A safe disconnected-artifact mask is not proven independently of glow/character effects.",
+      "candidateMutation": false, "formalPromotion": false
+    },
+    {
+      "speciesId": "m105", "family": "F035", "stage": 3,
+      "sourceSha256": "cad0fd4963fdcb66790500d4df50d0ba727047b4621a1fed63890a60a7bea676", "sourceBytes": 61624,
+      "diagnosis": ["BACKGROUND_COMPLEX", "GLOW_PARTICLE_OVERLAP", "TEXT_LABEL_ARTIFACT"],
+      "repairConfidence": "LOW", "decision": "MANUAL_REVIEW",
+      "reason": "CURRENT audit requires text, glow, and background cleanup on the most complex stage. Subject/effect/background boundaries are not safely separable under the non-generative rules.",
+      "candidateMutation": false, "formalPromotion": false
+    }
+  ],
+  "qa": {
+    "diagnosis": "PASS",
+    "machineQa": "PASS (CURRENT candidates retained byte-for-byte; provenance SHA/bytes recorded; CURRENT audit reports 512x512 opaque WebP canvases)",
+    "visualQa": "PASS (CURRENT final-visual-audit evidence reviewed; no new pixel mutation performed)",
+    "familyQa": "PASS (F035 handled consistently; no stage-specific unsafe exception introduced)",
+    "characterPreservation": "PASS by zero candidate mutation",
+    "unexpectedCandidateChanges": 0
+  },
+  "zipValidation": {
+    "zipReopen": "PASS", "expectedWebpCount": 0,
+    "riffWebp": "N/A (no REPAIRED species in checkpoint ZIP)",
+    "dimensions512x512": "N/A (no REPAIRED species in checkpoint ZIP)",
+    "shaBytes": "PASS (decision manifest only; archive SHA recorded separately)",
+    "missing": 0, "duplicate": 0, "extra": 0
+  },
+  "zip": "monster-art-phase2c-a-cp1.zip"
+}
