@@ -56,11 +56,11 @@ test('W-114 normalized descriptions expose the same lossless schema across shard
   }
 })
 
-test('W-207 runtime art resolves the completed FORMAL set and retains the m235 placeholder safeguard', () => {
+test('W-207 runtime art resolves the completed FORMAL set including m235', () => {
   assert.equal(Object.keys(RUNTIME_MONSTER_ASSETS).length, 238)
   assert.equal(RUNTIME_MONSTER_ASSETS.m001.state, 'FORMAL')
   assert.equal(RUNTIME_MONSTER_ASSETS.m011.state, 'FORMAL')
-  assert.equal(RUNTIME_MONSTER_ASSETS.m235.state, 'PLACEHOLDER')
+  assert.equal(RUNTIME_MONSTER_ASSETS.m235.state, 'FORMAL')
 
   const formal = resolveMonsterArt('m001')
   assert.equal(formal.state, 'FORMAL')
@@ -72,10 +72,10 @@ test('W-207 runtime art resolves the completed FORMAL set and retains the m235 p
   assert.equal(completed.src, '/monsters/m011.webp')
   assert.equal(completed.isFormal, true)
 
-  const placeholder = resolveMonsterArt('m235')
-  assert.equal(placeholder.state, 'PLACEHOLDER')
-  assert.equal(placeholder.src, null)
-  assert.equal(placeholder.isFormal, false)
+  const m235 = resolveMonsterArt('m235')
+  assert.equal(m235.state, 'FORMAL')
+  assert.equal(m235.src, '/monsters/m235.webp')
+  assert.equal(m235.isFormal, true)
 
   const excluded = resolveMonsterArt('m239')
   assert.equal(excluded.state, 'MISSING')

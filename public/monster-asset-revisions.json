@@ -801,7 +801,7 @@
     "m160": {
       "state": "FORMAL",
       "url": "/monsters/m160.webp",
-      "revision": "sha256-3e02a725de56956d8d79a4cf23f43289a6b1003456e21815c1e88082fa5b199f"
+      "revision": "sha256-8e209040b40af68324d54e8511d43efb0f996af0f553989153c17160b88819c9"
     },
     "m161": {
       "state": "FORMAL",
@@ -1174,7 +1174,9 @@
       "revision": "sha256-335b0e0cd322df5e38a3d4b8f9f2d45f8ecddb58d28e705d52787309751ba714"
     },
     "m235": {
-      "state": "PLACEHOLDER"
+      "state": "FORMAL",
+      "url": "/monsters/m235.webp",
+      "revision": "sha256-df07f6d99ab1ed33c4f7cb0fcc668b0254443c10405fb769f03682b87e728991"
     },
     "m236": {
       "state": "FORMAL",
@@ -1352,7 +1354,7 @@
     "/monsters/m157.webp": "sha256-91263f5ff50c28c3ba5529a67fa9f6732eb14ffa9e99c0ae8dc9c4024c9cd9b6",
     "/monsters/m158.webp": "sha256-8e33f601ed5ebaf02411dc67be856d8274f309aea06d050f3678de1ec5b18a3b",
     "/monsters/m159.webp": "sha256-c437ac504cb12f52cef6e861ce584c5f8261a73602838e822c94b45d7c8d7d9d",
-    "/monsters/m160.webp": "sha256-3e02a725de56956d8d79a4cf23f43289a6b1003456e21815c1e88082fa5b199f",
+    "/monsters/m160.webp": "sha256-8e209040b40af68324d54e8511d43efb0f996af0f553989153c17160b88819c9",
     "/monsters/m161.webp": "sha256-7fc318aa263c7ccb07fc4262d0d961abc66f6b5f70f4030dddb4fc33e814da4b",
     "/monsters/m162.webp": "sha256-8349198cdec027846821fc70695b1a46cab28edf68c69c9801c80cc0a04c94e0",
     "/monsters/m163.webp": "sha256-3a03c64ded7e0eeb54823517f7d6c6a66d29050d6584877a7d130e80902a5340",
@@ -1427,6 +1429,7 @@
     "/monsters/m232.webp": "sha256-484990140a0dbf7e552541788d39d4854088c6841d1eb4b2befafc91ad2a95b7",
     "/monsters/m233.webp": "sha256-23da7dd5876b23cd266fefa756757931a4086089e77d10597e28176ea10302bd",
     "/monsters/m234.webp": "sha256-335b0e0cd322df5e38a3d4b8f9f2d45f8ecddb58d28e705d52787309751ba714",
+    "/monsters/m235.webp": "sha256-df07f6d99ab1ed33c4f7cb0fcc668b0254443c10405fb769f03682b87e728991",
     "/monsters/m236.webp": "sha256-2301c11ba9d297d3b43228561aed4df0f67b7d5e2ce69a80c4e757ee71bf543b",
     "/monsters/m237.webp": "sha256-9c2f5290f2253f4366dbe1541294f2890b45b422145c3cfd64b4742e10b73ed4",
     "/monsters/m238.webp": "sha256-92d2c6b2b48c7d2dc8bacaefb8fed0f9f679f841dce49834b1097b34ec75b12b"

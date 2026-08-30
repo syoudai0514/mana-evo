@@ -171,6 +171,22 @@
       "crop": false,
       "edgeContact": false,
       "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-30T23:37:35.350Z",
+      "sourceLabel": "FINAL CLOSEOUT last7: m160 authoritative 512px replacement",
+      "previous": {
+        "repositoryPath": "public/monsters/m160.webp",
+        "sha256": "3e02a725de56956d8d79a4cf23f43289a6b1003456e21815c1e88082fa5b199f",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m160/3e02a725de56956d8d79a4cf23f43289a6b1003456e21815c1e88082fa5b199f.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m160.webp",
+        "sha256": "8e209040b40af68324d54e8511d43efb0f996af0f553989153c17160b88819c9",
+        "bytes": 125254
+      },
+      "manifestStateBefore": "CANDIDATE",
+      "formalPromotion": false
     }
   ]
 }

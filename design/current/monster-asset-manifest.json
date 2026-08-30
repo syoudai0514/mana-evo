@@ -15,9 +15,9 @@
     "inventoryDate": "2026-08-25"
   },
   "counts": {
-    "FORMAL": 237,
+    "FORMAL": 238,
     "CANDIDATE": 0,
-    "PLACEHOLDER": 1
+    "PLACEHOLDER": 0
   },
   "stateDefinitions": {
     "FORMAL": "Explicit CURRENT approval recorded; eligible for normal runtime.",
@@ -2139,14 +2139,14 @@
     "m160": {
       "state": "FORMAL",
       "formalAsset": "/monsters/m160.webp",
-      "formalSha256": "3e02a725de56956d8d79a4cf23f43289a6b1003456e21815c1e88082fa5b199f",
+      "formalSha256": "8e209040b40af68324d54e8511d43efb0f996af0f553989153c17160b88819c9",
       "approvalEvidence": {
         "speciesId": "m160",
         "approved": true,
         "approvalType": "CURRENT_FORMAL",
-        "approvedBy": "repository owner release authorization",
-        "approvedAt": "2026-08-30T17:38:00.019Z",
-        "source": "ManaEvo FINAL CLOSEOUT-N1A validated candidate; owner release authorization"
+        "approvedBy": "ManaEvo product owner",
+        "approvedAt": "2026-08-30T23:37:00Z",
+        "source": "Explicit user authorization: FINAL CLOSEOUT last 7 registration and FORMAL 238/238"
       }
     },
     "m161": {
@@ -3112,7 +3112,17 @@
       }
     },
     "m235": {
-      "state": "PLACEHOLDER"
+      "state": "FORMAL",
+      "formalAsset": "/monsters/m235.webp",
+      "formalSha256": "df07f6d99ab1ed33c4f7cb0fcc668b0254443c10405fb769f03682b87e728991",
+      "approvalEvidence": {
+        "speciesId": "m235",
+        "approved": true,
+        "approvalType": "CURRENT_FORMAL",
+        "approvedBy": "ManaEvo product owner",
+        "approvedAt": "2026-08-30T23:37:00Z",
+        "source": "Explicit user authorization: FINAL CLOSEOUT last 7 registration and FORMAL 238/238"
+      }
     },
     "m236": {
       "state": "FORMAL",
