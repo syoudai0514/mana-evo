@@ -1,0 +1,1317 @@
+{
+  "schemaVersion": 1,
+  "sourceSchemaVersion": 1,
+  "sourcePath": "design/current/monster-asset-manifest.json",
+  "assets": {
+    "m001": {
+      "state": "FORMAL",
+      "url": "/monsters/m001.webp",
+      "revision": "sha256-7155656d37ec2541fc97adfacb99c74368fe0be5ffdf90080aab86f97431b041"
+    },
+    "m002": {
+      "state": "FORMAL",
+      "url": "/monsters/m002.webp",
+      "revision": "sha256-f6772e39647f1ba8e78ed9386e52d058bdacb4c255c5f2c95c1a572661d28ac4"
+    },
+    "m003": {
+      "state": "FORMAL",
+      "url": "/monsters/m003.webp",
+      "revision": "sha256-d3c94c46b180e1354ddfabd5c7f6701a3ad60e23dcd7f553746b01a957b29be0"
+    },
+    "m004": {
+      "state": "FORMAL",
+      "url": "/monsters/m004.webp",
+      "revision": "sha256-e7370f61737c2139187d48b0195c7c84865a1c71352760ad342226f6b4d88794"
+    },
+    "m005": {
+      "state": "FORMAL",
+      "url": "/monsters/m005.webp",
+      "revision": "sha256-6006961d581410b387a5af049cda9099a3a8982872cca0bef4198708aa113dc3"
+    },
+    "m006": {
+      "state": "FORMAL",
+      "url": "/monsters/m006.webp",
+      "revision": "sha256-2bc39baebda89f387b57d522ffa618c444d0ccb1501e014edfbc736402163991"
+    },
+    "m007": {
+      "state": "FORMAL",
+      "url": "/monsters/m007.webp",
+      "revision": "sha256-98665390498734104206dd9b82951fa49f3a2c5db843d6bf1233a40250caff18"
+    },
+    "m008": {
+      "state": "FORMAL",
+      "url": "/monsters/m008.webp",
+      "revision": "sha256-0fc5e0fff8edec521f08367d69dc157b599b9bfa8bcc3a6636c7fddc2178cd2a"
+    },
+    "m009": {
+      "state": "FORMAL",
+      "url": "/monsters/m009.webp",
+      "revision": "sha256-4246a204a6353c76db575b417a75b7b9ee70e4563d2005f5121a20c2107bf937"
+    },
+    "m010": {
+      "state": "FORMAL",
+      "url": "/monsters/m010.webp",
+      "revision": "sha256-8cdc0e759bcceda804eed3936f9b270fcf0747827e378d562a2d30029e019f21"
+    },
+    "m011": {
+      "state": "CANDIDATE"
+    },
+    "m012": {
+      "state": "CANDIDATE"
+    },
+    "m013": {
+      "state": "CANDIDATE"
+    },
+    "m014": {
+      "state": "CANDIDATE"
+    },
+    "m015": {
+      "state": "FORMAL",
+      "url": "/monsters/m015.webp",
+      "revision": "sha256-35761e3489ab1d220802f1399a31a857fbc7084216c74583edbb6031cea32e33"
+    },
+    "m016": {
+      "state": "FORMAL",
+      "url": "/monsters/m016.webp",
+      "revision": "sha256-7e5401608c3cef60cf32e8479b540eb568999653a46157c6da1eefe188279682"
+    },
+    "m017": {
+      "state": "FORMAL",
+      "url": "/monsters/m017.webp",
+      "revision": "sha256-54d36f66870a388b81524c7cf7f6297ef211b36d00b07b8bc226c07af6a79484"
+    },
+    "m018": {
+      "state": "FORMAL",
+      "url": "/monsters/m018.webp",
+      "revision": "sha256-498d30ef085783c61ed74f574355b5fa06d7da99fb180206a4d9941000a1857a"
+    },
+    "m019": {
+      "state": "FORMAL",
+      "url": "/monsters/m019.webp",
+      "revision": "sha256-c9c8f758e3b8d4d40f1ff89be5bd33c3b259d806bdf143b8e07dd2d472b0270d"
+    },
+    "m020": {
+      "state": "FORMAL",
+      "url": "/monsters/m020.webp",
+      "revision": "sha256-c9aabf150422ba028582d4e4f672177ef23fed604a1f5027392888961928a494"
+    },
+    "m021": {
+      "state": "FORMAL",
+      "url": "/monsters/m021.webp",
+      "revision": "sha256-558e00df00ffb6e92769698ab19f0c6d0d6c36df838f990f221977b52d400e1d"
+    },
+    "m022": {
+      "state": "FORMAL",
+      "url": "/monsters/m022.webp",
+      "revision": "sha256-c9781f901c698dcd59e27a3a54513710e90a1038f865edd6276b58c322bc40cf"
+    },
+    "m023": {
+      "state": "FORMAL",
+      "url": "/monsters/m023.webp",
+      "revision": "sha256-898262b71dbc4c60c8cc6d31dba7b7ba29ac17b8ec08bedf52d677ace1a00151"
+    },
+    "m024": {
+      "state": "FORMAL",
+      "url": "/monsters/m024.webp",
+      "revision": "sha256-4d08c1007b7ad4850834185b4ada3b479cc1e69c22f4f4fc31f5bab7c11f21a3"
+    },
+    "m025": {
+      "state": "FORMAL",
+      "url": "/monsters/m025.webp",
+      "revision": "sha256-6df853aa27e3cf967975b39c93d4ab92445a70309b001e349353be803cf5bdbb"
+    },
+    "m026": {
+      "state": "FORMAL",
+      "url": "/monsters/m026.webp",
+      "revision": "sha256-b7f6d095ba17d5dfea03a7db270a3c503841df06e3dcd4364296464564eea33c"
+    },
+    "m027": {
+      "state": "FORMAL",
+      "url": "/monsters/m027.webp",
+      "revision": "sha256-cf434531c2c8aaa1049f883b85253de8ca8092b50ee8bbd8351dba374e476238"
+    },
+    "m028": {
+      "state": "FORMAL",
+      "url": "/monsters/m028.webp",
+      "revision": "sha256-50d59372273b51d28ecbe4fee45a8a9fa9be041674150cf44637596c9f2d6bca"
+    },
+    "m029": {
+      "state": "FORMAL",
+      "url": "/monsters/m029.webp",
+      "revision": "sha256-a3e810611db2095e0b9d2b9920c1eaf541f58dc7426aa945e65c109e5ee5d70e"
+    },
+    "m030": {
+      "state": "FORMAL",
+      "url": "/monsters/m030.webp",
+      "revision": "sha256-f37e641f70f49fe4c4732909895dd537eadcc55ef6e6afc6d54906842c0e5732"
+    },
+    "m031": {
+      "state": "FORMAL",
+      "url": "/monsters/m031.webp",
+      "revision": "sha256-1a3300ee184165683e17db69bd1ae936feff0bf0c786b3dcfa6bea3691c2ccb0"
+    },
+    "m032": {
+      "state": "FORMAL",
+      "url": "/monsters/m032.webp",
+      "revision": "sha256-655045e583c71480c2520b7fff1bd8ccd7e655ddf9711e25f2436b636500e474"
+    },
+    "m033": {
+      "state": "FORMAL",
+      "url": "/monsters/m033.webp",
+      "revision": "sha256-f9e1df4f2b004ad9d8e80fb77ec4ae52fc36c1cec05be2e59fd90a65ed1685ee"
+    },
+    "m034": {
+      "state": "FORMAL",
+      "url": "/monsters/m034.webp",
+      "revision": "sha256-91122d2cd17e9142b4e43b0f730eb72a371a0b0efb40d3a28a8730ad05c89e7a"
+    },
+    "m035": {
+      "state": "FORMAL",
+      "url": "/monsters/m035.webp",
+      "revision": "sha256-8cd4ae95987d7e1168ecc842aa921bf291fb1601d0ab7f0cac1d6439c298947e"
+    },
+    "m036": {
+      "state": "FORMAL",
+      "url": "/monsters/m036.webp",
+      "revision": "sha256-a50493c4b878ead4a8974f0f4cdfe3a1e4aef030aafc60fbdc5d4df873964267"
+    },
+    "m037": {
+      "state": "FORMAL",
+      "url": "/monsters/m037.webp",
+      "revision": "sha256-c5954096c6ba66a48d3d596c30f457566b797878cf52c3c3aae9da3eba386161"
+    },
+    "m038": {
+      "state": "FORMAL",
+      "url": "/monsters/m038.webp",
+      "revision": "sha256-78a4f8c25f9cb4fae3aad345e3b722dc1c6d5861e03081f78d1821f5c34fbccb"
+    },
+    "m039": {
+      "state": "FORMAL",
+      "url": "/monsters/m039.webp",
+      "revision": "sha256-a83556af195ca7fb70cd04c7d1d22be336fef6c75a1b7d159609d4d7ea80335a"
+    },
+    "m040": {
+      "state": "FORMAL",
+      "url": "/monsters/m040.webp",
+      "revision": "sha256-cde86a49c5d1c3cc70fc437a7b27e03923d5bec19191b881c2ca749d80faaa80"
+    },
+    "m041": {
+      "state": "FORMAL",
+      "url": "/monsters/m041.webp",
+      "revision": "sha256-da739d9203cdf30414708697b181f76cc402f40e86614b238466e256bef1f30e"
+    },
+    "m042": {
+      "state": "PLACEHOLDER"
+    },
+    "m043": {
+      "state": "FORMAL",
+      "url": "/monsters/m043.webp",
+      "revision": "sha256-3345c1ca8c387143d3b759dff39136ab56d6de40e1a0df8ab1f9b11d541b7675"
+    },
+    "m044": {
+      "state": "FORMAL",
+      "url": "/monsters/m044.webp",
+      "revision": "sha256-88c9790991afe2ac10a49d2f6e5f86405f837c72004b6274a820e7ac593b3cbc"
+    },
+    "m045": {
+      "state": "PLACEHOLDER"
+    },
+    "m046": {
+      "state": "FORMAL",
+      "url": "/monsters/m046.webp",
+      "revision": "sha256-1e6c3b5beec457ada40b44a3faa2d716fea2ad38cbe2ef9f6b6c0a7a837557c9"
+    },
+    "m047": {
+      "state": "FORMAL",
+      "url": "/monsters/m047.webp",
+      "revision": "sha256-3f1e07fc6751c9fa7bce79033a2a4da823a1fe69ce00cdc116d49c26df73d7e1"
+    },
+    "m048": {
+      "state": "FORMAL",
+      "url": "/monsters/m048.webp",
+      "revision": "sha256-2aa0a8b5997cc620a3529d60805ee356ad506c9cd4d4bc5c27f4605fc2cc66c0"
+    },
+    "m049": {
+      "state": "FORMAL",
+      "url": "/monsters/m049.webp",
+      "revision": "sha256-c1c580af098caf00c33d3e475bafca0e9b372ccbd6700fe6661a6455ca336b76"
+    },
+    "m050": {
+      "state": "FORMAL",
+      "url": "/monsters/m050.webp",
+      "revision": "sha256-9fae02c35914a92c3aa24a36e0521ca49475705a65808b90e8a40a3e6b19bf90"
+    },
+    "m051": {
+      "state": "PLACEHOLDER"
+    },
+    "m052": {
+      "state": "FORMAL",
+      "url": "/monsters/m052.webp",
+      "revision": "sha256-1ce9854179730a6ee13574961ea855c69c62fba3e0322710550b9ddea3750a3f"
+    },
+    "m053": {
+      "state": "FORMAL",
+      "url": "/monsters/m053.webp",
+      "revision": "sha256-07097c4fc24998b9db4a203adda1adf3509a7bf7a7bb3ed7d6230589ec7407b0"
+    },
+    "m054": {
+      "state": "FORMAL",
+      "url": "/monsters/m054.webp",
+      "revision": "sha256-f4519d4fc50f87daf37ccab9b91bb42ac96f64c4f4b81593541e77814228983a"
+    },
+    "m055": {
+      "state": "FORMAL",
+      "url": "/monsters/m055.webp",
+      "revision": "sha256-b3172206e1f1a2cb228d0c23f597f0af50c238dc94d737372e25dbeced8225dd"
+    },
+    "m056": {
+      "state": "FORMAL",
+      "url": "/monsters/m056.webp",
+      "revision": "sha256-4864b93737466517180dbae73a2fad38ea61b006d00d5501a51ca52d42b77941"
+    },
+    "m057": {
+      "state": "FORMAL",
+      "url": "/monsters/m057.webp",
+      "revision": "sha256-b700369d316f5eb336b348bc1a4d71e3aacd54325f00444aed1e4cd730761bd5"
+    },
+    "m058": {
+      "state": "FORMAL",
+      "url": "/monsters/m058.webp",
+      "revision": "sha256-74cf8fb8f0ebd6321323250d683a2f89641c53efac6ea0ec9a6cdac76df9b764"
+    },
+    "m059": {
+      "state": "FORMAL",
+      "url": "/monsters/m059.webp",
+      "revision": "sha256-91fe52a09a425a221fc4668423988c693a98bef9510f6de8850006704150a30e"
+    },
+    "m060": {
+      "state": "FORMAL",
+      "url": "/monsters/m060.webp",
+      "revision": "sha256-2658f12552a89527b04dfe913a0ce2216523173bdb8e4ec9ddcc5d65d928215b"
+    },
+    "m061": {
+      "state": "FORMAL",
+      "url": "/monsters/m061.webp",
+      "revision": "sha256-3be1c7af24ff13a045afa522d56a19c76c1a4a5302304d379b27bae771bdfdce"
+    },
+    "m062": {
+      "state": "FORMAL",
+      "url": "/monsters/m062.webp",
+      "revision": "sha256-a177fb3e0295f644d9054309f2132d289e72a1504815647628ce4730f0596569"
+    },
+    "m063": {
+      "state": "FORMAL",
+      "url": "/monsters/m063.webp",
+      "revision": "sha256-98fdcac95c5c7d9442690599b9f866697f2a157e2dd9567016c7489e363c2b91"
+    },
+    "m064": {
+      "state": "PLACEHOLDER"
+    },
+    "m065": {
+      "state": "PLACEHOLDER"
+    },
+    "m066": {
+      "state": "FORMAL",
+      "url": "/monsters/m066.webp",
+      "revision": "sha256-8aae68a18621301bfbd6b4904584da573c5febb08a93971032004bdcfeb1afac"
+    },
+    "m067": {
+      "state": "FORMAL",
+      "url": "/monsters/m067.webp",
+      "revision": "sha256-e014d513a6dc2f105c1b8534c10ce95b32d8d5bebaf9400b5c6d702396a13c6f"
+    },
+    "m068": {
+      "state": "FORMAL",
+      "url": "/monsters/m068.webp",
+      "revision": "sha256-b2c6204e4be661924363804d57e7785d93e77c0a9e05f9de26f344b527ad719e"
+    },
+    "m069": {
+      "state": "FORMAL",
+      "url": "/monsters/m069.webp",
+      "revision": "sha256-d103b0ff2d56bd2f8c31288387f845510f3d890c78da281fb9cc536e6f391c1b"
+    },
+    "m070": {
+      "state": "FORMAL",
+      "url": "/monsters/m070.webp",
+      "revision": "sha256-a83566087ded1cf5ff26a5afd7c21b29e016dd8e2815ddab158c04ac37bff3cd"
+    },
+    "m071": {
+      "state": "FORMAL",
+      "url": "/monsters/m071.webp",
+      "revision": "sha256-3887b9291f44319f66d53cdb3262590805e9f32dfce46de3e443fb27179c7adc"
+    },
+    "m072": {
+      "state": "FORMAL",
+      "url": "/monsters/m072.webp",
+      "revision": "sha256-5205e956577185221e44ae69bbec0e6393ce17d719facd9f0692e4b70a1ee29b"
+    },
+    "m073": {
+      "state": "FORMAL",
+      "url": "/monsters/m073.webp",
+      "revision": "sha256-f5c621f611032bca80b017b7d584aa3eb975275eca99dc326f7e4487b1aa8667"
+    },
+    "m074": {
+      "state": "FORMAL",
+      "url": "/monsters/m074.webp",
+      "revision": "sha256-2cd186a4478473991936395ae3435b6c68f438b3ebb2df034d6d72dac67b290f"
+    },
+    "m075": {
+      "state": "FORMAL",
+      "url": "/monsters/m075.webp",
+      "revision": "sha256-945506e03033f58989090060fc28db18ad26615d4f2991c8b5f1f3de72478f1d"
+    },
+    "m076": {
+      "state": "FORMAL",
+      "url": "/monsters/m076.webp",
+      "revision": "sha256-134988f2f11b9da210e3b0f8d49aa93ea8fa0c0f04e87350a5c43d22c6e59873"
+    },
+    "m077": {
+      "state": "FORMAL",
+      "url": "/monsters/m077.webp",
+      "revision": "sha256-742a66afaf7bc4b11b2c3f9d71f2f317de7f3add4beddb3f23da046325bdb8bc"
+    },
+    "m078": {
+      "state": "FORMAL",
+      "url": "/monsters/m078.webp",
+      "revision": "sha256-9e8ec05cb825cb7567c24be07475c300453990929843842cdeddf80b82c0f698"
+    },
+    "m079": {
+      "state": "FORMAL",
+      "url": "/monsters/m079.webp",
+      "revision": "sha256-a835f1b2970431be7433e769e35258c0d83b8190711b7a37949b0375e036504f"
+    },
+    "m080": {
+      "state": "FORMAL",
+      "url": "/monsters/m080.webp",
+      "revision": "sha256-a58141b8a13785ddfedee232f72bf6adb46d911b581e4714abcbf5004f15bca3"
+    },
+    "m081": {
+      "state": "PLACEHOLDER"
+    },
+    "m082": {
+      "state": "FORMAL",
+      "url": "/monsters/m082.webp",
+      "revision": "sha256-6de588fc3674bff146a6d8b363e22a92a4fcdb3d943dabe18c19eac4741d711a"
+    },
+    "m083": {
+      "state": "FORMAL",
+      "url": "/monsters/m083.webp",
+      "revision": "sha256-e11f68157b54b4ec22e7c0faa74c6801fc5bfd30a517f924c087ff9b312caee7"
+    },
+    "m084": {
+      "state": "FORMAL",
+      "url": "/monsters/m084.webp",
+      "revision": "sha256-bb9b10c4bffb93b996b271380cb93fcdbcf195bda209a4fb46af423447d51dea"
+    },
+    "m085": {
+      "state": "FORMAL",
+      "url": "/monsters/m085.webp",
+      "revision": "sha256-09082fa6609b7ffd378d748cfba1392a651956c741b8a78320c3c03997169448"
+    },
+    "m086": {
+      "state": "FORMAL",
+      "url": "/monsters/m086.webp",
+      "revision": "sha256-d4f423580b7a665f998d464329e2660c6a671375753eaeafb1dabff872dd6a36"
+    },
+    "m087": {
+      "state": "FORMAL",
+      "url": "/monsters/m087.webp",
+      "revision": "sha256-f59cb06267582741b720ace74feca397aaf25dd79a1f7e0b5dadd3cb7f720780"
+    },
+    "m088": {
+      "state": "FORMAL",
+      "url": "/monsters/m088.webp",
+      "revision": "sha256-4937db7a52651a52fec96e848087610b61817574ab7bf544bca995b3669cc6fc"
+    },
+    "m089": {
+      "state": "FORMAL",
+      "url": "/monsters/m089.webp",
+      "revision": "sha256-869e190116390ccd33df984ca06d97937bd65654eacfb81be36dbb4449c3f123"
+    },
+    "m090": {
+      "state": "FORMAL",
+      "url": "/monsters/m090.webp",
+      "revision": "sha256-bf223473c670d0a0a98f9288182b99ab9bf12ca8ec8a378bf8d5c60ed698b604"
+    },
+    "m091": {
+      "state": "FORMAL",
+      "url": "/monsters/m091.webp",
+      "revision": "sha256-6d5d7347fbbb300fd7461b4f80bb014c4a3e12aa61df0797a9d073d53c5ca216"
+    },
+    "m092": {
+      "state": "FORMAL",
+      "url": "/monsters/m092.webp",
+      "revision": "sha256-2023a2bf2d13efa45810257ec8a14e146598855ad411617f555c13bac3a58450"
+    },
+    "m093": {
+      "state": "FORMAL",
+      "url": "/monsters/m093.webp",
+      "revision": "sha256-df311700d6605ef7216a4d1e938dd7b9161f4ee09770a1c281ea63fafe195819"
+    },
+    "m094": {
+      "state": "FORMAL",
+      "url": "/monsters/m094.webp",
+      "revision": "sha256-63763a4df307a8d517f87b83a27fa82be8da4aa5dad70d8034f8ca684549d518"
+    },
+    "m095": {
+      "state": "FORMAL",
+      "url": "/monsters/m095.webp",
+      "revision": "sha256-d7b710c42168e6eb46cf5143596d367be48f5e1b7643b7d393c90c26e039cf79"
+    },
+    "m096": {
+      "state": "FORMAL",
+      "url": "/monsters/m096.webp",
+      "revision": "sha256-47a2dc375318963773f486ba7e7edfd42bfae2e095c56b9fcca31e40849b3c26"
+    },
+    "m097": {
+      "state": "FORMAL",
+      "url": "/monsters/m097.webp",
+      "revision": "sha256-f7dacf90997c29a715eb665021bb632ef334b98bda4a4be432f6c69a7f1ba8cd"
+    },
+    "m098": {
+      "state": "FORMAL",
+      "url": "/monsters/m098.webp",
+      "revision": "sha256-9d60820087ff5c3e3621d10f618fae0f84c366b5612dd571eecee02a13397c17"
+    },
+    "m099": {
+      "state": "FORMAL",
+      "url": "/monsters/m099.webp",
+      "revision": "sha256-f51c2b629ffb980c2aca42897496989c708ea9e5f54b8915966e1aca89bf046f"
+    },
+    "m100": {
+      "state": "FORMAL",
+      "url": "/monsters/m100.webp",
+      "revision": "sha256-57eb537b1722585b13685c1e67b04d6f080b56749f59614113884cd97a074bf1"
+    },
+    "m101": {
+      "state": "FORMAL",
+      "url": "/monsters/m101.webp",
+      "revision": "sha256-a83076f04ab74b22b333718a311979038a6988234a91f3a7d8ab072c079a25b3"
+    },
+    "m102": {
+      "state": "FORMAL",
+      "url": "/monsters/m102.webp",
+      "revision": "sha256-6e8bbe8ec22b409d97d1e03169ba06527bf786d20e2058411d4c0cc6a0aca728"
+    },
+    "m103": {
+      "state": "PLACEHOLDER"
+    },
+    "m104": {
+      "state": "FORMAL",
+      "url": "/monsters/m104.webp",
+      "revision": "sha256-25dfa11433b2c3d37555b0f7590782c3e9696cc34fdd7821699a0efee4e72aa6"
+    },
+    "m105": {
+      "state": "FORMAL",
+      "url": "/monsters/m105.webp",
+      "revision": "sha256-3673be3280065437adc3274bf19872f26f236ef6d5baee8836f1fa1c35016558"
+    },
+    "m106": {
+      "state": "FORMAL",
+      "url": "/monsters/m106.webp",
+      "revision": "sha256-d45bb40aef1295b9a286337c725cd921ad8cb179c59139afeaf55887d2b6ea27"
+    },
+    "m107": {
+      "state": "FORMAL",
+      "url": "/monsters/m107.webp",
+      "revision": "sha256-09adea56fb2fc23c48669229ac4a3c7f9633a1512e17274f21608e5646e0cc11"
+    },
+    "m108": {
+      "state": "FORMAL",
+      "url": "/monsters/m108.webp",
+      "revision": "sha256-d462f906ca24e6e157005d4a421081fae155e3d1158d39c7cd271e831c3984b8"
+    },
+    "m109": {
+      "state": "FORMAL",
+      "url": "/monsters/m109.webp",
+      "revision": "sha256-56683e8a9385c0572814ec4ae07b27d1bdb56681918c767cd4bba0a59ddc7bc3"
+    },
+    "m110": {
+      "state": "FORMAL",
+      "url": "/monsters/m110.webp",
+      "revision": "sha256-73176396161056e8486594ca3e717aac22950ef595988df2c97a907180e17f01"
+    },
+    "m111": {
+      "state": "FORMAL",
+      "url": "/monsters/m111.webp",
+      "revision": "sha256-3f16c09674f181a121dbcd43e709e0339780691c4a6a067eb31173338df96744"
+    },
+    "m112": {
+      "state": "FORMAL",
+      "url": "/monsters/m112.webp",
+      "revision": "sha256-110a8b233a238a2fd516ea2c1857dfd6778e8dd4ba72f88097fb421171a4bb0f"
+    },
+    "m113": {
+      "state": "FORMAL",
+      "url": "/monsters/m113.webp",
+      "revision": "sha256-639e5e504a84ad042d899fb083eafcd2bd6ab35fb4c4e58edfb886b1e76fa4c3"
+    },
+    "m114": {
+      "state": "FORMAL",
+      "url": "/monsters/m114.webp",
+      "revision": "sha256-7c46cd19af56cff0bc507fc5970e929194641d14e71374e5d9f433390e714538"
+    },
+    "m115": {
+      "state": "FORMAL",
+      "url": "/monsters/m115.webp",
+      "revision": "sha256-bdf9d7b15242ebe4f67d7b05a252dc407ee37b47a06938adbc98ad270d13c8f5"
+    },
+    "m116": {
+      "state": "FORMAL",
+      "url": "/monsters/m116.webp",
+      "revision": "sha256-73ca2f563c96fc91d65b4cce25957a5c9871ec2237969b36e1d751aa21c52b9d"
+    },
+    "m117": {
+      "state": "FORMAL",
+      "url": "/monsters/m117.webp",
+      "revision": "sha256-6fefdb100e95c03527aaa81f80989e46676a58aed6e9715967eaec80f46ec43c"
+    },
+    "m118": {
+      "state": "FORMAL",
+      "url": "/monsters/m118.webp",
+      "revision": "sha256-470bf466d5e93529b9559efaa8b41aa5509ecf1ccdcdca889f53c547814ba246"
+    },
+    "m119": {
+      "state": "FORMAL",
+      "url": "/monsters/m119.webp",
+      "revision": "sha256-da6e6f4bd32a18ae354472c3b8ae4cb5f9f84263c29327a4cf95ed43fce51516"
+    },
+    "m120": {
+      "state": "FORMAL",
+      "url": "/monsters/m120.webp",
+      "revision": "sha256-b0588fd70567b60a9da1252f0396ca88fbd23c5034e58b6aaf4e9cd37b9846ee"
+    },
+    "m121": {
+      "state": "FORMAL",
+      "url": "/monsters/m121.webp",
+      "revision": "sha256-da55b6f95f27b40ecca8145112cb5ddc61140aa579061294d083861f5abddee8"
+    },
+    "m122": {
+      "state": "PLACEHOLDER"
+    },
+    "m123": {
+      "state": "FORMAL",
+      "url": "/monsters/m123.webp",
+      "revision": "sha256-d4ce2d9fe4aa45f76dc49b4eed4e9c75fbe2520c07b1a65c2f7682fde73d8829"
+    },
+    "m124": {
+      "state": "FORMAL",
+      "url": "/monsters/m124.webp",
+      "revision": "sha256-09be6ad5cefeb81cda30c6054899cc5da626acf8e9413ca555463d5b42ce2b73"
+    },
+    "m125": {
+      "state": "FORMAL",
+      "url": "/monsters/m125.webp",
+      "revision": "sha256-5e72d0869dad08721eb080a5879669e56e8babaa37e2b86095e3d09c26163fb1"
+    },
+    "m126": {
+      "state": "FORMAL",
+      "url": "/monsters/m126.webp",
+      "revision": "sha256-0b95371919c3da9bf1efda2fbb2333ace372a8c890d7e36766f8a1d4bdf38c18"
+    },
+    "m127": {
+      "state": "FORMAL",
+      "url": "/monsters/m127.webp",
+      "revision": "sha256-99e598de34e14aaa95fec8f6d26c64d2eba34a07e8d85837cdd835f06063db24"
+    },
+    "m128": {
+      "state": "FORMAL",
+      "url": "/monsters/m128.webp",
+      "revision": "sha256-f16c96b46d53bfa5db5820d90ba7a695a8bc009288944291de01b982bbcaf556"
+    },
+    "m129": {
+      "state": "PLACEHOLDER"
+    },
+    "m130": {
+      "state": "PLACEHOLDER"
+    },
+    "m131": {
+      "state": "FORMAL",
+      "url": "/monsters/m131.webp",
+      "revision": "sha256-bd498c013b8fd11f7f047d5b60c14d81ff50e9aaf8a6f4b01ed847f5e97fa346"
+    },
+    "m132": {
+      "state": "FORMAL",
+      "url": "/monsters/m132.webp",
+      "revision": "sha256-46a3db5cf7854952cb6a3e958636a6e100f64e455a01f23b0661224b5128d8e7"
+    },
+    "m133": {
+      "state": "PLACEHOLDER"
+    },
+    "m134": {
+      "state": "FORMAL",
+      "url": "/monsters/m134.webp",
+      "revision": "sha256-ec27e60c419dae85c1c0bbceec8a1d22330b0676815acbf7cde7949864330c27"
+    },
+    "m135": {
+      "state": "PLACEHOLDER"
+    },
+    "m136": {
+      "state": "PLACEHOLDER"
+    },
+    "m137": {
+      "state": "FORMAL",
+      "url": "/monsters/m137.webp",
+      "revision": "sha256-ced1a4f52fdbebcaeea6a0e757e6de176ede235407eddb5467ba1e4fd81ab820"
+    },
+    "m138": {
+      "state": "FORMAL",
+      "url": "/monsters/m138.webp",
+      "revision": "sha256-bbc787b8c831b03763cc770d8ec2a3bd99d64f2be3cc2398b612fac4280ed82b"
+    },
+    "m139": {
+      "state": "FORMAL",
+      "url": "/monsters/m139.webp",
+      "revision": "sha256-c83b04c4e2d7c4574bdd30a9f7809e3770304909503316cdcdaa4981165fe30a"
+    },
+    "m140": {
+      "state": "FORMAL",
+      "url": "/monsters/m140.webp",
+      "revision": "sha256-66bd4a672a635297ba8d78771907b2089ea0b048da20ad64c300df1df0e8e66e"
+    },
+    "m141": {
+      "state": "PLACEHOLDER"
+    },
+    "m142": {
+      "state": "PLACEHOLDER"
+    },
+    "m143": {
+      "state": "FORMAL",
+      "url": "/monsters/m143.webp",
+      "revision": "sha256-cfa0dce52b091fb862db6ffd31256c30abbce3e0b5908785feec82ffcda27390"
+    },
+    "m144": {
+      "state": "FORMAL",
+      "url": "/monsters/m144.webp",
+      "revision": "sha256-aa99e716905f731f6091f9225d8fc8e810262459ebcbea057ad832a15f618fa0"
+    },
+    "m145": {
+      "state": "FORMAL",
+      "url": "/monsters/m145.webp",
+      "revision": "sha256-d0760af8f17e6fd9df8be9e6a993f372784cd5133919c9359d82a297dcd8252e"
+    },
+    "m146": {
+      "state": "FORMAL",
+      "url": "/monsters/m146.webp",
+      "revision": "sha256-fbfcb143e91b9724bd19138bc48000f7cba2fa29feb5ce9802b13050cd153eb9"
+    },
+    "m147": {
+      "state": "FORMAL",
+      "url": "/monsters/m147.webp",
+      "revision": "sha256-eb37efe61c306f096181fc03408f917a6121bb57b0ad81b3f10e565d345f6fcd"
+    },
+    "m148": {
+      "state": "FORMAL",
+      "url": "/monsters/m148.webp",
+      "revision": "sha256-9457abee9201e0f013759c6dbf03add3af0a63bd7fb5b69114199dab05adee6c"
+    },
+    "m149": {
+      "state": "FORMAL",
+      "url": "/monsters/m149.webp",
+      "revision": "sha256-cb5a91afdb438225049da8a48ca8731a8d547c117abfc26e39417ce8b0771cc5"
+    },
+    "m150": {
+      "state": "FORMAL",
+      "url": "/monsters/m150.webp",
+      "revision": "sha256-e478a74780fdba249b7a8bb014c22c01ae79a7362ed344c3fb6ae466ca04bb91"
+    },
+    "m151": {
+      "state": "FORMAL",
+      "url": "/monsters/m151.webp",
+      "revision": "sha256-c98288f5b8e68c842fc34a1c4f0ed7fea3812b770f2f577996250ed882cd0be9"
+    },
+    "m152": {
+      "state": "FORMAL",
+      "url": "/monsters/m152.webp",
+      "revision": "sha256-bc08aa396e940d4103ec1960ac845d1205e315e2944844de46b0f6ebfbbb5b38"
+    },
+    "m153": {
+      "state": "FORMAL",
+      "url": "/monsters/m153.webp",
+      "revision": "sha256-a53b4d2eb88c4e48f12005a5a0f154c9f02d75b709bcce369fa8702f221630b1"
+    },
+    "m154": {
+      "state": "FORMAL",
+      "url": "/monsters/m154.webp",
+      "revision": "sha256-8d1732f3eda93abee5de79bae2f4ba9a1f5fb32791879a8c4bdf6794eff75b2a"
+    },
+    "m155": {
+      "state": "FORMAL",
+      "url": "/monsters/m155.webp",
+      "revision": "sha256-45bb2ac514bad68f2797218fa530b44941706755b8b60f78de02afbffa3bf5d4"
+    },
+    "m156": {
+      "state": "FORMAL",
+      "url": "/monsters/m156.webp",
+      "revision": "sha256-49e21a745707317e1695dbda09904d836f39f1240a0fc06ce934358e3bb4ced7"
+    },
+    "m157": {
+      "state": "FORMAL",
+      "url": "/monsters/m157.webp",
+      "revision": "sha256-91263f5ff50c28c3ba5529a67fa9f6732eb14ffa9e99c0ae8dc9c4024c9cd9b6"
+    },
+    "m158": {
+      "state": "FORMAL",
+      "url": "/monsters/m158.webp",
+      "revision": "sha256-8e33f601ed5ebaf02411dc67be856d8274f309aea06d050f3678de1ec5b18a3b"
+    },
+    "m159": {
+      "state": "FORMAL",
+      "url": "/monsters/m159.webp",
+      "revision": "sha256-c437ac504cb12f52cef6e861ce584c5f8261a73602838e822c94b45d7c8d7d9d"
+    },
+    "m160": {
+      "state": "PLACEHOLDER"
+    },
+    "m161": {
+      "state": "PLACEHOLDER"
+    },
+    "m162": {
+      "state": "PLACEHOLDER"
+    },
+    "m163": {
+      "state": "FORMAL",
+      "url": "/monsters/m163.webp",
+      "revision": "sha256-3a03c64ded7e0eeb54823517f7d6c6a66d29050d6584877a7d130e80902a5340"
+    },
+    "m164": {
+      "state": "FORMAL",
+      "url": "/monsters/m164.webp",
+      "revision": "sha256-001a5eab3b0c02981e2942b77dc2d8f8b28a4715a97285633c8439a4f0aba35c"
+    },
+    "m165": {
+      "state": "FORMAL",
+      "url": "/monsters/m165.webp",
+      "revision": "sha256-42ea22e661523ee17478bb772589d1fded0180aa14ad9e15b7e9d7ae4bf8ee10"
+    },
+    "m166": {
+      "state": "FORMAL",
+      "url": "/monsters/m166.webp",
+      "revision": "sha256-6c984ec630ed4b810ddca71f47bd86eebb7f7f832aedc33653b789954e4442f1"
+    },
+    "m167": {
+      "state": "PLACEHOLDER"
+    },
+    "m168": {
+      "state": "FORMAL",
+      "url": "/monsters/m168.webp",
+      "revision": "sha256-d6c1e46fb2b7c6ea9cf2eb2fc482885991464707786699c9912ca4b28774b97f"
+    },
+    "m169": {
+      "state": "FORMAL",
+      "url": "/monsters/m169.webp",
+      "revision": "sha256-3de5d0b00782cea75c5106fee6ece2353b891ccebdf9b8a216c4b0fd10315e04"
+    },
+    "m170": {
+      "state": "FORMAL",
+      "url": "/monsters/m170.webp",
+      "revision": "sha256-e332f5c963023c1c14164ca95629fb38bf69c7bb3b07264e694e2021c4810408"
+    },
+    "m171": {
+      "state": "FORMAL",
+      "url": "/monsters/m171.webp",
+      "revision": "sha256-532d84a3c3148b32b2f8ea965d09e03635a00edf569a6c9b93773c0461c16501"
+    },
+    "m172": {
+      "state": "FORMAL",
+      "url": "/monsters/m172.webp",
+      "revision": "sha256-f0bc6dac01795a26f55bd42db2a7e82251da857f646b33e1e54750297401e185"
+    },
+    "m173": {
+      "state": "FORMAL",
+      "url": "/monsters/m173.webp",
+      "revision": "sha256-0a2fcb7be35a769a7b5bd6ec24c0ff17db8ec08cc37c2d96769aac1018a0b8b6"
+    },
+    "m174": {
+      "state": "FORMAL",
+      "url": "/monsters/m174.webp",
+      "revision": "sha256-c844cd15f827b81899890e114ea2b858ec1ae92f229b04058adbe12bdbfc7cb2"
+    },
+    "m175": {
+      "state": "PLACEHOLDER"
+    },
+    "m176": {
+      "state": "FORMAL",
+      "url": "/monsters/m176.webp",
+      "revision": "sha256-0a65c43eef45f87b5d3667117ab0e5863cf2fc877439d043aa5ae60e3ed96388"
+    },
+    "m177": {
+      "state": "FORMAL",
+      "url": "/monsters/m177.webp",
+      "revision": "sha256-7361ddef40a2353d0a70e5ba5f6fd175fac544b27fa026eacd3f9b65ce05efd3"
+    },
+    "m178": {
+      "state": "PLACEHOLDER"
+    },
+    "m179": {
+      "state": "PLACEHOLDER"
+    },
+    "m180": {
+      "state": "PLACEHOLDER"
+    },
+    "m181": {
+      "state": "FORMAL",
+      "url": "/monsters/m181.webp",
+      "revision": "sha256-a5801c41b2b617263212915fdbc2d1e7ec288a3d41b7da15ec9ca29c95f5690c"
+    },
+    "m182": {
+      "state": "FORMAL",
+      "url": "/monsters/m182.webp",
+      "revision": "sha256-20cbebbd6fde1a98f659bba1f6981cbb6c239de295c695b8911d6a259905b4a6"
+    },
+    "m183": {
+      "state": "FORMAL",
+      "url": "/monsters/m183.webp",
+      "revision": "sha256-d5850bca493a67486540a531d371d05850ee66e8f8bc3be232cbfaf0ca2acc48"
+    },
+    "m184": {
+      "state": "FORMAL",
+      "url": "/monsters/m184.webp",
+      "revision": "sha256-39569f40c4f79fac885edc24996de45327842195be6f8865984ddcd5ce6799c5"
+    },
+    "m185": {
+      "state": "FORMAL",
+      "url": "/monsters/m185.webp",
+      "revision": "sha256-b8671a4b8218b1601a21a44e959f33ea7860ec07e62a728be759d0b5a125dc3a"
+    },
+    "m186": {
+      "state": "FORMAL",
+      "url": "/monsters/m186.webp",
+      "revision": "sha256-60173f2accb8429342c172456a364147b1d4595e3c618ca5bb06fcbc353ad00a"
+    },
+    "m187": {
+      "state": "FORMAL",
+      "url": "/monsters/m187.webp",
+      "revision": "sha256-1ce6b6308956419cbdf3a6a30c9f3026aabe45b2e412a30320980c9efc7b7430"
+    },
+    "m188": {
+      "state": "FORMAL",
+      "url": "/monsters/m188.webp",
+      "revision": "sha256-1ed443b9933ec1b5f4e2b3b6435f200f9c91c86e20c321169e3fc2a32f42dfb9"
+    },
+    "m189": {
+      "state": "FORMAL",
+      "url": "/monsters/m189.webp",
+      "revision": "sha256-931ae2930355cf4ab6170c3775ca9ddfdf0b4c3fc7da4ad8e690266d49ee3216"
+    },
+    "m190": {
+      "state": "FORMAL",
+      "url": "/monsters/m190.webp",
+      "revision": "sha256-92776186367e0107bb01487a889f9bef7343fb41d2699aaf982f34dca3a24768"
+    },
+    "m191": {
+      "state": "FORMAL",
+      "url": "/monsters/m191.webp",
+      "revision": "sha256-47e92bdeb8f2a239fd1fb7ad87e299ce2d3b33e8ffa0926e5f71b54a0e3ae224"
+    },
+    "m192": {
+      "state": "FORMAL",
+      "url": "/monsters/m192.webp",
+      "revision": "sha256-84f472a0358a9f0e1cf16da9aad2d4fc1e93645fa0affeb84b79ae5cf6d3a24d"
+    },
+    "m193": {
+      "state": "FORMAL",
+      "url": "/monsters/m193.webp",
+      "revision": "sha256-07eb0dd16253d1de78a326bcd4c41340c36ab81612fc0d541471e8431f7cd255"
+    },
+    "m194": {
+      "state": "FORMAL",
+      "url": "/monsters/m194.webp",
+      "revision": "sha256-3b4f0f5879c04976a8dc217a9d0680381968120a7083e289dd9ffabaf7f03d90"
+    },
+    "m195": {
+      "state": "FORMAL",
+      "url": "/monsters/m195.webp",
+      "revision": "sha256-879710440ffbca813770a99e3a5c9fb7362ceb36f0e3683b2ee858553b6cb2dd"
+    },
+    "m196": {
+      "state": "FORMAL",
+      "url": "/monsters/m196.webp",
+      "revision": "sha256-4cc9174210b5e89c5487302c2c3b239f2091273e9db0837e2c530102a304a582"
+    },
+    "m197": {
+      "state": "FORMAL",
+      "url": "/monsters/m197.webp",
+      "revision": "sha256-51abc64417b7dabbd49746c69d7d5f5ec0becee06d5fe2d4267d5c53c2e11b82"
+    },
+    "m198": {
+      "state": "FORMAL",
+      "url": "/monsters/m198.webp",
+      "revision": "sha256-43c88796607364e02ae47f721573b0fcd1d4d143b8da34603c48d8ebe55559db"
+    },
+    "m199": {
+      "state": "FORMAL",
+      "url": "/monsters/m199.webp",
+      "revision": "sha256-1a69478a2c4b4dcfc52aeefa2bf8ecc5046026266ad386422d2f6a8c436a4643"
+    },
+    "m200": {
+      "state": "FORMAL",
+      "url": "/monsters/m200.webp",
+      "revision": "sha256-da152a4918eadc7ce3412f2bb7c09448722ce0d1a10b49e59c1eb81a2e9b07f1"
+    },
+    "m201": {
+      "state": "FORMAL",
+      "url": "/monsters/m201.webp",
+      "revision": "sha256-0c17ada239b928ba4f442324c50504e8287c6068823af1af568f5e79807d728c"
+    },
+    "m202": {
+      "state": "PLACEHOLDER"
+    },
+    "m203": {
+      "state": "PLACEHOLDER"
+    },
+    "m204": {
+      "state": "FORMAL",
+      "url": "/monsters/m204.webp",
+      "revision": "sha256-1203cdb9203f7b27b99ff1727f66baf044fb740ae8fbd4e8c4f04119348750cb"
+    },
+    "m205": {
+      "state": "FORMAL",
+      "url": "/monsters/m205.webp",
+      "revision": "sha256-5b521d751dffd080fdff856361d5aaeae4d6405d5f8b18785e15a409d9fc99e0"
+    },
+    "m206": {
+      "state": "PLACEHOLDER"
+    },
+    "m207": {
+      "state": "FORMAL",
+      "url": "/monsters/m207.webp",
+      "revision": "sha256-80e53232b566ee7dfee591528607baa1a70eec2e45c3e7f8ad6e555b57f1aa7d"
+    },
+    "m208": {
+      "state": "FORMAL",
+      "url": "/monsters/m208.webp",
+      "revision": "sha256-6f549075af313fb820442841831b39a7b935fed64d3ddab66e5d001a9c4fbf76"
+    },
+    "m209": {
+      "state": "FORMAL",
+      "url": "/monsters/m209.webp",
+      "revision": "sha256-0c9b1a7f2ee4d967c1a72c1992c4f05d3244e9ff6c25f569c82eff5c54b59821"
+    },
+    "m210": {
+      "state": "FORMAL",
+      "url": "/monsters/m210.webp",
+      "revision": "sha256-7f9aea3b2c2d31f2593cf8438adbd4cc0ef9c17ce9ecb4ad273de85ba7d74eca"
+    },
+    "m211": {
+      "state": "FORMAL",
+      "url": "/monsters/m211.webp",
+      "revision": "sha256-b6b6db53c407f698ab01ef5f59a9fd92099fa111de3fee51c04c4bc49effd5c2"
+    },
+    "m212": {
+      "state": "FORMAL",
+      "url": "/monsters/m212.webp",
+      "revision": "sha256-c6a29cc028ba0db9d57c6c46d699ba65097f0171920bf255ea4c2f72a823f626"
+    },
+    "m213": {
+      "state": "FORMAL",
+      "url": "/monsters/m213.webp",
+      "revision": "sha256-5832f802ef80fae73dbde009828db91b112d92c2701efd6d0f8d1ce1f54a3851"
+    },
+    "m214": {
+      "state": "FORMAL",
+      "url": "/monsters/m214.webp",
+      "revision": "sha256-b1e8c183f263f092f49cae3e5ceddfd195267d3cd052bbf2d9528ce5333d900e"
+    },
+    "m215": {
+      "state": "PLACEHOLDER"
+    },
+    "m216": {
+      "state": "PLACEHOLDER"
+    },
+    "m217": {
+      "state": "FORMAL",
+      "url": "/monsters/m217.webp",
+      "revision": "sha256-8d17227dbc5c742ca7fe04b27b38df5c4e4a03c6a151d87c7b6167485495b9a3"
+    },
+    "m218": {
+      "state": "PLACEHOLDER"
+    },
+    "m219": {
+      "state": "PLACEHOLDER"
+    },
+    "m220": {
+      "state": "FORMAL",
+      "url": "/monsters/m220.webp",
+      "revision": "sha256-4188f3dfdcd7bef4d37cecf1a0f315ea7ac6b8a0724a2d0d70c7d370f8725b03"
+    },
+    "m221": {
+      "state": "FORMAL",
+      "url": "/monsters/m221.webp",
+      "revision": "sha256-f3d18e4c51ad9b4002a093697501e01ad06f9c9fd662775985d967fac5f95e66"
+    },
+    "m222": {
+      "state": "FORMAL",
+      "url": "/monsters/m222.webp",
+      "revision": "sha256-bc9457af39941c243f00891b76e1b971e535b35ba9d7f527894ef73ee4168be8"
+    },
+    "m223": {
+      "state": "FORMAL",
+      "url": "/monsters/m223.webp",
+      "revision": "sha256-fb11592178e2ffbf025cf70b455ef8948426ddea9a16979f8a1623977b031095"
+    },
+    "m224": {
+      "state": "FORMAL",
+      "url": "/monsters/m224.webp",
+      "revision": "sha256-5f865e962d9f5d8dffe5e3dbad5a4edfc353495513e4112ee295af74302971f5"
+    },
+    "m225": {
+      "state": "FORMAL",
+      "url": "/monsters/m225.webp",
+      "revision": "sha256-9129fe6c07664e349b751b87e6675f883dfe5ac1e86f9a953f86ab54bc41462b"
+    },
+    "m226": {
+      "state": "FORMAL",
+      "url": "/monsters/m226.webp",
+      "revision": "sha256-5280f2b4ebd5dc6e23c0629b59fb07fbaf66069ba0df741104121f854ba9d5eb"
+    },
+    "m227": {
+      "state": "FORMAL",
+      "url": "/monsters/m227.webp",
+      "revision": "sha256-7da6cd61ade498075b76589c9ce7a77f06d2ab5e2b764db5781ac6a96e6c2f38"
+    },
+    "m228": {
+      "state": "FORMAL",
+      "url": "/monsters/m228.webp",
+      "revision": "sha256-3a92454ac96d4df18147a53ebeb488731c3732db09d79683d506d07d1d01113c"
+    },
+    "m229": {
+      "state": "PLACEHOLDER"
+    },
+    "m230": {
+      "state": "PLACEHOLDER"
+    },
+    "m231": {
+      "state": "PLACEHOLDER"
+    },
+    "m232": {
+      "state": "FORMAL",
+      "url": "/monsters/m232.webp",
+      "revision": "sha256-484990140a0dbf7e552541788d39d4854088c6841d1eb4b2befafc91ad2a95b7"
+    },
+    "m233": {
+      "state": "PLACEHOLDER"
+    },
+    "m234": {
+      "state": "PLACEHOLDER"
+    },
+    "m235": {
+      "state": "PLACEHOLDER"
+    },
+    "m236": {
+      "state": "FORMAL",
+      "url": "/monsters/m236.webp",
+      "revision": "sha256-2301c11ba9d297d3b43228561aed4df0f67b7d5e2ce69a80c4e757ee71bf543b"
+    },
+    "m237": {
+      "state": "FORMAL",
+      "url": "/monsters/m237.webp",
+      "revision": "sha256-9c2f5290f2253f4366dbe1541294f2890b45b422145c3cfd64b4742e10b73ed4"
+    },
+    "m238": {
+      "state": "FORMAL",
+      "url": "/monsters/m238.webp",
+      "revision": "sha256-92d2c6b2b48c7d2dc8bacaefb8fed0f9f679f841dce49834b1097b34ec75b12b"
+    }
+  },
+  "formalByUrl": {
+    "/monsters/m001.webp": "sha256-7155656d37ec2541fc97adfacb99c74368fe0be5ffdf90080aab86f97431b041",
+    "/monsters/m002.webp": "sha256-f6772e39647f1ba8e78ed9386e52d058bdacb4c255c5f2c95c1a572661d28ac4",
+    "/monsters/m003.webp": "sha256-d3c94c46b180e1354ddfabd5c7f6701a3ad60e23dcd7f553746b01a957b29be0",
+    "/monsters/m004.webp": "sha256-e7370f61737c2139187d48b0195c7c84865a1c71352760ad342226f6b4d88794",
+    "/monsters/m005.webp": "sha256-6006961d581410b387a5af049cda9099a3a8982872cca0bef4198708aa113dc3",
+    "/monsters/m006.webp": "sha256-2bc39baebda89f387b57d522ffa618c444d0ccb1501e014edfbc736402163991",
+    "/monsters/m007.webp": "sha256-98665390498734104206dd9b82951fa49f3a2c5db843d6bf1233a40250caff18",
+    "/monsters/m008.webp": "sha256-0fc5e0fff8edec521f08367d69dc157b599b9bfa8bcc3a6636c7fddc2178cd2a",
+    "/monsters/m009.webp": "sha256-4246a204a6353c76db575b417a75b7b9ee70e4563d2005f5121a20c2107bf937",
+    "/monsters/m010.webp": "sha256-8cdc0e759bcceda804eed3936f9b270fcf0747827e378d562a2d30029e019f21",
+    "/monsters/m015.webp": "sha256-35761e3489ab1d220802f1399a31a857fbc7084216c74583edbb6031cea32e33",
+    "/monsters/m016.webp": "sha256-7e5401608c3cef60cf32e8479b540eb568999653a46157c6da1eefe188279682",
+    "/monsters/m017.webp": "sha256-54d36f66870a388b81524c7cf7f6297ef211b36d00b07b8bc226c07af6a79484",
+    "/monsters/m018.webp": "sha256-498d30ef085783c61ed74f574355b5fa06d7da99fb180206a4d9941000a1857a",
+    "/monsters/m019.webp": "sha256-c9c8f758e3b8d4d40f1ff89be5bd33c3b259d806bdf143b8e07dd2d472b0270d",
+    "/monsters/m020.webp": "sha256-c9aabf150422ba028582d4e4f672177ef23fed604a1f5027392888961928a494",
+    "/monsters/m021.webp": "sha256-558e00df00ffb6e92769698ab19f0c6d0d6c36df838f990f221977b52d400e1d",
+    "/monsters/m022.webp": "sha256-c9781f901c698dcd59e27a3a54513710e90a1038f865edd6276b58c322bc40cf",
+    "/monsters/m023.webp": "sha256-898262b71dbc4c60c8cc6d31dba7b7ba29ac17b8ec08bedf52d677ace1a00151",
+    "/monsters/m024.webp": "sha256-4d08c1007b7ad4850834185b4ada3b479cc1e69c22f4f4fc31f5bab7c11f21a3",
+    "/monsters/m025.webp": "sha256-6df853aa27e3cf967975b39c93d4ab92445a70309b001e349353be803cf5bdbb",
+    "/monsters/m026.webp": "sha256-b7f6d095ba17d5dfea03a7db270a3c503841df06e3dcd4364296464564eea33c",
+    "/monsters/m027.webp": "sha256-cf434531c2c8aaa1049f883b85253de8ca8092b50ee8bbd8351dba374e476238",
+    "/monsters/m028.webp": "sha256-50d59372273b51d28ecbe4fee45a8a9fa9be041674150cf44637596c9f2d6bca",
+    "/monsters/m029.webp": "sha256-a3e810611db2095e0b9d2b9920c1eaf541f58dc7426aa945e65c109e5ee5d70e",
+    "/monsters/m030.webp": "sha256-f37e641f70f49fe4c4732909895dd537eadcc55ef6e6afc6d54906842c0e5732",
+    "/monsters/m031.webp": "sha256-1a3300ee184165683e17db69bd1ae936feff0bf0c786b3dcfa6bea3691c2ccb0",
+    "/monsters/m032.webp": "sha256-655045e583c71480c2520b7fff1bd8ccd7e655ddf9711e25f2436b636500e474",
+    "/monsters/m033.webp": "sha256-f9e1df4f2b004ad9d8e80fb77ec4ae52fc36c1cec05be2e59fd90a65ed1685ee",
+    "/monsters/m034.webp": "sha256-91122d2cd17e9142b4e43b0f730eb72a371a0b0efb40d3a28a8730ad05c89e7a",
+    "/monsters/m035.webp": "sha256-8cd4ae95987d7e1168ecc842aa921bf291fb1601d0ab7f0cac1d6439c298947e",
+    "/monsters/m036.webp": "sha256-a50493c4b878ead4a8974f0f4cdfe3a1e4aef030aafc60fbdc5d4df873964267",
+    "/monsters/m037.webp": "sha256-c5954096c6ba66a48d3d596c30f457566b797878cf52c3c3aae9da3eba386161",
+    "/monsters/m038.webp": "sha256-78a4f8c25f9cb4fae3aad345e3b722dc1c6d5861e03081f78d1821f5c34fbccb",
+    "/monsters/m039.webp": "sha256-a83556af195ca7fb70cd04c7d1d22be336fef6c75a1b7d159609d4d7ea80335a",
+    "/monsters/m040.webp": "sha256-cde86a49c5d1c3cc70fc437a7b27e03923d5bec19191b881c2ca749d80faaa80",
+    "/monsters/m041.webp": "sha256-da739d9203cdf30414708697b181f76cc402f40e86614b238466e256bef1f30e",
+    "/monsters/m043.webp": "sha256-3345c1ca8c387143d3b759dff39136ab56d6de40e1a0df8ab1f9b11d541b7675",
+    "/monsters/m044.webp": "sha256-88c9790991afe2ac10a49d2f6e5f86405f837c72004b6274a820e7ac593b3cbc",
+    "/monsters/m046.webp": "sha256-1e6c3b5beec457ada40b44a3faa2d716fea2ad38cbe2ef9f6b6c0a7a837557c9",
+    "/monsters/m047.webp": "sha256-3f1e07fc6751c9fa7bce79033a2a4da823a1fe69ce00cdc116d49c26df73d7e1",
+    "/monsters/m048.webp": "sha256-2aa0a8b5997cc620a3529d60805ee356ad506c9cd4d4bc5c27f4605fc2cc66c0",
+    "/monsters/m049.webp": "sha256-c1c580af098caf00c33d3e475bafca0e9b372ccbd6700fe6661a6455ca336b76",
+    "/monsters/m050.webp": "sha256-9fae02c35914a92c3aa24a36e0521ca49475705a65808b90e8a40a3e6b19bf90",
+    "/monsters/m052.webp": "sha256-1ce9854179730a6ee13574961ea855c69c62fba3e0322710550b9ddea3750a3f",
+    "/monsters/m053.webp": "sha256-07097c4fc24998b9db4a203adda1adf3509a7bf7a7bb3ed7d6230589ec7407b0",
+    "/monsters/m054.webp": "sha256-f4519d4fc50f87daf37ccab9b91bb42ac96f64c4f4b81593541e77814228983a",
+    "/monsters/m055.webp": "sha256-b3172206e1f1a2cb228d0c23f597f0af50c238dc94d737372e25dbeced8225dd",
+    "/monsters/m056.webp": "sha256-4864b93737466517180dbae73a2fad38ea61b006d00d5501a51ca52d42b77941",
+    "/monsters/m057.webp": "sha256-b700369d316f5eb336b348bc1a4d71e3aacd54325f00444aed1e4cd730761bd5",
+    "/monsters/m058.webp": "sha256-74cf8fb8f0ebd6321323250d683a2f89641c53efac6ea0ec9a6cdac76df9b764",
+    "/monsters/m059.webp": "sha256-91fe52a09a425a221fc4668423988c693a98bef9510f6de8850006704150a30e",
+    "/monsters/m060.webp": "sha256-2658f12552a89527b04dfe913a0ce2216523173bdb8e4ec9ddcc5d65d928215b",
+    "/monsters/m061.webp": "sha256-3be1c7af24ff13a045afa522d56a19c76c1a4a5302304d379b27bae771bdfdce",
+    "/monsters/m062.webp": "sha256-a177fb3e0295f644d9054309f2132d289e72a1504815647628ce4730f0596569",
+    "/monsters/m063.webp": "sha256-98fdcac95c5c7d9442690599b9f866697f2a157e2dd9567016c7489e363c2b91",
+    "/monsters/m066.webp": "sha256-8aae68a18621301bfbd6b4904584da573c5febb08a93971032004bdcfeb1afac",
+    "/monsters/m067.webp": "sha256-e014d513a6dc2f105c1b8534c10ce95b32d8d5bebaf9400b5c6d702396a13c6f",
+    "/monsters/m068.webp": "sha256-b2c6204e4be661924363804d57e7785d93e77c0a9e05f9de26f344b527ad719e",
+    "/monsters/m069.webp": "sha256-d103b0ff2d56bd2f8c31288387f845510f3d890c78da281fb9cc536e6f391c1b",
+    "/monsters/m070.webp": "sha256-a83566087ded1cf5ff26a5afd7c21b29e016dd8e2815ddab158c04ac37bff3cd",
+    "/monsters/m071.webp": "sha256-3887b9291f44319f66d53cdb3262590805e9f32dfce46de3e443fb27179c7adc",
+    "/monsters/m072.webp": "sha256-5205e956577185221e44ae69bbec0e6393ce17d719facd9f0692e4b70a1ee29b",
+    "/monsters/m073.webp": "sha256-f5c621f611032bca80b017b7d584aa3eb975275eca99dc326f7e4487b1aa8667",
+    "/monsters/m074.webp": "sha256-2cd186a4478473991936395ae3435b6c68f438b3ebb2df034d6d72dac67b290f",
+    "/monsters/m075.webp": "sha256-945506e03033f58989090060fc28db18ad26615d4f2991c8b5f1f3de72478f1d",
+    "/monsters/m076.webp": "sha256-134988f2f11b9da210e3b0f8d49aa93ea8fa0c0f04e87350a5c43d22c6e59873",
+    "/monsters/m077.webp": "sha256-742a66afaf7bc4b11b2c3f9d71f2f317de7f3add4beddb3f23da046325bdb8bc",
+    "/monsters/m078.webp": "sha256-9e8ec05cb825cb7567c24be07475c300453990929843842cdeddf80b82c0f698",
+    "/monsters/m079.webp": "sha256-a835f1b2970431be7433e769e35258c0d83b8190711b7a37949b0375e036504f",
+    "/monsters/m080.webp": "sha256-a58141b8a13785ddfedee232f72bf6adb46d911b581e4714abcbf5004f15bca3",
+    "/monsters/m082.webp": "sha256-6de588fc3674bff146a6d8b363e22a92a4fcdb3d943dabe18c19eac4741d711a",
+    "/monsters/m083.webp": "sha256-e11f68157b54b4ec22e7c0faa74c6801fc5bfd30a517f924c087ff9b312caee7",
+    "/monsters/m084.webp": "sha256-bb9b10c4bffb93b996b271380cb93fcdbcf195bda209a4fb46af423447d51dea",
+    "/monsters/m085.webp": "sha256-09082fa6609b7ffd378d748cfba1392a651956c741b8a78320c3c03997169448",
+    "/monsters/m086.webp": "sha256-d4f423580b7a665f998d464329e2660c6a671375753eaeafb1dabff872dd6a36",
+    "/monsters/m087.webp": "sha256-f59cb06267582741b720ace74feca397aaf25dd79a1f7e0b5dadd3cb7f720780",
+    "/monsters/m088.webp": "sha256-4937db7a52651a52fec96e848087610b61817574ab7bf544bca995b3669cc6fc",
+    "/monsters/m089.webp": "sha256-869e190116390ccd33df984ca06d97937bd65654eacfb81be36dbb4449c3f123",
+    "/monsters/m090.webp": "sha256-bf223473c670d0a0a98f9288182b99ab9bf12ca8ec8a378bf8d5c60ed698b604",
+    "/monsters/m091.webp": "sha256-6d5d7347fbbb300fd7461b4f80bb014c4a3e12aa61df0797a9d073d53c5ca216",
+    "/monsters/m092.webp": "sha256-2023a2bf2d13efa45810257ec8a14e146598855ad411617f555c13bac3a58450",
+    "/monsters/m093.webp": "sha256-df311700d6605ef7216a4d1e938dd7b9161f4ee09770a1c281ea63fafe195819",
+    "/monsters/m094.webp": "sha256-63763a4df307a8d517f87b83a27fa82be8da4aa5dad70d8034f8ca684549d518",
+    "/monsters/m095.webp": "sha256-d7b710c42168e6eb46cf5143596d367be48f5e1b7643b7d393c90c26e039cf79",
+    "/monsters/m096.webp": "sha256-47a2dc375318963773f486ba7e7edfd42bfae2e095c56b9fcca31e40849b3c26",
+    "/monsters/m097.webp": "sha256-f7dacf90997c29a715eb665021bb632ef334b98bda4a4be432f6c69a7f1ba8cd",
+    "/monsters/m098.webp": "sha256-9d60820087ff5c3e3621d10f618fae0f84c366b5612dd571eecee02a13397c17",
+    "/monsters/m099.webp": "sha256-f51c2b629ffb980c2aca42897496989c708ea9e5f54b8915966e1aca89bf046f",
+    "/monsters/m100.webp": "sha256-57eb537b1722585b13685c1e67b04d6f080b56749f59614113884cd97a074bf1",
+    "/monsters/m101.webp": "sha256-a83076f04ab74b22b333718a311979038a6988234a91f3a7d8ab072c079a25b3",
+    "/monsters/m102.webp": "sha256-6e8bbe8ec22b409d97d1e03169ba06527bf786d20e2058411d4c0cc6a0aca728",
+    "/monsters/m104.webp": "sha256-25dfa11433b2c3d37555b0f7590782c3e9696cc34fdd7821699a0efee4e72aa6",
+    "/monsters/m105.webp": "sha256-3673be3280065437adc3274bf19872f26f236ef6d5baee8836f1fa1c35016558",
+    "/monsters/m106.webp": "sha256-d45bb40aef1295b9a286337c725cd921ad8cb179c59139afeaf55887d2b6ea27",
+    "/monsters/m107.webp": "sha256-09adea56fb2fc23c48669229ac4a3c7f9633a1512e17274f21608e5646e0cc11",
+    "/monsters/m108.webp": "sha256-d462f906ca24e6e157005d4a421081fae155e3d1158d39c7cd271e831c3984b8",
+    "/monsters/m109.webp": "sha256-56683e8a9385c0572814ec4ae07b27d1bdb56681918c767cd4bba0a59ddc7bc3",
+    "/monsters/m110.webp": "sha256-73176396161056e8486594ca3e717aac22950ef595988df2c97a907180e17f01",
+    "/monsters/m111.webp": "sha256-3f16c09674f181a121dbcd43e709e0339780691c4a6a067eb31173338df96744",
+    "/monsters/m112.webp": "sha256-110a8b233a238a2fd516ea2c1857dfd6778e8dd4ba72f88097fb421171a4bb0f",
+    "/monsters/m113.webp": "sha256-639e5e504a84ad042d899fb083eafcd2bd6ab35fb4c4e58edfb886b1e76fa4c3",
+    "/monsters/m114.webp": "sha256-7c46cd19af56cff0bc507fc5970e929194641d14e71374e5d9f433390e714538",
+    "/monsters/m115.webp": "sha256-bdf9d7b15242ebe4f67d7b05a252dc407ee37b47a06938adbc98ad270d13c8f5",
+    "/monsters/m116.webp": "sha256-73ca2f563c96fc91d65b4cce25957a5c9871ec2237969b36e1d751aa21c52b9d",
+    "/monsters/m117.webp": "sha256-6fefdb100e95c03527aaa81f80989e46676a58aed6e9715967eaec80f46ec43c",
+    "/monsters/m118.webp": "sha256-470bf466d5e93529b9559efaa8b41aa5509ecf1ccdcdca889f53c547814ba246",
+    "/monsters/m119.webp": "sha256-da6e6f4bd32a18ae354472c3b8ae4cb5f9f84263c29327a4cf95ed43fce51516",
+    "/monsters/m120.webp": "sha256-b0588fd70567b60a9da1252f0396ca88fbd23c5034e58b6aaf4e9cd37b9846ee",
+    "/monsters/m121.webp": "sha256-da55b6f95f27b40ecca8145112cb5ddc61140aa579061294d083861f5abddee8",
+    "/monsters/m123.webp": "sha256-d4ce2d9fe4aa45f76dc49b4eed4e9c75fbe2520c07b1a65c2f7682fde73d8829",
+    "/monsters/m124.webp": "sha256-09be6ad5cefeb81cda30c6054899cc5da626acf8e9413ca555463d5b42ce2b73",
+    "/monsters/m125.webp": "sha256-5e72d0869dad08721eb080a5879669e56e8babaa37e2b86095e3d09c26163fb1",
+    "/monsters/m126.webp": "sha256-0b95371919c3da9bf1efda2fbb2333ace372a8c890d7e36766f8a1d4bdf38c18",
+    "/monsters/m127.webp": "sha256-99e598de34e14aaa95fec8f6d26c64d2eba34a07e8d85837cdd835f06063db24",
+    "/monsters/m128.webp": "sha256-f16c96b46d53bfa5db5820d90ba7a695a8bc009288944291de01b982bbcaf556",
+    "/monsters/m131.webp": "sha256-bd498c013b8fd11f7f047d5b60c14d81ff50e9aaf8a6f4b01ed847f5e97fa346",
+    "/monsters/m132.webp": "sha256-46a3db5cf7854952cb6a3e958636a6e100f64e455a01f23b0661224b5128d8e7",
+    "/monsters/m134.webp": "sha256-ec27e60c419dae85c1c0bbceec8a1d22330b0676815acbf7cde7949864330c27",
+    "/monsters/m137.webp": "sha256-ced1a4f52fdbebcaeea6a0e757e6de176ede235407eddb5467ba1e4fd81ab820",
+    "/monsters/m138.webp": "sha256-bbc787b8c831b03763cc770d8ec2a3bd99d64f2be3cc2398b612fac4280ed82b",
+    "/monsters/m139.webp": "sha256-c83b04c4e2d7c4574bdd30a9f7809e3770304909503316cdcdaa4981165fe30a",
+    "/monsters/m140.webp": "sha256-66bd4a672a635297ba8d78771907b2089ea0b048da20ad64c300df1df0e8e66e",
+    "/monsters/m143.webp": "sha256-cfa0dce52b091fb862db6ffd31256c30abbce3e0b5908785feec82ffcda27390",
+    "/monsters/m144.webp": "sha256-aa99e716905f731f6091f9225d8fc8e810262459ebcbea057ad832a15f618fa0",
+    "/monsters/m145.webp": "sha256-d0760af8f17e6fd9df8be9e6a993f372784cd5133919c9359d82a297dcd8252e",
+    "/monsters/m146.webp": "sha256-fbfcb143e91b9724bd19138bc48000f7cba2fa29feb5ce9802b13050cd153eb9",
+    "/monsters/m147.webp": "sha256-eb37efe61c306f096181fc03408f917a6121bb57b0ad81b3f10e565d345f6fcd",
+    "/monsters/m148.webp": "sha256-9457abee9201e0f013759c6dbf03add3af0a63bd7fb5b69114199dab05adee6c",
+    "/monsters/m149.webp": "sha256-cb5a91afdb438225049da8a48ca8731a8d547c117abfc26e39417ce8b0771cc5",
+    "/monsters/m150.webp": "sha256-e478a74780fdba249b7a8bb014c22c01ae79a7362ed344c3fb6ae466ca04bb91",
+    "/monsters/m151.webp": "sha256-c98288f5b8e68c842fc34a1c4f0ed7fea3812b770f2f577996250ed882cd0be9",
+    "/monsters/m152.webp": "sha256-bc08aa396e940d4103ec1960ac845d1205e315e2944844de46b0f6ebfbbb5b38",
+    "/monsters/m153.webp": "sha256-a53b4d2eb88c4e48f12005a5a0f154c9f02d75b709bcce369fa8702f221630b1",
+    "/monsters/m154.webp": "sha256-8d1732f3eda93abee5de79bae2f4ba9a1f5fb32791879a8c4bdf6794eff75b2a",
+    "/monsters/m155.webp": "sha256-45bb2ac514bad68f2797218fa530b44941706755b8b60f78de02afbffa3bf5d4",
+    "/monsters/m156.webp": "sha256-49e21a745707317e1695dbda09904d836f39f1240a0fc06ce934358e3bb4ced7",
+    "/monsters/m157.webp": "sha256-91263f5ff50c28c3ba5529a67fa9f6732eb14ffa9e99c0ae8dc9c4024c9cd9b6",
+    "/monsters/m158.webp": "sha256-8e33f601ed5ebaf02411dc67be856d8274f309aea06d050f3678de1ec5b18a3b",
+    "/monsters/m159.webp": "sha256-c437ac504cb12f52cef6e861ce584c5f8261a73602838e822c94b45d7c8d7d9d",
+    "/monsters/m163.webp": "sha256-3a03c64ded7e0eeb54823517f7d6c6a66d29050d6584877a7d130e80902a5340",
+    "/monsters/m164.webp": "sha256-001a5eab3b0c02981e2942b77dc2d8f8b28a4715a97285633c8439a4f0aba35c",
+    "/monsters/m165.webp": "sha256-42ea22e661523ee17478bb772589d1fded0180aa14ad9e15b7e9d7ae4bf8ee10",
+    "/monsters/m166.webp": "sha256-6c984ec630ed4b810ddca71f47bd86eebb7f7f832aedc33653b789954e4442f1",
+    "/monsters/m168.webp": "sha256-d6c1e46fb2b7c6ea9cf2eb2fc482885991464707786699c9912ca4b28774b97f",
+    "/monsters/m169.webp": "sha256-3de5d0b00782cea75c5106fee6ece2353b891ccebdf9b8a216c4b0fd10315e04",
+    "/monsters/m170.webp": "sha256-e332f5c963023c1c14164ca95629fb38bf69c7bb3b07264e694e2021c4810408",
+    "/monsters/m171.webp": "sha256-532d84a3c3148b32b2f8ea965d09e03635a00edf569a6c9b93773c0461c16501",
+    "/monsters/m172.webp": "sha256-f0bc6dac01795a26f55bd42db2a7e82251da857f646b33e1e54750297401e185",
+    "/monsters/m173.webp": "sha256-0a2fcb7be35a769a7b5bd6ec24c0ff17db8ec08cc37c2d96769aac1018a0b8b6",
+    "/monsters/m174.webp": "sha256-c844cd15f827b81899890e114ea2b858ec1ae92f229b04058adbe12bdbfc7cb2",
+    "/monsters/m176.webp": "sha256-0a65c43eef45f87b5d3667117ab0e5863cf2fc877439d043aa5ae60e3ed96388",
+    "/monsters/m177.webp": "sha256-7361ddef40a2353d0a70e5ba5f6fd175fac544b27fa026eacd3f9b65ce05efd3",
+    "/monsters/m181.webp": "sha256-a5801c41b2b617263212915fdbc2d1e7ec288a3d41b7da15ec9ca29c95f5690c",
+    "/monsters/m182.webp": "sha256-20cbebbd6fde1a98f659bba1f6981cbb6c239de295c695b8911d6a259905b4a6",
+    "/monsters/m183.webp": "sha256-d5850bca493a67486540a531d371d05850ee66e8f8bc3be232cbfaf0ca2acc48",
+    "/monsters/m184.webp": "sha256-39569f40c4f79fac885edc24996de45327842195be6f8865984ddcd5ce6799c5",
+    "/monsters/m185.webp": "sha256-b8671a4b8218b1601a21a44e959f33ea7860ec07e62a728be759d0b5a125dc3a",
+    "/monsters/m186.webp": "sha256-60173f2accb8429342c172456a364147b1d4595e3c618ca5bb06fcbc353ad00a",
+    "/monsters/m187.webp": "sha256-1ce6b6308956419cbdf3a6a30c9f3026aabe45b2e412a30320980c9efc7b7430",
+    "/monsters/m188.webp": "sha256-1ed443b9933ec1b5f4e2b3b6435f200f9c91c86e20c321169e3fc2a32f42dfb9",
+    "/monsters/m189.webp": "sha256-931ae2930355cf4ab6170c3775ca9ddfdf0b4c3fc7da4ad8e690266d49ee3216",
+    "/monsters/m190.webp": "sha256-92776186367e0107bb01487a889f9bef7343fb41d2699aaf982f34dca3a24768",
+    "/monsters/m191.webp": "sha256-47e92bdeb8f2a239fd1fb7ad87e299ce2d3b33e8ffa0926e5f71b54a0e3ae224",
+    "/monsters/m192.webp": "sha256-84f472a0358a9f0e1cf16da9aad2d4fc1e93645fa0affeb84b79ae5cf6d3a24d",
+    "/monsters/m193.webp": "sha256-07eb0dd16253d1de78a326bcd4c41340c36ab81612fc0d541471e8431f7cd255",
+    "/monsters/m194.webp": "sha256-3b4f0f5879c04976a8dc217a9d0680381968120a7083e289dd9ffabaf7f03d90",
+    "/monsters/m195.webp": "sha256-879710440ffbca813770a99e3a5c9fb7362ceb36f0e3683b2ee858553b6cb2dd",
+    "/monsters/m196.webp": "sha256-4cc9174210b5e89c5487302c2c3b239f2091273e9db0837e2c530102a304a582",
+    "/monsters/m197.webp": "sha256-51abc64417b7dabbd49746c69d7d5f5ec0becee06d5fe2d4267d5c53c2e11b82",
+    "/monsters/m198.webp": "sha256-43c88796607364e02ae47f721573b0fcd1d4d143b8da34603c48d8ebe55559db",
+    "/monsters/m199.webp": "sha256-1a69478a2c4b4dcfc52aeefa2bf8ecc5046026266ad386422d2f6a8c436a4643",
+    "/monsters/m200.webp": "sha256-da152a4918eadc7ce3412f2bb7c09448722ce0d1a10b49e59c1eb81a2e9b07f1",
+    "/monsters/m201.webp": "sha256-0c17ada239b928ba4f442324c50504e8287c6068823af1af568f5e79807d728c",
+    "/monsters/m204.webp": "sha256-1203cdb9203f7b27b99ff1727f66baf044fb740ae8fbd4e8c4f04119348750cb",
+    "/monsters/m205.webp": "sha256-5b521d751dffd080fdff856361d5aaeae4d6405d5f8b18785e15a409d9fc99e0",
+    "/monsters/m207.webp": "sha256-80e53232b566ee7dfee591528607baa1a70eec2e45c3e7f8ad6e555b57f1aa7d",
+    "/monsters/m208.webp": "sha256-6f549075af313fb820442841831b39a7b935fed64d3ddab66e5d001a9c4fbf76",
+    "/monsters/m209.webp": "sha256-0c9b1a7f2ee4d967c1a72c1992c4f05d3244e9ff6c25f569c82eff5c54b59821",
+    "/monsters/m210.webp": "sha256-7f9aea3b2c2d31f2593cf8438adbd4cc0ef9c17ce9ecb4ad273de85ba7d74eca",
+    "/monsters/m211.webp": "sha256-b6b6db53c407f698ab01ef5f59a9fd92099fa111de3fee51c04c4bc49effd5c2",
+    "/monsters/m212.webp": "sha256-c6a29cc028ba0db9d57c6c46d699ba65097f0171920bf255ea4c2f72a823f626",
+    "/monsters/m213.webp": "sha256-5832f802ef80fae73dbde009828db91b112d92c2701efd6d0f8d1ce1f54a3851",
+    "/monsters/m214.webp": "sha256-b1e8c183f263f092f49cae3e5ceddfd195267d3cd052bbf2d9528ce5333d900e",
+    "/monsters/m217.webp": "sha256-8d17227dbc5c742ca7fe04b27b38df5c4e4a03c6a151d87c7b6167485495b9a3",
+    "/monsters/m220.webp": "sha256-4188f3dfdcd7bef4d37cecf1a0f315ea7ac6b8a0724a2d0d70c7d370f8725b03",
+    "/monsters/m221.webp": "sha256-f3d18e4c51ad9b4002a093697501e01ad06f9c9fd662775985d967fac5f95e66",
+    "/monsters/m222.webp": "sha256-bc9457af39941c243f00891b76e1b971e535b35ba9d7f527894ef73ee4168be8",
+    "/monsters/m223.webp": "sha256-fb11592178e2ffbf025cf70b455ef8948426ddea9a16979f8a1623977b031095",
+    "/monsters/m224.webp": "sha256-5f865e962d9f5d8dffe5e3dbad5a4edfc353495513e4112ee295af74302971f5",
+    "/monsters/m225.webp": "sha256-9129fe6c07664e349b751b87e6675f883dfe5ac1e86f9a953f86ab54bc41462b",
+    "/monsters/m226.webp": "sha256-5280f2b4ebd5dc6e23c0629b59fb07fbaf66069ba0df741104121f854ba9d5eb",
+    "/monsters/m227.webp": "sha256-7da6cd61ade498075b76589c9ce7a77f06d2ab5e2b764db5781ac6a96e6c2f38",
+    "/monsters/m228.webp": "sha256-3a92454ac96d4df18147a53ebeb488731c3732db09d79683d506d07d1d01113c",
+    "/monsters/m232.webp": "sha256-484990140a0dbf7e552541788d39d4854088c6841d1eb4b2befafc91ad2a95b7",
+    "/monsters/m236.webp": "sha256-2301c11ba9d297d3b43228561aed4df0f67b7d5e2ce69a80c4e757ee71bf543b",
+    "/monsters/m237.webp": "sha256-9c2f5290f2253f4366dbe1541294f2890b45b422145c3cfd64b4742e10b73ed4",
+    "/monsters/m238.webp": "sha256-92d2c6b2b48c7d2dc8bacaefb8fed0f9f679f841dce49834b1097b34ec75b12b"
+  }
+}

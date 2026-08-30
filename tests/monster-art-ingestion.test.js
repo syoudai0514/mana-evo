@@ -181,8 +181,9 @@ test('FORMAL promotion refuses missing approval evidence and dry-run leaves mani
 test('committed queue and ledger are fresh against repository CURRENT shards', () => {
   const root = path.resolve(new URL('..', import.meta.url).pathname);
   const { descriptions, manifest } = loadCurrent(root);
-  const queue = buildAttributeQueue(descriptions, manifest, { sourceCommit: 'efde04d5edd8cef26d30f36512ab33f818745e24' });
-  const ledger = buildReviewLedger(descriptions, manifest, queue, { sourceCommit: 'efde04d5edd8cef26d30f36512ab33f818745e24' });
+  const sourceCommit = process.env.GITHUB_SHA ?? null;
+  const queue = buildAttributeQueue(descriptions, manifest, { sourceCommit });
+  const ledger = buildReviewLedger(descriptions, manifest, queue, { sourceCommit });
   const queuePath = path.join(root, 'design/rebuild/asset-production/PHASE-4-ATTRIBUTE-QUEUE.json');
   const ledgerPath = path.join(root, 'design/rebuild/asset-production/PHASE-4-REVIEW-LEDGER.json');
   assert.equal(fs.readFileSync(queuePath, 'utf8'), stableStringify(queue));

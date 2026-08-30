@@ -11,7 +11,7 @@ test('W-220 source release contracts keep Vercel-root PWA isolated and installab
   const report = verifySourceContracts({ root })
   assert.equal(report.canonicalUrl, 'https://mana-evo.vercel.app/')
   assert.equal(report.appBase, '/')
-  assert.deepEqual(report.artCounts, { FORMAL: 0, CANDIDATE: 20, PLACEHOLDER: 218 })
+  assert.deepEqual(report.artCounts, { FORMAL: 198, CANDIDATE: 4, PLACEHOLDER: 36 })
 })
 
 test('production reachability keeps save-compatibility sprite v3 but proves v1 dead before removal', () => {

@@ -48,8 +48,19 @@ test('every generated candidate has an exact WebP/provenance pair', () => {
   }
 })
 
-test('candidate rollout does not promote CURRENT assets to FORMAL', () => {
+test('FINAL ART CLOSEOUT promotes only the audited KEEP set to FORMAL', () => {
   const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'design/current/monster-asset-manifest.json'), 'utf8'))
-  const formalCount = Object.values(manifest.assets).filter((asset) => asset.state === 'FORMAL').length
-  assert.equal(formalCount, 0)
+  const assets = Object.values(manifest.assets)
+  const formal = Object.entries(manifest.assets).filter(([, asset]) => asset.state === 'FORMAL')
+  assert.equal(formal.length, 198)
+  assert.equal(assets.filter((asset) => asset.state === 'CANDIDATE').length, 4)
+  assert.equal(assets.filter((asset) => asset.state === 'PLACEHOLDER').length, 36)
+  for (const [speciesId, asset] of formal) {
+    assert.equal(asset.formalAsset, `/monsters/${speciesId}.webp`)
+    assert.equal(asset.approvalEvidence?.approved, true)
+    assert.equal(asset.approvalEvidence?.source, 'FINAL ART CLOSEOUT current audit KEEP classification')
+  }
+  for (const id of ['m011', 'm012', 'm160', 'm229', 'm235']) {
+    assert.notEqual(manifest.assets[id].state, 'FORMAL', `${id} remains outside the audited KEEP release set`)
+  }
 })
