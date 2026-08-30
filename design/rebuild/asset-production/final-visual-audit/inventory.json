@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-30T01:23:16.552Z",
+  "generatedAt": "2026-08-30T06:19:46.819Z",
   "scope": {
     "first": "m001",
     "last": "m238",
@@ -2721,8 +2721,8 @@
       "provenancePath": "design/rebuild/asset-production/candidate-provenance/m193.json",
       "provenanceExists": true,
       "provenanceCandidateMatches": true,
-      "rawBytes": 53634,
-      "sha256": "102d76fcb1b3bec5c37f69c772cf44c3a77560ba87cc7d3247e9bcd561fe1e57",
+      "rawBytes": 192254,
+      "sha256": "07eb0dd16253d1de78a326bcd4c41340c36ab81612fc0d541471e8431f7cd255",
       "headerFormat": "WEBP"
     },
     {
@@ -2735,8 +2735,8 @@
       "provenancePath": "design/rebuild/asset-production/candidate-provenance/m194.json",
       "provenanceExists": true,
       "provenanceCandidateMatches": true,
-      "rawBytes": 51482,
-      "sha256": "4f28e1bc9d4e153a06a3b487a0733eabb5e999c505edb20867c4c6ddea79a28f",
+      "rawBytes": 188218,
+      "sha256": "3b4f0f5879c04976a8dc217a9d0680381968120a7083e289dd9ffabaf7f03d90",
       "headerFormat": "WEBP"
     },
     {
@@ -2749,8 +2749,8 @@
       "provenancePath": "design/rebuild/asset-production/candidate-provenance/m195.json",
       "provenanceExists": true,
       "provenanceCandidateMatches": true,
-      "rawBytes": 45372,
-      "sha256": "e0658be9b2478370bc1b7acabd8caaee1e728c7e5f922404f57149a7adf93545",
+      "rawBytes": 167096,
+      "sha256": "879710440ffbca813770a99e3a5c9fb7362ceb36f0e3683b2ee858553b6cb2dd",
       "headerFormat": "WEBP"
     },
     {
