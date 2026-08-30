@@ -1,0 +1,132 @@
+{
+  "schemaVersion": 1,
+  "title": "Phase 2C-F F012/F054/F075",
+  "worker": "F",
+  "checkpoint": 2,
+  "familyId": "F054",
+  "baseIntegrationHead": "5354cba99dd7cfc3f52a3ce1e587778e356fe4ca",
+  "parentWorkerHead": "c8141a21efe6f9507623c365449da1cb8b31c25c",
+  "formalPromotion": false,
+  "generationPerformed": false,
+  "candidateChanges": [],
+  "species": [
+    {
+      "speciesId": "m157",
+      "familyId": "F054",
+      "stage": 1,
+      "initialAudit": [
+        "BACKGROUND_UNIFORM",
+        "gray rectangular background suspicion"
+      ],
+      "diagnosis": [
+        "BACKGROUND_GRADIENT",
+        "GLOW_PARTICLE_OVERLAP"
+      ],
+      "finalDecision": "NEEDS_GENERATION",
+      "evidence": {
+        "fullyOpaque": true,
+        "transparentPixelRatio": 0,
+        "meanLuminance": 155.698,
+        "meanSaturation": 0.367,
+        "priorRequalification": "Warm vignette and amber glow overlap the crystal/armor boundary; subject-color similarity prevents safe flat-region extraction."
+      },
+      "safetyFinding": "Background and protected amber glow share color/luminance at the subject boundary; any threshold, gradient subtraction, or matte would either erase glow/edge pixels or leave the background plate.",
+      "repairAttempted": false,
+      "candidateChanged": false,
+      "protectedRisk": [
+        "glow",
+        "particles",
+        "thin outline"
+      ],
+      "reason": "Existing pixels do not provide a provably safe separation. Repair would violate the protected-glow rule or require reconstruction."
+    },
+    {
+      "speciesId": "m158",
+      "familyId": "F054",
+      "stage": 2,
+      "initialAudit": [
+        "BACKGROUND_UNIFORM",
+        "gray rectangular background suspicion"
+      ],
+      "diagnosis": [
+        "BACKGROUND_GRADIENT",
+        "GLOW_PARTICLE_OVERLAP"
+      ],
+      "finalDecision": "NEEDS_GENERATION",
+      "evidence": {
+        "fullyOpaque": true,
+        "transparentPixelRatio": 0,
+        "meanLuminance": 152.368,
+        "meanSaturation": 0.386,
+        "priorRequalification": "Warm vignette and amber glow overlap the crystal/armor boundary; subject-color similarity prevents safe flat-region extraction."
+      },
+      "safetyFinding": "Background and protected amber glow share color/luminance at the subject boundary; any threshold, gradient subtraction, or matte would either erase glow/edge pixels or leave the background plate.",
+      "repairAttempted": false,
+      "candidateChanged": false,
+      "protectedRisk": [
+        "glow",
+        "particles",
+        "thin outline"
+      ],
+      "reason": "Existing pixels do not provide a provably safe separation. Repair would violate the protected-glow rule or require reconstruction."
+    },
+    {
+      "speciesId": "m159",
+      "familyId": "F054",
+      "stage": 3,
+      "initialAudit": [
+        "BACKGROUND_UNIFORM",
+        "gray rectangular background suspicion"
+      ],
+      "diagnosis": [
+        "BACKGROUND_GRADIENT",
+        "GLOW_PARTICLE_OVERLAP"
+      ],
+      "finalDecision": "NEEDS_GENERATION",
+      "evidence": {
+        "fullyOpaque": true,
+        "transparentPixelRatio": 0,
+        "meanLuminance": 151.925,
+        "meanSaturation": 0.358,
+        "priorRequalification": "Warm vignette and amber glow overlap the crystal/armor boundary; subject-color similarity prevents safe flat-region extraction."
+      },
+      "safetyFinding": "Background and protected amber glow share color/luminance at the subject boundary; any threshold, gradient subtraction, or matte would either erase glow/edge pixels or leave the background plate.",
+      "repairAttempted": false,
+      "candidateChanged": false,
+      "protectedRisk": [
+        "glow",
+        "particles",
+        "thin outline"
+      ],
+      "reason": "Existing pixels do not provide a provably safe separation. Repair would violate the protected-glow rule or require reconstruction."
+    }
+  ],
+  "safetyPolicy": {
+    "allowed": [
+      "border/region based background extraction",
+      "safe gradient modeling",
+      "alpha matting",
+      "minimal edge cleanup",
+      "provably non-character artifact removal"
+    ],
+    "prohibited": [
+      "generation",
+      "regeneration",
+      "repaint",
+      "inpainting",
+      "reconstruction",
+      "anatomy/pose/color/light redesign",
+      "crop",
+      "FORMAL",
+      "main merge",
+      "deploy"
+    ],
+    "protected": [
+      "semi-transparent wings",
+      "glow",
+      "particles",
+      "thin outline"
+    ],
+    "rule": "If subject/background separation cannot be proven safe, do not modify the candidate."
+  }
+}

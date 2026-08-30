@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "worker": "F",
+  "checkpoint": 2,
+  "status": "PASS",
+  "assigned": [
+    "m157",
+    "m158",
+    "m159"
+  ],
+  "decisionCoverage": "3/3",
+  "candidateChanges": [],
+  "unexpectedChanges": 0,
+  "candidateMutationGate": "PASS — no candidate bytes changed because no species reached REPAIRED.",
+  "provenanceMutation": "NONE",
+  "formalPromotion": false,
+  "integrationWrite": false,
+  "mainMerge": false,
+  "deploy": false,
+  "zip": {
+    "name": "monster-art-phase2c-f-cp2.zip",
+    "reopen": "PASS",
+    "entries": [
+      "manifest.json",
+      "qa.json"
+    ]
+  }
+}
