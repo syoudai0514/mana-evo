@@ -1,0 +1,36 @@
+{
+  "title": "Phase 2C-G F041/F055/F083",
+  "assigned": 6,
+  "workerBranch": "repair/phase2c-complex-g",
+  "baseSha": "5354cba99dd7cfc3f52a3ce1e587778e356fe4ca",
+  "species": [
+    {"id":"m119","diagnosis":"OTHER","result":"MANUAL_REVIEW","candidateChanged":false},
+    {"id":"m120","diagnosis":"OTHER","result":"MANUAL_REVIEW","candidateChanged":false},
+    {"id":"m121","diagnosis":"OTHER","result":"MANUAL_REVIEW","candidateChanged":false},
+    {"id":"m161","diagnosis":"DETACHED_ARTIFACT/TEXT_LABEL_ARTIFACT","result":"MANUAL_REVIEW","candidateChanged":false},
+    {"id":"m162","diagnosis":"DETACHED_ARTIFACT/TEXT_LABEL_ARTIFACT","result":"MANUAL_REVIEW","candidateChanged":false},
+    {"id":"m238","diagnosis":"OTHER","result":"MANUAL_REVIEW","candidateChanged":false}
+  ],
+  "summary": {
+    "REPAIRED": [],
+    "NEEDS_GENERATION": [],
+    "MANUAL_REVIEW": ["m119","m120","m121","m161","m162","m238"],
+    "candidateChanges": 0,
+    "m160Changes": 0,
+    "unexpectedChanges": 0
+  },
+  "checkpointCommits": {
+    "CP1": "7c4373c7a7871820acbf37e7e03440709ebdf291",
+    "CP2": "ea7c262afc1ffdf5de2152ccec7f628c6939c73c"
+  },
+  "validation": {
+    "registry": "NOT RERUN",
+    "provenance": "NOT RERUN",
+    "npmTest": "NOT RERUN",
+    "viteBuild": "NOT RERUN"
+  },
+  "formal": 0,
+  "integrationMerge": false,
+  "mainMerge": false,
+  "deploy": false
+}
