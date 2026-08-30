@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-30T00:28:58.577Z",
+  "generatedAt": "2026-08-30T01:23:16.552Z",
   "scope": {
     "first": "m001",
     "last": "m238",
@@ -705,8 +705,8 @@
       "provenancePath": "design/rebuild/asset-production/candidate-provenance/m049.json",
       "provenanceExists": true,
       "provenanceCandidateMatches": true,
-      "rawBytes": 34400,
-      "sha256": "387fa20fe5f63c9002f2295f22c26fde0343dbdc99a0ae3d9fc286a0d5ccb277",
+      "rawBytes": 146348,
+      "sha256": "c1c580af098caf00c33d3e475bafca0e9b372ccbd6700fe6661a6455ca336b76",
       "headerFormat": "WEBP"
     },
     {
@@ -719,8 +719,8 @@
       "provenancePath": "design/rebuild/asset-production/candidate-provenance/m050.json",
       "provenanceExists": true,
       "provenanceCandidateMatches": true,
-      "rawBytes": 39600,
-      "sha256": "03c105d1d6fa1215a4c1cd144bd247af3e9bf9d98077d41d472b027399a12371",
+      "rawBytes": 135056,
+      "sha256": "9fae02c35914a92c3aa24a36e0521ca49475705a65808b90e8a40a3e6b19bf90",
       "headerFormat": "WEBP"
     },
     {
@@ -733,8 +733,8 @@
       "provenancePath": "design/rebuild/asset-production/candidate-provenance/m051.json",
       "provenanceExists": true,
       "provenanceCandidateMatches": true,
-      "rawBytes": 46206,
-      "sha256": "63b49418e5f4e66589e1afd4e99d0de508fc019fc7aa4778ba97a96491575104",
+      "rawBytes": 142014,
+      "sha256": "bd0a1ad8084902db7638d4e1a65aa062943bb5abcef0d661a03d97f86795b49e",
       "headerFormat": "WEBP"
     },
     {
@@ -2259,8 +2259,8 @@
       "provenancePath": "design/rebuild/asset-production/candidate-provenance/m160.json",
       "provenanceExists": true,
       "provenanceCandidateMatches": true,
-      "rawBytes": 10392,
-      "sha256": "2723c2df407ea635de67b03ccfa897618af5a3168844cf78afffdcaeeca0119a",
+      "rawBytes": 40468,
+      "sha256": "5d374f7a64fc07c2a2f829ff50c2862d6f5532b85c2c94ce5e2fda5114aa608e",
       "headerFormat": "WEBP"
     },
     {

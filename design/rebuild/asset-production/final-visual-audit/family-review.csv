@@ -15,7 +15,7 @@ F013,water,m037|m038|m039,1|2|3,0.7679,0.9956,false,none detected by silhouette/
 F014,grass,m040|m041|m042,1|2|3,0.7668,0.9311,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
 F015,poison,m043|m044|m045,1|2|3,0.8106,0.5617,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
 F016,fight,m046|m047|m048,1|2|3,0.8064,0.8007,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
-F017,fairy,m049|m050|m051,1|2|3,1,0.98,true,adjacent stages unusually similar: m050-m051,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
+F017,fairy,m049|m050|m051,1|2|3,0.819,0.972,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
 F018,psychic,m052|m053|m054,1|2|3,0.8155,0.9196,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
 F019,fire,m055|m056|m057,1|2|3,0.896,0.9701,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
 F020,fire,m058|m059|m060,1|2|3,0.87,0.9886,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
@@ -53,7 +53,7 @@ F051,dark,m148|m149|m150,1|2|3,0.753,0.9818,false,none detected by silhouette/pa
 F052,dark,m151|m152|m153,1|2|3,0.8337,0.9959,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
 F053,steel,m154|m155|m156,1|2|3,0.9535,0.9894,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
 F054,rock,m157|m158|m159,1|2|3,1,0.9695,true,adjacent stages unusually similar: m157-m158,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
-F055,ground,m160|m161|m162,1|2|3,1,0.9999,true,"adjacent stages unusually similar: m160-m161, m161-m162",false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
+F055,ground,m160|m161|m162,1|2|3,0.1827,0.4407,true,adjacent stages unusually similar: m161-m162,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
 F056,ground,m163|m164|m165,1|2|3,0.8535,0.9907,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
 F057,poison,m166|m167|m168,1|2|3,0.7649,0.747,false,none detected by silhouette/palette/stage heuristics,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
 F058,fight,m169|m170|m171,1|2|3,1,0.9919,true,adjacent stages unusually similar: m170-m171,false,No family/stage continuity concern confirmed in overview/family visual review.,VISUAL_CLEAR
