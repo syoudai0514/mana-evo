@@ -48,6 +48,57 @@
       "noSemanticArtChange": true,
       "characterPixelPreservation": "PASS",
       "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-30T00:27:33.076Z",
+      "sourceLabel": "ManaEvo PHASE 2A-EXT current normalize cleanup checkpoint 5",
+      "previous": {
+        "repositoryPath": "public/monsters/m206.webp",
+        "sha256": "2fb05ba1e0e32b283633d64d3b28f19b88c33d0b234bbd1362a203d6d1a489f6",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m206/2fb05ba1e0e32b283633d64d3b28f19b88c33d0b234bbd1362a203d6d1a489f6.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m206.webp",
+        "sha256": "d6bfafb5166570b4c69859a77f6a35e8de8ee76c24e5c5d829f759406294dd7e",
+        "bytes": 154404
+      },
+      "manifestStateBefore": "CANDIDATE",
+      "operation": "normalization",
+      "reason": "current audit identified presentation scale, transparent whitespace, or placement as outside preferred roster range",
+      "normalizationParameters": {
+        "sourceFullAlphaBbox": {
+          "minX": 7,
+          "minY": 116,
+          "maxXExclusive": 503,
+          "maxYExclusive": 434,
+          "width": 496,
+          "height": 318
+        },
+        "canvas": {
+          "width": 512,
+          "height": 512,
+          "transparent": true
+        },
+        "resizedContent": {
+          "width": 496,
+          "height": 318
+        },
+        "placement": {
+          "x": 8,
+          "y": 97
+        },
+        "scaleX": 1,
+        "scaleY": 1,
+        "resampling": "LANCZOS premultiplied-alpha",
+        "webpEncoding": {
+          "lossless": true,
+          "method": 6,
+          "exactTransparentRgb": true
+        }
+      },
+      "noSemanticArtChange": true,
+      "backgroundMutation": false,
+      "formalPromotion": false
     }
   ]
 }
