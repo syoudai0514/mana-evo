@@ -13,6 +13,22 @@
       },
       "manifestStateBefore": "PLACEHOLDER",
       "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-30T14:27:26.110Z",
+      "sourceLabel": "ManaEvo F063 ART READY regeneration",
+      "previous": {
+        "repositoryPath": "public/monsters/m185.webp",
+        "sha256": "b3810570d90da6d70ca1b65a9951583eae3d711207441ad56a5b7e1af26214f3",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m185/b3810570d90da6d70ca1b65a9951583eae3d711207441ad56a5b7e1af26214f3.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m185.webp",
+        "sha256": "b8671a4b8218b1601a21a44e959f33ea7860ec07e62a728be759d0b5a125dc3a",
+        "bytes": 210908
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
     }
   ]
 }
