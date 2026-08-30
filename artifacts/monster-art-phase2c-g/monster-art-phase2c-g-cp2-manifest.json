@@ -1,0 +1,35 @@
+{
+  "title": "Phase 2C-G checkpoint 2",
+  "workerBranch": "repair/phase2c-complex-g",
+  "checkpoint": "CP2",
+  "species": [
+    {
+      "id": "m161",
+      "diagnosis": "DETACHED_ARTIFACT/TEXT_LABEL_ARTIFACT",
+      "result": "MANUAL_REVIEW",
+      "candidateChanged": false,
+      "reason": "Confirmed prior Phase 2C-G decision: detached/label-like artifact evidence exists, but a safe removal mask was not proven."
+    },
+    {
+      "id": "m162",
+      "diagnosis": "DETACHED_ARTIFACT/TEXT_LABEL_ARTIFACT",
+      "result": "MANUAL_REVIEW",
+      "candidateChanged": false,
+      "reason": "Confirmed prior Phase 2C-G decision: detached/label-like artifact evidence exists, but a safe removal mask was not proven."
+    },
+    {
+      "id": "m238",
+      "diagnosis": "OTHER",
+      "result": "MANUAL_REVIEW",
+      "candidateChanged": false,
+      "reason": "Complete pixel-level safety proof for a non-generative repair mask could not be established in the resume execution environment. No speculative repair performed."
+    }
+  ],
+  "candidateChanges": 0,
+  "m160Changes": 0,
+  "unexpectedChanges": 0,
+  "formalChanges": 0,
+  "integrationMerge": false,
+  "mainMerge": false,
+  "deploy": false
+}
