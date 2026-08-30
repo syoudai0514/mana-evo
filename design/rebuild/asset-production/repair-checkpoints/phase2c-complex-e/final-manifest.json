@@ -1,0 +1,51 @@
+{
+  "title": "Phase 2C-E F039/F060/F081",
+  "phase": "2C-E",
+  "assigned_count": 6,
+  "assigned": [
+    "m115",
+    "m116",
+    "m175",
+    "m176",
+    "m177",
+    "m236"
+  ],
+  "results": {
+    "REPAIRED": [],
+    "NEEDS_GENERATION": [],
+    "MANUAL_REVIEW": [
+      "m115",
+      "m116",
+      "m175",
+      "m176",
+      "m177",
+      "m236"
+    ]
+  },
+  "diagnosis": {
+    "m115": "OTHER",
+    "m116": "OTHER",
+    "m175": "OTHER",
+    "m176": "OTHER",
+    "m177": "OTHER",
+    "m236": "OTHER"
+  },
+  "candidate_changes": 0,
+  "unexpected_candidate_changes": 0,
+  "cp1_fresh_sha": "312baa7b9650c47b68016264033dfa54fc447d77",
+  "worker_branch": "repair/phase2c-complex-e",
+  "base_integration_sha": "5354cba99dd7cfc3f52a3ce1e587778e356fe4ca",
+  "repair_policy": "No candidate bytes changed because CURRENT GitHub evidence does not supply an authoritative safe pixel mask/index or byte-exact repaired candidate for any assigned species.",
+  "global_audit_updated": false,
+  "FORMAL": 0,
+  "integration_merge": "NO",
+  "main_merge": "NO",
+  "deploy": "NO",
+  "zip": {
+    "cp1": "monster-art-phase2c-e-cp1.zip",
+    "cp2": "monster-art-phase2c-e-cp2.zip",
+    "final": "monster-art-phase2c-e-final.zip",
+    "status": "CREATED_AND_REOPENED_EXECUTION_ARTIFACT",
+    "committed_to_github": false
+  }
+}
