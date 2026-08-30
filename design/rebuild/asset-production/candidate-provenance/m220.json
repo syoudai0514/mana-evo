@@ -29,6 +29,22 @@
       },
       "manifestStateBefore": "PLACEHOLDER",
       "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-30T15:57:04.746Z",
+      "sourceLabel": "ManaEvo FINAL CLOSEOUT-R1: alpha-only removal of confirmed unrelated detached right-side artifact components; retained decoded RGBA exact",
+      "previous": {
+        "repositoryPath": "public/monsters/m220.webp",
+        "sha256": "4188f3dfdcd7bef4d37cecf1a0f315ea7ac6b8a0724a2d0d70c7d370f8725b03",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m220/4188f3dfdcd7bef4d37cecf1a0f315ea7ac6b8a0724a2d0d70c7d370f8725b03.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m220.webp",
+        "sha256": "6eb0e4992962f9621ff693beebfc73ed6493b075cd5c1b6f1600a5809fd1e8ee",
+        "bytes": 130676
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
     }
   ]
 }

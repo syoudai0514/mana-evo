@@ -56,23 +56,23 @@ test('W-114 normalized descriptions expose the same lossless schema across shard
   }
 })
 
-test('W-207 runtime art resolves FORMAL assets while retaining CANDIDATE and PLACEHOLDER safeguards', () => {
+test('W-207 runtime art resolves the completed FORMAL set and retains the m235 placeholder safeguard', () => {
   assert.equal(Object.keys(RUNTIME_MONSTER_ASSETS).length, 238)
   assert.equal(RUNTIME_MONSTER_ASSETS.m001.state, 'FORMAL')
-  assert.equal(RUNTIME_MONSTER_ASSETS.m011.state, 'CANDIDATE')
-  assert.equal(RUNTIME_MONSTER_ASSETS.m229.state, 'PLACEHOLDER')
+  assert.equal(RUNTIME_MONSTER_ASSETS.m011.state, 'FORMAL')
+  assert.equal(RUNTIME_MONSTER_ASSETS.m235.state, 'PLACEHOLDER')
 
   const formal = resolveMonsterArt('m001')
   assert.equal(formal.state, 'FORMAL')
   assert.equal(formal.src, '/monsters/m001.webp')
   assert.equal(formal.isFormal, true)
 
-  const candidate = resolveMonsterArt('m011')
-  assert.equal(candidate.state, 'CANDIDATE')
-  assert.equal(candidate.src, null)
-  assert.equal(candidate.isFormal, false)
+  const completed = resolveMonsterArt('m011')
+  assert.equal(completed.state, 'FORMAL')
+  assert.equal(completed.src, '/monsters/m011.webp')
+  assert.equal(completed.isFormal, true)
 
-  const placeholder = resolveMonsterArt('m229')
+  const placeholder = resolveMonsterArt('m235')
   assert.equal(placeholder.state, 'PLACEHOLDER')
   assert.equal(placeholder.src, null)
   assert.equal(placeholder.isFormal, false)
@@ -82,14 +82,14 @@ test('W-207 runtime art resolves FORMAL assets while retaining CANDIDATE and PLA
   assert.equal(excluded.src, null)
 })
 
-test('W-207 review mode can explicitly preview a candidate without treating it as FORMAL', () => {
+test('W-207 review mode never downgrades a completed FORMAL asset to a candidate preview', () => {
   const runtimeResolution = resolveMonsterArt('m011')
   const reviewResolution = resolveMonsterArt('m011', 'review')
-  assert.equal(runtimeResolution.src, null)
-  assert.equal(reviewResolution.state, 'CANDIDATE')
-  assert.match(reviewResolution.src, /m011\.svg$/)
-  assert.equal(reviewResolution.isFormal, false)
-  assert.equal(reviewResolution.isCandidatePreview, true)
+  assert.equal(runtimeResolution.src, '/monsters/m011.webp')
+  assert.equal(reviewResolution.state, 'FORMAL')
+  assert.equal(reviewResolution.src, '/monsters/m011.webp')
+  assert.equal(reviewResolution.isFormal, true)
+  assert.equal(reviewResolution.isCandidatePreview, false)
 })
 
 test('W-207 FORMAL resolution requires path, approval evidence, and asset integrity', () => {
