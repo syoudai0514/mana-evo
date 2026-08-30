@@ -1,0 +1,53 @@
+{
+  "worker": "C",
+  "checkpoint": 1,
+  "baseIntegrationHead": "b50f789e195ec3d7be271b06f975b8cdd06b4163",
+  "formalPromotion": false,
+  "species": [
+    {
+      "speciesId": "m049",
+      "family": "F017",
+      "stage": 1,
+      "sourceSha256": "387fa20fe5f63c9002f2295f22c26fde0343dbdc99a0ae3d9fc286a0d5ccb277",
+      "repairedSha256": "c1c580af098caf00c33d3e475bafca0e9b372ccbd6700fe6661a6455ca336b76",
+      "sourceBytes": 34400,
+      "repairedBytes": 146348,
+      "repairType": "flat-white-background-plate-removal",
+      "backgroundModel": "border-connected uniform rgb(255,255,255)",
+      "alphaOperation": { "backgroundConnectivityThreshold": 18, "edgeMatteRadiusPixels": 2, "edgeMatteThreshold": 80, "backgroundPixelsRemoved": 137050, "edgePixelsMatted": 2798, "pixelsChanged": 139848 },
+      "characterPixelPreservation": "PASS",
+      "semanticArtChange": false,
+      "formalPromotion": false
+    },
+    {
+      "speciesId": "m050",
+      "family": "F017",
+      "stage": 2,
+      "sourceSha256": "03c105d1d6fa1215a4c1cd144bd247af3e9bf9d98077d41d472b027399a12371",
+      "repairedSha256": "9fae02c35914a92c3aa24a36e0521ca49475705a65808b90e8a40a3e6b19bf90",
+      "sourceBytes": 39600,
+      "repairedBytes": 135056,
+      "repairType": "flat-white-background-plate-removal",
+      "backgroundModel": "border-connected uniform rgb(255,255,255)",
+      "alphaOperation": { "backgroundConnectivityThreshold": 18, "edgeMatteRadiusPixels": 2, "edgeMatteThreshold": 80, "backgroundPixelsRemoved": 176293, "edgePixelsMatted": 4661, "pixelsChanged": 180954 },
+      "characterPixelPreservation": "PASS",
+      "semanticArtChange": false,
+      "formalPromotion": false
+    },
+    {
+      "speciesId": "m051",
+      "family": "F017",
+      "stage": 3,
+      "sourceSha256": "63b49418e5f4e66589e1afd4e99d0de508fc019fc7aa4778ba97a96491575104",
+      "repairedSha256": "bd0a1ad8084902db7638d4e1a65aa062943bb5abcef0d661a03d97f86795b49e",
+      "sourceBytes": 46206,
+      "repairedBytes": 142014,
+      "repairType": "flat-white-background-plate-removal",
+      "backgroundModel": "border-connected uniform rgb(255,255,255)",
+      "alphaOperation": { "backgroundConnectivityThreshold": 18, "edgeMatteRadiusPixels": 2, "edgeMatteThreshold": 80, "backgroundPixelsRemoved": 180638, "edgePixelsMatted": 4305, "pixelsChanged": 184943 },
+      "characterPixelPreservation": "PASS",
+      "semanticArtChange": false,
+      "formalPromotion": false
+    }
+  ]
+}

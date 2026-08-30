@@ -1,0 +1,16 @@
+{
+  "worker": "C",
+  "baseIntegrationHead": "b50f789e195ec3d7be271b06f975b8cdd06b4163",
+  "checkpoints": [
+    { "checkpoint": 1, "status": "PASS", "zip": "monster-art-requal-c-cp1.zip" },
+    { "checkpoint": 2, "status": "NOT USED" },
+    { "checkpoint": 3, "status": "NOT USED" }
+  ],
+  "formalPromotion": false,
+  "selectedFamilies": ["F017"],
+  "qualificationRejectedFamilies": ["F035", "F041", "F065", "F083"],
+  "species": ["m049", "m050", "m051"],
+  "finalZip": "monster-art-requal-c-final.zip",
+  "finalZipContents": ["m049.webp", "m050.webp", "m051.webp"],
+  "candidateIntegrity": "PASS — non-transparent decoded RGB pixels exactly match the archived source for all three repaired species."
+}

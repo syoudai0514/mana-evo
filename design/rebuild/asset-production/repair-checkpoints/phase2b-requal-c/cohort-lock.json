@@ -1,0 +1,17 @@
+{
+  "worker": "C",
+  "baseIntegrationHead": "b50f789e195ec3d7be271b06f975b8cdd06b4163",
+  "partition": "family number % 3 == 2",
+  "currentNormalizeExcluded": ["m013", "m014", "m040", "m041", "m042", "m046", "m088", "m089", "m091", "m092", "m093", "m134", "m135", "m136", "m178", "m179", "m180", "m202", "m203", "m206", "m218", "m219"],
+  "partitionRepairFamilies": ["F017", "F035", "F041", "F065", "F083"],
+  "selectedFamilies": ["F017"],
+  "selected": ["m049", "m050", "m051"],
+  "qualification": {
+    "F017": "PASS — all three candidates have an opaque, border-connected uniform rgb(255,255,255) plate; threshold-18 exterior removal and radius-2 edge matte preserve every non-transparent decoded subject RGB pixel.",
+    "F035": "REJECT — blue multi-tone gradient/studio background; not a uniform or near-uniform plate.",
+    "F041": "REJECT — blue multi-tone gradient/studio background; not a uniform or near-uniform plate.",
+    "F065": "REJECT — dark green/brown scene background; not a uniform or near-uniform plate.",
+    "F083": "REJECT — brown/blue multi-tone scene background; not a uniform or near-uniform plate."
+  },
+  "lockedAt": "2026-08-30T00:31:24.000Z"
+}
