@@ -26,10 +26,10 @@ REGENERATE: 0
 MANUAL_REVIEW: 16
 
 ### KEEP
-m001, m002, m003, m004, m005, m006, m007, m008, m009, m010, m015, m016, m017, m018, m019, m020, m021, m022, m023, m024, m025, m026, m027, m028, m029, m030, m031, m032, m033, m034, m035, m036, m037, m038, m039, m040, m041, m043, m044, m046, m047, m048, m049, m050, m052, m053, m054, m055, m056, m057, m058, m059, m060, m061, m062, m063, m066, m067, m068, m069, m070, m071, m072, m073, m074, m075, m076, m077, m078, m079, m080, m082, m083, m084, m085, m086, m087, m088, m089, m090, m091, m092, m093, m094, m095, m096, m097, m098, m099, m100, m101, m102, m104, m105, m106, m107, m108, m109, m110, m111, m112, m113, m114, m115, m116, m117, m118, m119, m120, m121, m123, m124, m125, m126, m127, m128, m131, m132, m134, m137, m138, m139, m140, m143, m144, m145, m146, m147, m148, m149, m150, m151, m152, m153, m154, m155, m156, m157, m158, m159, m163, m164, m165, m166, m168, m169, m170, m171, m172, m173, m174, m176, m177, m181, m182, m183, m184, m185, m186, m187, m188, m189, m190, m191, m192, m193, m194, m195, m196, m197, m198, m199, m200, m201, m204, m205, m207, m208, m209, m210, m211, m212, m213, m214, m217, m220, m221, m222, m223, m224, m225, m226, m227, m228, m232, m236, m237, m238
+m001, m002, m003, m004, m005, m006, m007, m008, m009, m010, m015, m016, m017, m018, m019, m020, m021, m022, m023, m024, m025, m026, m027, m028, m029, m030, m031, m032, m033, m034, m035, m036, m037, m038, m039, m040, m041, m043, m044, m046, m047, m048, m049, m050, m052, m053, m054, m055, m056, m057, m058, m059, m060, m061, m062, m063, m066, m067, m068, m069, m070, m071, m072, m073, m074, m075, m076, m077, m078, m079, m080, m082, m083, m084, m085, m086, m087, m088, m089, m090, m091, m092, m093, m094, m095, m096, m097, m098, m099, m100, m101, m102, m104, m105, m106, m107, m108, m109, m110, m111, m112, m113, m114, m115, m116, m117, m118, m119, m120, m121, m123, m124, m125, m126, m127, m128, m131, m132, m134, m137, m138, m139, m140, m143, m144, m145, m146, m147, m148, m149, m150, m151, m152, m153, m154, m155, m156, m157, m158, m159, m161, m162, m163, m164, m165, m166, m168, m169, m170, m171, m172, m173, m174, m176, m177, m181, m182, m183, m184, m185, m186, m187, m188, m189, m190, m191, m192, m193, m194, m195, m196, m197, m198, m199, m200, m201, m204, m205, m207, m208, m209, m210, m211, m212, m213, m214, m217, m222, m223, m224, m225, m226, m227, m228, m232, m236, m237, m238
 
 ### NORMALIZE
-m013, m014, m042, m051, m064, m065, m103, m122, m135, m136, m160, m161, m162, m175, m178, m179, m180, m202, m203, m206, m218, m219
+m013, m014, m042, m051, m064, m065, m103, m122, m135, m136, m160, m175, m178, m179, m180, m202, m203, m206, m218, m219, m220, m221
 
 ### REPAIR
 m233, m234
@@ -42,7 +42,7 @@ m011, m012, m045, m081, m129, m130, m133, m141, m142, m167, m215, m216, m229, m2
 
 ## Key findings
 
-- background suspicion: 2 — m229, m235
+- background suspicion: 0 — none
 - crop risk (excluding alpha-opaque background edges): 13 — m011, m045, m081, m129, m130, m133, m141, m142, m167, m215, m216, m230, m231
 - scale outlier after shape-aware visual review: 14 — m013, m014, m015, m140, m178, m179, m180, m202, m203, m218, m219, m232, m233, m234
 - confirmed family continuity concerns: 2 — F004, F078
@@ -72,9 +72,6 @@ m011, m012, m045, m081, m129, m130, m133, m141, m142, m167, m215, m216, m229, m2
 - m235: **MANUAL_REVIEW** — Manual visual QA: image is dominated by a horizontal forest/tree scene rather than an unambiguous isolated monster; safe separation of creature from scenery is uncertain.
 
 ## Smallest apparent species — TOP 20
-- m160 (F055, S1, ground) — H 17.0% / W 19.2%
-- m161 (F055, S2, ground) — H 23.8% / W 24.4%
-- m162 (F055, S3, ground) — H 29.3% / W 28.5%
 - m233 (F079, S2, normal) — H 30.3% / W 36.6%
 - m234 (F079, S3, normal) — H 36.1% / W 36.9%
 - m136 (F046, S3, grass) — H 41.4% / W 87.5%
@@ -92,12 +89,13 @@ m011, m012, m045, m081, m129, m130, m133, m141, m142, m167, m215, m216, m229, m2
 - m154 (F053, S1, steel) — H 62.5% / W 90.2%
 - m103 (F035, S1, ice) — H 62.7% / W 64.5%
 - m212 (F072, S2, fire) — H 63.9% / W 81.6%
+- m160 (F055, S1, ground) — H 64.1% / W 72.1%
+- m219 (F074, S3, electric) — H 64.1% / W 78.7%
+- m051 (F017, S3, fairy) — H 65.4% / W 90.4%
 
 ## Largest apparent species — TOP 20
 - m133 (F045, S3, water) — H 100.0% / W 87.5%
 - m215 (F073, S2, water) — H 100.0% / W 81.8%
-- m229 (F078, S1, poison) — H 100.0% / W 100.0%
-- m235 (F080, S1, grass) — H 100.0% / W 100.0%
 - m141 (F048, S2, bug) — H 99.8% / W 99.4%
 - m142 (F048, S3, bug) — H 99.8% / W 99.4%
 - m231 (F078, S3, poison) — H 99.8% / W 99.8%
@@ -114,16 +112,18 @@ m011, m012, m045, m081, m129, m130, m133, m141, m142, m167, m215, m216, m229, m2
 - m230 (F078, S2, poison) — H 99.0% / W 99.8%
 - m102 (F034, S3, normal) — H 98.9% / W 95.0%
 - m018 (F006, S3, flying) — H 98.8% / W 98.2%
+- m045 (F015, S3, poison) — H 98.8% / W 91.6%
+- m228 (F077, S3, bug) — H 98.8% / W 98.0%
 
 ## Strongest alpha-centroid offset — TOP 20
 - m175 (F060) — alpha offset 0.1180, bbox-center offset (0.1055, 0.0645)
+- m220 (F075) — alpha offset 0.1074, bbox-center offset (-0.0635, -0.0010)
+- m221 (F075) — alpha offset 0.1068, bbox-center offset (-0.0576, 0.0010)
 - m058 (F020) — alpha offset 0.1046, bbox-center offset (0.0000, 0.0020)
 - m213 (F072) — alpha offset 0.0943, bbox-center offset (0.0000, -0.0098)
 - m167 (F057) — alpha offset 0.0879, bbox-center offset (-0.0010, -0.0068)
 - m043 (F015) — alpha offset 0.0832, bbox-center offset (0.0361, -0.0186)
-- m220 (F075) — alpha offset 0.0826, bbox-center offset (0.0107, 0.0000)
 - m085 (F029) — alpha offset 0.0821, bbox-center offset (0.0000, 0.0000)
-- m221 (F075) — alpha offset 0.0789, bbox-center offset (0.0000, 0.0010)
 - m052 (F018) — alpha offset 0.0789, bbox-center offset (-0.0010, -0.0117)
 - m005 (F002) — alpha offset 0.0786, bbox-center offset (0.0000, 0.0010)
 - m142 (F048) — alpha offset 0.0741, bbox-center offset (0.0029, -0.0010)
@@ -131,15 +131,14 @@ m011, m012, m045, m081, m129, m130, m133, m141, m142, m167, m215, m216, m229, m2
 - m110 (F037) — alpha offset 0.0731, bbox-center offset (-0.0020, 0.0000)
 - m038 (F013) — alpha offset 0.0717, bbox-center offset (0.0010, 0.0000)
 - m023 (F008) — alpha offset 0.0713, bbox-center offset (0.0117, -0.0020)
-- m160 (F055) — alpha offset 0.0713, bbox-center offset (0.0024, 0.0537)
 - m060 (F020) — alpha offset 0.0709, bbox-center offset (0.0010, 0.0117)
 - m089 (F030) — alpha offset 0.0705, bbox-center offset (0.0010, 0.0000)
 - m006 (F002) — alpha offset 0.0696, bbox-center offset (0.0000, 0.0000)
 - m112 (F038) — alpha offset 0.0687, bbox-center offset (0.0430, 0.0010)
+- m049 (F017) — alpha offset 0.0684, bbox-center offset (0.0166, 0.0645)
 
 ## Background suspicion species
-- m229
-- m235
+- none
 
 ## Crop-risk species
 - m011: visible alpha reaches canvas edge after excluding opaque-background cases
