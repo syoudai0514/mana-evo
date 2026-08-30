@@ -15,9 +15,9 @@
     "inventoryDate": "2026-08-25"
   },
   "counts": {
-    "FORMAL": 198,
-    "CANDIDATE": 4,
-    "PLACEHOLDER": 36
+    "FORMAL": 237,
+    "CANDIDATE": 0,
+    "PLACEHOLDER": 1
   },
   "stateDefinitions": {
     "FORMAL": "Explicit CURRENT approval recorded; eligible for normal runtime.",
@@ -200,16 +200,56 @@
       }
     },
     "m011": {
-      "state": "CANDIDATE"
+      "state": "FORMAL",
+      "formalAsset": "/monsters/m011.webp",
+      "formalSha256": "97270ef1e7e6445bf5ac49293fc256f12b283563c0a533d784960e839e12c599",
+      "approvalEvidence": {
+        "speciesId": "m011",
+        "approved": true,
+        "approvalType": "CURRENT_FORMAL",
+        "approvedBy": "repository owner release authorization",
+        "approvedAt": "2026-08-30T17:38:00.019Z",
+        "source": "FINAL CLOSEOUT completion authorization; all active species except m235"
+      }
     },
     "m012": {
-      "state": "CANDIDATE"
+      "state": "FORMAL",
+      "formalAsset": "/monsters/m012.webp",
+      "formalSha256": "61444a71535cc2778cb2ef1a645a788d6b121cbd539016962c019070bee8147e",
+      "approvalEvidence": {
+        "speciesId": "m012",
+        "approved": true,
+        "approvalType": "CURRENT_FORMAL",
+        "approvedBy": "repository owner release authorization",
+        "approvedAt": "2026-08-30T17:38:00.019Z",
+        "source": "FINAL CLOSEOUT completion authorization; all active species except m235"
+      }
     },
     "m013": {
-      "state": "CANDIDATE"
+      "state": "FORMAL",
+      "formalAsset": "/monsters/m013.webp",
+      "formalSha256": "e7c5295b9945e799a038edeaf8f897a3195de181e738b9ac1bc03fcb287a6d01",
+      "approvalEvidence": {
+        "speciesId": "m013",
+        "approved": true,
+        "approvalType": "CURRENT_FORMAL",
+        "approvedBy": "repository owner release authorization",
+        "approvedAt": "2026-08-30T17:38:00.019Z",
+        "source": "FINAL CLOSEOUT completion authorization; all active species except m235"
+      }
     },
     "m014": {
-      "state": "CANDIDATE"
+      "state": "FORMAL",
+      "formalAsset": "/monsters/m014.webp",
+      "formalSha256": "451c5b894976e70bbde1cc5719163a9c492be2d86da5e383ee834ad1e3897f62",
+      "approvalEvidence": {
+        "speciesId": "m014",
+        "approved": true,
+        "approvalType": "CURRENT_FORMAL",
+        "approvedBy": "repository owner release authorization",
+        "approvedAt": "2026-08-30T17:38:00.019Z",
+        "source": "FINAL CLOSEOUT completion authorization; all active species except m235"
+      }
     },
     "m015": {
       "state": "FORMAL",
@@ -563,7 +603,17 @@
       }
     },
     "m042": {
-      "state": "PLACEHOLDER"
+      "state": "FORMAL",
+      "formalAsset": "/monsters/m042.webp",
+      "formalSha256": "f6fd5beff40b972cc6571abc41df7650f99df2ef4ffc503e57e956574ec7862a",
+      "approvalEvidence": {
+        "speciesId": "m042",
+        "approved": true,
+        "approvalType": "CURRENT_FORMAL",
+        "approvedBy": "repository owner release authorization",
+        "approvedAt": "2026-08-30T17:38:00.019Z",
+        "source": "FINAL CLOSEOUT completion authorization; all active species except m235"
+      }
     },
     "m043": {
       "state": "FORMAL",
@@ -592,7 +642,17 @@
       }
     },
     "m045": {
-      "state": "PLACEHOLDER"
+      "state": "FORMAL",
+      "formalAsset": "/monsters/m045.webp",
+      "formalSha256": "6ee86f89c52f90b944388605f5a5dc204a0bd50f2cce7266f9b3f5a3d5695565",
+      "approvalEvidence": {
+        "speciesId": "m045",
+        "approved": true,
+        "approvalType": "CURRENT_FORMAL",
+        "approvedBy": "repository owner release authorization",
+        "approvedAt": "2026-08-30T17:38:00.019Z",
+        "source": "FINAL CLOSEOUT completion authorization; all active species except m235"
+      }
     },
     "m046": {
       "state": "FORMAL",
@@ -660,7 +720,17 @@
       }
     },
     "m051": {
-      "state": "PLACEHOLDER"
+      "state": "FORMAL",
+      "formalAsset": "/monsters/m051.webp",
+      "formalSha256": "bd0a1ad8084902db7638d4e1a65aa062943bb5abcef0d661a03d97f86795b49e",
+      "approvalEvidence": {
+        "speciesId": "m051",
+        "approved": true,
+        "approvalType": "CURRENT_FORMAL",
+        "approvedBy": "repository owner release authorization",
+        "approvedAt": "2026-08-30T17:38:00.019Z",
+        "source": "FINAL CLOSEOUT completion authorization; all active species except m235"
+      }
     },
     "m052": {
       "state": "FORMAL",
@@ -819,10 +889,30 @@
       }
     },
     "m064": {
-      "state": "PLACEHOLDER"
+      "state": "FORMAL",
+      "formalAsset": "/monsters/m064.webp",
+      "formalSha256": "199b5ef861c40a9f23594914ac4cd919eee6f13bf4f2e486f0ef89c1847fc987",
+      "approvalEvidence": {
+        "speciesId": "m064",
+        "approved": true,
+        "approvalType": "CURRENT_FORMAL",
+        "approvedBy": "repository owner release authorization",
+        "approvedAt": "2026-08-30T17:38:00.019Z",
+        "source": "FINAL CLOSEOUT completion authorization; all active species except m235"
+      }
     },
     "m065": {
-      "state": "PLACEHOLDER"
+      "state": "FORMAL",
+      "formalAsset": "/monsters/m065.webp",
+      "formalSha256": "38dd121720e70086995d229849b6096f5c691642dfafb9763f8f939af3fbeee5",
+      "approvalEvidence": {
+        "speciesId": "m065",
+        "approved": true,
+        "approvalType": "CURRENT_FORMAL",
+        "approvedBy": "repository owner release authorization",
+        "approvedAt": "2026-08-30T17:38:00.019Z",
+        "source": "FINAL CLOSEOUT completion authorization; all active species except m235"
+      }
     },
     "m066": {
       "state": "FORMAL",
@@ -1020,7 +1110,17 @@
       }
     },
     "m081": {
-      "state": "PLACEHOLDER"
+      "state": "FORMAL",
+      "formalAsset": "/monsters/m081.webp",
+      "formalSha256": "2daea4399372cbdcd975293609139adb4e912305153929b7bc10bb1d5ce0c284",
+      "approvalEvidence": {
+        "speciesId": "m081",
+        "approved": true,
+        "approvalType": "CURRENT_FORMAL",
+        "approvedBy": "repository owner release authorization",
+        "approvedAt": "2026-08-30T17:38:00.019Z",
+        "source": "FINAL CLOSEOUT completion authorization; all active species except m235"
+      }
     },
     "m082": {
       "state": "FORMAL",
@@ -1296,7 +1396,17 @@
       }
     },
     "m103": {
-      "state": "PLACEHOLDER"
+      "state": "FORMAL",
+      "formalAsset": "/monsters/m103.webp",
+      "formalSha256": "f3767c9baf3b9a3899eef56e97f3c9b82b63227e683ad1e7ce1541edd515b277",
+      "approvalEvidence": {
+        "speciesId": "m103",
+        "approved": true,
+        "approvalType": "CURRENT_FORMAL",
+        "approvedBy": "repository owner release authorization",
+        "approvedAt": "2026-08-30T17:38:00.019Z",
+        "source": "FINAL CLOSEOUT completion authorization; all active species except m235"
+      }
     },
     "m104": {
       "state": "FORMAL",
@@ -1533,7 +1643,17 @@
       }
     },
     "m122": {
-      "state": "PLACEHOLDER"
+      "state": "FORMAL",
+      "formalAsset": "/monsters/m122.webp",
+      "formalSha256": "509a6c79b5de9ad912ca29368d9d9190dbff85354cf8c245793a93685d68fe0e",
+      "approvalEvidence": {
+        "speciesId": "m122",
+        "approved": true,
+        "approvalType": "CURRENT_FORMAL",
+        "approvedBy": "repository owner release authorization",
+        "approvedAt": "2026-08-30T17:38:00.019Z",
+        "source": "FINAL CLOSEOUT completion authorization; all active species except m235"
+      }
     },
     "m123": {
       "state": "FORMAL",
@@ -1614,10 +1734,30 @@
       }
     },
     "m129": {
-      "state": "PLACEHOLDER"
+      "state": "FORMAL",
+      "formalAsset": "/monsters/m129.webp",
+      "formalSha256": "b1d657b0733a762638f8d249aaafdc62e0a057c8ade4c7693fdef10ceb5b0e72",
+      "approvalEvidence": {
+        "speciesId": "m129",
+        "approved": true,
+        "approvalType": "CURRENT_FORMAL",
+        "approvedBy": "repository owner release authorization",
+        "approvedAt": "2026-08-30T17:38:00.019Z",
+        "source": "FINAL CLOSEOUT completion authorization; all active species except m235"
+      }
     },
     "m130": {
-      "state": "PLACEHOLDER"
+      "state": "FORMAL",
+      "formalAsset": "/monsters/m130.webp",
+      "formalSha256": "aa178fa1b929ec54ae5bb59f924d33fe0544a5282efbbcb1ea872a0fcd077709",
+      "approvalEvidence": {
+        "speciesId": "m130",
+        "approved": true,
+        "approvalType": "CURRENT_FORMAL",
+        "approvedBy": "repository owner release authorization",
+        "approvedAt": "2026-08-30T17:38:00.019Z",
+        "source": "FINAL CLOSEOUT completion authorization; all active species except m235"
+      }
     },
     "m131": {
       "state": "FORMAL",
@@ -1646,7 +1786,17 @@
       }
     },
     "m133": {
-      "state": "PLACEHOLDER"
+      "state": "FORMAL",
+      "formalAsset": "/monsters/m133.webp",
+      "formalSha256": "3a5db2f4e7f6aca180dca1f65d776171661602cf824b4e0ce7016aad1ca15198",
+      "approvalEvidence": {
+        "speciesId": "m133",
+        "approved": true,
+        "approvalType": "CURRENT_FORMAL",
+        "approvedBy": "repository owner release authorization",
+        "approvedAt": "2026-08-30T17:38:00.019Z",
+        "source": "FINAL CLOSEOUT completion authorization; all active species except m235"
+      }
     },
     "m134": {
       "state": "FORMAL",
@@ -1662,10 +1812,30 @@
       }
     },
     "m135": {
-      "state": "PLACEHOLDER"
+      "state": "FORMAL",
+      "formalAsset": "/monsters/m135.webp",
+      "formalSha256": "a89933381ca6d4b2ac14ad466b645239ba0014a8d81f984a0812158972bd3aa3",
+      "approvalEvidence": {
+        "speciesId": "m135",
+        "approved": true,
+        "approvalType": "CURRENT_FORMAL",
+        "approvedBy": "repository owner release authorization",
+        "approvedAt": "2026-08-30T17:38:00.019Z",
+        "source": "FINAL CLOSEOUT completion authorization; all active species except m235"
+      }
     },
     "m136": {
-      "state": "PLACEHOLDER"
+      "state": "FORMAL",
+      "formalAsset": "/monsters/m136.webp",
+      "formalSha256": "8b9b86706f711fd9bc72c597cd498b86a93d9a89f9c1afa85edcf321d4fa4298",
+      "approvalEvidence": {
+        "speciesId": "m136",
+        "approved": true,
+        "approvalType": "CURRENT_FORMAL",
+        "approvedBy": "repository owner release authorization",
+        "approvedAt": "2026-08-30T17:38:00.019Z",
+        "source": "FINAL CLOSEOUT completion authorization; all active species except m235"
+      }
     },
     "m137": {
       "state": "FORMAL",
@@ -1720,10 +1890,30 @@
       }
     },
     "m141": {
-      "state": "PLACEHOLDER"
+      "state": "FORMAL",
+      "formalAsset": "/monsters/m141.webp",
+      "formalSha256": "b8be7ddfcf8f5b33a37b1e20bd8c26ef73d76444cf06e93e5f06ef428f4f523b",
+      "approvalEvidence": {
+        "speciesId": "m141",
+        "approved": true,
+        "approvalType": "CURRENT_FORMAL",
+        "approvedBy": "repository owner release authorization",
+        "approvedAt": "2026-08-30T17:38:00.019Z",
+        "source": "FINAL CLOSEOUT completion authorization; all active species except m235"
+      }
     },
     "m142": {
-      "state": "PLACEHOLDER"
+      "state": "FORMAL",
+      "formalAsset": "/monsters/m142.webp",
+      "formalSha256": "8bac25f9431f18983088b6203809ce1f38159f13bf90dff9bdc33f691139c1c9",
+      "approvalEvidence": {
+        "speciesId": "m142",
+        "approved": true,
+        "approvalType": "CURRENT_FORMAL",
+        "approvedBy": "repository owner release authorization",
+        "approvedAt": "2026-08-30T17:38:00.019Z",
+        "source": "FINAL CLOSEOUT completion authorization; all active species except m235"
+      }
     },
     "m143": {
       "state": "FORMAL",
@@ -1947,13 +2137,43 @@
       }
     },
     "m160": {
-      "state": "PLACEHOLDER"
+      "state": "FORMAL",
+      "formalAsset": "/monsters/m160.webp",
+      "formalSha256": "3e02a725de56956d8d79a4cf23f43289a6b1003456e21815c1e88082fa5b199f",
+      "approvalEvidence": {
+        "speciesId": "m160",
+        "approved": true,
+        "approvalType": "CURRENT_FORMAL",
+        "approvedBy": "repository owner release authorization",
+        "approvedAt": "2026-08-30T17:38:00.019Z",
+        "source": "ManaEvo FINAL CLOSEOUT-N1A validated candidate; owner release authorization"
+      }
     },
     "m161": {
-      "state": "PLACEHOLDER"
+      "state": "FORMAL",
+      "formalAsset": "/monsters/m161.webp",
+      "formalSha256": "7fc318aa263c7ccb07fc4262d0d961abc66f6b5f70f4030dddb4fc33e814da4b",
+      "approvalEvidence": {
+        "speciesId": "m161",
+        "approved": true,
+        "approvalType": "CURRENT_FORMAL",
+        "approvedBy": "repository owner release authorization",
+        "approvedAt": "2026-08-30T17:38:00.019Z",
+        "source": "ManaEvo FINAL CLOSEOUT-N1A validated candidate; owner release authorization"
+      }
     },
     "m162": {
-      "state": "PLACEHOLDER"
+      "state": "FORMAL",
+      "formalAsset": "/monsters/m162.webp",
+      "formalSha256": "8349198cdec027846821fc70695b1a46cab28edf68c69c9801c80cc0a04c94e0",
+      "approvalEvidence": {
+        "speciesId": "m162",
+        "approved": true,
+        "approvalType": "CURRENT_FORMAL",
+        "approvedBy": "repository owner release authorization",
+        "approvedAt": "2026-08-30T17:38:00.019Z",
+        "source": "ManaEvo FINAL CLOSEOUT-N1A validated candidate; owner release authorization"
+      }
     },
     "m163": {
       "state": "FORMAL",
@@ -2008,7 +2228,17 @@
       }
     },
     "m167": {
-      "state": "PLACEHOLDER"
+      "state": "FORMAL",
+      "formalAsset": "/monsters/m167.webp",
+      "formalSha256": "c0faf3ba44f5a03fecff3a268404a378ebe39082175c190b05014c17d635557f",
+      "approvalEvidence": {
+        "speciesId": "m167",
+        "approved": true,
+        "approvalType": "CURRENT_FORMAL",
+        "approvedBy": "repository owner release authorization",
+        "approvedAt": "2026-08-30T17:38:00.019Z",
+        "source": "FINAL CLOSEOUT completion authorization; all active species except m235"
+      }
     },
     "m168": {
       "state": "FORMAL",
@@ -2102,7 +2332,17 @@
       }
     },
     "m175": {
-      "state": "PLACEHOLDER"
+      "state": "FORMAL",
+      "formalAsset": "/monsters/m175.webp",
+      "formalSha256": "80b76f020c7f065385d0687bbfb7388352afd6c6eab43971a5fa7924411349e2",
+      "approvalEvidence": {
+        "speciesId": "m175",
+        "approved": true,
+        "approvalType": "CURRENT_FORMAL",
+        "approvedBy": "repository owner release authorization",
+        "approvedAt": "2026-08-30T17:38:00.019Z",
+        "source": "FINAL CLOSEOUT completion authorization; all active species except m235"
+      }
     },
     "m176": {
       "state": "FORMAL",
@@ -2131,13 +2371,43 @@
       }
     },
     "m178": {
-      "state": "PLACEHOLDER"
+      "state": "FORMAL",
+      "formalAsset": "/monsters/m178.webp",
+      "formalSha256": "5ab88a2311fee2d74259600a7464726ee2a77fc27e1af6c6206068d5cbf1d105",
+      "approvalEvidence": {
+        "speciesId": "m178",
+        "approved": true,
+        "approvalType": "CURRENT_FORMAL",
+        "approvedBy": "repository owner release authorization",
+        "approvedAt": "2026-08-30T17:38:00.019Z",
+        "source": "FINAL CLOSEOUT completion authorization; all active species except m235"
+      }
     },
     "m179": {
-      "state": "PLACEHOLDER"
+      "state": "FORMAL",
+      "formalAsset": "/monsters/m179.webp",
+      "formalSha256": "7203379f870bc3ba886599983568714c2081c183ce9479ad1c26cb211c669540",
+      "approvalEvidence": {
+        "speciesId": "m179",
+        "approved": true,
+        "approvalType": "CURRENT_FORMAL",
+        "approvedBy": "repository owner release authorization",
+        "approvedAt": "2026-08-30T17:38:00.019Z",
+        "source": "FINAL CLOSEOUT completion authorization; all active species except m235"
+      }
     },
     "m180": {
-      "state": "PLACEHOLDER"
+      "state": "FORMAL",
+      "formalAsset": "/monsters/m180.webp",
+      "formalSha256": "563f43a12e80944ab4865b1262df33e89070498b987a01ab6c5f59bb48a61918",
+      "approvalEvidence": {
+        "speciesId": "m180",
+        "approved": true,
+        "approvalType": "CURRENT_FORMAL",
+        "approvedBy": "repository owner release authorization",
+        "approvedAt": "2026-08-30T17:38:00.019Z",
+        "source": "FINAL CLOSEOUT completion authorization; all active species except m235"
+      }
     },
     "m181": {
       "state": "FORMAL",
@@ -2413,10 +2683,30 @@
       }
     },
     "m202": {
-      "state": "PLACEHOLDER"
+      "state": "FORMAL",
+      "formalAsset": "/monsters/m202.webp",
+      "formalSha256": "7e38a8fb77b9531e0492d11767b16e51f6e770394600b14ed0c6b365bfe78616",
+      "approvalEvidence": {
+        "speciesId": "m202",
+        "approved": true,
+        "approvalType": "CURRENT_FORMAL",
+        "approvedBy": "repository owner release authorization",
+        "approvedAt": "2026-08-30T17:38:00.019Z",
+        "source": "FINAL CLOSEOUT completion authorization; all active species except m235"
+      }
     },
     "m203": {
-      "state": "PLACEHOLDER"
+      "state": "FORMAL",
+      "formalAsset": "/monsters/m203.webp",
+      "formalSha256": "9bef5165d6d0f7c9fd74fbaafc3c69511b7daeba4cf70c6979ed1254aa203a43",
+      "approvalEvidence": {
+        "speciesId": "m203",
+        "approved": true,
+        "approvalType": "CURRENT_FORMAL",
+        "approvedBy": "repository owner release authorization",
+        "approvedAt": "2026-08-30T17:38:00.019Z",
+        "source": "FINAL CLOSEOUT completion authorization; all active species except m235"
+      }
     },
     "m204": {
       "state": "FORMAL",
@@ -2445,7 +2735,17 @@
       }
     },
     "m206": {
-      "state": "PLACEHOLDER"
+      "state": "FORMAL",
+      "formalAsset": "/monsters/m206.webp",
+      "formalSha256": "d6bfafb5166570b4c69859a77f6a35e8de8ee76c24e5c5d829f759406294dd7e",
+      "approvalEvidence": {
+        "speciesId": "m206",
+        "approved": true,
+        "approvalType": "CURRENT_FORMAL",
+        "approvedBy": "repository owner release authorization",
+        "approvedAt": "2026-08-30T17:38:00.019Z",
+        "source": "FINAL CLOSEOUT completion authorization; all active species except m235"
+      }
     },
     "m207": {
       "state": "FORMAL",
@@ -2552,10 +2852,30 @@
       }
     },
     "m215": {
-      "state": "PLACEHOLDER"
+      "state": "FORMAL",
+      "formalAsset": "/monsters/m215.webp",
+      "formalSha256": "642030e5abe6493f53838767ec2aff0b3949ac9353d2d396f20ca7db7abb817d",
+      "approvalEvidence": {
+        "speciesId": "m215",
+        "approved": true,
+        "approvalType": "CURRENT_FORMAL",
+        "approvedBy": "repository owner release authorization",
+        "approvedAt": "2026-08-30T17:38:00.019Z",
+        "source": "FINAL CLOSEOUT completion authorization; all active species except m235"
+      }
     },
     "m216": {
-      "state": "PLACEHOLDER"
+      "state": "FORMAL",
+      "formalAsset": "/monsters/m216.webp",
+      "formalSha256": "1f32e4647ede4418d35ccdc305ca8e2101a4f371b5a6ff0a704f2ea5875f8c35",
+      "approvalEvidence": {
+        "speciesId": "m216",
+        "approved": true,
+        "approvalType": "CURRENT_FORMAL",
+        "approvedBy": "repository owner release authorization",
+        "approvedAt": "2026-08-30T17:38:00.019Z",
+        "source": "FINAL CLOSEOUT completion authorization; all active species except m235"
+      }
     },
     "m217": {
       "state": "FORMAL",
@@ -2571,35 +2891,55 @@
       }
     },
     "m218": {
-      "state": "PLACEHOLDER"
+      "state": "FORMAL",
+      "formalAsset": "/monsters/m218.webp",
+      "formalSha256": "7d5e0d0de8e3b2e17b4377d4a96d4b5f22867bf70ac8cbf107622feb47dd02dc",
+      "approvalEvidence": {
+        "speciesId": "m218",
+        "approved": true,
+        "approvalType": "CURRENT_FORMAL",
+        "approvedBy": "repository owner release authorization",
+        "approvedAt": "2026-08-30T17:38:00.019Z",
+        "source": "FINAL CLOSEOUT completion authorization; all active species except m235"
+      }
     },
     "m219": {
-      "state": "PLACEHOLDER"
+      "state": "FORMAL",
+      "formalAsset": "/monsters/m219.webp",
+      "formalSha256": "9e1061233b3746e8a65cce86c5ecfadb6aabcb9afaaf307fffc9e587b4fe6163",
+      "approvalEvidence": {
+        "speciesId": "m219",
+        "approved": true,
+        "approvalType": "CURRENT_FORMAL",
+        "approvedBy": "repository owner release authorization",
+        "approvedAt": "2026-08-30T17:38:00.019Z",
+        "source": "FINAL CLOSEOUT completion authorization; all active species except m235"
+      }
     },
     "m220": {
       "state": "FORMAL",
       "formalAsset": "/monsters/m220.webp",
-      "formalSha256": "4188f3dfdcd7bef4d37cecf1a0f315ea7ac6b8a0724a2d0d70c7d370f8725b03",
+      "formalSha256": "6eb0e4992962f9621ff693beebfc73ed6493b075cd5c1b6f1600a5809fd1e8ee",
       "approvalEvidence": {
         "speciesId": "m220",
         "approved": true,
         "approvalType": "CURRENT_FORMAL",
         "approvedBy": "repository owner release authorization",
-        "approvedAt": "2026-08-30T16:00:00.000Z",
-        "source": "FINAL ART CLOSEOUT current audit KEEP classification"
+        "approvedAt": "2026-08-30T17:38:00.019Z",
+        "source": "ManaEvo FINAL CLOSEOUT-R1 validated fragment cleanup; owner release authorization"
       }
     },
     "m221": {
       "state": "FORMAL",
       "formalAsset": "/monsters/m221.webp",
-      "formalSha256": "f3d18e4c51ad9b4002a093697501e01ad06f9c9fd662775985d967fac5f95e66",
+      "formalSha256": "dd4fe5c364b5688e84ad5329c514c0c339003fe48a186085d834d576d9398610",
       "approvalEvidence": {
         "speciesId": "m221",
         "approved": true,
         "approvalType": "CURRENT_FORMAL",
         "approvedBy": "repository owner release authorization",
-        "approvedAt": "2026-08-30T16:00:00.000Z",
-        "source": "FINAL ART CLOSEOUT current audit KEEP classification"
+        "approvedAt": "2026-08-30T17:38:00.019Z",
+        "source": "ManaEvo FINAL CLOSEOUT-R1 validated fragment cleanup; owner release authorization"
       }
     },
     "m222": {
@@ -2694,13 +3034,43 @@
       }
     },
     "m229": {
-      "state": "PLACEHOLDER"
+      "state": "FORMAL",
+      "formalAsset": "/monsters/m229.webp",
+      "formalSha256": "5af990a01171f779018d46c17739b607109e08cd8bef12b35248134d7d94fafa",
+      "approvalEvidence": {
+        "speciesId": "m229",
+        "approved": true,
+        "approvalType": "CURRENT_FORMAL",
+        "approvedBy": "repository owner release authorization",
+        "approvedAt": "2026-08-30T17:38:00.019Z",
+        "source": "ManaEvo-F078-m229-art-ready FINAL CLOSEOUT-R2G QA; owner release authorization"
+      }
     },
     "m230": {
-      "state": "PLACEHOLDER"
+      "state": "FORMAL",
+      "formalAsset": "/monsters/m230.webp",
+      "formalSha256": "b9acc60c0b78f5e4c2104cabeeec52a934ebf5b0d9d6dbd5452be89b73d268fc",
+      "approvalEvidence": {
+        "speciesId": "m230",
+        "approved": true,
+        "approvalType": "CURRENT_FORMAL",
+        "approvedBy": "repository owner release authorization",
+        "approvedAt": "2026-08-30T17:38:00.019Z",
+        "source": "FINAL CLOSEOUT completion authorization; all active species except m235"
+      }
     },
     "m231": {
-      "state": "PLACEHOLDER"
+      "state": "FORMAL",
+      "formalAsset": "/monsters/m231.webp",
+      "formalSha256": "d75fed6ce3016eecc28d8ae625b1f28b70e6da926c03f0ff7f7fa2a79bdf36cb",
+      "approvalEvidence": {
+        "speciesId": "m231",
+        "approved": true,
+        "approvalType": "CURRENT_FORMAL",
+        "approvedBy": "repository owner release authorization",
+        "approvedAt": "2026-08-30T17:38:00.019Z",
+        "source": "FINAL CLOSEOUT completion authorization; all active species except m235"
+      }
     },
     "m232": {
       "state": "FORMAL",
@@ -2716,10 +3086,30 @@
       }
     },
     "m233": {
-      "state": "PLACEHOLDER"
+      "state": "FORMAL",
+      "formalAsset": "/monsters/m233.webp",
+      "formalSha256": "23da7dd5876b23cd266fefa756757931a4086089e77d10597e28176ea10302bd",
+      "approvalEvidence": {
+        "speciesId": "m233",
+        "approved": true,
+        "approvalType": "CURRENT_FORMAL",
+        "approvedBy": "repository owner release authorization",
+        "approvedAt": "2026-08-30T17:38:00.019Z",
+        "source": "FINAL CLOSEOUT completion authorization; all active species except m235"
+      }
     },
     "m234": {
-      "state": "PLACEHOLDER"
+      "state": "FORMAL",
+      "formalAsset": "/monsters/m234.webp",
+      "formalSha256": "335b0e0cd322df5e38a3d4b8f9f2d45f8ecddb58d28e705d52787309751ba714",
+      "approvalEvidence": {
+        "speciesId": "m234",
+        "approved": true,
+        "approvalType": "CURRENT_FORMAL",
+        "approvedBy": "repository owner release authorization",
+        "approvedAt": "2026-08-30T17:38:00.019Z",
+        "source": "FINAL CLOSEOUT completion authorization; all active species except m235"
+      }
     },
     "m235": {
       "state": "PLACEHOLDER"

@@ -13,6 +13,22 @@
       },
       "manifestStateBefore": "PLACEHOLDER",
       "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-30T17:37:06.327Z",
+      "sourceLabel": "ManaEvo-F078-m229-art-ready(3).zip FINAL CLOSEOUT-R2G",
+      "previous": {
+        "repositoryPath": "public/monsters/m229.webp",
+        "sha256": "8e8005b11ae00b4fcf1cd069b59973180862e1e7b598c0295f8f983293789503",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m229/8e8005b11ae00b4fcf1cd069b59973180862e1e7b598c0295f8f983293789503.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m229.webp",
+        "sha256": "5af990a01171f779018d46c17739b607109e08cd8bef12b35248134d7d94fafa",
+        "bytes": 183900
+      },
+      "manifestStateBefore": "PLACEHOLDER",
+      "formalPromotion": false
     }
   ]
 }
