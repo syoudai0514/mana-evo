@@ -29,6 +29,129 @@
       },
       "manifestStateBefore": "PLACEHOLDER",
       "formalPromotion": false
+    },
+    {
+      "timestamp": "2026-08-30T16:27:01.386Z",
+      "sourceLabel": "ManaEvo FINAL CLOSEOUT-N1A CP2 current scale normalization",
+      "previous": {
+        "repositoryPath": "public/monsters/m162.webp",
+        "sha256": "0938c90351e39c82a612760a606bef12e1e52e593eea10c25766f4ee77a958d4",
+        "archivePath": "design/rebuild/asset-production/candidate-history/m162/0938c90351e39c82a612760a606bef12e1e52e593eea10c25766f4ee77a958d4.webp"
+      },
+      "candidate": {
+        "repositoryPath": "public/monsters/m162.webp",
+        "sha256": "8349198cdec027846821fc70695b1a46cab28edf68c69c9801c80cc0a04c94e0",
+        "bytes": 181554
+      },
+      "manifestStateBefore": "CANDIDATE",
+      "operation": "normalize",
+      "reason": "Normalize only apparent scale and placement inside the existing transparent canvas; preserve the complete CURRENT repaired subject including thin alpha/VFX.",
+      "normalization": {
+        "method": "uniform-transparent-canvas-scale-and-reposition",
+        "resampling": "Pillow premultiplied-alpha LANCZOS; lossless WebP",
+        "targetVisibleMaxPresence": 0.8,
+        "scaleFactor": 2.730666666666667,
+        "before": {
+          "canvas": [
+            512,
+            512
+          ],
+          "visibleBBox": {
+            "x": 187,
+            "y": 187,
+            "w": 146,
+            "h": 150,
+            "right": 333,
+            "bottom": 337
+          },
+          "nonzeroBBox": {
+            "x": 185,
+            "y": 185,
+            "w": 149,
+            "h": 154,
+            "right": 334,
+            "bottom": 339
+          },
+          "visiblePresence": {
+            "w": 0.28515625,
+            "h": 0.29296875,
+            "max": 0.29296875
+          },
+          "nonzeroPresence": {
+            "w": 0.291015625,
+            "h": 0.30078125,
+            "max": 0.30078125
+          },
+          "visibleCenter": [
+            0.5078125,
+            0.51171875
+          ],
+          "nonzeroClearance": {
+            "left": 185,
+            "top": 185,
+            "right": 178,
+            "bottom": 173
+          },
+          "edgeContact": false
+        },
+        "after": {
+          "canvas": [
+            512,
+            512
+          ],
+          "visibleBBox": {
+            "x": 59,
+            "y": 51,
+            "w": 397,
+            "h": 412,
+            "right": 456,
+            "bottom": 463
+          },
+          "nonzeroBBox": {
+            "x": 52,
+            "y": 45,
+            "w": 407,
+            "h": 421,
+            "right": 459,
+            "bottom": 466
+          },
+          "visiblePresence": {
+            "w": 0.775390625,
+            "h": 0.8046875,
+            "max": 0.8046875
+          },
+          "nonzeroPresence": {
+            "w": 0.794921875,
+            "h": 0.822265625,
+            "max": 0.822265625
+          },
+          "visibleCenter": [
+            0.5029296875,
+            0.501953125
+          ],
+          "nonzeroClearance": {
+            "left": 52,
+            "top": 45,
+            "right": 53,
+            "bottom": 46
+          },
+          "edgeContact": false
+        },
+        "reverseScalePremultipliedMae": {
+          "rgbaMeanAbs": 2.318835526889218,
+          "perChannel": [
+            2.703216246840408,
+            2.7357273598884335,
+            2.563496905778785,
+            1.2729015950492462
+          ]
+        }
+      },
+      "noSemanticArtChange": true,
+      "backgroundMutation": false,
+      "crop": false,
+      "edgeContact": false,
+      "formalPromotion": false
     }
   ]
 }
