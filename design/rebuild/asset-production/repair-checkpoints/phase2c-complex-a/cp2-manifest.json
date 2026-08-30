@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "phase": "2C-A",
+  "worker": "A",
+  "checkpoint": 2,
+  "baseIntegrationHead": "5354cba99dd7cfc3f52a3ce1e587778e356fe4ca",
+  "parentWorkerHead": "7a3f4580807a3f673de7886dad8085aef939eb1e",
+  "assigned": ["m122", "m123", "m124"],
+  "status": "PASS",
+  "formalPromotion": false,
+  "repaired": [],
+  "needsGeneration": [],
+  "manualReview": ["m122", "m123", "m124"],
+  "species": [
+    {"speciesId":"m122","family":"F042","stage":1,"sourceSha256":"3e8a80919815acc9f38e1b8b89f3ad4d7727fa3db8b403ad3098863facf07d81","sourceBytes":27290,"diagnosis":["BACKGROUND_COMPLEX","GLOW_PARTICLE_OVERLAP","DETACHED_ARTIFACT","TEXT_LABEL_ARTIFACT"],"repairConfidence":"LOW","decision":"MANUAL_REVIEW","reason":"CURRENT audit reports gear/logo/glow residue. Gear-like forms may be character/world-design elements while logo-like marks are artifacts; a deletion mask cannot be proven character-safe automatically.","candidateMutation":false,"formalPromotion":false},
+    {"speciesId":"m123","family":"F042","stage":2,"sourceSha256":"e86c6dc34aa7f4e2189a22edceff4b2b02c94556cd21d017084aa4adea02044b","sourceBytes":44194,"diagnosis":["BACKGROUND_COMPLEX","GLOW_PARTICLE_OVERLAP","DETACHED_ARTIFACT","TEXT_LABEL_ARTIFACT"],"repairConfidence":"LOW","decision":"MANUAL_REVIEW","reason":"Gear/logo/glow coexist in the candidate. Removing detached marks without a semantic distinction between decorative gear/effect pixels and non-character logo pixels has high automation risk.","candidateMutation":false,"formalPromotion":false},
+    {"speciesId":"m124","family":"F042","stage":3,"sourceSha256":"d52a25b49c07652261a16a6c3237121ae62608d6c1f64dbe7d4229297fee0078","sourceBytes":64690,"diagnosis":["BACKGROUND_COMPLEX","GLOW_PARTICLE_OVERLAP","DETACHED_ARTIFACT","TEXT_LABEL_ARTIFACT"],"repairConfidence":"LOW","decision":"MANUAL_REVIEW","reason":"The most complex stage retains gear/logo/glow elements. Automated artifact removal cannot prove preservation of aura, thin outlines, and intended gear motifs.","candidateMutation":false,"formalPromotion":false}
+  ],
+  "qa": {"diagnosis":"PASS","machineQa":"PASS (CURRENT candidates retained byte-for-byte; provenance SHA/bytes recorded; CURRENT audit reports 512x512 opaque WebP canvases)","visualQa":"PASS (CURRENT final-visual-audit evidence reviewed; no new pixel mutation performed)","familyQa":"PASS (F042 handled consistently; ambiguous gear/logo/effect semantics never auto-deleted)","characterPreservation":"PASS by zero candidate mutation","unexpectedCandidateChanges":0},
+  "zipValidation": {"zipReopen":"PASS","expectedWebpCount":0,"riffWebp":"N/A (no REPAIRED species in checkpoint ZIP)","dimensions512x512":"N/A (no REPAIRED species in checkpoint ZIP)","shaBytes":"PASS (decision manifest only; archive SHA recorded separately)","missing":0,"duplicate":0,"extra":0},
+  "zip": "monster-art-phase2c-a-cp2.zip"
+}
