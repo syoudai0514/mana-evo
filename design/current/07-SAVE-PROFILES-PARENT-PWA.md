@@ -532,3 +532,60 @@ This contract does not independently define:
 - paid Vercel/Supabase upgrades.
 
 If a later implementation needs one of these as a product decision, recover or obtain explicit approval rather than inferring it from runtime.
+
+---
+
+## 17. D-021 PWA orientation / tablet presentation contract
+
+This section is later cross-cutting authority under **D-021**. It supplements the existing W-107/D-018/D-019 platform contract and does not supersede CURRENT D-020 Dex cache/browse/history semantics.
+
+### 17.1 No ManaEvo orientation preference
+
+ManaEvo supports portrait and landscape presentation when the operating environment permits them. Canonical PWA policy therefore defines **no preferred application orientation**.
+
+The target manifest state is to **omit the `orientation` member** rather than retain `portrait-primary`. `orientation: any` is not required; the product requirement is that ManaEvo itself imposes no orientation preference. Any future explicit orientation value requires a separately reviewed product/platform decision.
+
+The CURRENT runtime value `orientation: portrait-primary` is a known implementation delta and must not be removed in isolation.
+
+### 17.2 Release ordering
+
+Required sequence:
+
+1. D-021 canonical tablet contract is approved;
+2. fail-first responsive geometry and continuity acceptance exists;
+3. Compact / Workspace / Contextual-interactive layout behavior passes;
+4. low-height, safe-area and meaningful active-interaction continuity pass;
+5. only then remove the portrait preference in an implementation candidate;
+6. verify Safari browser and installed Home Screen Web App separately on actual iPad;
+7. verify an already-installed PWA upgrading from the prior portrait-preference release;
+8. release only when the existing-install gate is PASS, or a separately reviewed compatibility/remediation policy explicitly resolves a demonstrated platform limitation.
+
+This order prevents an orientation-only release from exposing a previously unreachable but broken landscape presentation.
+
+### 17.3 Safari browser and Home Screen Web App are separate environments
+
+Safari-tab presentation and installed standalone/Home Screen presentation are separate release environments. Manifest orientation behavior must not be used to infer Safari-tab behavior, and release evidence must name the environment actually tested.
+
+### 17.4 Existing installed PWA upgrade is a release gate
+
+**PASS:** through the supported normal update lifecycle, an already-installed ManaEvo PWA reaches the target behavior in which ManaEvo no longer imposes the prior portrait preference and can use the supported portrait/landscape contract.
+
+Fresh install or reinstall may be used as diagnostic comparison evidence, but does **not** by itself make the existing-install upgrade gate pass.
+
+If a demonstrated platform limitation prevents the existing installed client from reaching target behavior, production release remains **BLOCKED** until a separately reviewed compatibility/remediation policy defines:
+
+- affected installed clients;
+- acceptable interim behavior, if any;
+- required user action, if any;
+- communication/remediation approach;
+- release exit criterion.
+
+“Observed/diagnosed” alone is not PASS.
+
+### 17.5 Actual-device release target
+
+Release operations must explicitly identify the supported generally available iPadOS release target(s) used for mandatory Safari and standalone smoke. This operational version list is not a device/UA-based layout rule.
+
+### 17.6 Parent and active-interaction continuity
+
+Resize/orientation is a presentation event, not a Parent gate reset. Meaningful Parent state such as an active unlocked/recovering gate or unsubmitted adult input must not be lost solely because responsive presentation changes. Detailed responsive continuity acceptance is owned by `08-ACCEPTANCE-TEST-CONTRACT.md` under D-021.
