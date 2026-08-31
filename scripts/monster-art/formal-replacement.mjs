@@ -2,12 +2,16 @@
 import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
+import { execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { generateRevisionManifest } from '../generate-pwa-asset-revisions.mjs'
 
-export const BUNDLE_SCHEMA = 'ManaEvo.formal-art-replacement.v1'
+export const BUNDLE_SCHEMA = 'ManaEvo.formal-art-replacement.v2'
+export const CHANGE_PLAN_SCHEMA = 'ManaEvo.monster-art-change-plan.v1'
 export const MAX_SCOPE = 3
 export const MAX_WEBP_BYTES = 1_000_000
+export const MIN_MARGIN_PX = 4
+export const RECOMMENDED_MARGIN_PX = 12
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const defaultRoot = path.resolve(here, '../..')
@@ -26,15 +30,31 @@ function writeJson(filePath, value) {
   fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`)
 }
 
-function assertSafeRelativeFile(value, speciesId) {
-  if (value !== `${speciesId}.webp`) {
-    throw new Error(`${speciesId}: bundle file must be exactly ${speciesId}.webp`)
+function assertSha(value, label) {
+  if (!/^[0-9a-f]{64}$/.test(value ?? '')) throw new Error(`${label} must be 64 lowercase hex characters`)
+}
+
+function assertGitSha(value, label) {
+  if (!/^[0-9a-f]{40}$/.test(value ?? '')) throw new Error(`${label} must be a 40-character lowercase git SHA`)
+}
+
+function assertTransactionId(value) {
+  if (typeof value !== 'string' || !/^[A-Za-z0-9._:-]{8,128}$/.test(value)) {
+    throw new Error('bundle transactionId must be 8-128 safe characters')
   }
+}
+
+function assertSafeRelativeFile(value, speciesId) {
+  if (value !== `${speciesId}.webp`) throw new Error(`${speciesId}: bundle file must be exactly ${speciesId}.webp`)
 }
 
 export function validateBundleManifest(bundle) {
   if (!bundle || typeof bundle !== 'object') throw new Error('bundle manifest must be an object')
   if (bundle.schema !== BUNDLE_SCHEMA) throw new Error(`bundle schema must be ${BUNDLE_SCHEMA}`)
+  assertTransactionId(bundle.transactionId)
+  assertGitSha(bundle.baseHeadSha, 'bundle baseHeadSha')
+  if (bundle.intent !== 'REPLACE') throw new Error('bundle intent must be REPLACE')
+
   if (!Array.isArray(bundle.scope) || bundle.scope.length < 1 || bundle.scope.length > MAX_SCOPE) {
     throw new Error(`bundle scope must contain 1-${MAX_SCOPE} species`)
   }
@@ -53,6 +73,17 @@ export function validateBundleManifest(bundle) {
   const scopeKeys = [...bundle.scope].sort()
   if (JSON.stringify(speciesKeys) !== JSON.stringify(scopeKeys)) throw new Error('bundle species keys must exactly match scope')
 
+  if (!bundle.familyReferences || typeof bundle.familyReferences !== 'object') {
+    throw new Error('bundle familyReferences map is required')
+  }
+  for (const [id, row] of Object.entries(bundle.familyReferences)) {
+    if (!/^m\d{3,}$/.test(id)) throw new Error(`invalid speciesId in familyReferences: ${id}`)
+    assertSha(row?.expectedCurrentSha256, `${id}: familyReferences.expectedCurrentSha256`)
+  }
+  for (const id of bundle.scope) {
+    if (!bundle.familyReferences[id]) throw new Error(`${id}: familyReferences must include every replacement target`)
+  }
+
   if (bundle.scope.length > 1 && bundle.familyVisualQa !== 'PASS') {
     throw new Error('multi-species bundle requires familyVisualQa=PASS')
   }
@@ -60,9 +91,13 @@ export function validateBundleManifest(bundle) {
   for (const id of bundle.scope) {
     const row = bundle.species[id]
     assertSafeRelativeFile(row?.file, id)
-    if (!/^[0-9a-f]{64}$/.test(row?.sha256 ?? '')) throw new Error(`${id}: sha256 must be 64 lowercase hex characters`)
+    assertSha(row?.expectedCurrentSha256, `${id}: expectedCurrentSha256`)
+    assertSha(row?.sha256, `${id}: sha256`)
     if (!Number.isInteger(row?.bytes) || row.bytes <= 0) throw new Error(`${id}: positive integer bytes is required`)
     if (row?.visualQa !== 'PASS') throw new Error(`${id}: visualQa must be PASS`)
+    if (bundle.familyReferences[id].expectedCurrentSha256 !== row.expectedCurrentSha256) {
+      throw new Error(`${id}: family reference SHA must equal species expectedCurrentSha256`)
+    }
   }
   return bundle
 }
@@ -121,6 +156,55 @@ export async function inspectWebPWithWebKit(filePath) {
       const bboxTouchesEdges = bbox
         ? Number(bbox.minX === 0) + Number(bbox.minY === 0) + Number(bbox.maxX === width - 1) + Number(bbox.maxY === height - 1)
         : 0
+      const margins = bbox
+        ? { left: bbox.minX, top: bbox.minY, right: width - 1 - bbox.maxX, bottom: height - 1 - bbox.maxY }
+        : null
+      const minMarginPx = margins ? Math.min(margins.left, margins.top, margins.right, margins.bottom) : 0
+
+      function sideOccupancy(side) {
+        if (!bbox) return 0
+        let visible = 0
+        let total = 0
+        if (side === 'top' || side === 'bottom') {
+          const y = side === 'top' ? bbox.minY : bbox.maxY
+          for (let x = bbox.minX; x <= bbox.maxX; x += 1) {
+            total += 1
+            if (data[(y * width + x) * 4 + 3] > 8) visible += 1
+          }
+        } else {
+          const x = side === 'left' ? bbox.minX : bbox.maxX
+          for (let y = bbox.minY; y <= bbox.maxY; y += 1) {
+            total += 1
+            if (data[(y * width + x) * 4 + 3] > 8) visible += 1
+          }
+        }
+        return total ? visible / total : 0
+      }
+
+      let borderSolid = 0
+      let borderTotal = 0
+      const band = 4
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          if (x >= band && x < width - band && y >= band && y < height - band) continue
+          borderTotal += 1
+          if (data[(y * width + x) * 4 + 3] >= 224) borderSolid += 1
+        }
+      }
+      const bboxWidth = bbox ? bbox.maxX - bbox.minX + 1 : 0
+      const bboxHeight = bbox ? bbox.maxY - bbox.minY + 1 : 0
+      const bboxAreaRatio = (bboxWidth * bboxHeight) / (width * height)
+      const bboxSideOccupancy = bbox ? {
+        top: sideOccupancy('top'),
+        bottom: sideOccupancy('bottom'),
+        left: sideOccupancy('left'),
+        right: sideOccupancy('right'),
+      } : null
+      const rectangularBackgroundSuspicion = Boolean(
+        bboxSideOccupancy && bboxAreaRatio >= 0.25 &&
+        Math.min(bboxSideOccupancy.top, bboxSideOccupancy.bottom, bboxSideOccupancy.left, bboxSideOccupancy.right) >= 0.72
+      )
+
       return {
         width,
         height,
@@ -129,6 +213,12 @@ export async function inspectWebPWithWebKit(filePath) {
         visiblePixels,
         bbox,
         bboxTouchesEdges,
+        margins,
+        minMarginPx,
+        borderSolidRatio: borderTotal ? borderSolid / borderTotal : 0,
+        bboxAreaRatio,
+        bboxSideOccupancy,
+        rectangularBackgroundSuspicion,
       }
     }, src)
   } finally {
@@ -196,8 +286,32 @@ function approvalFor(bundle, speciesId) {
 function readProvenance(filePath, speciesId) {
   if (!fs.existsSync(filePath)) throw new Error(`${speciesId}: provenance file is required before FORMAL replacement`)
   const value = readJson(filePath)
-  if (value.speciesId !== speciesId || !Array.isArray(value.events)) throw new Error(`${speciesId}: malformed provenance`)
+  if (value.speciesId !== speciesId || !Array.isArray(value.events) || value.events.length === 0) {
+    throw new Error(`${speciesId}: malformed provenance`)
+  }
   return value
+}
+
+function latestProvenanceSha(provenance) {
+  for (let index = provenance.events.length - 1; index >= 0; index -= 1) {
+    const event = provenance.events[index]
+    const candidateSha = event?.candidate?.sha256
+    if (/^[0-9a-f]{64}$/.test(candidateSha ?? '')) return candidateSha
+    const formalSha = event?.formal?.sha256
+    if (/^[0-9a-f]{64}$/.test(formalSha ?? '')) return formalSha
+  }
+  return null
+}
+
+function findTransactionEvent(provenance, transactionId, newSha256) {
+  return provenance.events.find((event) => event?.transactionId === transactionId && event?.candidate?.sha256 === newSha256) ?? null
+}
+
+function verifyProvenanceCurrent(provenance, speciesId, currentSha) {
+  const latest = latestProvenanceSha(provenance)
+  if (latest !== currentSha) {
+    throw new Error(`${speciesId}: provenance latest asset SHA does not match CURRENT FORMAL SHA`)
+  }
 }
 
 function revisionFor(value, speciesId) {
@@ -224,13 +338,44 @@ function restoreSnapshot(filePath, snapshot) {
   }
 }
 
-export async function planFormalReplacement({ root = defaultRoot, bundleDir, inspectImage = inspectWebPWithWebKit }) {
+export function resolveGitHead(root) {
+  try {
+    return execFileSync('git', ['-C', root, 'rev-parse', 'HEAD'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim()
+  } catch {
+    return null
+  }
+}
+
+function currentFamilyMembers(metadata, familyNo) {
+  return [...metadata.values()]
+    .filter((row) => String(row.familyNo) === String(familyNo))
+    .map((row) => row.speciesId)
+    .sort()
+}
+
+function imageWarnings(image) {
+  const warnings = []
+  if (image.minMarginPx < RECOMMENDED_MARGIN_PX) warnings.push(`margin ${image.minMarginPx}px is below recommended ${RECOMMENDED_MARGIN_PX}px`)
+  if (image.borderSolidRatio > 0) warnings.push(`solid alpha exists in outer 4px band ratio=${image.borderSolidRatio}`)
+  if (image.rectangularBackgroundSuspicion) warnings.push('rectangular background plate suspicion')
+  return warnings
+}
+
+export async function planFormalReplacement({
+  root = defaultRoot,
+  bundleDir,
+  inspectImage = inspectWebPWithWebKit,
+  currentHeadSha = resolveGitHead(root),
+} = {}) {
   if (!bundleDir) throw new Error('--bundle-dir is required')
   const absoluteBundleDir = path.resolve(bundleDir)
   const bundlePath = path.join(absoluteBundleDir, 'manifest.json')
   if (!fs.existsSync(bundlePath)) throw new Error('bundle manifest.json is required')
   const bundle = validateBundleManifest(readJson(bundlePath))
   verifyBundleFiles(absoluteBundleDir, bundle)
+  if (currentHeadSha && currentHeadSha !== bundle.baseHeadSha) {
+    throw new Error(`STALE_BUNDLE base HEAD changed; expected=${bundle.baseHeadSha} current=${currentHeadSha}`)
+  }
 
   const manifestPath = path.join(root, 'design/current/monster-asset-manifest.json')
   const manifest = readJson(manifestPath)
@@ -262,23 +407,41 @@ export async function planFormalReplacement({ root = defaultRoot, bundleDir, ins
     if (image.actualAlpha !== true) throw new Error(`${id}: actual decoded alpha/transparency is required`)
     if (!image.visiblePixels) throw new Error(`${id}: image has no visible creature pixels`)
     if (image.bboxTouchesEdges > 0) throw new Error(`${id}: visible silhouette touches ${image.bboxTouchesEdges} canvas edge(s)`)
+    if (!Number.isFinite(image.minMarginPx)) throw new Error(`${id}: image QA did not return minMarginPx`)
+    if (image.minMarginPx < MIN_MARGIN_PX) throw new Error(`${id}: transparent margin must be at least ${MIN_MARGIN_PX}px; got ${image.minMarginPx}px`)
 
     const currentPath = assetFilePath(root, current.formalAsset)
     const currentSha = sha256(currentPath)
     const provenancePath = path.join(root, 'design/rebuild/asset-production/candidate-provenance', `${id}.json`)
-    readProvenance(provenancePath, id)
+    const provenance = readProvenance(provenancePath, id)
+    verifyProvenanceCurrent(provenance, id, currentSha)
+    const transactionEvent = findTransactionEvent(provenance, bundle.transactionId, actualSha)
+
+    let status
+    if (currentSha === actualSha && transactionEvent) status = 'ALREADY_APPLIED'
+    else if (currentSha === actualSha) throw new Error(`${id}: ambiguous no-op; current already equals new SHA but transactionId is not recorded`)
+    else if (currentSha !== declared.expectedCurrentSha256) {
+      throw new Error(`STALE_BUNDLE ${id}: expected CURRENT ${declared.expectedCurrentSha256}, got ${currentSha}`)
+    } else if (actualSha === declared.expectedCurrentSha256) {
+      throw new Error(`${id}: replacement is unexpectedly byte-identical to expected CURRENT`)
+    } else status = 'CHANGE'
+
     entries.push({
       speciesId: id,
       familyNo: meta.familyNo,
       sourcePath,
       sourceBytes: actualBytes,
       newSha256: actualSha,
+      expectedCurrentSha256: declared.expectedCurrentSha256,
       currentPath,
       currentSha256: currentSha,
       provenancePath,
-      status: currentSha === actualSha ? 'ALREADY_MATCHES' : 'CHANGE',
+      provenanceBefore: provenance,
+      status,
       image,
+      warnings: imageWarnings(image),
       approvalEvidence: approvalFor(bundle, id),
+      previousApprovalEvidence: current.approvalEvidence ?? null,
     })
   }
 
@@ -286,10 +449,30 @@ export async function planFormalReplacement({ root = defaultRoot, bundleDir, ins
     throw new Error('multi-species FAST LANE bundle must contain one evolution family only; split unrelated species into separate bundles')
   }
 
+  const primaryFamilyNo = entries[0].familyNo
+  const requiredFamilyReferences = currentFamilyMembers(metadata, primaryFamilyNo)
+  const declaredReferenceIds = Object.keys(bundle.familyReferences).sort()
+  if (JSON.stringify(declaredReferenceIds) !== JSON.stringify(requiredFamilyReferences)) {
+    throw new Error(`familyReferences must exactly cover CURRENT family; expected=${requiredFamilyReferences.join(',')} actual=${declaredReferenceIds.join(',')}`)
+  }
+  for (const referenceId of requiredFamilyReferences) {
+    const referenceAsset = manifest.assets?.[referenceId]
+    if (!referenceAsset || referenceAsset.state !== 'FORMAL') throw new Error(`${referenceId}: family reference must be CURRENT FORMAL`)
+    const currentReferenceSha = sha256(assetFilePath(root, referenceAsset.formalAsset))
+    const expectedReferenceSha = bundle.familyReferences[referenceId].expectedCurrentSha256
+    const targetEntry = entries.find((row) => row.speciesId === referenceId)
+    if (targetEntry?.status === 'ALREADY_APPLIED') continue
+    if (currentReferenceSha !== expectedReferenceSha) {
+      throw new Error(`STALE_BUNDLE family reference ${referenceId}: expected ${expectedReferenceSha}, got ${currentReferenceSha}`)
+    }
+  }
+
   return {
     root: path.resolve(root),
     bundleDir: absoluteBundleDir,
     bundle,
+    baseHeadSha: bundle.baseHeadSha,
+    currentHeadSha,
     manifestPath,
     manifestBefore: manifest,
     beforeRepository,
@@ -297,14 +480,65 @@ export async function planFormalReplacement({ root = defaultRoot, bundleDir, ins
     revisionsBefore,
     entries,
     changedSpecies: entries.filter((row) => row.status === 'CHANGE').map((row) => row.speciesId),
-    idempotentSpecies: entries.filter((row) => row.status === 'ALREADY_MATCHES').map((row) => row.speciesId),
+    alreadyAppliedSpecies: entries.filter((row) => row.status === 'ALREADY_APPLIED').map((row) => row.speciesId),
+  }
+}
+
+function changePlanPath(root, transactionId) {
+  return path.join(root, 'design/rebuild/asset-production/change-plans', `${transactionId}.json`)
+}
+
+function buildChangePlan(plan, timestamp) {
+  const species = {}
+  const allowedChangedFiles = new Set([
+    'design/current/monster-asset-manifest.json',
+    'public/monster-asset-revisions.json',
+    path.relative(plan.root, changePlanPath(plan.root, plan.bundle.transactionId)).replaceAll('\\', '/'),
+  ])
+  for (const row of plan.entries) {
+    const oldSha256 = row.expectedCurrentSha256
+    const historyPath = `design/rebuild/asset-production/candidate-history/${row.speciesId}/${oldSha256}.webp`
+    species[row.speciesId] = {
+      oldSha256,
+      newSha256: row.newSha256,
+      expectedCurrentSha256: row.expectedCurrentSha256,
+    }
+    allowedChangedFiles.add(`public/monsters/${row.speciesId}.webp`)
+    allowedChangedFiles.add(`design/rebuild/asset-production/candidate-provenance/${row.speciesId}.json`)
+    allowedChangedFiles.add(historyPath)
+  }
+  return {
+    schema: CHANGE_PLAN_SCHEMA,
+    transactionId: plan.bundle.transactionId,
+    baseHeadSha: plan.baseHeadSha,
+    createdAt: timestamp,
+    intent: 'REPLACE',
+    expectedSpecies: [...plan.bundle.scope].sort(),
+    familyReferences: plan.bundle.familyReferences,
+    species,
+    allowedChangedFiles: [...allowedChangedFiles].sort(),
   }
 }
 
 export function executeFormalReplacement(plan, {
   timestamp = new Date().toISOString(),
   regenerateRevisions = generateRevisionManifest,
+  currentHeadSha = resolveGitHead(plan.root),
 } = {}) {
+  if (currentHeadSha && currentHeadSha !== plan.baseHeadSha) {
+    throw new Error(`STALE_BUNDLE base HEAD changed after dry-run; expected=${plan.baseHeadSha} current=${currentHeadSha}`)
+  }
+  if (plan.changedSpecies.length === 0 && plan.alreadyAppliedSpecies.length > 0) {
+    return {
+      mode: 'ALREADY_APPLIED',
+      transactionId: plan.bundle.transactionId,
+      scope: plan.bundle.scope,
+      changedSpecies: [],
+      alreadyAppliedSpecies: plan.alreadyAppliedSpecies,
+      counts: plan.beforeRepository.counts,
+    }
+  }
+
   const root = plan.root
   const manifest = structuredClone(plan.manifestBefore)
   const touched = new Map()
@@ -314,6 +548,8 @@ export function executeFormalReplacement(plan, {
 
   remember(plan.manifestPath)
   remember(plan.revisionPath)
+  const planPath = changePlanPath(root, plan.bundle.transactionId)
+  remember(planPath)
   for (const row of plan.entries) {
     if (row.status !== 'CHANGE') continue
     const historyPath = path.join(root, 'design/rebuild/asset-production/candidate-history', row.speciesId, `${row.currentSha256}.webp`)
@@ -327,18 +563,29 @@ export function executeFormalReplacement(plan, {
     for (const row of plan.entries) {
       if (row.status !== 'CHANGE') continue
       fs.mkdirSync(path.dirname(row.historyPath), { recursive: true })
-      if (!fs.existsSync(row.historyPath)) fs.copyFileSync(row.currentPath, row.historyPath)
+      if (fs.existsSync(row.historyPath)) {
+        const archivedSha = sha256(row.historyPath)
+        if (archivedSha !== row.currentSha256) {
+          throw new Error(`${row.speciesId}: existing history archive SHA mismatch; expected=${row.currentSha256} actual=${archivedSha}`)
+        }
+      } else {
+        fs.copyFileSync(row.currentPath, row.historyPath)
+      }
 
       fs.copyFileSync(row.sourcePath, row.currentPath)
 
       const provenance = readProvenance(row.provenancePath, row.speciesId)
+      verifyProvenanceCurrent(provenance, row.speciesId, row.currentSha256)
       provenance.events.push({
         timestamp,
+        transactionId: plan.bundle.transactionId,
+        baseHeadSha: plan.baseHeadSha,
         sourceLabel: plan.bundle.approval.source,
         previous: {
           repositoryPath: path.relative(root, row.currentPath).replaceAll('\\', '/'),
           sha256: row.currentSha256,
           archivePath: path.relative(root, row.historyPath).replaceAll('\\', '/'),
+          approvalEvidence: row.previousApprovalEvidence,
         },
         candidate: {
           repositoryPath: `public/monsters/${row.speciesId}.webp`,
@@ -380,17 +627,17 @@ export function executeFormalReplacement(plan, {
     for (const [id, hash] of Object.entries(afterRepository.hashes)) {
       if (revisionFor(revisionsAfter, id) !== `sha256-${hash}`) throw new Error(`${id}: generated revision mismatch`)
     }
-    for (const row of plan.entries) {
-      if (row.status === 'ALREADY_MATCHES' && revisionFor(plan.revisionsBefore, row.speciesId) !== revisionFor(revisionsAfter, row.speciesId)) {
-        throw new Error(`${row.speciesId}: idempotent entry unexpectedly changed revision`)
-      }
-    }
+
+    const changePlan = buildChangePlan(plan, timestamp)
+    writeJson(planPath, changePlan)
 
     return {
       mode: 'EXECUTED',
+      transactionId: plan.bundle.transactionId,
       scope: plan.bundle.scope,
       changedSpecies: plan.changedSpecies,
-      idempotentSpecies: plan.idempotentSpecies,
+      alreadyAppliedSpecies: plan.alreadyAppliedSpecies,
+      changePlanPath: path.relative(root, planPath).replaceAll('\\', '/'),
       counts: afterRepository.counts,
     }
   } catch (error) {
@@ -418,9 +665,11 @@ export async function runCli(argv = process.argv.slice(2)) {
   if (!args.execute) {
     return {
       mode: 'DRY_RUN',
+      transactionId: plan.bundle.transactionId,
       scope: plan.bundle.scope,
       changedSpecies: plan.changedSpecies,
-      idempotentSpecies: plan.idempotentSpecies,
+      alreadyAppliedSpecies: plan.alreadyAppliedSpecies,
+      warnings: Object.fromEntries(plan.entries.filter((row) => row.warnings.length).map((row) => [row.speciesId, row.warnings])),
     }
   }
   return executeFormalReplacement(plan)
