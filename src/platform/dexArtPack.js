@@ -69,19 +69,17 @@ export async function sha256Hex(bytes) {
   return [...new Uint8Array(digest)].map((value) => value.toString(16).padStart(2, '0')).join('')
 }
 
-function responseFromBytes(source, bytes) {
-  const headers = new Headers(source.headers)
-  if (!headers.has('content-type')) headers.set('content-type', 'image/webp')
-  return new Response(bytes, { status: 200, statusText: 'OK', headers })
-}
-
 export async function verifyAssetResponse(asset, response) {
   if (!response?.ok) throw new Error(`${asset.speciesId}: image HTTP ${response?.status || 'error'}`)
+  // Preserve the browser-native response object for CacheStorage. Rebuilding the
+  // response with new Response(bytes) can lose fetch response metadata/type that
+  // WebKit requires when a Service Worker later satisfies an <img> request offline.
+  const cacheResponse = response.clone()
   const bytes = await response.arrayBuffer()
   const actual = await sha256Hex(bytes)
   const expected = expectedShaHex(asset.revision)
   if (actual !== expected) throw new Error(`${asset.speciesId}: SHA mismatch (${actual.slice(0, 12)} != ${expected.slice(0, 12)})`)
-  return { bytes, response: responseFromBytes(response, bytes) }
+  return { bytes, response: cacheResponse }
 }
 
 export async function cacheHasCurrentAsset(cache, asset) {
