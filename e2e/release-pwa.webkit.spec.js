@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 
-test('release PWA installs at the Vercel root, owns only ManaEvo caches, and preserves state after SW takeover', async ({ page }) => {
+test('release PWA installs at the Vercel root, separates shell/Dex art ownership, and preserves state after SW takeover', async ({ page }) => {
   const response = await page.goto('/', { waitUntil: 'domcontentloaded' })
   expect(response?.ok()).toBeTruthy()
   await expect(page.locator('#root')).not.toBeEmpty()
@@ -26,24 +26,29 @@ test('release PWA installs at the Vercel root, owns only ManaEvo caches, and pre
 
   const cacheProof = await page.evaluate(async () => {
     const cacheNames = await caches.keys()
-    const owned = cacheNames.filter((name) => name.startsWith('manaevo-pwa-'))
-    const foreign = cacheNames.filter((name) => !name.startsWith('manaevo-pwa-'))
+    const shell = cacheNames.filter((name) => name.startsWith('manaevo-shell-'))
+    const art = cacheNames.filter((name) => name === 'manaevo-dex-art-v1')
+    const legacy = cacheNames.filter((name) => name.startsWith('manaevo-pwa-'))
+    const foreign = cacheNames.filter((name) => !name.startsWith('manaevo-shell-') && name !== 'manaevo-dex-art-v1' && !name.startsWith('manaevo-pwa-'))
     const paths = []
 
-    for (const name of owned) {
+    for (const name of shell) {
       const cache = await caches.open(name)
       for (const request of await cache.keys()) paths.push(new URL(request.url).pathname)
     }
 
     return {
-      owned,
+      shell,
+      art,
+      legacy,
       foreign,
       hasRoot: paths.includes('/'),
       hasEntryAsset: paths.some((pathname) => pathname.startsWith('/assets/'))
     }
   })
 
-  expect(cacheProof.owned.length).toBeGreaterThan(0)
+  expect(cacheProof.shell.length).toBe(1)
+  expect(cacheProof.legacy).toEqual([])
   expect(cacheProof.foreign).toEqual([])
   expect(cacheProof.hasRoot).toBeTruthy()
   expect(cacheProof.hasEntryAsset).toBeTruthy()

@@ -23,23 +23,33 @@ export function buildRevisionManifest(canonicalManifest, readAsset) {
   if (!canonicalManifest || typeof canonicalManifest !== 'object') throw new Error('invalid monster asset manifest')
   const assets = {}
   const formalByUrl = {}
+  let totalBytes = 0
+  const manifestRows = []
 
-  for (const [speciesId, entry] of Object.entries(canonicalManifest.assets || {})) {
+  for (const [speciesId, entry] of Object.entries(canonicalManifest.assets || {}).sort(([a], [b]) => a.localeCompare(b))) {
     const state = entry?.state || 'PLACEHOLDER'
     assets[speciesId] = { state }
     if (state !== 'FORMAL') continue
 
     const assetUrl = normalizedLocalAssetPath(entry.formalAsset)
     const bytes = readAsset(assetUrl)
+    const byteLength = Number(bytes.byteLength ?? bytes.length ?? 0)
     const revision = `sha256-${sha256(bytes)}`
-    assets[speciesId] = { state: 'FORMAL', url: assetUrl, revision }
+    assets[speciesId] = { state: 'FORMAL', url: assetUrl, revision, byteLength }
     formalByUrl[assetUrl] = revision
+    totalBytes += byteLength
+    manifestRows.push(`${speciesId}\t${assetUrl}\t${revision}\t${byteLength}`)
   }
 
+  const manifestRevision = `sha256-${sha256(manifestRows.join('\n'))}`
+
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     sourceSchemaVersion: canonicalManifest.schemaVersion ?? null,
     sourcePath: 'design/current/monster-asset-manifest.json',
+    manifestRevision,
+    formalCount: manifestRows.length,
+    totalBytes,
     assets,
     formalByUrl
   }
@@ -59,5 +69,5 @@ export function generateRevisionManifest({ root = defaultRoot } = {}) {
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const generated = generateRevisionManifest()
-  console.log(`Generated PWA monster revisions: ${Object.keys(generated.formalByUrl).length} formal assets`)
+  console.log(`Generated PWA monster revisions: ${generated.formalCount} formal assets / ${generated.totalBytes} bytes / ${generated.manifestRevision}`)
 }

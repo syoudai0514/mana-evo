@@ -38,11 +38,17 @@ test('GitHub Pages production workflow is retired and CI no longer injects the o
   assert.doesNotMatch(ci, /VITE_BASE_PATH:\s*\/mana-evo\//)
 })
 
-test('service worker prunes old monster bytes only after current FORMAL bytes are cached', () => {
+test('D-020 service worker commits current FORMAL bytes only after SHA verification and prunes only on control-plane refresh', () => {
   const sw = fs.readFileSync(path.join(root, 'public/sw.js'), 'utf8')
-  const put = sw.indexOf('await cache.put(cacheKey, response.clone())')
-  const prune = sw.indexOf('await pruneMonsterCache(cache, request, cacheKey)', put)
-  assert.ok(put >= 0, 'current formal response must be cached')
-  assert.ok(prune > put, 'old candidate/revision entries must only be pruned after current formal bytes are cached')
-  assert.match(sw, /return \(await previousRevisionResponse\(cache, request\)\)/)
+  const verify = sw.indexOf('const verified = await verifyResponseForRevision(networkResponse, revision)')
+  const put = sw.indexOf('await artCache.put(cacheKey, verified.response.clone())', verify)
+  const warmHit = sw.indexOf('if (cached) return cached')
+  const messageHandler = sw.indexOf("MANA_EVO_DEX_ART_REFRESH_MANIFEST")
+  const prune = sw.indexOf('await pruneDexArtCache(revisions)', messageHandler)
+
+  assert.ok(verify >= 0, 'current FORMAL response must be SHA verified')
+  assert.ok(put > verify, 'verified FORMAL bytes must be cached only after verification')
+  assert.ok(warmHit >= 0 && warmHit < verify, 'warm current revision should return before network verification')
+  assert.ok(messageHandler >= 0 && prune > messageHandler, 'obsolete art pruning must run from explicit manifest refresh control path')
+  assert.match(sw, /return \(await previousRevisionResponse\(artCache, request\)\) \|\| Response\.error\(\)/)
 })

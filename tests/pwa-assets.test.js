@@ -52,30 +52,40 @@ test('service worker precache only references existing public assets', () => {
     const relativePath = match[1]
     assert.ok(fs.existsSync(publicAsset(relativePath)), `service worker precache asset is missing: ${relativePath}`)
   }
-  assert.match(sw, /CACHE_NAME = `\$\{CACHE_PREFIX\}v10`/)
+  assert.match(sw, /const SHELL_CACHE_NAME = `\$\{SHELL_CACHE_PREFIX\}v11`/)
+  assert.match(sw, /const DEX_ART_CACHE_NAME = 'manaevo-dex-art-v1'/)
   assert.match(sw, /monster-asset-revisions\.json/)
   assert.match(sw, /icons\/apple-touch-icon\.png/)
 })
 
-test('service worker keeps scope/cache cleanup ManaEvo-only and update-safe', () => {
-  assert.match(sw, /const CACHE_PREFIX = 'manaevo-pwa-'/)
+test('service worker keeps shell/art ownership ManaEvo-only and update-safe', () => {
+  assert.match(sw, /const LEGACY_CACHE_PREFIX = 'manaevo-pwa-'/)
+  assert.match(sw, /const SHELL_CACHE_PREFIX = 'manaevo-shell-'/)
+  assert.match(sw, /const DEX_ART_CACHE_NAME = 'manaevo-dex-art-v1'/)
   assert.match(sw, /url\.pathname\.startsWith\(BASE_PATH\)/)
-  assert.match(sw, /key\.startsWith\(CACHE_PREFIX\)/)
+  assert.match(sw, /key\.startsWith\(SHELL_CACHE_PREFIX\)/)
+  assert.match(sw, /key\.startsWith\(LEGACY_CACHE_PREFIX\)/)
+  assert.match(sw, /DEX_ART_CACHE_NAME is deliberately not deleted/)
   assert.doesNotMatch(sw, /kids-quest/)
 })
 
-test('monster cache uses revision identity for FORMAL art and network-first for non-formal art', () => {
+test('monster cache uses SHA revision identity for FORMAL art and keeps non-FORMAL out of authoritative art cache', () => {
   assert.match(sw, /loadMonsterRevisions/)
   assert.match(sw, /revisions\?\.formalByUrl\?\.\[relativePath\]/)
   assert.match(sw, /__manaevo_rev/)
+  assert.match(sw, /verifyResponseForRevision/)
+  assert.match(sw, /await artCache\.put\(cacheKey, verified\.response\.clone\(\)\)/)
   assert.match(sw, /previousRevisionResponse/)
-  assert.match(sw, /Candidate assets may be replaced by a later FORMAL asset/)
+  assert.match(sw, /Non-FORMAL\/candidate assets remain network-first/)
   assert.doesNotMatch(sw, /relative\.startsWith\('monsters\/'\) \|\| relative\.startsWith\('icons\/'\)/)
 })
 
 test('generated monster revision manifest mirrors canonical states and revisions every FORMAL local asset', () => {
-  assert.equal(revisions.schemaVersion, 1)
+  assert.equal(revisions.schemaVersion, 2)
   assert.equal(revisions.sourceSchemaVersion, canonicalArt.schemaVersion)
+  assert.equal(revisions.formalCount, 238)
+  assert.ok(revisions.totalBytes > 0)
+  assert.match(revisions.manifestRevision, /^sha256-[a-f0-9]{64}$/)
   assert.deepEqual(Object.keys(revisions.assets).sort(), Object.keys(canonicalArt.assets).sort())
 
   for (const [speciesId, canonical] of Object.entries(canonicalArt.assets)) {
@@ -84,6 +94,7 @@ test('generated monster revision manifest mirrors canonical states and revisions
     if (canonical.state === 'FORMAL') {
       assert.equal(generated.url, canonical.formalAsset)
       assert.match(generated.revision, /^sha256-[a-f0-9]{64}$/)
+      assert.ok(generated.byteLength > 0, `${speciesId} byteLength missing`)
       assert.equal(revisions.formalByUrl[generated.url], generated.revision)
       assert.ok(fs.existsSync(publicAsset(generated.url.replace(/^\//, ''))), `${speciesId} formal asset missing`)
     }
