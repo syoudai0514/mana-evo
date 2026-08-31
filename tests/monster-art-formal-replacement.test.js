@@ -101,10 +101,19 @@ function familyReferenceMap(root, ids) {
   const descriptions = JSON.parse(fs.readFileSync(path.join(root, 'design/current/monsters/descriptions-001-999.json')))
   const target = descriptions.find((row) => row.speciesId === ids[0])
   const family = descriptions.filter((row) => String(row.familyNo) === String(target?.familyNo))
-  return Object.fromEntries(family.map((row) => {
+  const references = Object.fromEntries(family.map((row) => {
     const current = fs.readFileSync(path.join(root, 'public/monsters', `${row.speciesId}.webp`))
     return [row.speciesId, { expectedCurrentSha256: sha256(current) }]
   }))
+  // Include every explicit target even for the negative unrelated-family fixture,
+  // so the test reaches and proves the one-family guard rather than failing earlier
+  // on a deliberately incomplete reference map.
+  for (const id of ids) {
+    if (references[id]) continue
+    const currentPath = path.join(root, 'public/monsters', `${id}.webp`)
+    if (fs.existsSync(currentPath)) references[id] = { expectedCurrentSha256: sha256(fs.readFileSync(currentPath)) }
+  }
+  return references
 }
 
 function makeBundle(root, ids, {
