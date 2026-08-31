@@ -123,7 +123,7 @@ test('Parent download creates a verified 238-key pack that renders all 238 offli
 
   page.once('dialog', (dialog) => dialog.accept())
   await page.getByTestId('dex-art-pack-controls').getByRole('button', { name: /モンスター画像を全部保存|不足分を修復/ }).click()
-  await expect(page.getByTestId('dex-art-pack-controls').getByText(/238\/238/)).toBeVisible({ timeout: 120_000 })
+  await expect(page.getByTestId('dex-art-pack-controls').getByText('238/238', { exact: true })).toBeVisible({ timeout: 120_000 })
   await expect(page.getByTestId('dex-art-pack-controls').getByText(/保存済み/)).toBeVisible()
 
   const keyCount = await page.evaluate(async () => {
