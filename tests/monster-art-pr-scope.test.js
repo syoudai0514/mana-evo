@@ -36,7 +36,7 @@ function initRepo() {
   fs.mkdirSync(path.join(root, 'public/monsters'), { recursive: true })
   fs.writeFileSync(path.join(root, 'public/monsters/m001.webp'), oldBytes)
   fs.writeFileSync(path.join(root, 'public/monsters/m002.webp'), fakeWebP(0x32))
-  const m002Sha = sha256(path.join(root, 'public/monsters/m002.webp'))
+  const m002Sha = sha256(fs.readFileSync(path.join(root, 'public/monsters/m002.webp')))
   writeJson(root, 'design/current/monster-asset-manifest.json', {
     counts: { FORMAL: 2, CANDIDATE: 0, PLACEHOLDER: 0 },
     assets: {
