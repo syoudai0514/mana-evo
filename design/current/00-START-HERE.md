@@ -44,7 +44,10 @@ Operational/release documents for Monster Art:
 
 - `../../docs/monster-production-status.md` — current operational status entry;
 - `../../docs/MONSTER-ART-FINAL-HANDOFF-20260831.md` — final closeout handoff and recovery context;
-- `../../docs/MONSTER-ART-MAINTENANCE-RUNBOOK.md` — future FORMAL replacement procedure;
+- `../../docs/MONSTER-ART-MAINTENANCE-RUNBOOK.md` — maintenance entry/runbook;
+- `../../docs/MONSTER-ART-FAST-LANE.md` — normal 1-species or same-family 2–3 species FORMAL replacement flow;
+- `../../docs/MONSTER-ROSTER-EXPANSION-LANE.md` — future new-species / roster-growth flow; not a license to change CURRENT roster without an approved expansion;
+- `../../docs/REPOSITORY-RELEASE-GUARD.md` — PR/CI/main release safety policy;
 - `../../docs/MONSTER-ART-TIPS-AND-PITFALLS.md` — practical failure patterns;
 - `../rebuild/asset-production/PHASE-4-STYLE-LOCK.md` — detailed art visual/technical lock;
 - `../rebuild/asset-production/PHASE-4-GITHUB-BINARY-HANDOFF.md` — exact binary transport/handoff.
@@ -53,7 +56,7 @@ Those operational documents explain **how to maintain/release art**. They do not
 
 ### Monster visual-description shards
 
-Together these three files contain the active visual-description set for **exactly `m001` through `m238`**:
+Together these three files contain the current active visual-description set for **exactly `m001` through `m238`**:
 
 - [`monsters/descriptions-001-080.json`](./monsters/descriptions-001-080.json)
 - [`monsters/descriptions-081-160.json`](./monsters/descriptions-081-160.json)
@@ -85,6 +88,8 @@ Active-scope guards:
 - `m236` CURRENT official name is **`ホシラディア`**;
 - baseline-derived lore/description data must not be invented or paraphrased into new canonical facts;
 - `m235` is F080 `ユグドラシア`, concept `世界樹`, stage 1 of 1; the world tree itself is the species identity unless a higher-authority approved decision changes it.
+
+If a future approved roster expansion adds species beyond the current three description shards, the expansion must extend the CURRENT description/master set deliberately. Do not treat the present three-shard filename list as a permanent product cap; do not extend it during ordinary art replacement.
 
 ## 4. Evidence and source categories
 
@@ -136,8 +141,9 @@ For Monster Art maintenance specifically:
 
 1. read W-109 and fresh CURRENT metadata/manifest;
 2. record current per-ID state/SHA before looking for a convenient old reference;
-3. follow the maintenance runbook through separate `VISUAL QA → ART READY → REGISTERED/REPLACED → FORMAL → MAIN → DEPLOYED → LIVE VERIFIED` gates;
-4. never use an old ZIP/chat SHA as CURRENT without refetching;
-5. never report a generated image, merged PR or successful deploy as the same completion state.
+3. choose the correct lane: existing FORMAL replacement vs future roster expansion;
+4. for existing FORMAL art, follow separate `VISUAL QA → ART READY → REPLACED → FORMAL → MAIN → DEPLOYED → LIVE VERIFIED` gates;
+5. never use an old ZIP/chat SHA as CURRENT without refetching;
+6. never report a generated image, merged PR or successful deploy as the same completion state.
 
 W-114 performed canonical normalization only; this later navigation update adds no independent product rule beyond approved CURRENT/closeout evidence.
