@@ -118,7 +118,7 @@ test('Parent download creates a verified 238-key pack that renders all 238 offli
   await page.getByRole('button', { name: /おうちのひと/ }).click()
   await page.locator('.parent-pin-input').fill('1234')
   await page.getByRole('button', { name: '保護者メニューを ひらく' }).click()
-  await expect(page.getByText('保護者メニュー')).toBeVisible()
+  await expect(page.getByText('👨‍👩‍👧 保護者メニュー', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: /画像を端末保存/ }).click()
 
   page.once('dialog', (dialog) => dialog.accept())
