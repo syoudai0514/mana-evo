@@ -1,267 +1,245 @@
 # ManaEvo Monster Art — FAST LANE
 
-Status: **CURRENT OPERATIONAL DESIGN**  
+Status: **IMPLEMENTED FOR REVIEW / NOT OPERATIONALLY ENABLED UNTIL MAIN RULESET IS APPLIED**  
 Date: 2026-08-31
 
-## 1. Purpose
+## Purpose
 
-The 238-species mass-production / final-closeout workflow is finished. It must **not** be reused as the normal procedure for small visual changes such as:
+Do not repeat the 238-species final-closeout process for ordinary visual iteration.
 
-- `m042をもう少し可愛くしたい`
-- `m162だけ最終進化らしくもっとかっこよくしたい`
-- `この3段進化を家族感を残したまま全部描き直したい`
-
-The normal user experience is:
+Normal target experience:
 
 ```text
-SHORT REQUEST
-  ↓
-CURRENT / FAMILY AUTO-READ
-  ↓
-2〜3 IMAGE OPTIONS（or 2〜3 FAMILY SETS）
-  ↓
-USER SELECTS
-  ↓
-ART READY ZIP / FOLDER
-  ↓
-AUTO BINARY + VISUAL QA
-  ↓
-TRANSACTIONAL FORMAL REPLACEMENT
-  ↓
-SCOPED PR + CI
-  ↓
-MAIN → VERCEL → LIVE VERIFY
+User: m162を最終進化らしくもっとかっこよく
+→ CURRENT + full family auto-read
+→ A / B / C
+User: B
+→ selected art finalized to 512 transparent WebP
+→ ART READY ZIP
+→ dry-run replacement validation
+→ transactional FORMAL replacement
+→ exact-scope PR CI
+→ main
+→ Vercel
+→ live SHA + visual verify
 ```
 
-The user should normally make only product/art decisions: **what to change** and **which option to use**. ZIP transfer between ChatGPT sessions/workers is welcome when convenient. The user should not have to calculate SHA, edit manifests, update provenance, run promotion commands, or assemble PR bookkeeping by hand.
+The user makes art/product decisions. ZIP transport is allowed, but SHA bookkeeping, history, manifest/revision edits, PR scope checks and release verification are system/worker work.
 
-## 2. Why the final closeout took hours
+## 1. Supported replacement scope
 
-The 2026-08-31 closeout combined several one-time problems: first global 238-species audit, 40 unfinished FORMAL states, stale/mixed handoff ZIPs, wrong dimensions, background plates, detached artifacts, m235 identity recovery, registry reconciliation, production deployment and live verification.
+FAST LANE is for existing FORMAL art only:
 
-Those are **migration/closeout costs**, not the normal cost of changing one picture. The stable baseline is now FORMAL 238 / CANDIDATE 0 / PLACEHOLDER 0, so ordinary visual maintenance starts from known approved bytes and history.
+- one species; or
+- two to three species from one CURRENT evolution family.
 
-## 3. Two FAST LANE shapes
+For a one-species change, all CURRENT family members are still recorded as visual references. This prevents a ZIP generated against old family art from being applied after another family member changed.
 
-### A. Single species
+Unknown/new IDs use `docs/MONSTER-ROSTER-EXPANSION-LANE.md` instead.
 
-Use when one existing FORMAL image changes. Examples: cuteness, coolness, face, pose, silhouette, decoration amount, final-stage presence.
+## 2. Bundle v2 is bound to the CURRENT state
+
+Schema: `ManaEvo.formal-art-replacement.v2`.
+
+Every bundle must contain:
+
+- unique `transactionId`;
+- `baseHeadSha` — Git HEAD used when the option was generated/selected;
+- `intent: REPLACE`;
+- exact replacement `scope`;
+- `familyReferences` with `expectedCurrentSha256` for every CURRENT member of the target family;
+- for every target: `expectedCurrentSha256`, selected new `sha256`, bytes, filename and `visualQa=PASS`;
+- explicit selection approval evidence.
 
 Example:
 
-```text
-User: m162、最終形だけもっとかっこよく
-Worker: CURRENT m160/m161/m162を自動参照 → A/B/C
-User: B
-Worker: BだけをART READY化してreleaseへ
-```
-
-### B. One evolution family, up to 3 species
-
-Use when a 2-stage/3-stage family is intentionally changed as one visual set. All targets must belong to the same CURRENT family.
-
-For a multi-species bundle, each image must pass individual visual QA **and** the complete set must pass `familyVisualQa=PASS` for:
-
-- recognizable family identity;
-- natural stage progression;
-- no accidental species swap;
-- final stage visibly more developed when intended;
-- one species per file.
-
-A 3-species set is treated as **one transaction**. It is not three unrelated best-effort updates. If a post-write gate fails, the tool restores all touched binaries/manifest/provenance/revision files to their pre-run state.
-
-Unrelated species must use separate bundles/PRs. This makes scope errors visible.
-
-## 4. FAST LANE eligibility
-
-Use FAST LANE only when:
-
-- scope is 1 existing FORMAL species, or 2–3 members of one CURRENT evolution family;
-- the requested change is visual/art direction;
-- species IDs, family ownership, evolution/game rules and canonical identity are unchanged;
-- CURRENT metadata determines identity unambiguously.
-
-Do not use FAST LANE for new species, roster expansion, family/master redesign, unresolved identity changes, or roster-wide restyling. Those use the separate Roster Expansion / design-change lane.
-
-## 5. ChatGPT-first workflow
-
-A short request is enough. The worker must fresh-read the current `main` HEAD, target FORMAL SHA, species/family metadata, current art, adjacent family art, provenance/history and style lock. Do not ask the user to repeat information already in CURRENT.
-
-Before repository mutation, generate 2–3 distinct but compatible options. For a family rewrite, present 2–3 **sets**, not a mixture of independently selected stages unless the user explicitly wants stage-by-stage selection.
-
-The user's selection is the visual approval event. Unselected generations do not enter GitHub.
-
-## 6. ART READY handoff
-
-ZIP is allowed and useful for cross-chat/cross-worker transfer. It is only a transport envelope; the receiver must verify the actual contents.
-
-Normal bundle after extraction:
-
-```text
-manifest.json
-mNNN.webp
-```
-
-or for a 3-stage family:
-
-```text
-manifest.json
-mNNN.webp
-mNNN.webp
-mNNN.webp
-```
-
-`manifest.json` schema:
-
 ```json
 {
-  "schema": "ManaEvo.formal-art-replacement.v1",
-  "scope": ["m160", "m161", "m162"],
-  "familyVisualQa": "PASS",
+  "schema": "ManaEvo.formal-art-replacement.v2",
+  "transactionId": "art-m162-20260831-001",
+  "baseHeadSha": "<40-char git sha>",
+  "intent": "REPLACE",
+  "scope": ["m162"],
+  "familyReferences": {
+    "m160": { "expectedCurrentSha256": "..." },
+    "m161": { "expectedCurrentSha256": "..." },
+    "m162": { "expectedCurrentSha256": "..." }
+  },
+  "species": {
+    "m162": {
+      "file": "m162.webp",
+      "expectedCurrentSha256": "<old sha>",
+      "sha256": "<selected new sha>",
+      "bytes": 123456,
+      "visualQa": "PASS"
+    }
+  },
   "approval": {
     "approved": true,
     "approvedBy": "repository owner via ChatGPT selection",
     "approvedAt": "2026-08-31T00:00:00Z",
-    "source": "selected family option B"
-  },
-  "species": {
-    "m160": {
-      "file": "m160.webp",
-      "sha256": "...",
-      "bytes": 123456,
-      "visualQa": "PASS"
-    }
+    "source": "selected option B"
   }
 }
 ```
 
-The manifest is expected metadata, not proof. The consumer recomputes bytes/SHA and decodes the WebP again.
+If HEAD, target SHA, or any family-reference SHA changed, stop with `STALE_BUNDLE`. Never silently rebase an old image choice onto newer art.
 
-## 7. Automated FORMAL replacement tool
+## 3. No-op and idempotency semantics
 
-Canonical command after ZIP extraction:
+`ALREADY_MATCHES` is no longer accepted merely because bytes happen to equal CURRENT.
 
-```bash
-npm install
-npx playwright install webkit
-npm run replace:monster-art -- --bundle-dir /path/to/bundle
+Rules:
+
+```text
+current == expectedCurrent && new == expectedCurrent
+→ FAIL: replacement unexpectedly byte-identical
+
+current == new AND same transactionId exists in provenance
+→ ALREADY_APPLIED
+
+current == new AND transactionId not recorded
+→ FAIL: ambiguous no-op
+
+current == expectedCurrent AND new != current
+→ CHANGE
+
+otherwise
+→ STALE_BUNDLE
 ```
 
-The first run is a **dry-run**. It performs no repository mutation.
+This distinguishes a missing/incorrect selected image from a safe retry of the exact same transaction.
 
-After the exact dry-run scope is reviewed:
+## 4. Actual image QA
 
-```bash
-npm run replace:monster-art -- --bundle-dir /path/to/bundle --execute
-```
+The tool rechecks the actual incoming WebP; manifest claims are not proof.
 
-`scripts/monster-art/formal-replacement.mjs` performs these gates before writing:
+Hard gates:
 
-1. bundle scope is exactly 1–3 species;
-2. actual `.webp` filenames exactly match scope — no extra image is silently accepted;
-3. each target already exists and is FORMAL;
-4. multi-target scope belongs to one CURRENT family;
-5. current FORMAL files still match their manifest SHA;
-6. current revision manifest matches current FORMAL SHA before replacement;
-7. incoming RIFF/WEBP bytes and SHA match bundle declarations;
-8. WebKit decodes the **actual incoming binary**;
-9. decoded image is exact 512×512;
-10. actual transparency exists;
-11. visible pixels exist and do not touch canvas edges;
-12. provenance exists before any replacement write.
+- RIFF/WEBP;
+- under current size limit;
+- decoded by Playwright WebKit;
+- exactly 512×512;
+- actual transparency;
+- visible pixels exist;
+- no visible edge contact;
+- minimum transparent margin >= 4 px;
+- declared bytes and SHA match actual bytes.
 
-Semantic checks such as “cute enough”, species identity, scenery/collage, extra creature and family continuity remain visual QA decisions and therefore require `visualQa=PASS`, plus `familyVisualQa=PASS` for multi-species bundles.
+It also reports warnings for:
 
-## 8. What execute changes
+- margin below recommended 12 px;
+- solid alpha in the outer 4 px band;
+- rectangular-background suspicion based on high occupancy on all four sides of the visible bounding box.
 
-For each actually changed target only:
+Semantic identity, cute/cool direction, extra-creature/background interpretation and family continuity remain explicit visual QA; heuristics do not replace visual review.
 
-- preserve previous FORMAL binary in history if not already archived;
-- replace `public/monsters/mNNN.webp`;
-- append old → new provenance with explicit FORMAL-replacement evidence;
-- keep state FORMAL and update the current `formalSha256` / approval evidence;
-- regenerate `public/monster-asset-revisions.json`;
-- verify the complete FORMAL repository remains internally consistent.
+A real WebKit integration test with transparent, fully opaque and edge-contact WebP fixtures runs in CI.
 
-Byte-identical input is `ALREADY_MATCHES`: no duplicate archive, provenance event or revision churn is created.
+## 5. Provenance and history
 
-The tool compares the before/after FORMAL binary map and fails if the actually changed species are not exactly the planned changed species.
+Before replacement:
 
-## 9. Transaction / rollback behavior
+- target CURRENT binary must match manifest FORMAL SHA;
+- revision manifest must match CURRENT FORMAL SHA;
+- latest provenance asset SHA must match CURRENT FORMAL SHA;
+- an existing history file named by old SHA must itself hash to that old SHA, otherwise FAIL.
 
-For a family bundle, all files that may be touched are snapshotted before mutation. If revision generation or a post-write consistency gate fails, the tool restores:
+Replacement provenance records:
 
-- target WebPs;
-- target provenance;
-- newly created history artifacts;
-- canonical manifest;
-- revision manifest.
+- transactionId;
+- baseHeadSha;
+- old/new SHA;
+- archive path;
+- previous approval evidence;
+- new approval evidence;
+- `formalReplacement: true`.
 
-This protects against ordinary process failures. A machine/process hard crash can never be made perfectly transactional with plain filesystem writes, so normal work still happens on a branch/PR and is never treated as released until CI/main/live verification completes.
+## 6. 2–3 species transaction
 
-## 10. PR omission and regression guard
+A family set is one transaction, not three best-effort replacements.
 
-Every release has an explicit expected species scope. Missing expected change is FAIL. Unexpected species change is FAIL.
+Touched binaries, provenance, history, manifest, revision and change-plan files are snapshotted. A handled post-write failure restores all snapshotted files.
 
-Before merge verify:
+A process/OS hard crash cannot be made filesystem-atomic by this script; PR scope CI and repository history remain the outer safety layer.
 
-- intended WebP(s) are actually in the PR;
-- intended manifest/provenance/revision changes exist;
-- no unrelated species binary/state changed;
-- CURRENT roster/counts remain valid;
-- generated runtime/revisions are fresh;
-- current PR CI/build passes against the current `main` merge result, not an old green snapshot.
+## 7. Machine-readable PR change plan
 
-After merge, fresh-read `main`, verify the intended content survived the merge, then verify Vercel commit/revision/live image.
+A successful execute writes:
 
-## 11. Production completion and rollback
+`design/rebuild/asset-production/change-plans/<transactionId>.json`
 
-Completion remains:
+It records:
+
+- transactionId;
+- baseHeadSha;
+- expectedSpecies;
+- old/expected/new SHA per species;
+- family reference SHAs;
+- exact allowed changed files.
+
+This is not optional release documentation. It is input to PR CI.
+
+## 8. PR exact-scope CI
+
+`npm run verify:monster-art-scope` compares the PR merge-base to HEAD.
+
+For an art transaction it requires:
+
+- exactly one changed transaction plan;
+- plan `baseHeadSha` equals PR merge-base;
+- changed `public/monsters/*.webp` IDs exactly equal `expectedSpecies`;
+- changed manifest asset entries exactly equal `expectedSpecies`;
+- changed provenance IDs exactly equal `expectedSpecies`;
+- changed revision entries exactly equal `expectedSpecies`;
+- history additions only for expected species and named by planned old SHA;
+- current binary/manifest/revision SHA equals planned new SHA;
+- base binary/manifest/revision SHA equals planned old SHA;
+- no changed file outside `allowedChangedFiles`;
+- missing expected change = FAIL;
+- unexpected change = FAIL.
+
+If release-state art files change without any transaction plan, CI fails.
+
+This closes the gap where another monster change was already present on the branch before the replacement script ran, or was mixed in after execution.
+
+## 9. Release completion
 
 ```text
 SELECTED
-→ FINAL WEBP QA PASS
-→ FORMAL REPLACEMENT
-→ PR CI PASS
+→ BUNDLE V2
+→ DRY RUN
+→ EXECUTE + CHANGE PLAN
+→ PR EXACT-SCOPE CI
+→ TEST/BUILD/WEBKIT E2E
 → MAIN
 → PRODUCTION DEPLOYED
 → LIVE REVISION MATCH
 → LIVE VISUAL VERIFY
 ```
 
-If the image looks wrong after production, restore the immediately previous FORMAL bytes from history on a new scoped branch and run the same PR/CI/main/deploy/live-verify path. Do not leave Vercel permanently on a commit that differs from GitHub `main`.
+A generated image, a successful local replacement, a merged PR and a live deployment are different states.
 
-## 12. Expected user experience
+## 10. Main Ruleset is an operational prerequisite
 
-Single image:
+FAST LANE must not be called **operationally enabled** until GitHub `main` has a real Ruleset/branch protection with:
 
-```text
-User: m213、もう少し可愛くしたい
-Assistant: [A] [B] [C]
-User: Bがいい
-Assistant/worker: ART READY ZIP → dry-run → execute → PR → CI → deploy → live verify
-Assistant: m213、本番差し替え完了。unexpected species change 0。
-```
+- Pull Request required;
+- required status check: `test-and-build`;
+- required approving reviews: 0;
+- force-push disabled;
+- branch deletion disabled.
 
-Family set:
+This is intentionally zero extra approval clicks for one-person development.
 
-```text
-User: この3段進化、全部もう少し統一感を出したい
-Assistant: [Family A] [Family B] [Family C]
-User: Family B
-Assistant/worker: 3体bundleを1 transactionで処理
-Assistant: 3/3本番差し替え完了。family QA PASS / unexpected species change 0。
-```
+The connected GitHub tool used for PR #133 can read Rulesets but cannot create/update them, so the repository setting cannot be truthfully applied from this tool session. Until that setting exists, the code may be merged after review, but production FAST LANE use remains **NOT ENABLED**.
 
-## 13. Principle
+## 11. Roster expansion is separate
 
-**Make the common case easy and the dangerous case impossible to do silently.**
+Existing FORMAL replacement never creates new IDs. Future additions beyond the current 238 use the separate Roster Expansion Lane, with `m239` remaining reserved unless explicitly re-decided.
 
-The user chooses art. The system handles bookkeeping, SHA/history/revision and release gates.
+Current planner default for a new three-stage family is `m240/m241/m242`, F084. Actual >238 runtime support is intentionally deferred to a Roster Capacity PR followed by a New Family Content PR.
 
-Related:
+## Principle
 
-- `docs/MONSTER-ART-MAINTENANCE-RUNBOOK.md`
-- `docs/MONSTER-ROSTER-EXPANSION-LANE.md`
-- `docs/REPOSITORY-RELEASE-GUARD.md`
-- `design/rebuild/asset-production/PHASE-4-STYLE-LOCK.md`
+**Make the common art decision easy, and make stale/partial/unscoped release states fail closed.**
