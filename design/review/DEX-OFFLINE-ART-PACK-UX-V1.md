@@ -637,3 +637,18 @@ If any blocker remains, verdict:
 If no blocker remains:
 
 `DESIGN PASS — PROMOTE DEX OFFLINE ART PACK + DETAIL UX V1`
+
+---
+
+# 15. Implementation-readiness gate after review
+
+Even after DESIGN PASS, implementation must not be merged until all of the following are true in the implementation PR:
+
+- CURRENT UI/PWA/Acceptance documents and Decision Log are synchronized first/in the same product change set;
+- owner-facing `USER-GUIDE.md` is updated and shown before main merge;
+- existing `public/sw.js` ownership is refactored rather than bypassed with a second screen cache;
+- new art-cache schema starts clean and does not import unverified legacy entries;
+- every writer of a current revision key uses one shared SHA-verified commit path;
+- the exhaustive AC-DEX tests above pass on the same implementation head;
+- WebKit evidence includes request-count/hot-path assertions, not only visual success;
+- no implementation shortcut may weaken the `238/238` truth rule, History restoration rule, or bounded-memory/request-budget rule.
