@@ -658,3 +658,167 @@ For an implementation PR claiming canonical completion of these domains, the min
 7. no acceptance test whose only justification is CSS import order/class/token existence
 
 The final review must report the commit SHA and which AC IDs are covered by which test file/scenario. CI PASS alone is not proof of specification correctness; coverage must trace back to this behavioral contract.
+
+---
+
+# 19. D-021 iPad / Tablet responsive acceptance
+
+This section is later cross-cutting authority under **D-021**. It adds tablet/rotation acceptance without replacing the existing 375〜430px mobile gate. CURRENT D-020 and `design/current/10A-DEX-OFFLINE-ART-PACK-ACCEPTANCE.md` remain the detailed Dex authority; AC-RSP is an additional responsive gate and must not relax or duplicate-away those semantics.
+
+## AC-RSP-001 — Supported responsive range
+
+Representative canonical fixtures cover:
+
+- mobile baseline: existing `375 / 390 / 430` portrait coverage;
+- Compact-boundary smoke: approximately `540–560px` width;
+- tablet portrait: approximately `820x1180`;
+- tablet landscape: approximately `1180x820`;
+- reduced tablet/multi-window: approximately `600px` width;
+- low-height interactive smoke: approximately `820x600` or an equivalent deterministic short-height fixture.
+
+Exact device-model matching is not canonical. Current available layout viewport is the authority.
+
+## AC-RSP-002 — Mobile baseline does not regress
+
+Tablet support must preserve the existing 375〜430px iPhone portrait child contract, safe-area behavior, first decision, touch targets and screen ownership.
+
+## AC-RSP-003 — Critical geometry is checked against the relevant bounded/clipping ancestor
+
+Document/body `scrollWidth` alone is insufficient.
+
+For required interactive surfaces, automated geometry must verify that required visible descendants remain inside the intended visible bounds of their relevant bounded/clipping ancestor unless overflow is an explicitly approved interaction.
+
+Minimum surfaces:
+
+- question/passage;
+- choice grid;
+- interaction wrap/keypad;
+- fixed/centered learning feedback where it can cover decisions;
+- Battle commands;
+- Capture decision/result;
+- Evolution continue CTA;
+- Dex grid/detail/search controls;
+- Adventure search when active;
+- Parent PIN/forms.
+
+`overflow-x:hidden/clip` does not convert required clipped content into PASS.
+
+## AC-RSP-004 — Layout Surface mapping is behaviorally observable
+
+Tests must cover representative Compact, Workspace and Contextual-interactive states without treating CSS class names as product authority.
+
+- Compact remains centered/readable instead of expanding without limit.
+- A Workspace state on representative tablet width must **not remain globally constrained by the Compact ~520px ceiling merely because it shares the application shell**. Its owning outer surface must be capable of exceeding the Compact ceiling while inner content may intentionally remain narrower.
+- A Contextual-interactive state likewise must not inherit the Compact ceiling merely because it renders inside a top-level owner.
+- Contextual primary decisions remain reachable/coherent in landscape and low-height.
+
+The gate does not require an exact measured width of `760px`; it requires that the Compact ceiling does not leak into Workspace/Contextual surfaces.
+
+## AC-RSP-005 — Learning rotation preserves transaction and active input
+
+Start a deterministic learning question in tablet portrait, create meaningful in-progress state, resize/rotate to landscape and verify:
+
+- same question identity/context;
+- same unsubmitted selection/input where applicable;
+- same attempt/progress semantics;
+- active interaction owner/substate is not silently replaced/reset;
+- no duplicate submit/reward;
+- primary action remains reachable.
+
+## AC-RSP-006 — Battle/Capture rotation preserves transaction and substate
+
+Start a deterministic active Battle and resize/rotate while active. Verify:
+
+- same Battle identity;
+- no duplicate ticket reserve/turn/settlement;
+- an already-open Capture/forced-switch or equivalent contextual subflow stays semantically active rather than silently closing/restarting;
+- unsubmitted Capture selection remains semantically preserved where applicable;
+- exact animation frame may differ, but no throw/result/settlement is replayed or duplicated and the flow does not return to a semantically different Battle state.
+
+## AC-RSP-007 — Evolution acknowledgement survives rotation
+
+While a deterministic Evolution reward/reveal acknowledgement is visible, resize/rotate and verify:
+
+- same `from → to` evolution/reward context;
+- acknowledgement/reveal is not silently dismissed;
+- `つづける！` or equivalent completion action remains reachable;
+- evolution/domain mutation and rewards are not executed/settled again;
+- exact animation frame need not be identical if the same semantic acknowledgement remains continuous.
+
+If Monster-origin and Battle-origin evolution use materially different responsive owner structures, implementation smoke should cover both entry paths.
+
+## AC-RSP-008 — Dex rotation is cumulative with D-020
+
+Resize/rotation continuity must preserve the CURRENT D-020 browse/history contract. D-021 does **not** replace or weaken:
+
+- area;
+- type;
+- search;
+- filter/tools state;
+- ordered result;
+- selected species;
+- anchor species;
+- viewport-offset semantics;
+- explicit browser-history provenance;
+- Grid→first detail `pushState`;
+- detail previous/next `replaceState`;
+- shared `restoreDexContext()` semantics;
+- same-session remount recovery and orphan-detail prevention.
+
+Existing D-020/10A acceptance may be reused as the base; AC-RSP adds the resize/rotation-specific delta rather than creating a weaker parallel Dex contract.
+
+## AC-RSP-009 — Semantic position, not exact pre-rotation scroll pixels
+
+Outside a stricter domain-specific contract such as D-020 Dex restoration, reflow may change physical coordinates. Assert the same semantic item/question/detail/anchor and usable route to the current primary action rather than the identical numeric pre-rotation `scrollY`.
+
+## AC-RSP-010 — Low-height / keyboard / safe-area operability
+
+In representative landscape/low-height conditions:
+
+- the active primary CTA/command can be reached;
+- fixed/sticky/feedback/overlay elements do not permanently cover it;
+- required modal/sheet content remains operable;
+- software-keyboard-sensitive Parent PIN/forms and Dex/Adventure search remain operable;
+- supported iPhone/iPad safe-area regions do not hide required back/home/answer/command/continue controls.
+
+## AC-RSP-011 — Actual Safari and standalone are separate manual release environments
+
+Before production release of the orientation change, perform actual-device smoke on the declared supported generally available iPadOS release target(s) for both:
+
+1. Safari browser presentation;
+2. installed Home Screen Web App / standalone presentation.
+
+Minimum smoke:
+
+- portrait launch;
+- landscape rotation;
+- Learning rotation;
+- Battle/Capture rotation;
+- Evolution acknowledgement rotation;
+- Parent + keyboard;
+- Dex/Adventure search + keyboard where applicable;
+- representative reduced/multi-window behavior where supported.
+
+Playwright WebKit viewport resize is necessary automated evidence but does not replace actual iPadOS standalone-shell verification.
+
+## AC-RSP-012 — Existing installed PWA upgrade is a release gate
+
+Verify an already-installed ManaEvo Home Screen Web App upgrading from the prior portrait-preference version.
+
+**PASS:** through the supported normal update lifecycle, the existing installed app reaches the target behavior where ManaEvo no longer imposes the prior portrait orientation preference and can use the supported portrait/landscape presentation contract.
+
+Fresh install/reinstall may be diagnostic comparison evidence, but does **not** by itself make this gate pass.
+
+If a demonstrated platform limitation prevents target behavior, production release remains **BLOCKED** until a separately reviewed compatibility/remediation policy defines affected clients, acceptable behavior/user action, remediation/communication and a release exit criterion. “Observed/diagnosed” alone is not PASS.
+
+## AC-RSP-013 — Orientation unlock sequencing
+
+The manifest portrait restriction must not be removed/released merely because D-021 is approved.
+
+Before an orientation-unlocked implementation candidate proceeds to actual-device release verification, AC-RSP-001 through AC-RSP-010 must pass.
+
+AC-RSP-011 and AC-RSP-012 are mandatory production-release gates after the orientation change can be exercised on actual device/installed client.
+
+## AC-RSP-014 — Visual regression is supplemental
+
+Representative screenshots may supplement the gate, but do not replace geometry/state assertions. Canonical success is un-clipped usable behavior and transaction/interaction continuity, not pixel-identical rendering across viewport classes.

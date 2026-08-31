@@ -1063,3 +1063,206 @@ W-106 canonical自体はgame ruleを変更しない。
 ## BLOCKED DECISION
 
 UI実装時にgame-rule詳細が必要な場合は、該当domain canonical（Learning / Battle / Capture / Evolution / World / Platform）を参照し、未確定ならそこでBLOCKED扱いにする。D-017はpresentation/navigation/legibilityの明示決定であり、捕獲確率・ticket・進化等の未確定game ruleを解消しない。
+
+---
+
+# 16. D-021 iPad / Tablet supported presentation contract
+
+This section is later cross-cutting authority under **D-021**. It supersedes only the interpretation that 375〜430px iPhone portrait is the exclusive supported presentation. That range remains the required mobile baseline. CURRENT D-020 and `design/current/10-DEX-OFFLINE-ART-PACK-UX.md` / `10A-DEX-OFFLINE-ART-PACK-ACCEPTANCE.md` remain detailed Dex authority and are not weakened by D-021.
+
+## 16.1 Supported presentation
+
+ManaEvo supports responsive presentation from the existing 375px-class mobile baseline through iPad-class full-screen and reduced multi-window viewports, in portrait and landscape where the operating environment permits rotation.
+
+Device model, OS family and User-Agent are not layout authority. The current **available layout viewport** is authority.
+
+Do not implement tablet support through iPad UA sniffing or model-specific media rules whose semantic condition is a named device.
+
+## 16.2 Three independent product axes
+
+These axes are independent and must not be inferred from each other.
+
+| Axis | Defines | Examples |
+|---|---|---|
+| Navigation ownership | who owns state/transition | TOP LEVEL / FOCUSED / CONTEXTUAL |
+| Layout Surface | how available viewport may be used | Compact / Workspace / Contextual interactive |
+| Runtime Continuity | what survives presentation changes | question/input / Battle / Capture / Evolution / Dex / Parent transaction + meaningful active interaction state |
+
+Navigation ownership does **not** imply Layout Surface. `FOCUSED_APP_VIEWS`, `.app-shell--focus`, route shape or CSS class membership must not be the authoritative list of tablet-width surfaces.
+
+## 16.3 Layout Surface Contract
+
+### Compact
+
+Target outer ceiling: approximately **520px**.
+
+Default mapping:
+
+- Home
+- Study hub
+- Adventure normal/browse
+- HowTo
+- Monster team/basic management
+
+Compact is a width ceiling, not an orientation lock.
+
+### Workspace
+
+Target outer ceiling: approximately **760px**.
+
+Default mapping:
+
+- Study Activity
+- Free
+- Review
+- Trial
+- Dictionary
+- Parent
+- Dex grid/detail browsing
+
+A Workspace state must not remain globally constrained by the Compact ~520px ceiling merely because it shares the application shell. Its owning outer surface must be capable of exceeding the Compact ceiling on a representative tablet viewport, while individual reading/decision regions may intentionally remain narrower.
+
+### Contextual interactive
+
+Target outer ceiling: approximately **760px**; the primary decision region is normally approximately **620–680px** unless the interaction requires otherwise.
+
+Default mapping:
+
+- Battle
+- Capture
+- Evolution
+
+A Contextual-interactive state must not inherit the Compact ceiling merely because it is rendered inside a top-level owner. These surfaces optimize for decision clarity and low-height operability, not maximum horizontal fill.
+
+The target ceilings are layout intent, not exact measured-width requirements.
+
+## 16.4 Nested width ownership
+
+For an ordinary nested layout component inside a bounded parent, required content must not exceed the containing layout surface unless overflow is an explicitly designed interaction such as an intentional carousel or viewport-owned overlay.
+
+Preferred behavior is parent-relative, for example:
+
+```css
+width: 100%;
+max-width: <component-ceiling>;
+```
+
+or an equivalent layout rule.
+
+`vw` is **not globally prohibited**. It may remain appropriate for viewport-relative art, typography, decoration or truly viewport-owned overlays. It must not be the independent width authority for a normal bounded nested choice grid, form, explanation card, keypad or interaction region when its containing surface is narrower.
+
+Global `overflow-x:hidden/clip` is not proof of valid responsive geometry and must not be added merely to hide an oversized required interactive descendant.
+
+## 16.5 Low-height, dynamic viewport and safe area
+
+Tablet support includes landscape and reduced-height conditions caused by browser chrome, standalone presentation, software keyboard and reduced multi-window configurations.
+
+The active primary action must remain reachable. Fixed/sticky/feedback/overlay ownership must not permanently cover another required primary action.
+
+At minimum preserve operability for:
+
+- global/top headers and bottom navigation;
+- focused Study progress/back controls;
+- choice grids and keypads;
+- fixed/centered learning feedback;
+- Battle arena + command deck;
+- Capture selection/throw/result;
+- Evolution continue action;
+- Dex search/filter/detail controls;
+- Adventure search where active;
+- Parent PIN/account/forms with software keyboard.
+
+New implementation should use dynamic-viewport-safe behavior rather than assuming a stable visual `100vh`. This contract does not mandate one CSS token or implementation technique.
+
+Safe-area ownership applies to supported iPhone and iPad environments in Safari and installed Home Screen presentation. Required back/home/answer/command/continue controls must not be hidden by status/chrome/home-indicator areas.
+
+## 16.6 Runtime Continuity on resize / rotation / Layout Surface change
+
+A viewport resize, portrait↔landscape rotation or responsive Layout Surface change is a **presentation event**, not a new learning/game transaction.
+
+Presentation response alone must not replace/remount the active interaction owner when doing so loses meaningful in-progress state.
+
+Meaningful state includes, where applicable:
+
+- current question identity and in-progress answer/input;
+- unsubmitted choice/selection;
+- current attempt/progress;
+- an open Capture, forced-switch or equivalent contextual subflow;
+- the semantic Dex item/detail being acted upon;
+- an active confirmation/result/reward acknowledgement;
+- Parent gate state such as unlocked/recovering and meaningful unsubmitted adult input.
+
+A presentation change must not by itself cause:
+
+- question regeneration or question-ID change;
+- unsubmitted input/selection loss;
+- attempt reset;
+- duplicate answer submit/reward settlement;
+- Battle recreation, duplicate turn or duplicate ticket reserve/commit/refund;
+- silent close/reset/restart of active Capture/forced-switch/contextual subflow;
+- duplicate Capture throw/result/settlement;
+- silent dismissal of an active Evolution/reward acknowledgement;
+- duplicate evolution execution/reward;
+- profile/route reset;
+- semantic Dex item/context loss;
+- Parent relock/recovery/input loss solely because presentation changed.
+
+Exact animation-frame preservation is **not** required. Temporal presentation may resume, normalize to an equivalent frame or complete according to an explicit owner policy, but presentation changes must never silently dismiss the acknowledgement, repeat domain execution/settlement or return to a semantically different transaction.
+
+Where reflow changes physical coordinates, exact numeric `scrollY` preservation is not generally required. Preserve semantic position instead, unless a stricter domain-specific contract requires additional restoration semantics.
+
+## 16.7 D-020 Dex cumulative authority
+
+D-021 does **not** replace, relax or summarize-away CURRENT D-020 Dex semantics. Responsive resize/rotation continuity must preserve D-020's detailed browse/history context, including:
+
+- area;
+- type;
+- search;
+- filter/tools state;
+- ordered result;
+- selected species;
+- anchor species;
+- viewport-offset semantics;
+- explicit browser-history provenance;
+- Grid→first detail `pushState`;
+- detail previous/next `replaceState`;
+- shared `restoreDexContext()` semantics;
+- same-session remount recovery and orphan-detail prevention.
+
+D-021 responsive acceptance is cumulative with D-020/10/10A rather than a weaker parallel Dex contract.
+
+## 16.8 Layout Surface companion map
+
+| Product state | Navigation owner | Layout Surface |
+|---|---|---|
+| Home | App shell | Compact |
+| Study hub | Study | Compact |
+| Study activity / free / review / trial / dictionary | Study focused flow | Workspace |
+| Adventure map/browse | Adventure | Compact |
+| Battle | Adventure/Battle flow | Contextual interactive |
+| Capture | Battle focused substate | Contextual interactive |
+| Monster team/box | Monster | Compact |
+| Dex | Monster/Dex local route | Workspace |
+| Evolution | Full-screen reward | Contextual interactive |
+| HowTo | Help | Compact |
+| Parent | Protected adult flow | Workspace |
+
+This map may be changed only by an explicit product decision. It must not be derived from CSS class membership.
+
+## 16.9 Tablet responsive anti-patterns
+
+Do not:
+
+- detect iPad layout by UA/device name;
+- add screenshot-specific one-off tablet patches where a surface contract solves the failure class;
+- add more clipping to hide oversized required content;
+- stretch all child content to full tablet width just because space exists;
+- use `FOCUSED_APP_VIEWS` as layout-width authority;
+- remount/replace an active interaction owner solely to change responsive presentation when meaningful state would be lost;
+- unlock landscape production access before responsive geometry/continuity acceptance passes.
+
+## 16.10 Canonical criterion
+
+D-021 is satisfied only when the specification and acceptance together can determine that:
+
+> From the 375px-class mobile baseline through full/reduced iPad portrait and landscape, the active primary decision remains visible/reachable without unintended clipping, Navigation ownership and Layout Surface remain independent, and presentation changes preserve the same semantic transaction plus meaningful active interaction substate while retaining stricter domain contracts such as D-020 Dex continuity.
