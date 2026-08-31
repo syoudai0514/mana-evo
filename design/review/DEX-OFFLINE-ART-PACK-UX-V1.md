@@ -652,3 +652,9 @@ Even after DESIGN PASS, implementation must not be merged until all of the follo
 - the exhaustive AC-DEX tests above pass on the same implementation head;
 - WebKit evidence includes request-count/hot-path assertions, not only visual success;
 - no implementation shortcut may weaken the `238/238` truth rule, History restoration rule, or bounded-memory/request-budget rule.
+
+---
+
+# 16. Review freeze
+
+For the next independent design review, review **the PR head SHA reported by PR #130 at the time this document is read** and do not review an older cached copy. If this file or the owner guide changes again, the review must restart from the new head. Runtime/source files remain intentionally unchanged in this design-only PR.
