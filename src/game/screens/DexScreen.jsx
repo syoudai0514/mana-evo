@@ -22,6 +22,15 @@ function writeSessionContext(context) {
   try { sessionStorage.setItem(DEX_SESSION_KEY, JSON.stringify({ version: 1, context })) } catch {}
 }
 
+function readInitialDexMount() {
+  const state = history.state && typeof history.state === 'object' ? history.state : null
+  const sessionContext = readSessionContext()
+  const isDetail = state?.manaevoDex === DEX_HISTORY_DETAIL
+  const context = isDetail && state?.dexContext?.version === 1 ? state.dexContext : sessionContext
+  const speciesId = isDetail ? (state?.speciesId || context?.selectedSpeciesId || null) : null
+  return { isDetail, state, context, speciesId }
+}
+
 function NearViewportMonsterArt({ speciesId }) {
   const hostRef = useRef(null)
   const [active, setActive] = useState(false)
@@ -104,16 +113,31 @@ function DexDetail({ speciesId, game, orderedIds, onClose, onNavigate }) {
 }
 
 export function DexGrid({ game }) {
-  const [area, setArea] = useState(0)
-  const [type, setType] = useState('all')
-  const [search, setSearch] = useState('')
-  const [showTools, setShowTools] = useState(false)
-  const [selectedSpeciesId, setSelectedSpeciesId] = useState(null)
-  const [activeContext, setActiveContext] = useState(() => readSessionContext())
-  const restoreFrameRef = useRef(null)
-  const previousScrollRestorationRef = useRef(null)
   const seen = game.dex?.seen || {}
   const caught = game.dex?.caught || {}
+  const initialMountRef = useRef(null)
+  if (!initialMountRef.current) initialMountRef.current = readInitialDexMount()
+  const initialDetailContext = initialMountRef.current.isDetail && initialMountRef.current.context?.version === 1
+    ? initialMountRef.current.context
+    : null
+  const initialDetailSpeciesId = initialDetailContext
+    && initialMountRef.current.speciesId
+    && seen[initialMountRef.current.speciesId]
+    && SPECIES[initialMountRef.current.speciesId]
+    && Array.isArray(initialDetailContext.orderedIds)
+    && initialDetailContext.orderedIds.includes(initialMountRef.current.speciesId)
+      ? initialMountRef.current.speciesId
+      : null
+
+  const [area, setArea] = useState(() => Number(initialDetailContext?.area || 0))
+  const [type, setType] = useState(() => initialDetailContext?.type || 'all')
+  const [search, setSearch] = useState(() => initialDetailContext?.search || '')
+  const [showTools, setShowTools] = useState(() => !!initialDetailContext?.showTools)
+  const [selectedSpeciesId, setSelectedSpeciesId] = useState(() => initialDetailSpeciesId)
+  const [activeContext, setActiveContext] = useState(() => initialDetailContext || readSessionContext())
+  const restoreFrameRef = useRef(null)
+  const previousScrollRestorationRef = useRef(null)
+  const remountReconciledRef = useRef(false)
   const seenCount = ACTIVE_MONSTER_IDS.filter((id) => seen[id]).length
   const caughtCount = ACTIVE_MONSTER_IDS.filter((id) => caught[id]).length
 
@@ -170,6 +194,23 @@ export function DexGrid({ game }) {
     scrollToContext(safe)
   }, [scrollToContext])
 
+  const buildFallbackContext = useCallback((preferredId = null) => {
+    const orderedIds = ACTIVE_MONSTER_IDS.filter((id) => seen[id] && SPECIES[id])
+    const anchorId = preferredId && orderedIds.includes(preferredId) ? preferredId : orderedIds[0] || null
+    return {
+      version: 1,
+      contextId: `dex-fallback-${Date.now()}`,
+      area: 0,
+      type: 'all',
+      search: '',
+      showTools: false,
+      orderedIds,
+      selectedSpeciesId: anchorId,
+      anchorId,
+      anchorOffset: 0
+    }
+  }, [seen])
+
   useEffect(() => {
     if (!('scrollRestoration' in history)) return undefined
     previousScrollRestorationRef.current = history.scrollRestoration
@@ -180,8 +221,43 @@ export function DexGrid({ game }) {
   }, [])
 
   useEffect(() => {
+    if (remountReconciledRef.current) return
+    remountReconciledRef.current = true
+    const state = history.state && typeof history.state === 'object' ? history.state : null
+    if (state?.manaevoDex !== DEX_HISTORY_DETAIL) return
+
+    const context = state?.dexContext?.version === 1 ? state.dexContext : activeContext || readSessionContext()
+    const speciesId = state?.speciesId || context?.selectedSpeciesId || null
+    const orderedIds = Array.isArray(context?.orderedIds)
+      ? context.orderedIds.filter((id) => seen[id] && SPECIES[id])
+      : []
+    const canRestoreDetail = context?.version === 1
+      && speciesId
+      && seen[speciesId]
+      && SPECIES[speciesId]
+      && orderedIds.includes(speciesId)
+
+    if (canRestoreDetail) {
+      const restored = { ...context, orderedIds, selectedSpeciesId: speciesId }
+      setArea(Number(restored.area || 0))
+      setType(restored.type || 'all')
+      setSearch(restored.search || '')
+      setShowTools(!!restored.showTools)
+      setActiveContext(restored)
+      writeSessionContext(restored)
+      setSelectedSpeciesId(speciesId)
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+      return
+    }
+
+    const fallback = buildFallbackContext(speciesId)
+    history.replaceState({ manaevoDex: DEX_HISTORY_GRID, dexContext: fallback }, '')
+    restoreDexContext(fallback)
+  }, [activeContext, buildFallbackContext, restoreDexContext, seen])
+
+  useEffect(() => {
     const onPopState = (event) => {
-      if (!selectedSpeciesId) return
+      if (!selectedSpeciesId && event.state?.manaevoDex !== DEX_HISTORY_GRID) return
       const context = event.state?.dexContext || activeContext || readSessionContext()
       restoreDexContext(context)
     }
@@ -251,18 +327,7 @@ export function DexGrid({ game }) {
       history.back()
       return
     }
-    const fallback = context || {
-      version: 1,
-      contextId: `dex-fallback-${Date.now()}`,
-      area: 0,
-      type: 'all',
-      search: '',
-      showTools: false,
-      orderedIds: ACTIVE_MONSTER_IDS.filter((id) => seen[id]),
-      selectedSpeciesId: selectedSpeciesId,
-      anchorId: selectedSpeciesId,
-      anchorOffset: 0
-    }
+    const fallback = context || buildFallbackContext(selectedSpeciesId)
     history.replaceState({ manaevoDex: DEX_HISTORY_GRID, dexContext: fallback }, '')
     restoreDexContext(fallback)
   }

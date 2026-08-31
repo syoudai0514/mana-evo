@@ -50,6 +50,12 @@ async function ensureServiceWorkerControl(page) {
   await expect.poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBeTruthy()
 }
 
+async function openDex(page) {
+  await page.getByRole('navigation', { name: 'メインメニュー' }).getByRole('button', { name: /モンスター/ }).click()
+  await page.getByRole('button', { name: /ずかん/ }).click()
+  await expect(page.locator('.dex-screen')).toBeVisible()
+}
+
 test('Dex uses bounded viewport art work and does not leave orphan detail history', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await installSave(page)
@@ -95,6 +101,85 @@ test('Dex uses bounded viewport art work and does not leave orphan detail histor
   await expect(page.locator('.dex-screen')).toBeVisible()
   await expect(page.locator('[data-dex-detail-id]')).toHaveCount(0)
   expect(await page.locator(`[data-dex-detail-id="${bId}"]`).count()).toBe(0)
+})
+
+test('Dex detail survives same-session React remount without history/UI divergence', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await installSave(page)
+  await page.goto('/')
+  await openDex(page)
+
+  await page.getByRole('button', { name: /No\.100 / }).click()
+  await expect(page.locator('[data-dex-detail-id="m100"]')).toBeVisible()
+  const detailStateBefore = await page.evaluate(() => history.state)
+  expect(detailStateBefore?.manaevoDex).toBe('manaevo-dex-detail-v1')
+  expect(detailStateBefore?.speciesId).toBe('m100')
+
+  const tabs = page.locator('.monster-tabs')
+  await tabs.getByRole('button', { name: /チーム/ }).click()
+  await expect(page.locator('[data-dex-detail-id]')).toHaveCount(0)
+  await tabs.getByRole('button', { name: /ずかん/ }).click()
+
+  await expect(page.locator('[data-dex-detail-id="m100"]')).toBeVisible()
+  const detailStateAfter = await page.evaluate(() => history.state)
+  expect(detailStateAfter?.manaevoDex).toBe('manaevo-dex-detail-v1')
+  expect(detailStateAfter?.speciesId).toBe('m100')
+
+  await page.goBack()
+  await expect(page.locator('.dex-screen')).toBeVisible()
+  await expect(page.locator('[data-dex-detail-id]')).toHaveCount(0)
+  const gridState = await page.evaluate(() => history.state)
+  expect(gridState?.manaevoDex).toBe('manaevo-dex-grid-v1')
+})
+
+test('Dex external-detail fallback replaces current detail entry without consuming unrelated history', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await installSave(page)
+  await page.goto('/')
+  await openDex(page)
+
+  const seeded = await page.evaluate(() => {
+    const orderedIds = Array.from({ length: 238 }, (_, index) => `m${String(index + 1).padStart(3, '0')}`)
+    const context = {
+      version: 1,
+      contextId: 'external-m050',
+      area: 0,
+      type: 'all',
+      search: '',
+      showTools: false,
+      orderedIds,
+      selectedSpeciesId: 'm050',
+      anchorId: 'm050',
+      anchorOffset: 0
+    }
+    history.replaceState({ unrelatedSentinel: 'capture-source' }, '')
+    history.pushState({
+      manaevoDex: 'manaevo-dex-detail-v1',
+      speciesId: 'm050',
+      hasGridHistoryEntry: false,
+      dexContext: context
+    }, '')
+    sessionStorage.setItem('manaevo-dex-browse-context-v1', JSON.stringify({ version: 1, context }))
+    return { historyLength: history.length }
+  })
+
+  const tabs = page.locator('.monster-tabs')
+  await tabs.getByRole('button', { name: /チーム/ }).click()
+  await tabs.getByRole('button', { name: /ずかん/ }).click()
+  await expect(page.locator('[data-dex-detail-id="m050"]')).toBeVisible()
+
+  const topNav = page.locator('.dex-detail-nav:not(.bottom)')
+  await topNav.getByRole('button', { name: 'ずかんへ' }).click()
+  await expect(page.locator('.dex-screen')).toBeVisible()
+  await expect(page.locator('[data-dex-detail-id]')).toHaveCount(0)
+
+  const afterClose = await page.evaluate(() => ({ state: history.state, historyLength: history.length }))
+  expect(afterClose.historyLength).toBe(seeded.historyLength)
+  expect(afterClose.state?.manaevoDex).toBe('manaevo-dex-grid-v1')
+
+  await page.goBack()
+  const previous = await page.evaluate(() => history.state)
+  expect(previous?.unrelatedSentinel).toBe('capture-source')
 })
 
 test('Parent download creates a verified 238-key pack that renders all 238 offline', async ({ page, context }) => {
