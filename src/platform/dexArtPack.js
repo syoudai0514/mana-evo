@@ -3,6 +3,7 @@ export const DEX_ART_TARGET_COUNT = 238
 export const DEX_ART_REV_PARAM = '__manaevo_rev'
 
 let manifestMemo = null
+const assetFillInflight = new Map()
 
 function baseUrl() {
   const raw = typeof import.meta !== 'undefined' && import.meta.env?.BASE_URL ? import.meta.env.BASE_URL : '/'
@@ -86,7 +87,7 @@ export async function cacheHasCurrentAsset(cache, asset) {
   return !!(await cache.match(revisionRequestUrl(asset)))
 }
 
-export async function fetchVerifyAndCacheAsset(asset, { signal } = {}) {
+async function fetchVerifyAndCacheAssetOnce(asset, { signal } = {}) {
   const cache = await caches.open(DEX_ART_CACHE_NAME)
   const key = revisionRequestUrl(asset)
   if (await cache.match(key)) return { speciesId: asset.speciesId, cached: true, bytes: asset.byteLength || 0 }
@@ -95,6 +96,27 @@ export async function fetchVerifyAndCacheAsset(asset, { signal } = {}) {
   const verified = await verifyAssetResponse(asset, response)
   await cache.put(key, verified.response)
   return { speciesId: asset.speciesId, cached: false, bytes: verified.bytes.byteLength }
+}
+
+export async function fetchVerifyAndCacheAsset(asset, { signal } = {}) {
+  // Detail navigation can ask for overlapping +/-2 neighborhoods faster than an
+  // image can be fetched/hashed on iPhone WebKit. Collapse concurrent no-signal
+  // fills for the same revision so prefetch does not multiply SHA/cache work.
+  // Explicit download calls keep their AbortSignal semantics; the Service Worker
+  // independently deduplicates the underlying current-revision network fill.
+  if (signal) return fetchVerifyAndCacheAssetOnce(asset, { signal })
+
+  const key = revisionRequestUrl(asset)
+  const existing = assetFillInflight.get(key)
+  if (existing) return existing
+
+  const fill = fetchVerifyAndCacheAssetOnce(asset)
+  assetFillInflight.set(key, fill)
+  try {
+    return await fill
+  } finally {
+    if (assetFillInflight.get(key) === fill) assetFillInflight.delete(key)
+  }
 }
 
 export async function auditDexArtPack(manifest = null) {

@@ -16,6 +16,7 @@ const APP_SHELL = [
 ]
 
 let monsterRevisionMemo = null
+const monsterFillInflight = new Map()
 
 async function warmEntryAssets(cache) {
   try {
@@ -156,6 +157,22 @@ async function pruneDexArtCache(revisions) {
   await Promise.all(keys.filter((key) => !expected.has(key.url)).map((key) => artCache.delete(key)))
 }
 
+async function fillCurrentMonsterRevision(artCache, cacheKey, request, revision) {
+  try {
+    const networkResponse = await fetch(request, { cache: 'no-store' })
+    const verified = await verifyResponseForRevision(networkResponse, revision)
+    if (!verified) return Response.error()
+    await artCache.put(cacheKey, verified.response.clone())
+    return verified.response
+  } catch {
+    try {
+      return (await previousRevisionResponse(artCache, request)) || Response.error()
+    } catch {
+      return Response.error()
+    }
+  }
+}
+
 async function handleMonsterAsset(request, url) {
   const relativePath = `/${url.pathname.slice(BASE_PATH.length)}`
   const revisions = await loadMonsterRevisions()
@@ -167,15 +184,19 @@ async function handleMonsterAsset(request, url) {
     const cached = await artCache.match(cacheKey)
     if (cached) return cached
 
-    try {
-      const networkResponse = await fetch(request, { cache: 'no-store' })
-      const verified = await verifyResponseForRevision(networkResponse, revision)
-      if (!verified) return Response.error()
-      await artCache.put(cacheKey, verified.response.clone())
-      return verified.response
-    } catch {
-      return (await previousRevisionResponse(artCache, request)) || Response.error()
+    // A fast detail sweep can make the visible <img> and +/-2 prefetch ask for the
+    // same current revision concurrently. Keep exactly one network/SHA/cache fill
+    // per revision key and clone its verified response for all waiting requests.
+    let fill = monsterFillInflight.get(cacheKey)
+    if (!fill) {
+      fill = fillCurrentMonsterRevision(artCache, cacheKey, request, revision)
+      monsterFillInflight.set(cacheKey, fill)
+      fill.finally(() => {
+        if (monsterFillInflight.get(cacheKey) === fill) monsterFillInflight.delete(cacheKey)
+      }).catch(() => {})
     }
+    const response = await fill
+    return response.clone()
   }
 
   // Non-FORMAL/candidate assets remain network-first and are not promoted into the

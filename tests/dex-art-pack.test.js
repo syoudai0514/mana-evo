@@ -53,6 +53,14 @@ test('D-020 Service Worker separates shell/art ownership and keeps warm hit free
   assert.doesNotMatch(source, /if \(cached\) \{\s*await pruneDexArtCache/)
   assert.match(source, /MANA_EVO_DEX_ART_REFRESH_MANIFEST/)
   assert.match(source, /verifyResponseForRevision/)
+  assert.match(source, /monsterFillInflight/)
+})
+
+test('D-020 detail prefetch collapses overlapping no-signal fills for one revision', () => {
+  const source = fs.readFileSync(new URL('../src/platform/dexArtPack.js', import.meta.url), 'utf8')
+  assert.match(source, /assetFillInflight/)
+  assert.match(source, /const existing = assetFillInflight\.get\(key\)/)
+  assert.match(source, /if \(existing\) return existing/)
 })
 
 test('D-020 Dex screen owns push/replace/back history and explicit viewport eligibility', () => {

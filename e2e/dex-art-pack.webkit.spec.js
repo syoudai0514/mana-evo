@@ -221,9 +221,24 @@ test('Dex detail can traverse No.001 to No.238 and back without growing retained
   expect(forward.id).toBe('m238')
   expect(forward.maxImages).toBeLessThanOrEqual(3)
 
-  await page.waitForTimeout(1200)
+  // The forward pass visits every species. Wait for the shared verified cache to
+  // contain every current revision before taking the network baseline; this avoids
+  // mistaking already-started prefetch completion for reverse-pass redownload.
+  await expect.poll(() => page.evaluate(async () => {
+    const cache = await caches.open('manaevo-dex-art-v1')
+    return (await cache.keys()).length
+  }), { timeout: 60_000 }).toBe(238)
+  await page.waitForTimeout(300)
+
   const networkAfterForward = swMonsterNetwork.length
   const manifestAfterForward = swManifestNetwork.length
+  // One current revision may require at most one SW-originated image fetch during
+  // this stress pass. More than 238 proves overlapping detail/prefetch requests are
+  // multiplying unchanged image network work.
+  expect(networkAfterForward).toBeLessThanOrEqual(238)
+  // Lifecycle/manifest initialization may need a small fixed number of requests,
+  // but the count must not scale with the 238 detail transitions.
+  expect(manifestAfterForward).toBeLessThanOrEqual(2)
 
   const backward = await page.evaluate(async () => {
     let maxImages = 0
@@ -240,7 +255,7 @@ test('Dex detail can traverse No.001 to No.238 and back without growing retained
   expect(backward.id).toBe('m001')
   expect(backward.maxImages).toBeLessThanOrEqual(3)
 
-  await page.waitForTimeout(1200)
+  await page.waitForTimeout(500)
   expect(swMonsterNetwork.length).toBe(networkAfterForward)
   expect(swManifestNetwork.length).toBe(manifestAfterForward)
 })
