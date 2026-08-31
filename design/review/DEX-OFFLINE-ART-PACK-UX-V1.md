@@ -1,438 +1,634 @@
 # ManaEvo Design Review Proposal — Dex Offline Art Pack + Detail Browsing UX V1
 
 - Status: **DESIGN REVIEW ONLY — NOT CURRENT / NOT IMPLEMENTATION AUTHORITY**
+- Revision: **V1 review revision 2 — addresses first independent review blockers**
 - Date: 2026-08-31
 - Repository: `syoudai0514/mana-evo`
-- Base: `main@bc78609097fc1f486d26d6703f127fdaf235188d`
+- Base at proposal start: `main@bc78609097fc1f486d26d6703f127fdaf235188d`
 - Proposed canonical domains after approval: UI / PWA / Acceptance / Monster Art presentation
 - Runtime changes in this PR: **none**
 
 ## 0. Why this proposal exists
 
-All active monster art is now FORMAL for No.001–238, but the current Dex browsing experience still makes the art feel unavailable or slow:
+All active monster art is FORMAL for No.001–238, but the current Dex experience still has four user-visible problems:
 
-1. the grid can show many image placeholders while images are being fetched/decoded;
-2. entering species detail replaces the grid, and returning does not guarantee restoration to the exact browse position;
-3. detail has no previous/next species navigation, so checking many monsters requires repeated back → scroll → open interactions;
-4. even after a user intentionally wants the full art collection on the device, there is no explicit “download all monster images” flow;
-5. a PWA cache can be evicted or become stale, so “downloaded once” cannot be treated as permanently valid without verification/versioning.
+1. grid/detail images can feel slow or blank while fetch/decode is happening;
+2. detail has no continuous previous/next browsing;
+3. returning from detail can lose the original grid position;
+4. there is no explicit user action to keep the complete current FORMAL set locally for fast/offline browsing.
 
-This proposal turns the Dex into a fast browse surface and adds an explicit, version-aware offline monster-art pack.
+The first independent review accepted the product direction but blocked implementation until four technical contracts were fixed:
 
----
+- one cache owner / Service Worker hot path;
+- authoritative SHA-verified 238/238 completion;
+- concrete History API / browser-back behavior;
+- exhaustive acceptance proving offline, resume, delta, eviction and bounded-memory behavior.
 
-# 1. Product goals
-
-## G1 — Warm browsing should feel instant
-
-After a monster image has been cached, reopening it or moving to nearby species should not visibly return to a blank gray tile while the same bytes are fetched again.
-
-## G2 — A user can intentionally download all 238 FORMAL monster images
-
-A device-level action downloads the complete current FORMAL art set for No.001–238 and makes it available offline, subject to browser/PWA storage guarantees.
-
-## G3 — Detailed browsing is continuous
-
-From a species detail view, a user can move directly to the previous/next browsable species without returning to the grid.
-
-## G4 — Returning to the grid preserves context
-
-Back to Dex returns to the same filter/search state and the same visible species position, rather than the top of the list.
-
-## G5 — New FORMAL revisions do not stay hidden behind stale cached bytes
-
-All downloaded art is tied to explicit asset revision identity. Changed assets can be refreshed deterministically and unchanged assets are not needlessly downloaded again.
+This revision fixes those four points in the design. It still does not authorize implementation.
 
 ---
 
-# 2. Non-goals
+# 1. Product goals and non-goals
 
-This proposal does **not**:
+## Goals
 
-- change monster identity, numbering, family, types, stats, capture/evolution rules, or FORMAL approval state;
-- include No.239 in active Dex or download pack;
-- promise that iOS/Safari will keep web storage forever under device-storage pressure;
-- preload/decode all 238 images into RAM at once;
-- auto-download a large pack without a user action;
-- make child-facing gameplay depend on the pack being installed.
+### G1 — Warm browsing should feel instant
+
+If the current FORMAL bytes are already stored locally, reopening a tile/detail or moving to nearby species must not require another network round-trip before those bytes can be shown.
+
+### G2 — Explicit full download
+
+A user can explicitly download exactly the current active FORMAL No.001–238 art set for offline use.
+
+### G3 — Continuous detail browsing
+
+Detail exposes visible `← まえ | ずかんへ | つぎ →` controls. Previous/next follows the current browse result order.
+
+### G4 — Exact browse-context restoration
+
+Returning to Dex restores filters/search and the original visual position using an anchor species + viewport offset, not just raw `scrollY`.
+
+### G5 — Delta-safe art updates
+
+One changed FORMAL image normally causes one image fetch; seven changes cause seven. Unchanged current assets are not fetched again.
+
+### G6 — Bounded decoded memory
+
+The complete byte pack may exist in CacheStorage, but decoded image lifetime is limited to the visible/near-visible/detail neighborhood. Visiting more species must not cause decoded-memory retention proportional to lifetime visit count.
+
+## Non-goals
+
+V1 does not:
+
+- change monster identity/data/FORMAL approval;
+- include No.239;
+- guarantee iOS/Safari retains CacheStorage forever;
+- auto-download the large pack without explicit user action;
+- decode all 238 images at once;
+- introduce React Router only for Dex;
+- make gameplay depend on the pack being installed.
 
 ---
 
-# 3. Canonical asset scope
+# 2. Canonical asset manifest contract
 
-The offline art pack contains exactly the active current FORMAL monster assets:
+The target set is exactly No.001–238, FORMAL only, No.239 excluded.
 
-- No.001–238
-- FORMAL only
-- No.239 excluded
+The build-generated authoritative art manifest must expose, per active asset:
 
-The source list must come from the canonical monster asset manifest / runtime formal resolver. UI code must not maintain a second hand-written list of 238 asset URLs.
+- `speciesId`
+- active No.
+- canonical source URL
+- SHA-256 revision/digest
+- `byteLength`
 
-Each asset must expose or derive stable revision identity such as SHA-256 / manifest digest / versioned URL. Cache validity is based on that identity, not merely on species ID.
+It must also expose a manifest revision/digest and `totalBytes` for the 238 active assets.
+
+The existing SHA-based monster revision data should be reused rather than inventing a second unrelated version system.
+
+`byteLength` and `totalBytes` are generated at build/asset-registration time. The runtime must not perform 238 HEAD requests merely to estimate pack size.
 
 ---
 
-# 4. “Download all monster images” UX
+# 3. Single cache owner and Service Worker architecture — REQUIRED
 
-## 4.1 Ownership
+## 3.1 Separate shell and durable Dex-art ownership
 
-The storage-management action is **Parent / device settings owned**, not a prominent child gameplay CTA.
+The implementation must separate app-shell caching from the durable user-requested art pack.
 
-Dex may show compact status such as:
+Required cache ownership model:
 
-- `画像: オンライン`
-- `画像: 238/238 保存済み`
-- `画像: 更新あり`
+- app shell: `manaevo-shell-vN` (or equivalent shell-owned versioned namespace)
+- FORMAL Dex bytes: **`manaevo-dex-art-v1`**
 
-and may provide a secondary shortcut to the storage-management surface, but the actual large download action belongs to Parent/device management to reduce accidental data/storage use.
+`v1` on `manaevo-dex-art-v1` is the **cache schema version**, not the image-content version.
 
-## 4.2 Primary controls
+FORMAL art content revisions do not rotate the cache namespace. They are represented by deterministic revisioned request keys.
 
-Parent/device storage section exposes:
+A Service Worker activation that cleans obsolete shell caches must **not delete `manaevo-dex-art-v1` merely because the shell version changes**.
+
+No second screen-owned CacheStorage is allowed. The Service Worker/download manager and `MonsterArt` must converge on this one FORMAL byte cache.
+
+## 3.2 Revisioned cache key
+
+A current FORMAL asset is stored/read under a deterministic key equivalent to:
+
+`/monsters/m123.webp?__manaevo_rev=<sha256>`
+
+The exact parameter name may differ, but all of these invariants are required:
+
+- species URL alone is not the currentness authority;
+- SHA/revision is part of effective Cache API identity;
+- old and new revisions cannot collide;
+- offline fallback for an old revision can never be mistaken for the current revision key.
+
+## 3.3 FORMAL image hot path
+
+For a normal current-revision FORMAL image request, the warm-cache path must be approximately:
+
+1. resolve current revision from an **in-worker memoized manifest/revision map**;
+2. construct revisioned cache key;
+3. `manaevo-dex-art-v1.match(revisionKey)`;
+4. if hit, return immediately;
+5. if miss, obtain current bytes through the controlled current-revision fetch path.
+
+The following are **forbidden on every image cache hit**:
+
+- network-fetching the revision manifest per image;
+- calling `cache.keys()`/full cache enumeration per image;
+- pruning the entire art cache per image.
+
+Manifest network refresh happens at explicit lifecycle/update/audit boundaries, not once per rendered image. Obsolete-art prune happens at manifest-change/update/repair boundaries, not in the display hot path.
+
+## 3.4 Manifest memoization/invalidation
+
+The worker/app may memoize the parsed revision map for the active app session/worker lifetime.
+
+It must refresh/invalidate that memoized map when one of these happens:
+
+- new app/worker version activates;
+- explicit pack audit/update begins;
+- lifecycle update check says the manifest revision changed;
+- developer/test fixture explicitly replaces manifest.
+
+A single manifest refresh can serve many image resolutions.
+
+---
+
+# 4. Authoritative 238/238 semantics — REQUIRED
+
+## 4.1 Truth source
+
+`238/238 保存済み` is not a UI counter, localStorage integer, or IndexedDB progress row.
+
+For V1, authoritative completion is derived from:
+
+1. one fixed target manifest snapshot for the current operation;
+2. the 238 expected SHA revision keys;
+3. entries that were written into `manaevo-dex-art-v1` **only after their response bytes passed SHA-256 verification**.
+
+V1 must not introduce an independent downloaded-count database as completion authority.
+
+## 4.2 Verified commit boundary
+
+An asset becomes complete only in this order:
+
+1. fetch bytes for the target canonical asset;
+2. require a successful usable response;
+3. read/clone bytes;
+4. compute SHA-256 over actual response bytes;
+5. compare to manifest SHA;
+6. only on exact match, `cache.put(revisionKey, verifiedResponse)`;
+7. only after successful `cache.put`, that target may count complete.
+
+Therefore:
+
+- HTTP 200 alone is insufficient;
+- an offline/stale Service Worker fallback with old bytes cannot count for a new SHA;
+- a failed/mismatched hash is never written under the current revision key;
+- a UI progress increment before `cache.put` success is forbidden.
+
+## 4.3 Crash-safe resume
+
+Because the verified revision key in CacheStorage is the durable truth, this sequence is safe:
+
+`verified cache.put succeeds → process/app is killed before UI/meta update`
+
+After reload, audit finds the expected revision key already present and does not re-fetch it merely because a transient progress counter was lost.
+
+Conversely, if metadata says 238 but one expected revision key is absent, status must downgrade to 237/238 (or `不足あり`).
+
+## 4.4 Fixed-manifest operation + latest-manifest final verification
+
+At download/update start, freeze **manifest snapshot N** as the operation target. Do not chase a moving target during each individual asset request.
+
+At the end:
+
+1. verify all N target revision keys are present;
+2. refresh latest manifest once;
+3. if latest is still N, completion may become 238/238;
+4. if latest is N+1, do not falsely declare fully current; calculate delta N→N+1 and show `更新あり` / continue update according to the chosen UI flow.
+
+Thus a manifest deployment occurring mid-download cannot create a false current 238/238 state.
+
+## 4.5 Audit cost
+
+A complete audit may iterate the expected 238 revision keys at an explicit audit boundary. It must not perform that full audit for each visible tile render.
+
+---
+
+# 5. Download-all UX and storage behavior
+
+## 5.1 Ownership
+
+Large storage management belongs to Parent/device management, not a primary child gameplay CTA.
+
+Controls:
 
 - `モンスター画像を全部保存`
-- current status: `0/238`, `123/238`, `238/238`
-- estimated/downloaded byte size where measurable
-- `更新する` when manifest revision differs
-- `不足分を修復` when cache audit finds missing/corrupt entries
-- `保存画像を削除` as a destructive secondary action with confirmation
+- verified progress `x/238`
+- expected total size from manifest
+- `更新する`
+- `不足分を修復`
+- `保存画像を削除` with confirmation
 
-## 4.3 Before download
+Dex may show a compact status/shortcut, but child browsing must work without installing the pack.
 
-Before beginning:
+## 5.2 Download scheduler
 
-1. calculate the canonical 238-asset target set;
-2. query storage usage/quota where `navigator.storage.estimate()` is available;
-3. show the expected download size if known or measurable;
-4. warn that browser/device storage pressure may later remove cached data;
-5. require explicit confirmation.
+Required:
 
-Do not claim a reliable “Wi-Fi only” guarantee because Network Information API support is not dependable on iOS. The UI may recommend downloading on Wi-Fi but must not pretend it can enforce it where the platform cannot.
+- bounded concurrency, initial default **4**;
+- cancellation;
+- verified completed entries survive cancellation/reload;
+- resume schedules only missing/outdated target revision keys;
+- no 238 simultaneous requests;
+- progress derived from verified completion, not requests started.
 
-## 4.4 Download behavior
+Concurrency is tuning, not product authority; device measurement may reduce it. Increasing it must not bypass request-budget tests.
 
-The download manager must:
+## 5.3 Storage quota / iPhone behavior
 
-- use bounded concurrency rather than 238 simultaneous requests;
-- report progress by verified completed asset count and bytes where known;
-- support cancellation;
-- keep successfully completed entries after cancellation/failure so retry resumes missing items;
-- verify response success and expected revision identity where technically available;
-- never mark the pack complete until all 238 current target revisions are present;
-- tolerate app backgrounding/reload by deriving truth from cache contents + manifest rather than volatile UI state.
+Before download, if available:
 
-Recommended implementation default for review: **4 concurrent asset downloads**, tunable after device measurement.
+- read `navigator.storage.estimate()` for an approximate capacity warning;
+- display manifest `totalBytes` as the expected art payload;
+- optionally call `navigator.storage.persist()` as best effort.
 
-## 4.5 Completion semantics
+Rules:
 
-`238/238 保存済み` means all current canonical FORMAL revisions are locally available through the art cache.
-
-It does not mean the browser guarantees permanent retention. On later app launch/resume, the app may audit a cheap manifest/index and downgrade status to `不足あり` if entries were evicted.
-
-If `navigator.storage.persist()` is supported, the app may request persistent storage as a best-effort optimization. Failure or unsupported status must not break the feature.
+- `estimate()` is advisory, not proof that the write will succeed;
+- actual Cache API write failure / `QuotaExceededError` is authoritative;
+- never promise permanent retention on iPhone/Safari/PWA;
+- eviction is a supported recovery case, not an impossible state;
+- unsupported/denied persistent-storage request does not break browsing.
 
 ---
 
-# 5. Cache and update architecture
+# 6. Delta update and prune
 
-## 5.1 Byte cache vs decoded-image memory
+Given manifest N cached and N+1 available:
 
-These are separate concerns:
+- same SHA → keep current revision entry, no image fetch;
+- changed SHA → fetch + hash-verify + cache.put new revision key;
+- new active asset → same verified path;
+- removed/non-active old revision → clean during explicit prune/update boundary;
+- No.239 remains outside the active target.
 
-- **persistent byte cache**: can hold all 238 current images for offline use;
-- **decoded image memory**: must stay bounded to nearby/visible images.
+Obsolete key cleanup must happen once at a controlled maintenance boundary, not through `cache.keys()` on every art request.
 
-Do **not** decode all 238 at once. That can make an iPhone less smooth by increasing memory pressure even when all bytes are locally cached.
-
-## 5.2 Cache identity
-
-Cache key/effective URL must include current asset revision, or the Service Worker must have an equivalent deterministic revision map.
-
-Species ID alone is insufficient if `m123.webp` bytes can change while URL stays identical.
-
-## 5.3 Delta update
-
-When the formal manifest changes:
-
-- unchanged digest → keep cached asset;
-- changed/new digest → download replacement;
-- removed/non-active asset → remove from active pack index and optionally clean obsolete bytes;
-- No.239 remains excluded from active pack.
-
-A future one-asset art correction should normally fetch one changed asset, not all 238 again.
-
-## 5.4 Runtime resolution
-
-`MonsterArt` remains the single art-resolution contract.
-
-Desired runtime resolution order for FORMAL art:
-
-1. current-revision local cache, if present;
-2. network current-revision asset;
-3. canonical loading/error fallback state.
-
-Screens must not implement their own competing cache rules.
+A one-image revision must be demonstrably capable of `exactly 1` image network fetch when all other current keys are valid.
 
 ---
 
-# 6. Normal Dex grid loading strategy
+# 7. Normal Dex request/decode budget
 
-The app must remain usable even when the full pack has not been installed.
+## 7.1 Do not render 238 live image requests
 
-## 6.1 Visible/near-visible priority
+Current `loading="lazy"` is not sufficient acceptance evidence because browsers may choose different lazy thresholds.
 
-Use viewport-aware loading, e.g. IntersectionObserver/root margin, so the app prioritizes:
+V1 requires an explicit viewport-aware eligibility layer, e.g. IntersectionObserver or an equivalent virtualized/windowed strategy.
 
-1. currently visible rows;
-2. approximately the next 2–3 screens of rows;
-3. only then later content as the user approaches it.
+Only these items should receive an active image `src`/decode request:
 
-Do not start 238 high-priority image fetches on Dex entry.
+- visible tiles;
+- roughly 2–3 viewport heights of overscan/near-visible tiles;
+- explicit detail/prefetch neighborhood.
 
-## 6.2 Nearby prefetch
+The remaining tiles keep fixed-size art placeholders without starting image resolution.
 
-When a detail view is opened, prefetch the previous/next nearby species bytes, recommended default:
+Native `loading="lazy"` may remain as a secondary browser hint but cannot be the sole request-budget mechanism.
 
-- previous 2 browsable species
-- next 2 browsable species
+## 7.2 Fixed geometry
 
-If already cached, the fetch layer should no-op/resolve locally.
+Grid art boxes have stable dimensions before decode. Image load must not alter tile height enough to destroy scroll-anchor restoration.
 
-## 6.3 Decode policy
+## 7.3 Detail prefetch/decode
 
-Where supported, decode the current detail image and nearest neighbors ahead of display (`img.decode()` or equivalent) without retaining the entire 238-image set as decoded bitmaps.
+On detail open or previous/next transition, recommended initial neighborhood:
 
-## 6.4 Loading presentation
+- current species: high priority;
+- previous 2 browsable species;
+- next 2 browsable species.
 
-A tile/detail must never look permanently broken while work is in progress.
+Bytes may already exist in CacheStorage. Decode/prefetch lifetime stays bounded to this neighborhood plus current grid viewport.
 
-Use an explicit loading skeleton/state inside the fixed art box. Do not collapse layout while the image loads. On retryable failure, show a clear retry/fallback state rather than an unexplained gray rectangle.
+The implementation must not hold decoded bitmaps/object URLs for every species visited during a long session.
+
+## 7.4 Loading/error presentation
+
+Before an image is ready, show an intentional loading skeleton/state inside the fixed art box. A retryable load/decode error has an explicit fallback/retry state rather than an unexplained gray rectangle.
 
 ---
 
-# 7. Dex detail navigation
+# 8. Detail navigation contract
 
-## 7.1 Persistent detail controls
+## 8.1 Visible controls
 
-Species detail must expose a stable navigation bar:
+Detail always provides:
 
 `← まえ`   `ずかんへ`   `つぎ →`
 
-The controls should remain reachable without requiring a long vertical scroll back to the top.
+Buttons remain the primary accessible navigation. Swipe may be supplementary later.
 
-A horizontal swipe gesture may be added as a secondary convenience, but visible buttons remain the accessible/learnable primary controls.
+## 8.2 Browse context
 
-## 7.2 What “previous/next” means
+A browse context contains at least:
 
-Navigation follows the **current browse context**.
-
-If the user entered detail from a filtered/search result list, previous/next traverses that filtered list in displayed order.
-
-If detail was opened without an existing grid context (for example a Capture/Evolution registration shortcut), create a default browse context of all currently browsable `seen` species ordered by No.
-
-Unknown/unseen species that cannot be opened are skipped.
-
-At the first/last item, the corresponding button is disabled. V1 does not wrap from last → first or first → last.
-
-## 7.3 Detail transition
-
-On previous/next:
-
-- keep the detail shell stable;
-- update species metadata and art in place;
-- start from the detail’s canonical top content position unless a later UX review explicitly chooses per-species detail scroll memory;
-- prefetch the next neighborhood after each transition.
-
-This avoids the current back/grid/reopen cycle.
-
----
-
-# 8. Returning to the grid
-
-## 8.1 Browse context snapshot
-
-Before entering detail from Dex, preserve:
-
-- area filter
-- type filter
-- search text
-- filter panel expanded/collapsed state where meaningful
-- ordered species result IDs
+- `contextId`
+- `area`
+- `type`
+- `search`
+- `showTools`
+- ordered currently browsable species IDs
 - selected species ID/index
-- scroll anchor species ID
-- pixel offset of that anchor within the viewport
+- grid anchor species ID
+- anchor viewport offset
 
-## 8.2 Restoration
+If opened from filtered/search results, previous/next stays within that ordered result set. Unknown/unopenable species are excluded/skipped.
 
-`ずかんへ` returns to the exact same browse context and restores the selected/anchor card to approximately the same viewport position.
+If detail is opened externally (capture/evolution registration shortcut), construct a default ordered context of currently browsable/seen species by No.
 
-Prefer **anchor species + offset** over raw `scrollY` alone because image decoding/layout/filter state can change document height.
+At the ends, previous/next is disabled; V1 does not wrap.
 
-No forced scroll-to-top is allowed for this local Dex detail return.
+## 8.3 Previous/next state transition
 
-## 8.3 Browser/back behavior
+Previous/next updates detail in place and **must not add one browser-history entry per species**.
 
-Browser/PWA back and the visible `ずかんへ` action should converge on the same restoration semantics when technically feasible. There must not be two different Dex return behaviors depending on which back mechanism was used.
+History behavior:
 
----
+- Grid → first detail: `history.pushState(detailState, ...)`
+- Detail species A → B via previous/next: `history.replaceState(updatedDetailState, ...)`
 
-# 9. Failure and recovery states
-
-## 9.1 Network loss during pack download
-
-- completed items remain valid;
-- status becomes paused/incomplete;
-- retry resumes missing current revisions;
-- pack is not falsely labeled complete.
-
-## 9.2 Cache eviction
-
-If some images are later missing:
-
-- normal online runtime can refetch on demand;
-- pack status becomes `不足あり` after audit;
-- `不足分を修復` downloads only missing/outdated revisions.
-
-## 9.3 Formal art revision during/after download
-
-The target set is revisioned. Completion is evaluated against the **current manifest revision**. A stale old revision does not count as current merely because a file exists for that species ID.
-
-## 9.4 Corrupt/unloadable image
-
-A failed decode/load must:
-
-- not loop infinitely;
-- mark that entry unavailable for current render;
-- permit retry/repair;
-- retain enough diagnostics to distinguish missing, HTTP failure, and decode failure in developer logs.
+Thus pressing browser Back from any species detail returns directly to the original Dex grid context instead of stepping backward through every species visited.
 
 ---
 
-# 10. Accessibility and child usability
+# 9. Browser/PWA Back + scroll restoration contract — REQUIRED
 
-- previous/next buttons have explicit text/aria labels including target species where practical;
-- touch targets remain at least the project mobile target size;
-- loading state is not conveyed by color alone;
-- focus returns to a meaningful element when closing detail;
-- grid restoration should focus or visually preserve the species just inspected without creating disruptive automatic screen-reader jumps;
-- download controls use plain Japanese and belong to adult/device management.
+V1 does not require React Router. It uses the platform History API explicitly.
 
----
+## 9.1 History state
 
-# 11. Performance requirements
+On Grid → Detail, push a Dex detail history state containing enough identity to recover the browse context, including at minimum:
 
-The design goal is “no unnecessary re-download and no blank-feeling navigation,” not an unsafe promise that every device paints in a fixed number of milliseconds.
+- Dex detail marker/version;
+- `contextId`;
+- current selected species ID;
+- filters/search/showTools;
+- ordered IDs or a deterministic context representation sufficient to reconstruct them;
+- anchor species ID;
+- anchor viewport offset.
 
-Required behavior:
+The same browse context is mirrored to `sessionStorage` under a versioned ManaEvo Dex key so an iOS/WebKit React-tree remount in the same tab/session does not automatically erase return context.
 
-1. after pack completion, all 238 FORMAL images are available with network disabled;
-2. previous/next detail navigation works offline for the full active set;
-3. already-cached art is served without a network dependency;
-4. opening detail prefetches the near neighbors rather than all 238 into decoded memory;
-5. returning to grid does not reset to the top;
-6. Dex entry without pack does not create 238 simultaneous image requests;
-7. repeated detail next/previous does not cause the same unchanged asset bytes to be re-downloaded.
+Do not store this as permanent cloud/profile gameplay state.
 
-Performance telemetry/review should record at least:
+## 9.2 One restore function
 
-- cold online detail image ready time;
-- warm cached detail image ready time;
-- next/previous transition image-ready time;
-- number of network image requests during a 20-species sequential browse;
-- memory behavior on target iPhone WebKit during extended browsing.
+Visible `ずかんへ` and browser/PWA `popstate` must call the **same Dex restore routine**.
 
----
+Required restore sequence:
 
-# 12. Proposed acceptance tests after design approval
+1. restore area/type/search/showTools;
+2. recompute/confirm the result list;
+3. render fixed-geometry grid;
+4. locate anchor species;
+5. scroll anchor into the intended viewport position;
+6. apply saved pixel-offset correction;
+7. restore meaningful focus without causing another disruptive scroll.
 
-## AC-DEX-PERF-001 — Full art pack downloads current active set
+There must not be separate visible-back and browser-back implementations with different scroll behavior.
 
-Starting with an empty ManaEvo art cache, trigger `モンスター画像を全部保存`. Completion requires exactly the active No.001–238 current FORMAL revisions. No.239 is not fetched as part of the pack.
+## 9.3 Browser automatic scroll restoration
 
-## AC-DEX-PERF-002 — Full pack works offline
+During the Dex grid/detail history interval, the app owns restoration using `history.scrollRestoration = 'manual'` where supported.
 
-After pack completion, place the browser context offline and verify sampled beginning/middle/end species plus sequential detail navigation can render current FORMAL art without network.
+The previous value is preserved and restored when leaving that ownership interval.
 
-A slower exhaustive non-PR test may validate all 238 cached entries by manifest identity.
+This avoids browser automatic restoration racing with anchor+offset restoration and causing a visible top-jump-then-jump-back effect.
 
-## AC-DEX-PERF-003 — Interrupted download resumes
+## 9.4 Invalid/stale context fallback
 
-Interrupt after a deterministic subset, reload, then resume. Previously verified current entries are not fetched again unnecessarily and final state reaches 238/238.
-
-## AC-DEX-PERF-004 — Delta update downloads changed assets only
-
-Given manifest N cached, move to manifest N+1 with one changed asset. Update fetches the changed current revision and preserves unchanged valid entries.
-
-## AC-DEX-PERF-005 — Cache eviction is recoverable
-
-Delete one cached art entry after completion. Audit must not still report 238/238. Repair downloads/restores only missing/outdated current entries.
-
-## AC-DEX-UX-001 — Detail previous/next respects browse context
-
-Apply a filter yielding a deterministic subset, open the middle result, then use previous/next. Navigation remains within the filtered result order and skips non-browsable unknown species.
-
-## AC-DEX-UX-002 — Grid restoration preserves context and position
-
-Scroll to a deterministic species far below the first viewport, open detail, navigate to a nearby detail, choose `ずかんへ`, and verify:
-
-- same filter/search state;
-- same result set/order;
-- return near the previously anchored species rather than top of grid.
-
-## AC-DEX-UX-003 — Browser back converges with visible back
-
-Opening a detail and returning through browser/PWA back preserves the same Dex browse context as the visible `ずかんへ` action.
-
-## AC-DEX-PERF-006 — No 238-request burst on normal Dex entry
-
-With pack absent, first Dex entry loads only visible/near-visible art within the configured prefetch window; it must not launch all 238 image requests at once.
-
-## AC-DEX-PERF-007 — Long browse remains bounded
-
-On target iPhone WebKit, sequentially inspect at least 50 species using next/previous. The app remains responsive, does not retain decoded images for all visited species, and does not repeatedly download unchanged cached bytes.
+If session state is missing, schema-incompatible, or filters no longer reproduce the saved anchor, return to a valid Dex grid deterministically rather than trapping the user in detail. Best available fallback is selected species if present, otherwise nearest result/top.
 
 ---
 
-# 13. Required canonical promotion if review passes
+# 10. Failure/recovery cases
 
-This review proposal is intentionally not authoritative yet.
+## Network loss during pack download
 
-After an independent design reviewer returns `DESIGN PASS — PROMOTE`, the implementation PR must first synchronize these CURRENT documents in the same change set before runtime work is considered mergeable:
+Keep verified cache entries; mark incomplete/paused; resume only missing current keys.
+
+## Cache eviction
+
+- one missing key → not 238/238;
+- full art-cache eviction → 0/238 until repaired;
+- unrelated stale metadata cannot override cache truth;
+- normal online browsing may fetch missing current asset on demand.
+
+## Stale SW fallback
+
+A response containing an old FORMAL revision is valid only for displaying that old offline revision when explicitly requested by its own old key/fallback policy. It may never satisfy a **current pack completion write** unless bytes hash to the current manifest SHA.
+
+## Corrupt/unloadable bytes
+
+Hash mismatch never commits as current. Decode failure does not infinite-loop; it exposes retry/repair diagnostics.
+
+## Manifest changes mid-operation
+
+Finish/fail against frozen target N, then compare latest once. Never silently relabel N as N+1-complete.
+
+---
+
+# 11. Performance invariants
+
+Implementation is not considered conformant merely because functional tests pass.
+
+Required invariants:
+
+1. warm current-revision cache hits do not require network;
+2. revision manifest network fetch count does not scale with number of images rendered;
+3. art-cache `cache.keys()` full enumeration count does not scale with image renders;
+4. normal first Dex entry never starts 238 image requests;
+5. decoded/mounted image resources stay bounded by viewport + configured prefetch neighborhood;
+6. repeated next/previous does not re-download unchanged current bytes;
+7. a completed pack allows all 238 current assets to load with network disabled.
+
+Measure/review on iPhone WebKit:
+
+- cold detail ready time;
+- warm cached detail ready time;
+- previous/next ready time;
+- image-network-request counts;
+- manifest-network-request counts;
+- full-cache-enumeration counts;
+- long-browse memory trend/responsiveness.
+
+No fixed millisecond SLA is declared until target-device measurement exists, but monotonic pathological work proportional to 238 renders is a blocker.
+
+---
+
+# 12. Acceptance required before release
+
+These tests become mandatory CURRENT acceptance if this design is promoted.
+
+## AC-DEX-PERF-001 — Verified full pack
+
+Empty `manaevo-dex-art-v1` → download all → exactly active No.001–238 current FORMAL target keys verified. No.239 excluded. Completion cannot be obtained from a counter alone.
+
+## AC-DEX-PERF-002 — OFFLINE-238 exhaustive
+
+After completion, set network completely offline and sequentially render/open **all No.001 through No.238**. Expected:
+
+- load/decode errors: 0 for the approved fixtures/assets;
+- network image dependency: 0;
+- previous/next can traverse the active sequence offline.
+
+This is required release acceptance, not only a slow optional sample test.
+
+## AC-DEX-PERF-003 — Crash-boundary resume
+
+For one deterministic target:
+
+1. fetch and SHA-verify;
+2. `cache.put` succeeds;
+3. kill/remount before progress/meta/UI update;
+4. resume.
+
+Expected: that revision is discovered as complete and network image fetch for it is 0 on resume.
+
+## AC-DEX-PERF-004 — Stale-SW fallback cannot fake completion
+
+Current target SHA=B. Simulate network failure where fetch path yields old revision bytes A with HTTP-success semantics. Expected:
+
+- SHA mismatch;
+- B key is not committed;
+- completed count does not increment;
+- 238/238 is impossible until B bytes arrive.
+
+## AC-DEX-PERF-005 — Delta exactness
+
+With manifest N fully current:
+
+- N+1 changes exactly 1 asset → image network fetches exactly 1;
+- another fixture changes exactly 7 assets → image network fetches exactly 7;
+- unchanged target image fetches = 0.
+
+Manifest/control requests are measured separately from image fetches.
+
+## AC-DEX-PERF-006 — Eviction/inconsistency matrix
+
+After a complete pack, test separately:
+
+1. remove one art entry;
+2. remove whole `manaevo-dex-art-v1`;
+3. leave stale UI/meta saying complete while cache entry is missing;
+4. remove optional UI/meta while cache remains complete.
+
+Expected status derives from authoritative expected revision keys; repair fetches only missing/outdated assets.
+
+## AC-DEX-PERF-007 — Request budget on normal Dex entry
+
+Without pack installed, instrument image source/resolution requests. On initial Dex entry and ordinary scrolling:
+
+- eligible image work stays within visible + configured 2–3 viewport overscan + explicit detail neighborhood;
+- 238 image request burst is a failure;
+- `loading="lazy"` by itself is not acceptance evidence.
+
+## AC-DEX-PERF-008 — 238 long browse / bounded memory
+
+On iPhone WebKit-equivalent target, traverse **No.001 → No.238 → No.001** using detail navigation.
+
+Assert/measure:
+
+- app remains responsive;
+- mounted/retained image/object-URL resources remain bounded to viewport/prefetch policy;
+- memory/resource retention does not grow monotonically with every visited species;
+- unchanged cached image bytes are not repeatedly downloaded.
+
+A 50-species sample is insufficient for release acceptance.
+
+## AC-DEX-PERF-009 — SW hot-path budget
+
+With warm current cache, browse/render all 238 under instrumentation. Expected:
+
+- revision manifest network fetch does **not** occur once per image;
+- art-cache full `cache.keys()` enumeration per cache hit = 0;
+- local revisioned cache hits can return without network.
+
+## AC-DEX-UX-001 — Filtered previous/next
+
+Filter/search to a deterministic subset, open a middle item, navigate previous/next. Remain within displayed browsable order; ends disabled.
+
+## AC-DEX-UX-002 — Visible `ずかんへ` restores exact context
+
+Scroll far down, open detail, navigate several species, press `ずかんへ`.
+
+Verify search/filter/showTools/result context and anchor+offset restoration. No forced top reset.
+
+## AC-DEX-UX-003 — Browser Back uses same restore path
+
+Repeat UX-002 but return with browser/PWA Back. It must call the same restoration semantics and not create a second/top-jump behavior.
+
+## AC-DEX-UX-004 — History does not accumulate species steps
+
+Grid → A detail → next B → next C → browser Back returns to the original grid context in one Back action. It must not step C→B→A first.
+
+## AC-DEX-UX-005 — Remount/session recovery
+
+While detail is open, simulate React-tree remount within the same browser session. Session-mirrored Dex context allows visible/back restoration to remain correct or degrade deterministically to the documented fallback.
+
+---
+
+# 13. Canonical promotion procedure after DESIGN PASS
+
+This PR remains review-only. A design PASS does **not** make this branch runtime authority by itself.
+
+After independent verdict:
+
+`DESIGN PASS — PROMOTE DEX OFFLINE ART PACK + DETAIL UX V1`
+
+then, before implementation is mergeable, synchronize in one product-change set:
 
 1. `design/current/06-UI-SCREEN-CONTRACT.md`
-   - Dex detail previous/next semantics
-   - exact grid-context/scroll restoration
-   - loading-state expectations
+   - detail previous/grid/next semantics
+   - History API and anchor+offset restoration
+   - explicit viewport-aware request budget/loading UI
 2. `design/current/07-SAVE-PROFILES-PARENT-PWA.md`
-   - explicit full FORMAL art-pack management
-   - storage/quota/persistence caveats
-   - resumable download + manifest-revision/delta-update contract
+   - shell vs `manaevo-dex-art-v1` cache ownership
+   - memoized manifest/hot-path constraints
+   - SHA-verified full pack, resume, quota, eviction, delta update
 3. `design/current/08-ACCEPTANCE-TEST-CONTRACT.md`
-   - AC-DEX-PERF / AC-DEX-UX cases above
-   - also keep production-host authority synchronized with current Vercel canonical state
+   - AC-DEX-PERF-001..009 and AC-DEX-UX-001..005
 4. `design/rebuild/DECISION-LOG.md`
-   - approved decision entry and supersession/authority note
-5. owner-facing guide/change explanation required by project governance.
+   - new approved decision and explicit supersession/authority note
+5. `design/current/USER-GUIDE.md`
+   - owner-facing explanation synchronized before main merge.
 
-Implementation must not silently weaken this proposal by using raw scroll-to-top behavior, all-at-once decode, non-versioned cache, or a false permanence promise for iOS web storage.
+Implementation must then change the existing Service Worker rather than layering a second competing cache owner onto it.
 
 ---
 
-# 14. Independent reviewer questions
+# 14. Independent re-review questions
 
-The reviewer should specifically challenge:
+The next reviewer should explicitly answer:
 
-1. Is CacheStorage + manifest revisioning sufficient and safe for the current Vite/PWA architecture, or should IndexedDB own any part of the art-pack index?
-2. Does the design avoid iPhone memory pressure by separating persistent bytes from decoded-image memory?
-3. Is a bounded default concurrency of 4 reasonable, and should it be adaptive?
-4. Is anchor-species + offset restoration robust with lazy image layout and filters?
-5. Should previous/next use filtered browse context as specified, or global No order?
-6. Are background/reload/cancellation semantics implementable without falsely reporting completion?
-7. Are iOS storage eviction and `navigator.storage.persist()` limitations represented accurately?
-8. Do the proposed acceptance tests catch repeat downloads, stale assets, scroll reset, and navigation traps?
-9. Is Parent/device ownership for the bulk-download action the right balance between convenience and accidental data use?
-10. Are there any blockers that must be fixed in design before implementation begins?
+1. Does `manaevo-shell-vN` vs `manaevo-dex-art-v1` eliminate double ownership and prevent shell activation from deleting the user-requested pack?
+2. Is the warm FORMAL image hot path bounded — memoized revision map + revisioned cache match, with no per-image manifest network fetch or full `cache.keys()` prune?
+3. Can any stale/old HTTP-success response become current-complete without passing the current SHA? It must be impossible.
+4. Does frozen manifest N + final latest-manifest check prevent moving-target false 238/238?
+5. Are crash-after-cache-put and eviction states derived safely from cache truth rather than progress metadata?
+6. Does History `push` on first detail + `replace` on previous/next + shared restore routine give intuitive browser Back with current architecture?
+7. Does `scrollRestoration='manual'` ownership avoid browser/app double restoration?
+8. Are OFFLINE-238, stale-SW, exact delta, eviction matrix, request budget, 238 round-trip long browse and SW hot-path tests strong enough for the stated “ヌルヌル/offline 238” promise?
+9. Does the design keep persistent bytes separate from bounded decoded memory?
+10. Is any implementation decision still dangerously deferred that could change safety/performance semantics?
 
-Expected reviewer verdict when no blocker remains:
+If any blocker remains, verdict:
+
+`DESIGN BLOCKED — DO NOT PROMOTE / DO NOT IMPLEMENT`
+
+If no blocker remains:
 
 `DESIGN PASS — PROMOTE DEX OFFLINE ART PACK + DETAIL UX V1`
