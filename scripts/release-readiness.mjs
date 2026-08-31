@@ -126,11 +126,25 @@ function verify404Source(source) {
 }
 
 function verifyServiceWorkerSource(sw) {
-  invariant(sw.includes("const CACHE_PREFIX = 'manaevo-pwa-'"), 'service worker cache prefix must stay ManaEvo-specific')
+  invariant(sw.includes("const LEGACY_CACHE_PREFIX = 'manaevo-pwa-'"), 'service worker must identify the legacy ManaEvo cache namespace for migration cleanup')
+  invariant(sw.includes("const SHELL_CACHE_PREFIX = 'manaevo-shell-'"), 'service worker shell cache prefix must stay ManaEvo-specific')
+  invariant(sw.includes("const DEX_ART_CACHE_NAME = 'manaevo-dex-art-v1'"), 'service worker must use the dedicated D-020 Dex art cache')
   invariant(sw.includes('url.pathname.startsWith(BASE_PATH)'), 'service worker fetch handler must stay inside its own scope')
-  invariant(sw.includes('key.startsWith(CACHE_PREFIX)'), 'service worker cleanup must only delete ManaEvo caches')
-  invariant(sw.includes('pruneMonsterCache'), 'service worker must prune superseded monster revisions only after a current formal revision is available')
+  invariant(sw.includes('key.startsWith(SHELL_CACHE_PREFIX)'), 'service worker cleanup must only rotate ManaEvo shell caches')
+  invariant(sw.includes('key.startsWith(LEGACY_CACHE_PREFIX)'), 'service worker must clean legacy ManaEvo PWA caches during migration')
+  invariant(sw.includes('DEX_ART_CACHE_NAME is deliberately not deleted'), 'shell updates must preserve the user-requested Dex art cache')
+  invariant(sw.includes('verifyResponseForRevision'), 'current FORMAL writes must pass SHA verification')
+  invariant(sw.includes('await artCache.put(cacheKey, verified.response.clone())'), 'verified current FORMAL bytes must commit to the dedicated art cache')
+  invariant(sw.includes('pruneDexArtCache'), 'obsolete art pruning must exist as an explicit control-plane operation')
+  invariant(sw.includes("MANA_EVO_DEX_ART_REFRESH_MANIFEST"), 'art prune/manifest refresh must be triggered explicitly rather than on every image hit')
   invariant(!sw.includes('kids-quest'), 'service worker must not reference Kids Quest')
+
+  const warmHit = sw.indexOf('const cached = await artCache.match(cacheKey)')
+  const warmReturn = sw.indexOf('if (cached) return cached', warmHit)
+  invariant(warmHit >= 0 && warmReturn > warmHit, 'FORMAL warm hit must return directly from revisioned art cache')
+  const pruneAfterWarmHit = sw.indexOf('pruneDexArtCache', warmHit)
+  const networkAfterWarmHit = sw.indexOf('fetch(request', warmHit)
+  invariant(pruneAfterWarmHit < 0 || networkAfterWarmHit < pruneAfterWarmHit, 'warm FORMAL cache hit must not prune the entire art cache')
 
   const appShell = sw.match(/const APP_SHELL = \[([\s\S]*?)\]\n/)?.[1] || ''
   invariant(appShell.length > 0, 'service worker APP_SHELL could not be inspected')
@@ -204,10 +218,15 @@ export function verifyBuildArtifact({ root = defaultRoot } = {}) {
   const localRefs = [...index.matchAll(/(?:src|href)="([^"]+)"/g)].map((match) => match[1]).filter((value) => !/^(https?:|data:|#)/.test(value))
   for (const ref of localRefs) invariant(ref.startsWith(APP_BASE), `built index local asset escaped app root: ${ref}`)
 
+  invariant(revisions.schemaVersion === 2, 'generated monster revision manifest must use D-020 schema v2')
+  invariant(revisions.formalCount === artCounts.FORMAL, `generated FORMAL count must be ${artCounts.FORMAL}`)
+  invariant(Number(revisions.totalBytes) > 0, 'generated monster revision manifest must include totalBytes')
+  invariant(/^sha256-[a-f0-9]{64}$/.test(revisions.manifestRevision || ''), 'generated monster revision manifest must include stable SHA identity')
   invariant(Object.keys(revisions.assets || {}).length === 238, 'generated monster revision manifest must cover m001-m238')
   invariant(Object.keys(revisions.formalByUrl || {}).length === artCounts.FORMAL, `generated FORMAL revision count must be ${artCounts.FORMAL}`)
   for (const [speciesId, canonical] of Object.entries(canonicalArt.assets || {})) {
     invariant(revisions.assets?.[speciesId]?.state === canonical.state, `generated art state drift for ${speciesId}`)
+    if (canonical.state === 'FORMAL') invariant(Number(revisions.assets?.[speciesId]?.byteLength) > 0, `${speciesId} must include byteLength`)
     if (canonical.state !== 'FORMAL') invariant(!revisions.assets?.[speciesId]?.revision, `${speciesId} must not receive a FORMAL revision while ${canonical.state}`)
   }
 
