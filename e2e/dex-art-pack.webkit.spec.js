@@ -180,3 +180,67 @@ test('Parent download creates a verified 238-key pack that renders all 238 offli
     throw new Error(`OFFLINE-238 failed: imageFailures=${offlineResult.length}/238; swNetwork=${serviceWorkerMonsterNetwork.length}; pre=${JSON.stringify(preOffline)}; firstImageFailures=${offlineResult.slice(0, 8).join(',')}; firstSwNetwork=${serviceWorkerMonsterNetwork.slice(0, 4).join(',')}`)
   }
 })
+
+test('Dex detail can traverse No.001 to No.238 and back without growing retained image resources', async ({ page, context }) => {
+  test.setTimeout(180_000)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await installSave(page)
+  await page.goto('/', { waitUntil: 'domcontentloaded' })
+  await page.evaluate(async () => navigator.serviceWorker.ready)
+  if (!(await page.evaluate(() => Boolean(navigator.serviceWorker.controller)))) {
+    await page.reload({ waitUntil: 'domcontentloaded' })
+  }
+  await ensureServiceWorkerControl(page)
+
+  const swMonsterNetwork = []
+  const swManifestNetwork = []
+  context.on('request', (request) => {
+    if (!request.serviceWorker()) return
+    const path = new URL(request.url()).pathname
+    if (path.startsWith('/monsters/')) swMonsterNetwork.push(request.url())
+    if (path.endsWith('/monster-asset-revisions.json')) swManifestNetwork.push(request.url())
+  })
+
+  await page.getByRole('navigation', { name: 'メインメニュー' }).getByRole('button', { name: /モンスター/ }).click()
+  await page.getByRole('button', { name: /ずかん/ }).click()
+  await page.getByRole('button', { name: /No\.001 / }).click()
+  await expect(page.locator('[data-dex-detail-id="m001"]')).toBeVisible()
+
+  const forward = await page.evaluate(async () => {
+    let maxImages = 0
+    for (let i = 1; i < 238; i += 1) {
+      const button = document.querySelector('.dex-detail-nav:not(.bottom) button[aria-label^="つぎのモンスター"]')
+      if (!button || button.disabled) return { error: `forward stopped at ${i}`, maxImages, id: document.querySelector('[data-dex-detail-id]')?.getAttribute('data-dex-detail-id') }
+      button.click()
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+      maxImages = Math.max(maxImages, document.querySelectorAll('.dex-detail img').length)
+    }
+    return { maxImages, id: document.querySelector('[data-dex-detail-id]')?.getAttribute('data-dex-detail-id') }
+  })
+  expect(forward.error).toBeUndefined()
+  expect(forward.id).toBe('m238')
+  expect(forward.maxImages).toBeLessThanOrEqual(3)
+
+  await page.waitForTimeout(1200)
+  const networkAfterForward = swMonsterNetwork.length
+  const manifestAfterForward = swManifestNetwork.length
+
+  const backward = await page.evaluate(async () => {
+    let maxImages = 0
+    for (let i = 237; i >= 1; i -= 1) {
+      const button = document.querySelector('.dex-detail-nav:not(.bottom) button[aria-label^="まえのモンスター"]')
+      if (!button || button.disabled) return { error: `backward stopped at ${i}`, maxImages, id: document.querySelector('[data-dex-detail-id]')?.getAttribute('data-dex-detail-id') }
+      button.click()
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+      maxImages = Math.max(maxImages, document.querySelectorAll('.dex-detail img').length)
+    }
+    return { maxImages, id: document.querySelector('[data-dex-detail-id]')?.getAttribute('data-dex-detail-id') }
+  })
+  expect(backward.error).toBeUndefined()
+  expect(backward.id).toBe('m001')
+  expect(backward.maxImages).toBeLessThanOrEqual(3)
+
+  await page.waitForTimeout(1200)
+  expect(swMonsterNetwork.length).toBe(networkAfterForward)
+  expect(swManifestNetwork.length).toBe(manifestAfterForward)
+})
