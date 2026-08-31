@@ -50,13 +50,6 @@ async function ensureServiceWorkerControl(page) {
   await expect.poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBeTruthy()
 }
 
-async function openDex(page) {
-  const nav = page.getByRole('navigation', { name: 'メインメニュー' })
-  await nav.getByRole('button', { name: /モンスター/ }).click()
-  await page.getByRole('button', { name: /ずかん/ }).click()
-  await expect(page.locator('.dex-screen')).toBeVisible()
-}
-
 test('Dex uses bounded viewport art work and does not leave orphan detail history', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await installSave(page)
@@ -126,13 +119,64 @@ test('Parent download creates a verified 238-key pack that renders all 238 offli
   await expect(page.getByTestId('dex-art-pack-controls').getByText('238/238', { exact: true })).toBeVisible({ timeout: 120_000 })
   await expect(page.getByTestId('dex-art-pack-controls').getByText(/保存済み/)).toBeVisible()
 
-  const keyCount = await page.evaluate(async () => {
+  const preOffline = await page.evaluate(async () => {
     const cache = await caches.open('manaevo-dex-art-v1')
-    return (await cache.keys()).length
+    const keys = await cache.keys()
+    const manifestResponse = await fetch('/monster-asset-revisions.json', { cache: 'no-store' })
+    const manifest = await manifestResponse.json()
+    const revision = manifest?.formalByUrl?.['/monsters/m001.webp'] || null
+    const expected = revision ? new URL(`/monsters/m001.webp?__manaevo_rev=${encodeURIComponent(revision)}`, location.href).href : null
+    const exact = expected ? await cache.match(expected) : null
+    const first = keys[0]?.url || null
+    return {
+      controller: navigator.serviceWorker.controller?.scriptURL || null,
+      keyCount: keys.length,
+      firstKey: first,
+      revision,
+      expectedKey: expected,
+      exactMatch: Boolean(exact),
+      exactStatus: exact?.status || null,
+      manifestSchemaVersion: manifest?.schemaVersion ?? null,
+      manifestRevision: manifest?.manifestRevision || null
+    }
   })
-  expect(keyCount).toBe(238)
+  expect(preOffline.keyCount).toBe(238)
+  expect(preOffline.exactMatch).toBeTruthy()
 
   await context.setOffline(true)
+  const offlineProbe = await page.evaluate(async () => {
+    const cache = await caches.open('manaevo-dex-art-v1')
+    const manifestCache = (await caches.keys()).find((name) => name.startsWith('manaevo-shell-'))
+    const shell = manifestCache ? await caches.open(manifestCache) : null
+    const shellManifest = shell ? await shell.match(new URL('/monster-asset-revisions.json', location.href).href) : null
+    let shellRevision = null
+    if (shellManifest) {
+      try {
+        const parsed = await shellManifest.json()
+        shellRevision = parsed?.formalByUrl?.['/monsters/m001.webp'] || null
+      } catch {}
+    }
+    const expected = shellRevision ? new URL(`/monsters/m001.webp?__manaevo_rev=${encodeURIComponent(shellRevision)}`, location.href).href : null
+    const exact = expected ? await cache.match(expected) : null
+    let fetchResult = null
+    try {
+      const response = await fetch('/monsters/m001.webp')
+      fetchResult = { ok: response.ok, status: response.status, type: response.type, size: (await response.arrayBuffer()).byteLength }
+    } catch (error) {
+      fetchResult = { error: String(error?.message || error) }
+    }
+    return {
+      controller: navigator.serviceWorker.controller?.scriptURL || null,
+      shellCacheName: manifestCache || null,
+      shellManifestPresent: Boolean(shellManifest),
+      shellRevision,
+      expectedKey: expected,
+      directCacheMatch: Boolean(exact),
+      directCacheStatus: exact?.status || null,
+      fetchResult
+    }
+  })
+
   const offlineResult = await page.evaluate(async () => {
     const failures = []
     for (let i = 1; i <= 238; i += 1) {
@@ -152,5 +196,7 @@ test('Parent download creates a verified 238-key pack that renders all 238 offli
     }
     return failures
   })
-  expect(offlineResult).toEqual([])
+  if (offlineResult.length) {
+    throw new Error(`OFFLINE-238 failed ${offlineResult.length}/238; pre=${JSON.stringify(preOffline)}; offline=${JSON.stringify(offlineProbe)}; firstFailures=${offlineResult.slice(0, 8).join(',')}`)
+  }
 })
