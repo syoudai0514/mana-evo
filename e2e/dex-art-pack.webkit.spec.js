@@ -127,11 +127,9 @@ test('Parent download creates a verified 238-key pack that renders all 238 offli
     const revision = manifest?.formalByUrl?.['/monsters/m001.webp'] || null
     const expected = revision ? new URL(`/monsters/m001.webp?__manaevo_rev=${encodeURIComponent(revision)}`, location.href).href : null
     const exact = expected ? await cache.match(expected) : null
-    const first = keys[0]?.url || null
     return {
       controller: navigator.serviceWorker.controller?.scriptURL || null,
       keyCount: keys.length,
-      firstKey: first,
       revision,
       expectedKey: expected,
       exactMatch: Boolean(exact),
@@ -143,38 +141,19 @@ test('Parent download creates a verified 238-key pack that renders all 238 offli
   expect(preOffline.keyCount).toBe(238)
   expect(preOffline.exactMatch).toBeTruthy()
 
-  await context.setOffline(true)
-  const offlineProbe = await page.evaluate(async () => {
-    const cache = await caches.open('manaevo-dex-art-v1')
-    const manifestCache = (await caches.keys()).find((name) => name.startsWith('manaevo-shell-'))
-    const shell = manifestCache ? await caches.open(manifestCache) : null
-    const shellManifest = shell ? await shell.match(new URL('/monster-asset-revisions.json', location.href).href) : null
-    let shellRevision = null
-    if (shellManifest) {
-      try {
-        const parsed = await shellManifest.json()
-        shellRevision = parsed?.formalByUrl?.['/monsters/m001.webp'] || null
-      } catch {}
+  // Playwright WebKit's context.setOffline(true) can reject requests before the
+  // Service Worker can satisfy them from CacheStorage. Instead, make the origin
+  // unavailable for direct monster requests while keeping the Service Worker alive.
+  // Any Service-Worker-originated monster network fetch is also a hard failure.
+  const serviceWorkerMonsterNetwork = []
+  context.on('request', (request) => {
+    const path = new URL(request.url()).pathname
+    if (path.startsWith('/monsters/') && request.serviceWorker()) {
+      serviceWorkerMonsterNetwork.push(request.url())
     }
-    const expected = shellRevision ? new URL(`/monsters/m001.webp?__manaevo_rev=${encodeURIComponent(shellRevision)}`, location.href).href : null
-    const exact = expected ? await cache.match(expected) : null
-    let fetchResult = null
-    try {
-      const response = await fetch('/monsters/m001.webp')
-      fetchResult = { ok: response.ok, status: response.status, type: response.type, size: (await response.arrayBuffer()).byteLength }
-    } catch (error) {
-      fetchResult = { error: String(error?.message || error) }
-    }
-    return {
-      controller: navigator.serviceWorker.controller?.scriptURL || null,
-      shellCacheName: manifestCache || null,
-      shellManifestPresent: Boolean(shellManifest),
-      shellRevision,
-      expectedKey: expected,
-      directCacheMatch: Boolean(exact),
-      directCacheStatus: exact?.status || null,
-      fetchResult
-    }
+  })
+  await context.route('**/monsters/**', async (route) => {
+    await route.abort('internetdisconnected')
   })
 
   const offlineResult = await page.evaluate(async () => {
@@ -196,7 +175,8 @@ test('Parent download creates a verified 238-key pack that renders all 238 offli
     }
     return failures
   })
-  if (offlineResult.length) {
-    throw new Error(`OFFLINE-238 failed ${offlineResult.length}/238; pre=${JSON.stringify(preOffline)}; offline=${JSON.stringify(offlineProbe)}; firstFailures=${offlineResult.slice(0, 8).join(',')}`)
+
+  if (offlineResult.length || serviceWorkerMonsterNetwork.length) {
+    throw new Error(`OFFLINE-238 failed: imageFailures=${offlineResult.length}/238; swNetwork=${serviceWorkerMonsterNetwork.length}; pre=${JSON.stringify(preOffline)}; firstImageFailures=${offlineResult.slice(0, 8).join(',')}; firstSwNetwork=${serviceWorkerMonsterNetwork.slice(0, 4).join(',')}`)
   }
 })
