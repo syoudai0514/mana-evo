@@ -165,7 +165,11 @@ For V1, authoritative completion is derived from:
 
 1. one fixed target manifest snapshot for the current operation;
 2. the 238 expected SHA revision keys;
-3. entries that were written into `manaevo-dex-art-v1` **only after their response bytes passed SHA-256 verification**.
+3. entries written into `manaevo-dex-art-v1` through the **verified-write path only**.
+
+The dedicated `manaevo-dex-art-v1` namespace begins as a new schema-owned cache. Only the pack manager/current-FORMAL miss path may write current revision keys, and both must use the same SHA verification routine before `cache.put`. No legacy cache entry is imported into this namespace merely because its URL/species matches.
+
+Therefore, after this schema starts, **presence of an expected revision key is a proof that its bytes passed the expected SHA at commit time**. Explicit pack audits may use expected-key presence as the cheap authoritative completeness check; they do not need to re-hash all 238 bytes on every status display.
 
 V1 must not introduce an independent downloaded-count database as completion authority.
 
@@ -173,7 +177,7 @@ V1 must not introduce an independent downloaded-count database as completion aut
 
 An asset becomes complete only in this order:
 
-1. fetch bytes for the target canonical asset;
+1. fetch bytes for the target canonical asset using a path that cannot be satisfied by an unverified old-revision fallback for a current-pack write;
 2. require a successful usable response;
 3. read/clone bytes;
 4. compute SHA-256 over actual response bytes;
@@ -186,7 +190,8 @@ Therefore:
 - HTTP 200 alone is insufficient;
 - an offline/stale Service Worker fallback with old bytes cannot count for a new SHA;
 - a failed/mismatched hash is never written under the current revision key;
-- a UI progress increment before `cache.put` success is forbidden.
+- a UI progress increment before `cache.put` success is forbidden;
+- a normal runtime cache miss that opportunistically fills `manaevo-dex-art-v1` must obey the same verified-write boundary as explicit download-all.
 
 ## 4.3 Crash-safe resume
 
@@ -425,7 +430,7 @@ Keep verified cache entries; mark incomplete/paused; resume only missing current
 - one missing key → not 238/238;
 - full art-cache eviction → 0/238 until repaired;
 - unrelated stale metadata cannot override cache truth;
-- normal online browsing may fetch missing current asset on demand.
+- normal online browsing may fetch missing current asset on demand through the verified-write path.
 
 ## Stale SW fallback
 
