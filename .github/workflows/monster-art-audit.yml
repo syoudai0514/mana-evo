@@ -10,6 +10,8 @@ on:
       - 'design/current/monster-asset-manifest.json'
       - 'design/current/monsters/**'
       - 'design/rebuild/asset-production/candidate-provenance/**'
+      - 'design/rebuild/asset-production/candidate-history/**'
+      - 'design/rebuild/asset-production/change-plans/**'
       - 'design/rebuild/asset-production/final-visual-audit/**'
       - '.github/workflows/monster-art-audit.yml'
       - 'package.json'
@@ -31,8 +33,11 @@ jobs:
           node-version: 24
       - name: Install dependencies
         run: npm ci
-      - name: Install Chromium
-        run: npx playwright install --with-deps chromium
+      - name: Install Chromium and WebKit
+        run: npx playwright install --with-deps chromium webkit
+      - name: Verify Monster Art PR exact scope
+        if: github.event_name == 'pull_request'
+        run: npm run verify:monster-art-scope
       - name: Snapshot protected candidate state
         shell: bash
         run: |
@@ -48,6 +53,10 @@ jobs:
         id: tests
         continue-on-error: true
         run: npm test
+      - name: Real WebKit replacement QA fixtures
+        id: webkit
+        continue-on-error: true
+        run: npm run test:monster-art-webkit
       - name: Production build
         id: build
         continue-on-error: true
@@ -68,9 +77,10 @@ jobs:
           path: design/rebuild/asset-production/final-visual-audit/**
           if-no-files-found: error
       - name: Surface validation failures
-        if: steps.tests.outcome != 'success' || steps.build.outcome != 'success'
+        if: steps.tests.outcome != 'success' || steps.webkit.outcome != 'success' || steps.build.outcome != 'success'
         shell: bash
         run: |
           echo "npm test outcome: ${{ steps.tests.outcome }}"
+          echo "WebKit integration outcome: ${{ steps.webkit.outcome }}"
           echo "npm run build outcome: ${{ steps.build.outcome }}"
           exit 1
