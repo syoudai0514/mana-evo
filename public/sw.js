@@ -176,7 +176,10 @@ async function fillCurrentMonsterRevision(artCache, cacheKey, request, revision)
 async function handleMonsterAsset(request, url) {
   const relativePath = `/${url.pathname.slice(BASE_PATH.length)}`
   const revisions = await loadMonsterRevisions()
-  const revision = revisions?.formalByUrl?.[relativePath]
+  const requestedRevision = url.searchParams.get(DEX_ART_REV_PARAM)
+  const revision = /^sha256-[a-f0-9]{64}$/i.test(requestedRevision || '')
+    ? requestedRevision
+    : revisions?.formalByUrl?.[relativePath]
 
   if (revision) {
     const artCache = await caches.open(DEX_ART_CACHE_NAME)

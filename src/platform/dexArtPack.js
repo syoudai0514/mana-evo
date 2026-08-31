@@ -92,7 +92,10 @@ async function fetchVerifyAndCacheAssetOnce(asset, { signal } = {}) {
   const key = revisionRequestUrl(asset)
   if (await cache.match(key)) return { speciesId: asset.speciesId, cached: true, bytes: asset.byteLength || 0 }
 
-  const response = await fetch(publicUrl(asset.url), { cache: 'no-store', signal })
+  // Fetch the exact frozen revision identity. The Service Worker honors this
+  // explicit revision even if its normal-display manifest memo is one lifecycle
+  // behind, then SHA-verifies the bytes before committing the same revision key.
+  const response = await fetch(key, { cache: 'no-store', signal })
   const verified = await verifyAssetResponse(asset, response)
   await cache.put(key, verified.response)
   return { speciesId: asset.speciesId, cached: false, bytes: verified.bytes.byteLength }

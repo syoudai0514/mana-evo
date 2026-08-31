@@ -22,7 +22,12 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register(`${baseUrl}sw.js`, {
       scope: baseUrl,
       updateViaCache: 'none'
-    }).then((registration) => registration.update()).catch((error) => {
+    }).then(async (registration) => {
+      await registration.update()
+      const ready = await navigator.serviceWorker.ready
+      const worker = navigator.serviceWorker.controller || ready.active
+      worker?.postMessage({ type: 'MANA_EVO_DEX_ART_REFRESH_MANIFEST' })
+    }).catch((error) => {
       console.warn('ManaEvo service worker registration failed', error)
     })
   })
