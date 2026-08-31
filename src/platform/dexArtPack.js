@@ -2,6 +2,8 @@ export const DEX_ART_CACHE_NAME = 'manaevo-dex-art-v1'
 export const DEX_ART_TARGET_COUNT = 238
 export const DEX_ART_REV_PARAM = '__manaevo_rev'
 
+let manifestMemo = null
+
 function baseUrl() {
   const raw = typeof import.meta !== 'undefined' && import.meta.env?.BASE_URL ? import.meta.env.BASE_URL : '/'
   return raw.endsWith('/') ? raw : `${raw}/`
@@ -45,10 +47,16 @@ export function normalizedDexManifest(raw) {
   }
 }
 
-export async function loadDexArtManifest({ cache = 'no-store' } = {}) {
+export async function loadDexArtManifest({ cache = 'no-store', refresh = false } = {}) {
+  if (!refresh && manifestMemo) return manifestMemo
   const response = await fetch(`${baseUrl()}monster-asset-revisions.json`, { cache })
   if (!response.ok) throw new Error(`monster manifest HTTP ${response.status}`)
-  return normalizedDexManifest(await response.json())
+  manifestMemo = normalizedDexManifest(await response.json())
+  return manifestMemo
+}
+
+export function clearDexArtManifestMemo() {
+  manifestMemo = null
 }
 
 export function expectedShaHex(revision) {
@@ -116,6 +124,14 @@ export async function auditDexArtPack(manifest = null) {
   }
 }
 
+export async function pruneDexArtCache(manifest = null) {
+  const target = manifest || await loadDexArtManifest()
+  const expected = new Set(target.assets.map(revisionRequestUrl))
+  const cache = await caches.open(DEX_ART_CACHE_NAME)
+  const keys = await cache.keys()
+  await Promise.all(keys.filter((key) => !expected.has(key.url)).map((key) => cache.delete(key)))
+}
+
 async function runPool(items, worker, concurrency) {
   let next = 0
   const runners = Array.from({ length: Math.min(Math.max(1, concurrency), items.length || 1) }, async () => {
@@ -128,7 +144,7 @@ async function runPool(items, worker, concurrency) {
 }
 
 export async function downloadDexArtPack({ onProgress, signal, concurrency = 4 } = {}) {
-  const frozen = await loadDexArtManifest({ cache: 'no-store' })
+  const frozen = await loadDexArtManifest({ cache: 'no-store', refresh: true })
   let audit = await auditDexArtPack(frozen)
   onProgress?.(audit)
 
@@ -140,8 +156,9 @@ export async function downloadDexArtPack({ onProgress, signal, concurrency = 4 }
   }, concurrency)
 
   const completedFrozen = await auditDexArtPack(frozen)
-  const latest = await loadDexArtManifest({ cache: 'no-store' })
+  const latest = await loadDexArtManifest({ cache: 'no-store', refresh: true })
   const latestAudit = await auditDexArtPack(latest)
+  await pruneDexArtCache(latest)
   notifyServiceWorkerManifestRefresh()
 
   return {
