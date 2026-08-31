@@ -116,18 +116,15 @@ async function sha256Hex(bytes) {
   return [...new Uint8Array(digest)].map((value) => value.toString(16).padStart(2, '0')).join('')
 }
 
-function responseFromBytes(source, bytes) {
-  const headers = new Headers(source.headers)
-  if (!headers.has('content-type')) headers.set('content-type', 'image/webp')
-  return new Response(bytes, { status: 200, statusText: 'OK', headers })
-}
-
 async function verifyResponseForRevision(response, revision) {
   if (!response?.ok) return null
+  // Keep the browser-native Response for CacheStorage. WebKit may reject a
+  // synthetic new Response(bytes) when it is later returned to an <img> request.
+  const cacheResponse = response.clone()
   const bytes = await response.arrayBuffer()
   const actual = await sha256Hex(bytes)
   if (actual !== expectedShaHex(revision)) return null
-  return { bytes, response: responseFromBytes(response, bytes) }
+  return { bytes, response: cacheResponse }
 }
 
 async function previousRevisionResponse(artCache, request) {
