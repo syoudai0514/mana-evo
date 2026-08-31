@@ -1,8 +1,8 @@
 # ManaEvo CURRENT — START HERE
 
 Status: **CURRENT NORMATIVE ENTRY POINT**  
-Date: 2026-08-25  
-Work Item: W-114
+Date: 2026-08-31  
+Origin: W-114 canonical normalization; navigation updated after Monster Art final closeout
 
 ## 1. Purpose
 
@@ -38,6 +38,19 @@ The following files are CURRENT companions to the domain contracts and must be c
 
 - [`monster-asset-manifest.json`](./monster-asset-manifest.json) — W-109 asset-state inventory / resolution companion.
 
+As of the 2026-08-31 final art closeout, the active roster is FORMAL 238 / CANDIDATE 0 / PLACEHOLDER 0 with `m239` excluded. **Do not treat this sentence as a substitute for reading the current manifest**; it records the closeout baseline only.
+
+Operational/release documents for Monster Art:
+
+- `../../docs/monster-production-status.md` — current operational status entry;
+- `../../docs/MONSTER-ART-FINAL-HANDOFF-20260831.md` — final closeout handoff and recovery context;
+- `../../docs/MONSTER-ART-MAINTENANCE-RUNBOOK.md` — future FORMAL replacement procedure;
+- `../../docs/MONSTER-ART-TIPS-AND-PITFALLS.md` — practical failure patterns;
+- `../rebuild/asset-production/PHASE-4-STYLE-LOCK.md` — detailed art visual/technical lock;
+- `../rebuild/asset-production/PHASE-4-GITHUB-BINARY-HANDOFF.md` — exact binary transport/handoff.
+
+Those operational documents explain **how to maintain/release art**. They do not outrank the W-109 CURRENT identity/art contract or rebuild authority rules.
+
 ### Monster visual-description shards
 
 Together these three files contain the active visual-description set for **exactly `m001` through `m238`**:
@@ -70,7 +83,8 @@ Active-scope guards:
 - every `m001`〜`m238` appears exactly once;
 - `m239` is not part of CURRENT active scope and remains baseline/reference only under D-003;
 - `m236` CURRENT official name is **`ホシラディア`**;
-- baseline-derived lore/description data must not be invented or paraphrased into new canonical facts.
+- baseline-derived lore/description data must not be invented or paraphrased into new canonical facts;
+- `m235` is F080 `ユグドラシア`, concept `世界樹`, stage 1 of 1; the world tree itself is the species identity unless a higher-authority approved decision changes it.
 
 ## 4. Evidence and source categories
 
@@ -118,4 +132,12 @@ For any change:
 5. preserve unresolved decisions as unresolved rather than guessing;
 6. update runtime/tests only in a Work Item that explicitly owns them.
 
-W-114 performs canonical normalization only; it creates no new product rule.
+For Monster Art maintenance specifically:
+
+1. read W-109 and fresh CURRENT metadata/manifest;
+2. record current per-ID state/SHA before looking for a convenient old reference;
+3. follow the maintenance runbook through separate `VISUAL QA → ART READY → REGISTERED/REPLACED → FORMAL → MAIN → DEPLOYED → LIVE VERIFIED` gates;
+4. never use an old ZIP/chat SHA as CURRENT without refetching;
+5. never report a generated image, merged PR or successful deploy as the same completion state.
+
+W-114 performed canonical normalization only; this later navigation update adds no independent product rule beyond approved CURRENT/closeout evidence.

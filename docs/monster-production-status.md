@@ -1,114 +1,154 @@
-# ManaEvo 238体 正式化進捗
+# ManaEvo 238体 Monster Art / Master 現在状況
 
-最終更新: 2026-08-24 14:56 JST
-作業ブランチ: `chatgpt/monster-master-238`
-PR: #15 `feat: 238体正式マスターと戦闘バランス基盤`
+最終更新: **2026-08-31 JST**
 
-## 今回のゴール
+この文書は、旧PR #15時点の進捗メモを置き換えた**現在状況の入口**です。詳細な恒久ルールは各設計書・runbookを参照してください。ライブ状態の正本は `design/current/monster-asset-manifest.json` と現在のGitHub/Productionです。
 
-- No.001〜No.238 を正式モンスターIDとして一元管理する。
-- 名前・属性・進化系列・HP・こうげき・ぼうぎょ・すばやさ・レベル成長・進化条件・出現・捕獲をゲームロジックへ接続する。
-- 正式画像が完成済みのキャラは正式画像、未完成のキャラはplaceholderを使う。画像待ちで育成・進化を止めない。
-- 既存セーブの旧speciesIdを正式IDへmigrationする。
-- Kids Quest由来の学習部分は変更しない。
-- PR Previewには `?qa=monster-master` の専用QA状態を用意し、基礎キャラ取得・進化条件達成・必要進化アイテム所持済みで確認できるようにする。
+## 現在の結論
+
+Monster Artの全体制作・最終closeoutは完了しています。
+
+| 項目 | 現在状態 |
+|---|---|
+| Active species | `m001`〜`m238` = 238 |
+| Excluded | `m239` |
+| FORMAL | **238** |
+| CANDIDATE | **0** |
+| PLACEHOLDER | **0** |
+| Final closeout PR | **#128** |
+| main merge commit | `bc78609097fc1f486d26d6703f127fdaf235188d` |
+| closeout tests | **290/290 PASS** |
+| Vite production build | **PASS** |
+| Production | `https://mana-evo.vercel.app/` |
+| Production revision endpoint | `https://mana-evo.vercel.app/monster-asset-revisions.json` |
+
+2026-08-31のcloseoutではProductionのトップとrevision endpointがHTTP 200で応答し、`m001`〜`m238`がFORMALとして配信されていることまで確認済みです。
+
+> テスト件数290は2026-08-31時点の証跡です。今後テストが増えた場合に「290固定」をAcceptanceにしないでください。将来はCURRENT test suiteの0 failureを基準にします。
 
 ## 正本
 
-- バトル/育成: `design/06-battle-and-progression-design.md`
-- バランス初期値/調整運用: `design/10-initial-balance-master.md`（`08` と競合時はこちら優先）
-- ギガ/バースト対象: `design/09-special-forms-master.md`
-- 未決事項: `01-UNRESOLVED-DECISIONS.md`
-- 有効範囲: No.001〜238。No.239は元資料に保全するが現行ゲームでは有効化しない。
+Monster Art / releaseについては次を使います。
 
-## 復元済みの特殊形態対象
+- 現在のasset state: `design/current/monster-asset-manifest.json`
+- Production revision出力: `public/monster-asset-revisions.json`
+- 最終引き継ぎ: `docs/MONSTER-ART-FINAL-HANDOFF-20260831.md`
+- 今後の差し替え手順: `docs/MONSTER-ART-MAINTENANCE-RUNBOOK.md`
+- 実務Tips/事故パターン: `docs/MONSTER-ART-TIPS-AND-PITFALLS.md`
+- Global style: `design/rebuild/asset-production/PHASE-4-STYLE-LOCK.md`
+- GitHub binary handoff: `design/rebuild/asset-production/PHASE-4-GITHUB-BINARY-HANDOFF.md`
+- Candidate/Formal tooling reference: `design/rebuild/asset-production/W-302-OPERATOR-GUIDE.md`
+- Provenance/history: `design/rebuild/asset-production/candidate-provenance/`, `candidate-history/`
 
-### ギガシンカ 12体
+Monsterの名前・属性・進化・ゲームルール等はMonster Artの進捗文書ではなく、`design/current/` および各CURRENT masterを正として復元してください。
 
-No.003 ジュランガ / 006 グレンドウ / 009 ワダツラ / 051 マシュランテ / 054 メンタリオン / 072 ライテイガ / 090 センガンジ / 121 ヒョウガルド / 153 キュウビガミ / 156 ガードヴァルツ / 159 イワガミラ / 186 ニジリュウガ
+## Final closeout 7体
 
-### キョダイバースト 8体
+最後にcloseoutした対象:
 
-No.060 アカリガルド / 066 ゲンコツヅラ / 133 カイテイリオ / 136 センジュガ / 142 カブトレクス / 165 テラガイア / 171 フドウザン / 174 テンショウガ
+- `m160`
+- `m161`
+- `m162`
+- `m220`
+- `m221`
+- `m229`
+- `m235`
 
-復元コミット: `7116ebdb84a2b91021d81623b0723772117a1d73` (`design: ギガ12体とバースト8体の対象を正本へ復元`)
+現在FORMAL SHA-256:
 
-## 実装進捗（コード投入済み基準）
+| Species | SHA-256 |
+|---|---|
+| m160 | `8e209040b40af68324d54e8511d43efb0f996af0f553989153c17160b88819c9` |
+| m161 | `7fc318aa263c7ccb07fc4262d0d961abc66f6b5f70f4030dddb4fc33e814da4b` |
+| m162 | `8349198cdec027846821fc70695b1a46cab28edf68c69c9801c80cc0a04c94e0` |
+| m220 | `6eb0e4992962f9621ff693beebfc73ed6493b075cd5c1b6f1600a5809fd1e8ee` |
+| m221 | `dd4fe5c364b5688e84ad5329c514c0c339003fe48a186085d834d576d9398610` |
+| m229 | `5af990a01171f779018d46c17739b607109e08cd8bef12b35248134d7d94fafa` |
+| m235 | `df07f6d99ab1ed33c4f7cb0fcc668b0254443c10405fb769f03682b87e728991` |
 
-| 工程 | 状態 | 実態 |
-|---|---|---|
-| 作業ブランチ/PR/進捗台帳 | ✅ | PR #15 Draft / open |
-| バトル正本更新 | ✅ | `design/06` |
-| バランス初期値・調整運用 | ✅ | `design/10`、`design/08` |
-| ギガ12/バースト8の対象復元 | ✅ | `design/09` |
-| Lv能力値計算 | ✅ | `src/game/balance.js` |
-| combatPower/referencePower | ✅ | `src/game/balance.js` |
-| 通常敵ソフトスケーリング基盤 | ✅ | engine接続済み |
-| ボス初回snapshot固定基盤 | ✅ | engine + save v5 |
-| チャレンジ再戦再スケーリング基盤 | ✅ | balance基盤あり |
-| No.001〜238正式master本体 | ⬜ | **まだPRに未投入** |
-| 238体の正式基礎値/進化条件 | ⬜ | ルールは確定、master本体未投入 |
-| ギガ/バーストflagを正式IDへ反映 | ⬜ | 対象は確定、master本体未投入 |
-| 正式画像/placeholder registry | ⬜ | 未投入 |
-| 旧19 species→正式ID migration | ⬜ | 未投入 |
-| `?qa=monster-master` | ⬜ | 未投入 |
-| 238体validator | ⬜ | バランス基盤テストのみ投入済み |
-| main merge / Production | ⬜ | 未実施 |
+Final registration bundle:
 
-## 初期バランス値
+- `ManaEvo-FINAL-CLOSEOUT-last7-registration-ready(1).zip`
+- bytes: `1,342,297`
+- SHA-256: `0911fb5320d175e9c35e40468c9262d54b715f4cf4fe2ef246f8f79ce5686904`
+- actual binary validation: 7/7 PASS (`512×512`, RIFF/WEBP, actual alpha, bytes/SHA manifest一致)
 
-`design/10-initial-balance-master.md` を正とする。
+## 重要な経緯
 
-- XP累計: `round(6 * (Lv - 1)^1.9)` / Lv上限100
-- 標準XP目安: 最低210 / 標準350 / がんばった日600
-- Lv能力: HP=`floor(baseHp*Lv/50)+Lv+10`、他=`floor(base*Lv/50)+5`
-- 基準BST: 第1形態200 / 中間270 / 最終340 / 単体最終380
-- 技威力帯: 40 / 60 / 80 / 100、バースト110
-- STAB: ×1.5、急所1/16×1.5、乱数0.90〜1.00
-- 捕獲: HP50%以下、最大3投、ほし1.00/ぎん1.20/きん1.50/にじ100%、非にじ92%上限
-- 通常敵: weak 0.82 / normal 0.92 / strong 1.02 / rare 1.065 / elite 1.12
-- ボスRank C/B/A/S/EX: targetPower 1.02/1.08/1.14/1.20/1.28、HP 1.20/1.35/1.50/1.65/1.80
+### 1. FORMAL漏れ40体
 
-調整担当は実装担当。238体master接続、進化/技/捕獲/敵設定変更、main merge前、再現可能な実機違和感をトリガーに自動シミュレーションと回帰テストを実施し、数値変更はPRで記録する。本番中に子ども個人へ合わせて裏で自動調整しない。
+途中で画像制作がほぼ完了していても、registryは一時:
 
-## 現在のCI / Preview
+- FORMAL 198
+- CANDIDATE 4
+- PLACEHOLDER 36
 
-PR head `a7963d32c15fe600dd38bbce9889605010ad0060` 時点:
+でした。
 
-- Vercel Preview: ✅ success
-- GitHub Actions CI #113: ❌ failure
-- Test: 78件中75 PASS / 3 FAIL
-- Build: Test失敗のため未実行
+画像が存在することとFORMAL承認は別です。最終closeoutで残り40体を含めて正式化し、現在は **238 / 0 / 0** です。
 
-3件のFAIL:
+以後、全体releaseの完了条件には必ず以下を含めます。
 
-1. `tests/game.test.js` の「fixed stage / enemy Lv5」期待値が、承認済みソフトスケーリング仕様と不一致（actual Lv53）。
-2. legacy save version期待値が4のまま。現実装はsave version 5。
-3. `tests/learning.test.js` の「fixed-level stage Lv5」期待値が、ソフトスケーリング仕様と不一致（actual Lv4）。
+1. 238 active species確認 / m239除外
+2. 画像QA
+3. FORMAL 238 / CANDIDATE 0 / PLACEHOLDER 0
+4. 238 FORMAL revision確認
+5. tests/build
+6. main merge
+7. Production deploy
+8. live revision endpoint確認
 
-新設したLv能力・combatPower・ボスsnapshot固定・チャレンジ再戦のバランステストはPASSしている。次担当は旧仕様テストを新正本へ更新し、CIをGreenに戻してから238体master接続を進める。
+### 2. m235
 
-## QA Preview 完成条件
+`m235`のauthoritative identityは:
 
-`?qa=monster-master` は通常セーブとは別にする。
+- F080
+- `ユグドラシア`
+- type `くさ`
+- concept `世界樹`
+- stage 1 of 1
 
-- 全基礎種を取得済み。
-- 各進化遷移の進化前個体をBOXへ用意。
-- レベル進化は必要Lv到達済み。
-- いし進化は必要石を所持。
-- もちもの+Lvアップ進化は必要品所持/装備/必要Lv達成済み。
-- ギガ12体は最終形 + ギガキー + 該当ギガコア所持済み。
-- バースト8体は最終形 + 該当バーストのしるし所持済み。
-- 全ステージ開放、捕獲用「わ」とチケットを十分所持。
-- 正式画像完成済みキャラとplaceholderキャラを同じ正式masterで確認できる。
+です。**世界樹そのものがm235**です。
 
-## 次のゲート
+旧画像の小さな前景characterをm235と誤認すると、鹿/狐/狼/四足獣などの「木属性の動物」に再解釈される事故が起きます。m235はanimal化しません。最終採用品は「一体の生命体として成立するmonsterized world-tree」です。
 
-1. CIの旧固定Lv/旧save-versionテスト3件を正本仕様へ更新してGreen化。
-2. No.001〜238正式master本体をPRへ投入。
-3. 238体のbase stats / role / rarity / 進化条件を接続し、155進化遷移validatorを通す。
-4. `gigaEligible` 12体 / `burstEligible` 8体を正式IDでmasterへ反映。
-5. 画像registry・legacy migration・QAモードを実装。
-6. `design/10` のmain merge前必須バランスゲートを全実行。
-7. GitHub CI / Vercel Preview / iPhone QAを確認。
-8. レビュー完了後にmain merge → Production確認。
+### 3. m160
+
+N1A handoffの一版ではactual `m160.webp`が1024×1024で、512×512契約を満たしていませんでした。登録を停止し、最終版でexact 512×512へnormalizationしました。
+
+今後はproducer/consumer両方で**final WebP actual decode後の寸法**を検証します。
+
+## 現在の運用モード
+
+238体一括生成・全体再監査フェーズは終了です。
+
+今後は原則として:
+
+**ゲーム中・実画像レビューで具体的な不具合が見つかったspeciesだけをtargeted maintenanceする**
+
+運用へ移行します。
+
+一括regenや「heuristicで少し気になる」だけの全体修正は行いません。過去のglobal auditで `m042`, `m057`, `m136`, `m202`, `m213` はapproved exceptionとして受理されています。新しいactual defectまたは明示的なdesign変更がない限り、自動修正対象に戻しません。
+
+## 将来の画像差し替えゲート
+
+状態を混同しないでください。
+
+`GENERATED/REPAIRED`
+→ `VISUAL QA`
+→ `ART READY`
+→ `REGISTERED`
+→ `FORMAL`
+→ `MAIN`
+→ `DEPLOYED`
+→ `LIVE VERIFIED`
+
+「画像ができた」「PRがmergeされた」「Vercelがdeployされた」は、それぞれ別の完了点です。
+
+詳細は `docs/MONSTER-ART-MAINTENANCE-RUNBOOK.md` を参照してください。
+
+## 旧文書について
+
+2026-08-24時点の旧版には、PR #15、Monster master未投入、画像registry未投入、旧CI failure等が記載されていました。それらは**当時の履歴**であり、現在状態ではありません。
+
+過去のPR/commitから経緯を調べる場合のみ旧履歴を参照し、現在進捗の判断にはこの文書・CURRENT manifest・GitHub main・Production実状態を使ってください。

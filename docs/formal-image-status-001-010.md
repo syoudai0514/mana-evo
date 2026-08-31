@@ -1,6 +1,25 @@
-# No.001〜010 仮正式画像 v1
+# No.001〜010 仮正式画像 v1 — HISTORICAL NOTE
 
-2026-08-25: `0822まとめ(2).zip` 内のエリア1正本 `E06AD93B-33A6-4C31-AFB8-F6775B91DE5F.PNG` から、No.001〜010を切り出し、ゲーム内で実物確認するための仮正式v1として投入した。
+Status: **HISTORICAL / DO NOT USE AS CURRENT STATE**
+
+この文書は2026-08-25の初期実機確認フェーズの記録です。当時は `0822まとめ(2).zip` 内のエリア1正本 `E06AD93B-33A6-4C31-AFB8-F6775B91DE5F.PNG` からNo.001〜010を切り出し、仮正式v1として投入していました。
+
+2026-08-31のMonster Art final closeout後、この「仮正式v1 / 128×128 runtime QA版を先行投入」という状態は**現在状態ではありません**。
+
+現在の正本:
+
+- active species: `m001-m238`
+- excluded: `m239`
+- FORMAL 238 / CANDIDATE 0 / PLACEHOLDER 0
+- per-ID runtime art: `public/monsters/mNNN.webp`
+- authoritative state: `design/current/monster-asset-manifest.json`
+- runtime revision: `public/monster-asset-revisions.json`
+- current status: `docs/monster-production-status.md`
+- final handoff: `docs/MONSTER-ART-FINAL-HANDOFF-20260831.md`
+
+以下は**当時の履歴**としてのみ残します。
+
+## 2026-08-25対象
 
 - No.001 m001 モコハ
 - No.002 m002 ワカバネ
@@ -13,12 +32,16 @@
 - No.009 m009 ワダツラ
 - No.010 m010 ポフィ
 
-## アセット方針
+## 当時のアセット方針
 
-- 原画のキャラクターデザインは変更せず切り出す。
-- 512×512・透過WebPのマスターを作成し、元データとして保持する。
-- 今回GitHub Pagesでの実機確認を早く行うため、`public/monsters/m001.webp`〜`m010.webp` には同じ切り出しから作った128×128のruntime QA版を先行投入した。
-- ゲーム側は正式マスターの `officialImageUrl: /monsters/${id}.webp` をそのまま使用するため、個別の画面コード変更は不要。
-- 実機確認後、同じパスへ512×512マスターまたは再生成したv2を差し替える。ID・ゲームロジックは変更しない。
-- 特に最終形態は実物を見て、迫力不足ならv2でかっこよさを強化する。
-- No.239は対象外。
+当時は:
+
+- 原画のキャラクターデザインを変更せず切り出す;
+- 512×512・透過WebPマスターを保持する;
+- GitHub Pages実機確認を急ぐため `public/monsters/m001.webp`〜`m010.webp` に128×128 runtime QA版を先行投入する;
+- 実機確認後に同じパスへ512×512 masterまたは再生成v2を差し替える;
+- m239は対象外;
+
+という暫定運用でした。
+
+現在のfinal per-ID contractは `design/rebuild/asset-production/PHASE-4-STYLE-LOCK.md` と `docs/MONSTER-ART-MAINTENANCE-RUNBOOK.md` を参照してください。現在のFORMAL画像をこの旧128×128/仮正式運用へ戻してはいけません。

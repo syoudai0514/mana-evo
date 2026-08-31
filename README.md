@@ -107,6 +107,26 @@ Kids Quest と同じく、問題には `🤔 わからない（こたえを み�
 
 ギガキー/種族ギガコア/バーストのしるしは永久・非消費の所有権として扱う。ギガシンカの基本取得ループ（最終進化→専用チャレンジ/ボス→勝利→種族コア→永久解放）と、キョダイバーストの1戦1回・3ターン・ギガとの同時使用不可は既決。
 
+## Monster Art / Asset Release
+
+238体のper-ID Monster Artは2026-08-31のfinal closeoutで全active speciesがFORMALになっています。Active scopeは `m001-m238`、`m239`は除外です。
+
+現在状態を判断するときは、チャット記録や古い進捗文書ではなく `design/current/monster-asset-manifest.json` と現在のProduction revisionを確認してください。
+
+運用資料:
+
+- 現在状況: [`docs/monster-production-status.md`](docs/monster-production-status.md)
+- 最終引き継ぎ: [`docs/MONSTER-ART-FINAL-HANDOFF-20260831.md`](docs/MONSTER-ART-FINAL-HANDOFF-20260831.md)
+- 今後の差し替え手順: [`docs/MONSTER-ART-MAINTENANCE-RUNBOOK.md`](docs/MONSTER-ART-MAINTENANCE-RUNBOOK.md)
+- 実務Tips/失敗パターン: [`docs/MONSTER-ART-TIPS-AND-PITFALLS.md`](docs/MONSTER-ART-TIPS-AND-PITFALLS.md)
+- Global style / final image contract: [`design/rebuild/asset-production/PHASE-4-STYLE-LOCK.md`](design/rebuild/asset-production/PHASE-4-STYLE-LOCK.md)
+- GitHub binary handoff: [`design/rebuild/asset-production/PHASE-4-GITHUB-BINARY-HANDOFF.md`](design/rebuild/asset-production/PHASE-4-GITHUB-BINARY-HANDOFF.md)
+- Candidate/Formal tooling reference: [`design/rebuild/asset-production/W-302-OPERATOR-GUIDE.md`](design/rebuild/asset-production/W-302-OPERATOR-GUIDE.md)
+
+大規模238体再生成フェーズは終了しており、今後はゲーム内・実画像レビューで具体的な問題が見つかったspeciesだけをtargeted maintenanceします。
+
+画像作業では `GENERATED/REPAIRED → VISUAL QA → ART READY → REGISTERED → FORMAL → MAIN → DEPLOYED → LIVE VERIFIED` を別gateとして扱い、「画像ができた」「FORMALになった」「本番配信済み」を混同しません。
+
 ## 開発
 
 Node.js 24以上を使用する。
@@ -118,7 +138,6 @@ npm run build
 ```
 
 CIでは `npm audit --audit-level=high`、全テスト、production buildを必須にする。
-
 
 ### ゲームコンセプト正本
 
