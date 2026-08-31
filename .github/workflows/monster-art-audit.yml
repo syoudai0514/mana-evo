@@ -20,7 +20,7 @@ jobs:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
         with:
@@ -67,18 +67,6 @@ jobs:
           name: monster-art-final-visual-audit
           path: design/rebuild/asset-production/final-visual-audit/**
           if-no-files-found: error
-      - name: Commit audit artifacts only
-        shell: bash
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add design/rebuild/asset-production/final-visual-audit
-          if git diff --cached --quiet; then
-            echo 'No audit artifact changes to commit.'
-          else
-            git commit -m 'audit: record final monster visual QA evidence'
-            git push origin HEAD:${{ github.head_ref }}
-          fi
       - name: Surface validation failures
         if: steps.tests.outcome != 'success' || steps.build.outcome != 'success'
         shell: bash
