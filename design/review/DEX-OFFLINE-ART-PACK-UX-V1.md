@@ -1,7 +1,7 @@
 # ManaEvo Design Review Proposal — Dex Offline Art Pack + Detail Browsing UX V1
 
 - Status: **DESIGN REVIEW ONLY — NOT CURRENT / NOT IMPLEMENTATION AUTHORITY**
-- Revision: **V1 review revision 2 — addresses first independent review blockers**
+- Revision: **V1 review revision 3 — closes History orphan-entry blocker**
 - Date: 2026-08-31
 - Repository: `syoudai0514/mana-evo`
 - Base at proposal start: `main@bc78609097fc1f486d26d6703f127fdaf235188d`
@@ -24,7 +24,9 @@ The first independent review accepted the product direction but blocked implemen
 - concrete History API / browser-back behavior;
 - exhaustive acceptance proving offline, resume, delta, eviction and bounded-memory behavior.
 
-This revision fixes those four points in the design. It still does not authorize implementation.
+The second independent review accepted cache/SHA/performance contracts but found one remaining History correctness gap: visible `ずかんへ` could restore the UI without consuming the current detail history entry, creating an orphan detail entry that a later Safari Back could revisit. This revision closes that gap explicitly.
+
+This document still does not authorize implementation.
 
 ---
 
@@ -383,15 +385,47 @@ On Grid → Detail, push a Dex detail history state containing enough identity t
 - filters/search/showTools;
 - ordered IDs or a deterministic context representation sufficient to reconstruct them;
 - anchor species ID;
-- anchor viewport offset.
+- anchor viewport offset;
+- `hasGridHistoryEntry` or equivalent provenance proving whether this detail was opened from a live Dex Grid history entry.
 
 The same browse context is mirrored to `sessionStorage` under a versioned ManaEvo Dex key so an iOS/WebKit React-tree remount in the same tab/session does not automatically erase return context.
 
 Do not store this as permanent cloud/profile gameplay state.
 
-## 9.2 One restore function
+## 9.2 Visible `ずかんへ` must consume the detail history entry
 
-Visible `ずかんへ` and browser/PWA `popstate` must call the **same Dex restore routine**.
+For the normal case where detail was opened from Dex Grid and the current detail state has a valid preceding Grid history entry, visible `ずかんへ` MUST behave as:
+
+`ずかんへ` → `history.back()` → `popstate` → shared `restoreDexContext()`
+
+It must **not** directly switch the React UI to Grid while leaving the detail history entry current.
+
+This contract prevents an orphan detail entry.
+
+Example that must work:
+
+`Grid G → open A → next B → ずかんへ → Grid G → open C → Safari Back once → Grid G`
+
+Safari Back must not unexpectedly return to B.
+
+## 9.3 External/no-preceding-grid detail fallback
+
+A detail may be opened from an external/internal shortcut such as Capture/Evolution registration, restored deep-link-like state, or another path where there is no valid preceding Dex Grid history entry to consume.
+
+In that case `history.back()` is not the authoritative return operation because it could leave ManaEvo or return to an unrelated screen.
+
+V1 fallback is deterministic:
+
+1. construct the documented default Dex browse context;
+2. replace the **current detail history entry** with a Dex Grid state using `history.replaceState(gridState, ...)`;
+3. call the same `restoreDexContext()` routine;
+4. do not create an extra synthetic history entry solely to return to Grid.
+
+The implementation must distinguish the normal Grid-origin case from this fallback using explicit history-state provenance, not by guessing from `history.length` alone.
+
+## 9.4 One restore function
+
+Visible `ずかんへ` and browser/PWA `popstate` converge on the **same `restoreDexContext()` semantics**.
 
 Required restore sequence:
 
@@ -403,9 +437,11 @@ Required restore sequence:
 6. apply saved pixel-offset correction;
 7. restore meaningful focus without causing another disruptive scroll.
 
-There must not be separate visible-back and browser-back implementations with different scroll behavior.
+The normal visible-return path reaches this function through `history.back()` + `popstate`; the no-preceding-grid fallback reaches it after `replaceState(gridState)`.
 
-## 9.3 Browser automatic scroll restoration
+There must not be separate visible-back and browser-back restoration implementations with different scroll behavior.
+
+## 9.5 Browser automatic scroll restoration
 
 During the Dex grid/detail history interval, the app owns restoration using `history.scrollRestoration = 'manual'` where supported.
 
@@ -413,7 +449,7 @@ The previous value is preserved and restored when leaving that ownership interva
 
 This avoids browser automatic restoration racing with anchor+offset restoration and causing a visible top-jump-then-jump-back effect.
 
-## 9.4 Invalid/stale context fallback
+## 9.6 Invalid/stale context fallback
 
 If session state is missing, schema-incompatible, or filters no longer reproduce the saved anchor, return to a valid Dex grid deterministically rather than trapping the user in detail. Best available fallback is selected species if present, otherwise nearest result/top.
 
@@ -570,11 +606,16 @@ Filter/search to a deterministic subset, open a middle item, navigate previous/n
 
 Scroll far down, open detail, navigate several species, press `ずかんへ`.
 
-Verify search/filter/showTools/result context and anchor+offset restoration. No forced top reset.
+Verify:
+
+- the normal Grid-origin path actually consumes the current detail history entry via `history.back()`;
+- `popstate` reaches the shared restore routine;
+- search/filter/showTools/result context and anchor+offset are restored;
+- no forced top reset.
 
 ## AC-DEX-UX-003 — Browser Back uses same restore path
 
-Repeat UX-002 but return with browser/PWA Back. It must call the same restoration semantics and not create a second/top-jump behavior.
+Repeat the same Grid-origin scenario but return with browser/PWA Back. It must reach the same restoration semantics and not create a second/top-jump behavior.
 
 ## AC-DEX-UX-004 — History does not accumulate species steps
 
@@ -583,6 +624,29 @@ Grid → A detail → next B → next C → browser Back returns to the original
 ## AC-DEX-UX-005 — Remount/session recovery
 
 While detail is open, simulate React-tree remount within the same browser session. Session-mirrored Dex context allows visible/back restoration to remain correct or degrade deterministically to the documented fallback.
+
+## AC-DEX-UX-006 — No orphan detail entry after visible return
+
+Required sequence:
+
+`Grid G → open A → next B → ずかんへ → Grid G → open C → Safari Back once`
+
+Expected: **Grid G**.
+
+Failure condition: Safari Back returns to B or any previously closed detail entry.
+
+This test proves that visible `ずかんへ` consumed/replaced the detail entry correctly instead of merely swapping React UI.
+
+## AC-DEX-UX-007 — External detail fallback does not escape Dex unexpectedly
+
+Open detail through a path with no valid preceding Dex Grid history entry. Press `ずかんへ`.
+
+Expected:
+
+- current detail entry is replaced with the documented Grid state;
+- shared `restoreDexContext()` runs;
+- no unrelated browser history entry is consumed;
+- user lands on a valid deterministic Dex Grid context.
 
 ---
 
@@ -598,14 +662,14 @@ then, before implementation is mergeable, synchronize in one product-change set:
 
 1. `design/current/06-UI-SCREEN-CONTRACT.md`
    - detail previous/grid/next semantics
-   - History API and anchor+offset restoration
+   - History API, visible-return history consumption, external-detail fallback and anchor+offset restoration
    - explicit viewport-aware request budget/loading UI
 2. `design/current/07-SAVE-PROFILES-PARENT-PWA.md`
    - shell vs `manaevo-dex-art-v1` cache ownership
    - memoized manifest/hot-path constraints
    - SHA-verified full pack, resume, quota, eviction, delta update
 3. `design/current/08-ACCEPTANCE-TEST-CONTRACT.md`
-   - AC-DEX-PERF-001..009 and AC-DEX-UX-001..005
+   - AC-DEX-PERF-001..009 and AC-DEX-UX-001..007
 4. `design/rebuild/DECISION-LOG.md`
    - new approved decision and explicit supersession/authority note
 5. `design/current/USER-GUIDE.md`
@@ -624,11 +688,13 @@ The next reviewer should explicitly answer:
 3. Can any stale/old HTTP-success response become current-complete without passing the current SHA? It must be impossible.
 4. Does frozen manifest N + final latest-manifest check prevent moving-target false 238/238?
 5. Are crash-after-cache-put and eviction states derived safely from cache truth rather than progress metadata?
-6. Does History `push` on first detail + `replace` on previous/next + shared restore routine give intuitive browser Back with current architecture?
-7. Does `scrollRestoration='manual'` ownership avoid browser/app double restoration?
-8. Are OFFLINE-238, stale-SW, exact delta, eviction matrix, request budget, 238 round-trip long browse and SW hot-path tests strong enough for the stated “ヌルヌル/offline 238” promise?
-9. Does the design keep persistent bytes separate from bounded decoded memory?
-10. Is any implementation decision still dangerously deferred that could change safety/performance semantics?
+6. Does History `push` on first detail + `replace` on previous/next + **visible `ずかんへ` consuming the detail entry with `history.back()`** give intuitive browser Back with current architecture?
+7. Is the no-preceding-grid detail fallback deterministic and safe, using `replaceState(gridState)` rather than consuming unrelated history?
+8. Does `scrollRestoration='manual'` ownership avoid browser/app double restoration?
+9. Are OFFLINE-238, stale-SW, exact delta, eviction matrix, request budget, 238 round-trip long browse and SW hot-path tests strong enough for the stated “ヌルヌル/offline 238” promise?
+10. Does AC-DEX-UX-006 specifically prevent the orphan-detail-entry regression?
+11. Does the design keep persistent bytes separate from bounded decoded memory?
+12. Is any implementation decision still dangerously deferred that could change safety/performance semantics?
 
 If any blocker remains, verdict:
 
@@ -649,6 +715,7 @@ Even after DESIGN PASS, implementation must not be merged until all of the follo
 - existing `public/sw.js` ownership is refactored rather than bypassed with a second screen cache;
 - new art-cache schema starts clean and does not import unverified legacy entries;
 - every writer of a current revision key uses one shared SHA-verified commit path;
+- visible `ずかんへ` cannot leave the current detail entry orphaned in browser history;
 - the exhaustive AC-DEX tests above pass on the same implementation head;
 - WebKit evidence includes request-count/hot-path assertions, not only visual success;
 - no implementation shortcut may weaken the `238/238` truth rule, History restoration rule, or bounded-memory/request-budget rule.
