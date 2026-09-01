@@ -38,7 +38,9 @@ export function postWinCaptureEligibility(game, battle, itemType = 'star') {
 }
 
 export function canAttemptPostWinCapture(game, battle, itemType = 'star') {
-  return postWinCaptureEligibility(game, battle, itemType).eligible
+  const current = game?.activeBattle
+  if (current?.battleId && battle?.battleId && current.battleId !== battle.battleId) return false
+  return postWinCaptureEligibility(game, current || battle, itemType).eligible
 }
 
 function pacedCaptureLevel(speciesId, enemyLevel) {
@@ -69,16 +71,19 @@ export function attemptPostWinCapture(game, battle, rolls = undefined, itemType 
     return { ok: false, game, battle: current || battle, reason: 'STALE_BATTLE' }
   }
 
-  const eligibility = postWinCaptureEligibility(game, battle, itemType)
+  // activeBattle is the authority. A stale `won` object must never be able to
+  // replay capture after the same battle has already moved to `caught`.
+  const authoritativeBattle = current
+  const eligibility = postWinCaptureEligibility(game, authoritativeBattle, itemType)
   if (!eligibility.eligible) {
-    return { ok: false, game, battle, reason: publicFailureReason(eligibility.reason) }
+    return { ok: false, game, battle: authoritativeBattle, reason: publicFailureReason(eligibility.reason) }
   }
 
   const successRoll = Array.isArray(rolls)
     ? Number(rolls[0])
     : (Number.isFinite(Number(rolls)) ? Number(rolls) : Math.random())
   const resolution = resolveCaptureRoll({
-    baseChance: baseCaptureChance(battle),
+    baseChance: baseCaptureChance(authoritativeBattle),
     itemType,
     successRoll,
     failureStars: 1
@@ -86,7 +91,7 @@ export function attemptPostWinCapture(game, battle, rolls = undefined, itemType 
 
   let nextGame = structuredClone(game)
   nextGame.captureItems[itemType] -= 1
-  const nextBattle = structuredClone(battle)
+  const nextBattle = structuredClone(authoritativeBattle)
   nextBattle.captureAttempts = (Number(nextBattle.captureAttempts) || 0) + 1
   nextBattle.captureStars = resolution.presentation.starCount
   nextBattle.capturePresentation = resolution.presentation.frames
@@ -114,25 +119,25 @@ export function attemptPostWinCapture(game, battle, rolls = undefined, itemType 
   }
 
   const captured = makeMonster(
-    battle.enemy.speciesId,
-    pacedCaptureLevel(battle.enemy.speciesId, battle.enemy.level)
+    authoritativeBattle.enemy.speciesId,
+    pacedCaptureLevel(authoritativeBattle.enemy.speciesId, authoritativeBattle.enemy.level)
   )
   const settlementResult = settleCaptureSuccess(nextGame, {
     resolutionId: `${nextBattle.rewardResolutionId}:capture`,
     capturedMonster: captured,
     ringType: itemType,
-    teamAtStart: battle.teamAtStart || []
+    teamAtStart: authoritativeBattle.teamAtStart || []
   })
   if (!settlementResult.ok) {
-    return { ok: false, game, battle, reason: settlementResult.reason }
+    return { ok: false, game, battle: authoritativeBattle, reason: settlementResult.reason }
   }
 
   nextGame = settlementResult.game
   nextBattle.status = 'caught'
-  nextBattle.ticketSettlement = battle.ticketSettlement
-  nextBattle.ticketCommitted = battle.ticketCommitted
-  if (nextBattle.ticketReservation && battle.ticketReservation) {
-    nextBattle.ticketReservation.status = battle.ticketReservation.status
+  nextBattle.ticketSettlement = authoritativeBattle.ticketSettlement
+  nextBattle.ticketCommitted = authoritativeBattle.ticketCommitted
+  if (nextBattle.ticketReservation && authoritativeBattle.ticketReservation) {
+    nextBattle.ticketReservation.status = authoritativeBattle.ticketReservation.status
   }
   nextBattle.partyStatuses = {}
   if (nextBattle.enemy) nextBattle.enemy.status = null
