@@ -5,8 +5,8 @@ import { xpToNext } from '../game/engine.js'
 
 export const TEST_FIXTURE_LABELS = Object.freeze({
   all: '全開放・全キャラ',
-  stage1: '第1形態・進化直前',
-  stage2: '第2形態・最終進化直前'
+  stage1: '第1形態・進化できる',
+  stage2: '第2形態・最終進化できる'
 })
 
 function localDayNumber(d = new Date()) {
@@ -84,17 +84,21 @@ export function createAllClearGameFixture() {
 
 function evolutionReadyMonster(transition) {
   if (transition.method === 'level') {
-    const level = Math.max(1, Number(transition.level) - 1)
-    return instance(transition.fromSpeciesId, level, { xp: Math.max(0, xpToNext(level) - 1) })
+    const level = Math.max(1, Number(transition.level) || 1)
+    return instance(transition.fromSpeciesId, level, {
+      xp: Math.max(0, xpToNext(level) - 1),
+      evolutionReady: true
+    })
   }
   if (transition.method === 'held_item_levelup') {
     const level = 40
     return instance(transition.fromSpeciesId, level, {
       xp: Math.max(0, xpToNext(level) - 1),
-      heldItemId: transition.itemId
+      heldItemId: transition.itemId,
+      evolutionReady: true
     })
   }
-  return instance(transition.fromSpeciesId, 40)
+  return instance(transition.fromSpeciesId, 40, { evolutionReady: true })
 }
 
 export function createEvolutionTestGameFixture(stage) {
