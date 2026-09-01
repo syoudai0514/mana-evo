@@ -59,10 +59,11 @@ test('child learning hub cannot change grade, ahead-grade unlock or hard mode', 
   assert.match(studyHub, /おうちのひとが きめるよ/)
 })
 
-test('parent entry is discoverable from Home without leaking adult settings detail and remains PIN protected', () => {
+test('parent entry stays PIN protected while registered profile switching is child-safe', () => {
   const app = read('src/App.jsx')
   const gate = read('src/parent/ParentGate.jsx')
   const parent = read('src/kids-quest-study/screens/ParentScreen.jsx')
+  const switcher = read('src/platform/ChildProfileSwitcher.jsx')
   assert.match(app, /parent-home-card/)
   assert.match(app, /おとなの せってい/)
   assert.doesNotMatch(app, /学年・先取り・むずかしさ・つくよみちゃん設定/)
@@ -72,9 +73,13 @@ test('parent entry is discoverable from Home without leaking adult settings deta
   assert.match(parent, /type:'SET_GRADE'/)
   assert.match(parent, /type:'FORCE_GRADE_MAX'/)
   assert.match(parent, /type:'LOWER_GRADE_MAX'/)
+  assert.match(parent, /type:'RENAME_PROFILE'/)
+  assert.match(parent, /type:'CREATE_PROFILE'/)
   assert.match(parent, /parent-voice/)
   assert.match(parent, /つくよみちゃんを使う場合は/)
-  assert.match(parent, /子ども画面からは変更できません/)
+  assert.match(parent, /名前の追加・変更、学年、難易度、クラウド、TEST、復元などはここで管理します/)
+  assert.match(switcher, /type:'SWITCH_PROFILE'/)
+  assert.doesNotMatch(switcher, /CREATE_PROFILE|RENAME_PROFILE|beginTestMode|restoreBackup|signIn/)
 })
 
 test('learning focus screens do not stack the ManaEvo header over the Kids Quest header', () => {
