@@ -63,7 +63,7 @@ function battleGameAtHalfHp({ rainbow = false, nearEvolution = false } = {}) {
 }
 
 async function enterFirstActivity(page) {
-  await page.locator('.study-task').first().click()
+  await page.getByRole('button', { name: /(?:おまかせで|つづきから) まなぶ！/ }).click()
   const lesson = page.locator('.lesson-screen')
   if (await lesson.count()) {
     await expect(lesson).toBeVisible()
