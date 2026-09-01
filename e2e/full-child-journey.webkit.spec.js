@@ -8,6 +8,7 @@ import { dayNumber } from '../src/kids-quest-study/engine/srs.js'
 const LEARNING_KEY = 'mana-evo:kids-quest-learning:v2'
 const GAME_KEY = 'mana-evo-save-v2'
 const REWARD_KEY = 'mana-evo:learning-reward-bridge:v1'
+const REPLACE_STORAGE_FLAG = 'mana-evo:e2e-replace-storage-once'
 
 function learningState({ coreDone = false, coreIndex = coreDone ? 5 : 0 } = {}) {
   return {
@@ -57,11 +58,14 @@ function canonicalDailyCompletionRuntime() {
 }
 
 async function replaceStorage(page, { learning, games, rewards = {} }) {
-  await page.evaluate(({ learningKey, gameKey, rewardKey, learning, games, rewards }) => {
+  await page.addInitScript(({ flag, learningKey, gameKey, rewardKey, learning, games, rewards }) => {
+    if (sessionStorage.getItem(flag) !== '1') return
     localStorage.setItem(learningKey, JSON.stringify(learning))
     localStorage.setItem(gameKey, JSON.stringify({ formatVersion: 2, gameByProfile: games }))
     localStorage.setItem(rewardKey, JSON.stringify({ version: 1, byProfile: rewards }))
+    sessionStorage.removeItem(flag)
   }, {
+    flag: REPLACE_STORAGE_FLAG,
     learningKey: LEARNING_KEY,
     gameKey: GAME_KEY,
     rewardKey: REWARD_KEY,
@@ -69,6 +73,7 @@ async function replaceStorage(page, { learning, games, rewards = {} }) {
     games,
     rewards
   })
+  await page.evaluate((flag) => sessionStorage.setItem(flag, '1'), REPLACE_STORAGE_FLAG)
   await page.reload()
 }
 
@@ -283,18 +288,17 @@ test('stable learning profile id selects an isolated game save across reload', a
   await expect(page.locator('.resource-pill.ticket strong')).toHaveText('1')
   await expect(page.locator('.resource-pill.mana strong')).toHaveText('11')
 
-  await page.evaluate(({ learningKey }) => {
-    const current = JSON.parse(localStorage.getItem(learningKey))
-    const selected = current.profiles['child-2'].state
-    localStorage.setItem(learningKey, JSON.stringify({
-      ...current,
-      ...selected,
-      activeProfileId: 'child-2',
-      profiles: current.profiles
-    }))
-  }, { learningKey: LEARNING_KEY })
-  await page.reload()
+  await page.getByRole('button', { name: 'いまのプレイヤー あお' }).click()
+  const dialog = page.getByRole('dialog', { name: 'だれが つかう？' })
+  await expect(dialog).toBeVisible()
+  await dialog.getByRole('button', { name: /みどり/ }).click()
 
+  await expect(page.getByRole('button', { name: 'いまのプレイヤー みどり' })).toBeVisible()
+  await expect(page.locator('.resource-pill.ticket strong')).toHaveText('4')
+  await expect(page.locator('.resource-pill.mana strong')).toHaveText('22')
+
+  await page.reload()
+  await expect(page.getByRole('button', { name: 'いまのプレイヤー みどり' })).toBeVisible()
   await expect(page.locator('.resource-pill.ticket strong')).toHaveText('4')
   await expect(page.locator('.resource-pill.mana strong')).toHaveText('22')
 
