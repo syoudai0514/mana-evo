@@ -8,6 +8,7 @@ import PlaceholderMonster from './game/PlaceholderMonster.jsx'
 import { AdventureFlow, MonsterScreen } from './game/GameScreens.jsx'
 import AppNavigation from './navigation/AppNavigation.jsx'
 import { isFocusedAppView, isTopLevelChildView, shouldShowTopLevelNavigation } from './navigation/viewOwnership.js'
+import { layoutSurfaceForApp, LAYOUT_SURFACES } from './ui/layoutSurface.js'
 import HowToPlay from './HowToPlay.jsx'
 import ParentGate from './parent/ParentGate.jsx'
 
@@ -128,6 +129,7 @@ export default function App() {
   const gameProfileRef = useRef(initialProfileId)
   const [view, setView] = useState(initialGame.activeBattle ? 'adventure' : 'home')
   const [activeTask, setActiveTask] = useState(null)
+  const [monsterLayoutSurface, setMonsterLayoutSurface] = useState(LAYOUT_SURFACES.COMPACT)
   const scrollByViewRef = useRef(Object.create(null))
   const today = dayNumber()
 
@@ -139,6 +141,7 @@ export default function App() {
       gameProfileRef.current = profileId
       setGame(next)
       setActiveTask(null)
+      setMonsterLayoutSurface(LAYOUT_SURFACES.COMPACT)
       scrollByViewRef.current = Object.create(null)
       setView(next.activeBattle ? 'adventure' : 'home')
       return
@@ -152,6 +155,7 @@ export default function App() {
       const next = loadGameForProfile(profileId)
       setGame(next)
       setActiveTask(null)
+      setMonsterLayoutSurface(LAYOUT_SURFACES.COMPACT)
       scrollByViewRef.current = Object.create(null)
       setView(next.activeBattle ? 'adventure' : 'home')
     }
@@ -206,8 +210,9 @@ export default function App() {
   const dailyCompleted=learning.daily?.coreDone===true
   const focusView=isFocusedAppView(view)
   const showTopLevelNavigation=shouldShowTopLevelNavigation(view,{activeBattle})
+  const layoutSurface=layoutSurfaceForApp({view,activeBattle,monsterSurface:monsterLayoutSurface})
 
-  return <div className={`app-shell${focusView?' app-shell--focus':''}`}>
+  return <div className={`app-shell${focusView?' app-shell--focus':''}`} data-layout-contract="d021" data-layout-surface={layoutSurface}>
     {!focusView && <header className="game-header"><div className="logo"><span className="logo-gem">◆</span><b>マナ</b><strong>エボ</strong><small>まなびが、進化になる。</small></div><StatusBar game={game} today={today}/></header>}
     {view==='home' && <Home learning={learning} game={game} go={setView} today={today}/>} 
     {view==='study' && <StudyHub learning={learning} dispatch={learningDispatch} onStartTask={startTask} go={setView}/>} 
@@ -218,7 +223,7 @@ export default function App() {
     {view==='dictionary' && <EnglishDictionaryScreen onBack={()=>setView('study')} onStartTask={startTask}/>} 
     {view==='parent' && <ParentGate onBack={()=>setView('home')}/>} 
     {view==='adventure' && <AdventureFlow game={game} setGame={setGame} dailyCompleted={dailyCompleted} dailyDay={today} today={today} goHome={()=>setView('home')} goStudy={()=>setView('study')}/>} 
-    {view==='monsters' && <MonsterScreen game={game} setGame={setGame} goHome={()=>setView('home')}/>} 
+    {view==='monsters' && <MonsterScreen game={game} setGame={setGame} goHome={()=>setView('home')} onLayoutSurfaceChange={setMonsterLayoutSurface}/>} 
     {view==='howto' && <HowToPlay game={game} today={today} goHome={()=>setView('home')} goAdventure={()=>setView('adventure')} goMonsters={()=>setView('monsters')} goStudy={()=>setView('study')}/>} 
     {showTopLevelNavigation && <AppNavigation view={view} onNavigate={setView} />}
   </div>
