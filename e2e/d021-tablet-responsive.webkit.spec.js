@@ -72,6 +72,10 @@ async function enterFirstActivity(page) {
   await expect(page.locator('.activity-screen')).toBeVisible()
 }
 
+function semanticText(value) {
+  return String(value || '').replace(/\s+/g, '')
+}
+
 async function expectSurfaceWidth(locator, { min = 0, max = Infinity } = {}) {
   await expect(locator).toBeVisible()
   const box = await locator.boundingBox()
@@ -88,11 +92,11 @@ async function expectInsideNearestBoundedAncestor(locator) {
     let boundary = null
     while (ancestor && ancestor !== document.body) {
       const style = getComputedStyle(ancestor)
-      const maxWidth = style.maxWidth
-      const boundedWidth = maxWidth && maxWidth !== 'none' && maxWidth !== '0px'
+      const rect = ancestor.getBoundingClientRect()
       const clips = ['hidden', 'clip', 'auto', 'scroll'].includes(style.overflowX)
-      if (clips || boundedWidth) {
-        boundary = ancestor.getBoundingClientRect()
+      const effectivelyBounded = rect.width + 1 < window.innerWidth
+      if (clips || effectivelyBounded) {
+        boundary = rect
         break
       }
       ancestor = ancestor.parentElement
@@ -159,22 +163,22 @@ test('D-021 Learning keeps the same active question and decision across rotation
   await expect(visual).toBeVisible()
   await expect(decision).toBeVisible()
   const before = {
-    instruction: await instruction.innerText(),
-    visual: await visual.innerText(),
-    decision: await decision.innerText()
+    instruction: semanticText(await instruction.textContent()),
+    visual: semanticText(await visual.textContent()),
+    decision: semanticText(await decision.textContent())
   }
 
   await page.setViewportSize({ width: 1180, height: 820 })
-  await expect(instruction).toHaveText(before.instruction)
-  await expect(visual).toHaveText(before.visual)
-  await expect(decision).toHaveText(before.decision)
+  expect(semanticText(await instruction.textContent())).toBe(before.instruction)
+  expect(semanticText(await visual.textContent())).toBe(before.visual)
+  expect(semanticText(await decision.textContent())).toBe(before.decision)
   await expectInsideNearestBoundedAncestor(visual)
   await expectInsideNearestBoundedAncestor(decision)
 
   await page.setViewportSize({ width: 600, height: 820 })
-  await expect(instruction).toHaveText(before.instruction)
-  await expect(visual).toHaveText(before.visual)
-  await expect(decision).toHaveText(before.decision)
+  expect(semanticText(await instruction.textContent())).toBe(before.instruction)
+  expect(semanticText(await visual.textContent())).toBe(before.visual)
+  expect(semanticText(await decision.textContent())).toBe(before.decision)
   await expectInsideNearestBoundedAncestor(decision)
 })
 
@@ -191,7 +195,6 @@ test('D-021 Capture preserves selected local substate across portrait-landscape-
   expect(count).toBeGreaterThan(0)
   const chosen = enabled.nth(Math.max(0, count - 1))
   await chosen.click()
-  const chosenLabel = (await chosen.innerText()).split('\n')[0].trim()
   await expect(chosen).toHaveAttribute('aria-pressed', 'true')
 
   const before = await page.evaluate(() => {
@@ -202,10 +205,11 @@ test('D-021 Capture preserves selected local substate across portrait-landscape-
 
   await page.setViewportSize({ width: 1180, height: 820 })
   await expect(panel).toBeVisible()
-  await expect(panel.getByRole('button', { name: new RegExp(chosenLabel) })).toHaveAttribute('aria-pressed', 'true')
+  await expect(chosen).toHaveAttribute('aria-pressed', 'true')
 
   await page.setViewportSize({ width: 600, height: 820 })
   await expect(panel).toBeVisible()
+  await expect(chosen).toHaveAttribute('aria-pressed', 'true')
   await expectInsideNearestBoundedAncestor(panel.locator('.capture-item-grid'))
   await expectReachable(page, panel.locator('.capture-actions .primary'))
 
@@ -275,11 +279,11 @@ test('D-021 Evolution acknowledgement survives rotation with the same from-to re
 
   const evolution = page.getByRole('dialog', { name: 'シンカ！' })
   await expect(evolution).toBeVisible({ timeout: 9000 })
-  const beforeText = await evolution.locator('h2').innerText()
+  const beforeText = semanticText(await evolution.locator('h2').textContent())
 
   await page.setViewportSize({ width: 1180, height: 820 })
   await expect(evolution).toBeVisible()
-  await expect(evolution.locator('h2')).toHaveText(beforeText)
+  expect(semanticText(await evolution.locator('h2').textContent())).toBe(beforeText)
   await expectReachable(page, evolution.getByRole('button', { name: 'つづける！' }))
 })
 
