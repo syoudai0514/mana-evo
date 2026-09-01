@@ -78,7 +78,7 @@ test('parent entry stays PIN protected while registered profile switching is chi
   assert.match(parent, /parent-voice/)
   assert.match(parent, /つくよみちゃんを使う場合は/)
   assert.match(parent, /名前の追加・変更、学年、難易度、クラウド、TEST、復元などはここで管理します/)
-  assert.match(switcher, /type:'SWITCH_PROFILE'/)
+  assert.match(switcher, /type:\s*['"]SWITCH_PROFILE['"]/)
   assert.doesNotMatch(switcher, /CREATE_PROFILE|RENAME_PROFILE|beginTestMode|restoreBackup|signIn/)
 })
 
