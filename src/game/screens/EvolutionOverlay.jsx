@@ -14,7 +14,7 @@ export function EvolutionCelebration({ reveal, onClose }) {
     ? '🗺️ じぶんで シンカした きろくが のこった！ この すがたは、これからの ぼうけんで であえる こうほに なったよ。'
     : '📖 じぶんで シンカした きろくが のこった！ ずかんの GET も こうしんされたよ。'
 
-  return <div className="evolution-overlay" role="dialog" aria-modal="true" aria-label="シンカ！" aria-live="polite">
+  return <div className="evolution-overlay" data-layout-surface="contextual" role="dialog" aria-modal="true" aria-label="シンカ！" aria-live="polite">
     <div className="evolution-stars">✦　✧　✦　✧　✦</div>
     <section className="evolution-celebration-card">
       <p className="evolution-kicker">✨ シンカ！ ✨</p>
