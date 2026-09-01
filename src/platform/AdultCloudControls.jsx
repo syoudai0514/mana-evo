@@ -10,8 +10,11 @@ export default function AdultCloudControls({ children, alreadyVerified = false }
   const [pin, setPin] = useState('')
   const [message, setMessage] = useState('')
   const pinExists = storedPin().length === 4
+  // ParentScreen can only exist after ParentGate has already verified the local
+  // Parent PIN. Requiring the same PIN again inside the cloud modal is redundant.
+  const parentAlreadyVerified = alreadyVerified || (typeof document !== 'undefined' && !!document.querySelector('.parent-screen'))
 
-  if (alreadyVerified || unlocked) return <>{children}</>
+  if (parentAlreadyVerified || unlocked) return <>{children}</>
 
   const unlock = () => {
     if (!pinExists) {
