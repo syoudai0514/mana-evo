@@ -2,6 +2,7 @@ import { exportGameEnvelope, importGameEnvelope } from '../game/saveStore.js'
 import { loadState, profileSnapshot, saveState } from '../kids-quest-study/engine/storage.js'
 import { exportLearningRewardEnvelope, importLearningRewardEnvelope } from '../kids-quest-study/state/learningRewardStore.js'
 import { createTestGameFixture, TEST_FIXTURE_LABELS } from './testFixtures.js'
+import { profileDisplayName } from './profileUi.js'
 import {
   DEVICE_PROFILE_KEY,
   TEST_MODE_KEY,
@@ -27,10 +28,13 @@ function removeLocal(key) {
 
 function normalizedProfiles(learning) {
   const profiles = clone(learning?.profiles || {})
+  for (const [id, profile] of Object.entries(profiles)) {
+    profiles[id] = { ...profile, name: profileDisplayName(profile) }
+  }
   const activeId = learning?.activeProfileId
   if (activeId) {
     profiles[activeId] = {
-      name: profiles[activeId]?.name || 'ぼうけんしゃ',
+      name: profileDisplayName(profiles[activeId]),
       state: profileSnapshot(learning)
     }
   }
