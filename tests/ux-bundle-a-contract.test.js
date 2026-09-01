@@ -13,6 +13,7 @@ const appSource = fs.readFileSync(new URL('../src/App.jsx', import.meta.url), 'u
 const parentSource = fs.readFileSync(new URL('../src/kids-quest-study/screens/ParentScreen.jsx', import.meta.url), 'utf8')
 const navSource = fs.readFileSync(new URL('../src/navigation/AppNavigation.jsx', import.meta.url), 'utf8')
 const cssSource = fs.readFileSync(new URL('../src/ui/ux-bundle-a.css', import.meta.url), 'utf8')
+const cssDeclarations = cssSource.replace(/\/\*[\s\S]*?\*\//g, '')
 const mainSource = fs.readFileSync(new URL('../src/main.jsx', import.meta.url), 'utf8')
 
 test('Bundle A hides legacy automatic adventurer names but preserves real names', () => {
@@ -52,7 +53,7 @@ test('Bundle A compacts shared chrome without shrinking tap targets below 44px',
   assert.match(cssSource, /game-header\.game-header--compact[\s\S]*min-height:calc\(54px \+ var\(--safe-top\)\)/)
   assert.match(cssSource, /game-bottom-nav\.game-bottom-nav--compact button[\s\S]*min-height:46px/)
   assert.match(cssSource, /child-profile-trigger[\s\S]*min-height:44px/)
-  assert.doesNotMatch(cssSource, /!important/)
+  assert.doesNotMatch(cssDeclarations, /!\s*important\b/)
 })
 
 test('Bundle A does not regress D-020 startup invariants', () => {
