@@ -19,7 +19,7 @@ function baseLearningSave(coreDone = true) {
       date: todayKey(),
       coreDone,
       coreIndex: coreDone ? 5 : 0,
-      coreTasks: coreDone ? [] : [{ uid: 'd021-keypad-core', domainId: 'suuji', questionCount: 3 }],
+      coreTasks: coreDone ? [] : [{ uid: 'd021-keypad-core', kind: 'core', domainId: 'suuji', questionCount: 3 }],
       tasksClearedToday: coreDone ? 5 : 0,
       correctToday: 0,
       attemptsToday: 0,
@@ -202,8 +202,8 @@ test('D-021 CapturePresentation survives resize without replaying capture settle
 
   await page.getByRole('button', { name: /ボールを なげる/ }).click()
   const panel = page.getByRole('dialog', { name: 'どのボールをつかう？' })
-  await panel.getByRole('button', { name: /にじボール/ }).click()
-  await panel.getByRole('button', { name: /にじボールを なげる！/ }).click()
+  await panel.locator('.capture-item-grid').getByRole('button', { name: /^にじボール / }).click()
+  await panel.getByRole('button', { name: 'にじボールを なげる！', exact: true }).click()
 
   const presentation = page.getByRole('dialog', { name: '捕獲演出' })
   await expect(presentation).toBeVisible()
