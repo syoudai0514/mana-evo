@@ -87,7 +87,7 @@ function verifyManifestAndIcons(root, publicPrefix = 'public') {
   const manifest = JSON.parse(read(root, `${publicPrefix}/manifest.webmanifest`))
   for (const key of ['id', 'start_url', 'scope']) invariant(manifest[key] === CANONICAL_URL, `${key} must be ${CANONICAL_URL}`)
   invariant(manifest.display === 'standalone', 'manifest display must remain standalone')
-  invariant(manifest.orientation === 'portrait-primary', 'manifest orientation must remain portrait-primary')
+  invariant(!Object.hasOwn(manifest, 'orientation'), 'D-021 manifest must not impose an orientation preference')
 
   const iconExpectations = [
     ['icons/apple-touch-icon.png', 180],
