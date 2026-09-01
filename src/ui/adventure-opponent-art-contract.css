@@ -1,8 +1,35 @@
 /* Opponent-selection card artwork only.
-   Keep battle-scene portrait positioning untouched. */
+   Keep battle-scene portrait positioning untouched.
+
+   The rank badge intentionally sits over the left edge of each opponent card.
+   Reserve that overlap zone and size the artwork itself instead of translating a
+   96px image underneath the badge. This contract applies to the real StageMap
+   DOM (`.stage-card.formal-stage-card`); the previous `.daily-stage-card`
+   selector never matched the rendered article. */
 @media (max-width: 760px) {
-  .adventure-map .formal-stage-card.daily-stage-card .encounter-art .placeholder-monster.monster-art {
-    transform: translate(5px, 1px) scale(0.70);
-    transform-origin: center;
+  .adventure-map .stage-card.formal-stage-card .encounter-art {
+    box-sizing: border-box;
+    min-width: 0;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-left: 22px;
+  }
+
+  .adventure-map .stage-card.formal-stage-card .encounter-art .placeholder-monster.monster-art {
+    width: clamp(54px, 15vw, 62px) !important;
+    height: clamp(54px, 15vw, 62px) !important;
+    min-width: clamp(54px, 15vw, 62px) !important;
+    flex-basis: clamp(54px, 15vw, 62px) !important;
+    flex-shrink: 0;
+    transform: none !important;
+  }
+
+  .adventure-map .stage-card.formal-stage-card .encounter-art .placeholder-monster.monster-art img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
   }
 }
