@@ -36,6 +36,7 @@ export function BattleView({ game, setGame, onExitToMap, goStudy }) {
   const playerHp = currentPlayerHp(battle)
   const finished = ['won', 'lost', 'caught'].includes(battle.status)
   const forcedSwitch = battle.status === 'needs_switch'
+  const postWinCapture = battle.status === 'won' && battle.enemy.hp <= 0
   const special = specialProgressionStatus(active, game)
   const [captureOpen, setCaptureOpen] = useState(false)
   const [switchOpen, setSwitchOpen] = useState(false)
@@ -47,7 +48,7 @@ export function BattleView({ game, setGame, onExitToMap, goStudy }) {
   const captureResolutionId = battle.rewardResolutionId ? `${battle.rewardResolutionId}:capture` : null
   const captureSettlement = captureResolutionId ? game.captureDomain?.settlements?.[captureResolutionId] : null
   const duplicatePending = captureSettlement?.status === 'pending_duplicate_choice'
-  const captureEligible = !finished && !forcedSwitch && CAPTURE_ITEM_IDS.some((id) => canAttemptCapture(game, battle, id))
+  const captureEligible = !forcedSwitch && (battle.status === 'fighting' || postWinCapture) && CAPTURE_ITEM_IDS.some((id) => canAttemptCapture(game, battle, id))
   const activeEvolutionReveal = !captureSequence && !duplicatePending ? evolutionQueue[0] || null : null
 
   const enqueueEvolutions = (evolutionsByInstance, nextGame) => {
@@ -93,7 +94,8 @@ export function BattleView({ game, setGame, onExitToMap, goStudy }) {
         id: `${result.battle?.battleId || result.battle?.stageId || 'capture'}:${result.battle?.captureAttempts || 0}`,
         frames,
         itemType,
-        speciesId: battle.enemy.speciesId
+        speciesId: battle.enemy.speciesId,
+        postWin: battle.status === 'won'
       })
     }
     enqueueEvolutions(result.evolutionsByInstance, result.game)
@@ -209,7 +211,7 @@ export function BattleView({ game, setGame, onExitToMap, goStudy }) {
       </div>
     </section>}
 
-    {!finished && !forcedSwitch && captureOpen && !captureSequence && <CapturePanel game={game} battle={battle} captureDisabled={stage?.captureDisabled} onCapture={capture} onCancel={() => setCaptureOpen(false)} />}
+    {!forcedSwitch && captureEligible && captureOpen && !captureSequence && <CapturePanel game={game} battle={battle} captureDisabled={stage?.captureDisabled} onCapture={capture} onCancel={() => setCaptureOpen(false)} />}
 
     {forcedSwitch && !captureSequence && <section className="battle-result-card"><h2>つぎの なかまを えらぼう！</h2><p>まだ元気な仲間がいるから、バトルは続けられるよ。</p></section>}
 
@@ -230,11 +232,15 @@ export function BattleView({ game, setGame, onExitToMap, goStudy }) {
       </div>
     </section>}
 
-    {finished && !duplicatePending && <section className="battle-result-card">
+    {finished && !duplicatePending && !captureOpen && <section className="battle-result-card">
       <h2>{battle.status === 'won' ? 'かち！ 🎉' : battle.status === 'caught' ? 'ゲット！ ★★★★' : 'まけちゃった…'}</h2>
       {battle.status === 'won' && stage?.id === 'a1-boss' && <p>🔷 はじめてのクリアで ギガキーが ひらいた！</p>}
       {battle.status === 'won' && stage?.specialReward?.type === 'giga' && <p>🔷 {enemySpecies.name}のギガコアを解放！</p>}
       {battle.status === 'won' && stage?.specialReward?.type === 'burst' && <p>💥 {enemySpecies.name}のバーストのしるしを解放！</p>}
+      {battle.status === 'won' && captureEligible && <>
+        <p>たおしたあとでも、ボールを なげて GETを ねらえるよ！</p>
+        <button className="capture-main-cta ready" onClick={() => setCaptureOpen(true)}><span className="mini-capture-ball" aria-hidden="true"/>ボールを なげる<small>たおしたあとでも GETできる！</small></button>
+      </>}
       {battle.status === 'caught' && !captureSettlement?.duplicate && <p>新しいなかまは、べつの1たいとして ボックスに入ったよ。チームは「モンスター」で えらべるよ。</p>}
       {battle.status === 'caught' && captureSettlement?.duplicate && captureSettlement.choice === 'keep' && <p>もう1たいの {enemySpecies.name}が、べつの1たいとして ボックスに入ったよ。</p>}
       {battle.status === 'caught' && captureSettlement?.duplicate && captureSettlement.choice === 'support' && <p>{enemySpecies.name}の おうえんで、そだちのかけらが ふえたよ！</p>}
