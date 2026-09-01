@@ -132,7 +132,7 @@ test('Parent can rename a profile and open cloud management without entering the
   await expect(page.locator('.adult-cloud-gate')).toHaveCount(0)
   await cloud.getByRole('button', { name: '×' }).click()
 
-  await page.getByRole('button', { name: '← ホーム' }).click()
+  await page.getByRole('button', { name: 'ホームへ' }).click()
   await expect(page.getByRole('button', { name: 'いまのプレイヤー まさき' })).toBeVisible()
   await page.reload()
   await expect(page.getByRole('button', { name: 'いまのプレイヤー まさき' })).toBeVisible()
