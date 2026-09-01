@@ -1,0 +1,139 @@
+/* D-021 responsive layout ownership.
+ * This is a semantic layout-surface module, not a device/UA patch layer.
+ * It is loaded before the established premium visual authority; selectors are
+ * intentionally scoped by the D-021 contract attributes rather than relying on
+ * stylesheet order.
+ */
+
+.app-shell[data-layout-contract="d021"]{
+  width:100%;
+  max-width:520px;
+  margin-inline:auto;
+  overflow-x:visible;
+}
+.app-shell[data-layout-contract="d021"][data-layout-surface="workspace"],
+.app-shell[data-layout-contract="d021"][data-layout-surface="contextual"]{
+  max-width:760px;
+}
+.app-shell[data-layout-contract="d021"] .screen{
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  margin-inline:auto;
+  overflow-x:visible;
+}
+.app-shell[data-layout-contract="d021"] .screen>*{
+  min-width:0;
+}
+
+/* Workspace learning: parent-relative width authority inside the bounded shell. */
+.app-shell[data-layout-contract="d021"] .activity-screen .center-col{
+  width:100%;
+  max-width:760px;
+  margin-inline:auto;
+}
+.app-shell[data-layout-contract="d021"] .activity-screen .qcard,
+.app-shell[data-layout-contract="d021"] .activity-screen .qcard-passage-wrap{
+  width:100%;
+  max-width:620px;
+}
+.app-shell[data-layout-contract="d021"] .activity-screen .choice-grid,
+.app-shell[data-layout-contract="d021"] .activity-screen .interaction-wrap,
+.app-shell[data-layout-contract="d021"] .activity-screen .explain-card{
+  width:100%;
+  max-width:680px;
+}
+.app-shell[data-layout-contract="d021"] .activity-screen .seed-grid{
+  width:100%;
+  max-width:650px;
+}
+.app-shell[data-layout-contract="d021"] .activity-screen .time-choice-row{
+  width:100%;
+  max-width:500px;
+}
+.app-shell[data-layout-contract="d021"] .activity-screen .keypad{
+  width:100%;
+  max-width:360px;
+}
+.app-shell[data-layout-contract="d021"] .activity-screen .hard-tag,
+.app-shell[data-layout-contract="d021"] .activity-screen .conquer-tag{
+  width:100%;
+  max-width:650px;
+}
+
+/* Workspace screens should use the extra room without forcing every control wide. */
+.app-shell[data-layout-contract="d021"][data-layout-surface="workspace"] .parent-gate-card,
+.app-shell[data-layout-contract="d021"][data-layout-surface="workspace"] .parent-content,
+.app-shell[data-layout-contract="d021"][data-layout-surface="workspace"] .dex-screen,
+.app-shell[data-layout-contract="d021"][data-layout-surface="workspace"] .dex-detail{
+  width:100%;
+  max-width:760px;
+  margin-inline:auto;
+}
+
+/* Contextual flows: outer workspace may use ~760px, primary decisions stay tighter. */
+.app-shell[data-layout-contract="d021"][data-layout-surface="contextual"] .battle-command-deck,
+.app-shell[data-layout-contract="d021"][data-layout-surface="contextual"] .battle-tools,
+.app-shell[data-layout-contract="d021"][data-layout-surface="contextual"] .team-switch,
+.app-shell[data-layout-contract="d021"][data-layout-surface="contextual"] .battle-result-card{
+  width:100%;
+  max-width:680px;
+  margin-inline:auto;
+}
+.app-shell[data-layout-contract="d021"][data-layout-surface="contextual"] .battle-arena-v2,
+.app-shell[data-layout-contract="d021"][data-layout-surface="contextual"] .battle-head,
+.app-shell[data-layout-contract="d021"][data-layout-surface="contextual"] .battle-log{
+  width:100%;
+  max-width:760px;
+  margin-inline:auto;
+}
+.app-shell[data-layout-contract="d021"][data-layout-surface="contextual"] .capture-item-grid,
+.app-shell[data-layout-contract="d021"][data-layout-surface="contextual"] .move-grid,
+.app-shell[data-layout-contract="d021"][data-layout-surface="contextual"] .battle-action-row{
+  max-width:100%;
+}
+
+/* Dynamic viewport / keyboard / short landscape reachability. */
+.app-shell[data-layout-contract="d021"] .activity-screen,
+.app-shell[data-layout-contract="d021"] .parent-screen,
+.app-shell[data-layout-contract="d021"] .parent-gate-screen,
+.app-shell[data-layout-contract="d021"] .study-hub,
+.app-shell[data-layout-contract="d021"] .battle-screen-v2{
+  min-height:100dvh;
+}
+
+@media (max-height:700px) and (min-width:600px){
+  .app-shell[data-layout-contract="d021"][data-layout-surface="contextual"] .battle-screen-v2{
+    padding-top:8px;
+    padding-bottom:20px;
+  }
+  .app-shell[data-layout-contract="d021"][data-layout-surface="contextual"] .battle-arena-v2{
+    min-height:230px;
+    margin:8px auto 6px;
+    grid-template-rows:1fr 1fr;
+  }
+  .app-shell[data-layout-contract="d021"][data-layout-surface="contextual"] .battle-arena-v2 .monster-art,
+  .app-shell[data-layout-contract="d021"][data-layout-surface="contextual"] .battle-arena-v2 .placeholder-monster{
+    max-width:118px;
+    max-height:118px;
+  }
+  .app-shell[data-layout-contract="d021"][data-layout-surface="contextual"] .battle-log{
+    margin-block:6px;
+  }
+  .app-shell[data-layout-contract="d021"][data-layout-surface="contextual"] .battle-command-deck{
+    margin-top:6px;
+  }
+}
+
+/* Fixed reward overlays own their viewport directly and remain scroll-safe. */
+.evolution-overlay[data-layout-surface="contextual"]{
+  box-sizing:border-box;
+  max-width:none;
+  overflow:auto;
+  overscroll-behavior:contain;
+}
+.evolution-overlay[data-layout-surface="contextual"] .evolution-celebration-card{
+  width:min(100%,680px);
+  max-width:680px;
+  margin:auto;
+}

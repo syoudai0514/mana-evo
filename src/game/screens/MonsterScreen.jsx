@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { MonsterArt } from '../PlaceholderMonster.jsx'
 import { EVOLUTION_ITEMS, speciesOf } from '../content.js'
 import {
@@ -15,6 +15,7 @@ import { equipHeldItem, specialProgressionStatus } from '../progression.js'
 import { DexGrid } from './DexScreen.jsx'
 import { EvolutionCelebration } from './EvolutionOverlay.jsx'
 import { TypePills } from './GameScreenPrimitives.jsx'
+import { LAYOUT_SURFACES } from '../../ui/layoutSurface.js'
 
 function MonsterRow({ monster, game, setGame, selected, setSelected, showcase = false, slotIndex = null }) {
   const species = speciesOf(monster.speciesId)
@@ -145,12 +146,17 @@ function DetailPanel({ game, setGame, instanceId, onEvolution }) {
   </section>
 }
 
-export function MonsterScreen({ game, setGame }) {
+export function MonsterScreen({ game, setGame, onLayoutSurfaceChange }) {
   const [tab, setTab] = useState('team')
   const [selected, setSelected] = useState(game.activeMonsterId || game.team?.[0] || Object.keys(game.box || {})[0] || null)
   const [evolutionReveal, setEvolutionReveal] = useState(null)
   const box = useMemo(() => Object.values(game.box || {}).sort((a, b) => b.level - a.level), [game.box])
   const team = game.team.map((id) => game.box[id]).filter(Boolean)
+
+  useEffect(() => {
+    onLayoutSurfaceChange?.(tab === 'dex' ? LAYOUT_SURFACES.WORKSPACE : LAYOUT_SURFACES.COMPACT)
+    return () => onLayoutSurfaceChange?.(LAYOUT_SURFACES.COMPACT)
+  }, [tab, onLayoutSurfaceChange])
 
   return <main className="screen monster-screen-v2">
     {evolutionReveal && <EvolutionCelebration reveal={evolutionReveal} onClose={() => setEvolutionReveal(null)} />}

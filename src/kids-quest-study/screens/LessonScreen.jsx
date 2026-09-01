@@ -56,7 +56,7 @@ export default function LessonScreen({ lesson, domainId, grade, isReview, onDone
   }
 
   return (
-    <div className="screen screen-in">
+    <div className="screen screen-in lesson-screen">
       <Starfield count={14} />
 
       <AppHeader
@@ -75,8 +75,8 @@ export default function LessonScreen({ lesson, domainId, grade, isReview, onDone
         )}
 
         <div
-          className="card"
-          style={{ width: 'min(680px,94vw)', textAlign: 'center', padding: '18px 16px' }}
+          className="card lesson-card"
+          style={{ width: '100%', maxWidth: 680, textAlign: 'center', padding: '18px 16px' }}
         >
           <div style={{ fontSize: 52 }}>{dom?.emoji}</div>
           <div style={{ fontWeight: 900, fontSize: 'clamp(20px,4vw,30px)', lineHeight: 1.4 }}>

@@ -14,6 +14,7 @@ import './platform/cloud-save.css'
 import './platform/adult-cloud-controls.css'
 import './ui/battle-portrait-contract.css'
 import './ui/adventure-opponent-art-contract.css'
+import './ui/tablet-layout.css'
 import './premium-ui-v4.css'
 import './ui/dex-art-pack.css'
 
