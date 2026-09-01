@@ -21,8 +21,8 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     const baseUrl = import.meta.env.BASE_URL || '/'
     // Registering is enough for the browser to perform its normal update check.
-    // Do not force registration.update() or a full Dex-art maintenance sweep on
-    // every app launch: CacheStorage enumeration/pruning is control-plane work.
+    // Do not force an extra Service Worker update or a full Dex-art maintenance
+    // sweep on every app launch: CacheStorage enumeration/pruning is control-plane work.
     navigator.serviceWorker.register(`${baseUrl}sw.js`, {
       scope: baseUrl,
       updateViaCache: 'none'
