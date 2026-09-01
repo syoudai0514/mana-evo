@@ -43,9 +43,9 @@ function learningState({ coreDone = false, coreIndex = coreDone ? 5 : 0 } = {}) 
 
 async function install(page, { learning, games, pin = null }) {
   await page.addInitScript(({ learningKey, gameKey, pinKey, learning, games, pin }) => {
-    localStorage.setItem(learningKey, JSON.stringify(learning))
-    localStorage.setItem(gameKey, JSON.stringify({ formatVersion: 2, gameByProfile: games }))
-    if (pin) localStorage.setItem(pinKey, pin)
+    if (localStorage.getItem(learningKey) == null) localStorage.setItem(learningKey, JSON.stringify(learning))
+    if (localStorage.getItem(gameKey) == null) localStorage.setItem(gameKey, JSON.stringify({ formatVersion: 2, gameByProfile: games }))
+    if (pin && localStorage.getItem(pinKey) == null) localStorage.setItem(pinKey, pin)
   }, { learningKey: LEARNING_KEY, gameKey: GAME_KEY, pinKey: PIN_KEY, learning, games, pin })
 }
 
