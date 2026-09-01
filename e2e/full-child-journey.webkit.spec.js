@@ -101,7 +101,7 @@ test('clean child goes Home -> Study, canonical daily completion applies once, t
 
   await expect(page.getByRole('button', { name: /まなぶ！/ })).toBeVisible()
   await page.getByRole('button', { name: /まなぶ！/ }).click()
-  await expect(page.getByRole('heading', { name: /の まなび/ })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: /の まなび$/ })).toBeVisible()
 
   const completedLearning = learningState({ coreDone: true, coreIndex: 5 })
   const rewardRuntime = canonicalDailyCompletionRuntime()
