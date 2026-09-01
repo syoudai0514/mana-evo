@@ -10,11 +10,8 @@ export default function AdultCloudControls({ children, alreadyVerified = false }
   const [pin, setPin] = useState('')
   const [message, setMessage] = useState('')
   const pinExists = storedPin().length === 4
-  // ParentScreen can only exist after ParentGate has already verified the local
-  // Parent PIN. Requiring the same PIN again inside the cloud modal is redundant.
-  const parentAlreadyVerified = alreadyVerified || (typeof document !== 'undefined' && !!document.querySelector('.parent-screen'))
 
-  if (parentAlreadyVerified || unlocked) return <>{children}</>
+  if (alreadyVerified || unlocked) return <>{children}</>
 
   const unlock = () => {
     if (!pinExists) {
@@ -34,7 +31,7 @@ export default function AdultCloudControls({ children, alreadyVerified = false }
     <div className="adult-cloud-gate__icon">🔒</div>
     <div>
       <h3>保護者専用</h3>
-      <p>TESTデータ・競合解決・バックアップ復元などは、保護者PINを確認してから操作します。</p>
+      <p>クラウド認証・同期・TESTデータ・競合解決・バックアップ復元などは、保護者PINを確認してから操作します。</p>
     </div>
     {pinExists ? <>
       <input
@@ -51,7 +48,7 @@ export default function AdultCloudControls({ children, alreadyVerified = false }
       <button disabled={pin.length !== 4} onClick={unlock}>🔓 保護者メニューをひらく</button>
     </> : <>
       <div className="cloud-gate-note">この端末には保護者PINがまだありません。</div>
-      <small>ホームの「保護者メニュー」でPINを設定すると、クラウドの高度な操作やテストデータを使えます。</small>
+      <small>ホームの「保護者メニュー」でPINを設定すると、クラウド認証・同期やテストデータを使えます。</small>
     </>}
     {message && <div className="cloud-gate-message">{message}</div>}
   </section>
