@@ -31,9 +31,11 @@ function requestKey(input) {
 class MemoryCache {
   constructor() {
     this.entries = new Map()
+    this.matchCount = 0
   }
 
   async match(input) {
+    this.matchCount += 1
     const response = this.entries.get(requestKey(input))
     return response ? response.clone() : undefined
   }
@@ -182,6 +184,18 @@ test('AC-DEX-PERF-003 crash-boundary resume trusts committed revision key and do
   }
 })
 
+test('D-020 download progress does not rescan all 238 cache entries after every completed image', async () => {
+  const base = fixture()
+  const runtime = installDexRuntime(base)
+  try {
+    const cache = await runtime.caches.open(DEX_ART_CACHE_NAME)
+    await downloadDexArtPack({ concurrency: 4 })
+    assert.ok(cache.matchCount < 2000, `expected bounded cache matching, got ${cache.matchCount}`)
+  } finally {
+    runtime.restore()
+  }
+})
+
 test('AC-DEX-PERF-005 delta update fetches exactly 1 then exactly 7 changed image revisions', async () => {
   const base = fixture()
   const runtime = installDexRuntime(base)
@@ -250,6 +264,7 @@ test('D-020 Service Worker separates shell/art ownership, honors explicit revisi
   assert.match(source, /if \(cached\) return cached/)
   assert.doesNotMatch(source, /if \(cached\) \{\s*await pruneDexArtCache/)
   assert.match(source, /MANA_EVO_DEX_ART_REFRESH_MANIFEST/)
+  assert.match(source, /event\.data\?\.prune === true/)
   assert.match(source, /verifyResponseForRevision/)
   assert.match(source, /monsterFillInflight/)
   assert.match(source, /requestedRevision = url\.searchParams\.get\(DEX_ART_REV_PARAM\)/)
@@ -264,10 +279,11 @@ test('D-020 pack/prefetch uses exact revision URL and collapses overlapping no-s
   assert.match(source, /const response = await fetch\(key, \{ cache: 'no-store', signal \}\)/)
 })
 
-test('D-020 app lifecycle refreshes the Service Worker manifest memo', () => {
+test('D-020 app startup registers the Service Worker without forcing Dex-art maintenance', () => {
   const source = fs.readFileSync(new URL('../src/main.jsx', import.meta.url), 'utf8')
-  assert.match(source, /navigator\.serviceWorker\.ready/)
-  assert.match(source, /MANA_EVO_DEX_ART_REFRESH_MANIFEST/)
+  assert.match(source, /navigator\.serviceWorker\.register/)
+  assert.doesNotMatch(source, /registration\.update\(/)
+  assert.doesNotMatch(source, /MANA_EVO_DEX_ART_REFRESH_MANIFEST/)
 })
 
 test('D-020 Dex screen owns push/replace/back history and explicit viewport eligibility', () => {
