@@ -204,7 +204,7 @@ test('manual stone evolution is Monster-owned, modal, and records first evolutio
   await page.goto('/')
 
   const game = createGameState()
-  const instanceId = game.activeMonsterId
+  const instanceId = game.team[0]
   game.box[instanceId] = {
     ...game.box[instanceId],
     speciesId: 'm026',
@@ -214,6 +214,7 @@ test('manual stone evolution is Monster-owned, modal, and records first evolutio
     evolutionReady: false
   }
   game.team = [instanceId]
+  game.activeMonsterId = instanceId
   game.dex.seen.m026 = true
   game.dex.caught.m026 = true
   game.evolutionItems.stones.thunder = 1
