@@ -218,7 +218,10 @@ self.addEventListener('message', (event) => {
   if (event.data?.type !== 'MANA_EVO_DEX_ART_REFRESH_MANIFEST') return
   event.waitUntil((async () => {
     const revisions = await loadMonsterRevisions({ refresh: true })
-    await pruneDexArtCache(revisions)
+    // Refreshing the worker's small manifest memo is cheap. Full CacheStorage
+    // enumeration/pruning is explicit maintenance only and must never be coupled
+    // to normal app startup.
+    if (event.data?.prune === true) await pruneDexArtCache(revisions)
   })())
 })
 
