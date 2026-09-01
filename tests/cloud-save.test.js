@@ -144,12 +144,14 @@ test('cloud snapshot includes the learning-to-game reward bridge in the same rev
   assert.match(source, /importLearningRewardEnvelope\(payload\.learningRewardEnvelope\)/)
 })
 
-test('player switching test fixtures conflicts and backup restore are behind Parent PIN', () => {
+test('player switching test fixtures conflicts backup restore and cloud auth are behind Parent PIN', () => {
   const shell = fs.readFileSync(new URL('../src/platform/CloudAccountShell.jsx', import.meta.url), 'utf8')
   const gate = fs.readFileSync(new URL('../src/platform/AdultCloudControls.jsx', import.meta.url), 'utf8')
-  assert.match(shell, /<AdultCloudControls>/)
+  assert.match(shell, /<AdultCloudControls\s+alreadyVerified=\{parentScreenOpen\}>/)
   assert.match(gate, /PARENT_PIN_KEY/)
   assert.match(gate, /保護者専用/)
+  assert.match(gate, /alreadyVerified\s*\|\|\s*unlocked/)
+  assert.doesNotMatch(gate, /querySelector\(['"]\.parent-screen/)
   assert.doesNotMatch(shell, /cloud-test-banner[^\n]+onClick=\{stopTest\}/)
 })
 
