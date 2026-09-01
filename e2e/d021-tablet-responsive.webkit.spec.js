@@ -62,6 +62,16 @@ function battleGameAtHalfHp({ rainbow = false, nearEvolution = false } = {}) {
   return started.game
 }
 
+async function enterFirstActivity(page) {
+  await page.locator('.study-task').first().click()
+  const lesson = page.locator('.lesson-screen')
+  if (await lesson.count()) {
+    await expect(lesson).toBeVisible()
+    await lesson.locator('.app-header__back').click()
+  }
+  await expect(page.locator('.activity-screen')).toBeVisible()
+}
+
 async function expectSurfaceWidth(locator, { min = 0, max = Infinity } = {}) {
   await expect(locator).toBeVisible()
   const box = await locator.boundingBox()
@@ -117,7 +127,7 @@ test('D-021 surface ownership keeps Compact narrow and Workspace/Contextual free
 
   const nav = page.getByRole('navigation', { name: 'メインメニュー' })
   await nav.getByRole('button', { name: /まなぶ/ }).click()
-  await page.locator('.study-task').first().click()
+  await enterFirstActivity(page)
   await expectSurfaceWidth(page.locator('.activity-screen'), { min: 560, max: 762 })
 
   await page.locator('.app-header__back').click()
@@ -135,16 +145,36 @@ test('D-021 surface ownership keeps Compact narrow and Workspace/Contextual free
   await expectSurfaceWidth(page.locator('.battle-screen-v2'), { min: 560, max: 762 })
 })
 
-test('D-021 nested learning decisions stay within the nearest bounded ancestor on tablet', async ({ page }) => {
+test('D-021 Learning keeps the same active question and decision across rotation', async ({ page }) => {
   await page.setViewportSize({ width: 820, height: 1180 })
   await installSave(page, createGameState(), { coreDone: false })
   await page.goto('/')
   await page.getByRole('button', { name: 'まなぶ！' }).click()
-  await page.locator('.study-task').first().click()
+  await enterFirstActivity(page)
 
-  await expectInsideNearestBoundedAncestor(page.locator('.qcard, .qcard-passage-wrap').first())
+  const instruction = page.locator('.activity-instruction')
+  const visual = page.locator('.qcard, .qcard-passage-wrap').first()
   const decision = page.locator('.choice-grid:visible, .interaction-wrap:visible').first()
+  await expect(instruction).toBeVisible()
+  await expect(visual).toBeVisible()
   await expect(decision).toBeVisible()
+  const before = {
+    instruction: await instruction.innerText(),
+    visual: await visual.innerText(),
+    decision: await decision.innerText()
+  }
+
+  await page.setViewportSize({ width: 1180, height: 820 })
+  await expect(instruction).toHaveText(before.instruction)
+  await expect(visual).toHaveText(before.visual)
+  await expect(decision).toHaveText(before.decision)
+  await expectInsideNearestBoundedAncestor(visual)
+  await expectInsideNearestBoundedAncestor(decision)
+
+  await page.setViewportSize({ width: 600, height: 820 })
+  await expect(instruction).toHaveText(before.instruction)
+  await expect(visual).toHaveText(before.visual)
+  await expect(decision).toHaveText(before.decision)
   await expectInsideNearestBoundedAncestor(decision)
 })
 
