@@ -93,7 +93,7 @@ export default function ParentGate({ onBack }) {
       <div className="parent-gate-icon">🔒</div>
       <p className="eyebrow">おうちのひと せんよう</p>
       <h1>{setupMode ? '保護者PINを設定' : '保護者PIN'}</h1>
-      <p className="parent-gate-note">学年・先取り・むずかしさ・つくよみちゃん・プロフィール・バックアップは、ここからだけ変更できます。</p>
+      <p className="parent-gate-note">学年・先取り・むずかしさ・つくよみちゃん・プロフィールの追加や名前変更・クラウドやバックアップは、ここからだけ変更できます。登録済みプロフィールの切替は子ども画面でもできます。</p>
 
       {setupMode ? <>
         <div className="adult-check">
