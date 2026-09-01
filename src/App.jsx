@@ -11,6 +11,8 @@ import { isFocusedAppView, isTopLevelChildView, shouldShowTopLevelNavigation } f
 import { layoutSurfaceForApp, LAYOUT_SURFACES } from './ui/layoutSurface.js'
 import HowToPlay from './HowToPlay.jsx'
 import ParentGate from './parent/ParentGate.jsx'
+import ChildProfileSwitcher from './platform/ChildProfileSwitcher.jsx'
+import { rememberDeviceProfile } from './platform/deviceProfile.js'
 
 import { useGame as useLearningGame, missedCount, masteryProgress } from './kids-quest-study/state/GameContext.jsx'
 import { DOMAIN_BY_ID, domainName } from './kids-quest-study/engine/activities.js'
@@ -56,7 +58,7 @@ function Home({ learning, game, go, today }) {
 
   return <main className="screen home-screen mock-home">
     <section className="manaevo-brand-hero">
-      <div className="brand-lockup"><span className="brand-crystal">◆</span><div><h1><b>マナ</b><em>エボ</em></h1><p>まなびが、<strong>進化</strong>になる。</p></div></div>
+      <div className="brand-lockup"><span className="brand-crystal">◆</span><div><h1><b>マナ</b><em>エボ</em></h1><p>まなぶと、<strong>進化</strong>する。</p></div></div>
       {monster && <div className="brand-partner"><PlaceholderMonster speciesId={monster.speciesId} excited={dailyCompleted}/><span>{species?.name} Lv.{monster.level}</span></div>}
     </section>
 
@@ -82,40 +84,57 @@ function Home({ learning, game, go, today }) {
   </main>
 }
 
-function StudyHub({ learning, dispatch, onStartTask, go }) {
+function StudyHub({ learning, onStartTask, go }) {
   const daily = learning.daily
-  const remaining = daily.coreTasks.slice(daily.coreIndex)
+  const coreTasks = Array.isArray(daily.coreTasks) ? daily.coreTasks : []
+  const currentTask = coreTasks[daily.coreIndex] || null
+  const remaining = coreTasks.slice(daily.coreIndex)
   const trial = trialUnlocked(learning, learning.grade)
   const mastery = Math.round(masteryProgress(learning)*100)
   const reviewCount = missedCount(learning)
+  const currentDomain = currentTask ? DOMAIN_BY_ID[currentTask.domainId] : null
 
-  const startCore = (task, offset) => {
-    const index = daily.coreIndex + offset
-    if (index !== daily.coreIndex) dispatch({ type:'PICK_CORE_TASK', index })
+  const startCore = () => {
+    if (!currentTask) return
     sfx.swoosh()
-    onStartTask(task)
+    onStartTask(currentTask)
   }
 
-  return <main className="screen study-hub">
+  return <main className="screen study-hub study-hub--guided">
     <button className="back" onClick={()=>go('home')}>← ホーム</button>
     <section className="study-hero"><div><p className="eyebrow">きょうの まなび</p><h1>📚 {gradeOf(learning.grade).name}の まなび</h1><p>きみの きろくに あわせて、つぎの もんだいが かわるよ。</p></div><div className="study-master"><strong>{mastery}%</strong><span>しれんの じゅんび</span></div></section>
 
     <section className="study-grade-locked"><span>🎓</span><div><strong>{gradeOf(learning.grade).name}</strong><small>がくねんと むずかしさは おうちのひとが きめるよ</small></div><span className="lock-mark">🔒</span></section>
 
-    {!daily.coreDone ? <section className="study-section"><h2>🚀 きょうの ミッション</h2><p className="kid-note">あと {remaining.length}きょうか。すきな じゅんばんで えらべるよ。</p><div className="study-task-grid">{remaining.map((task,index)=>{const dom=DOMAIN_BY_ID[task.domainId];return <button key={task.uid} className="study-task" onClick={()=>startCore(task,index)}><span>{dom?.emoji}</span><strong>{domainName(dom,learning.grade)}</strong><small>{task.questionCount}もん</small>{index===0&&<b>つぎ</b>}</button>})}</div></section> : <section className="study-section complete"><h2>🎉 きょうの ミッション クリア！</h2><p>バトルをあそべるよ。もっと まなびたいときは、ついかチャレンジや ほかの まなびへ。</p></section>}
+    {!daily.coreDone ? <section className="study-section study-required-mission">
+      <h2>🚀 きょうの ミッション</h2>
+      <p className="kid-note">あと {remaining.length}こ。おまかせで じゅんばんに すすむよ。</p>
+      <div className="study-mission-primary">
+        <div className="study-next-subject"><span>{currentDomain?.emoji || '📚'}</span><div><strong>{currentDomain ? domainName(currentDomain, learning.grade) : 'つぎの まなび'}</strong><small>{currentTask?.questionCount || 0}もん ・ つぎは これ！</small></div></div>
+        <button className="primary huge" disabled={!currentTask} onClick={startCore}>{daily.coreIndex > 0 ? '▶ つづきから まなぶ！' : '▶ おまかせで まなぶ！'}</button>
+      </div>
+      <div className="study-required-progress" aria-label="きょうの のこり">
+        {remaining.map((task,index)=>{const dom=DOMAIN_BY_ID[task.domainId];return <span key={task.uid} className={`study-progress-chip${index===0?' current':''}`}>{dom?.emoji}<b>{dom ? domainName(dom,learning.grade) : 'まなび'}</b></span>})}
+      </div>
+    </section> : <section className="study-section complete"><h2>🎉 きょうの ミッション クリア！</h2><p>バトルをあそべるよ。もっと まなびたいときは、ついかチャレンジや ほかの まなびへ。</p></section>}
+
+    <section className="study-goal-card" aria-label="このがくねんのゴール">
+      <div><p className="eyebrow">🏁 このがくねんの ゴール</p><h2>🌟 ほしのしれん</h2><p>{trial.unlocked ? 'じゅんびOK！ しれんに ちょうせんできるよ。' : `あと ${trial.missing.length}こ できることを ふやすと ちょうせんできるよ。`}</p></div>
+      <button className={trial.unlocked ? 'primary' : 'secondary'} disabled={!trial.unlocked} onClick={()=>go('trial')}>{trial.unlocked ? 'ちょうせん！' : `あと ${trial.missing.length}こ`}</button>
+    </section>
 
     {daily.coreDone && <section className="study-section"><h2>🎫 もっとバトルしたい</h2><p className="kid-note">1もん クリアするたび 🎫チケット+1 と 🧭たんさくポイント+1。ついかの せいかいが 3こ たまるたび ほしボール+1！</p><button className="primary huge" onClick={()=>onStartTask(buildExtraTask(daily.extraIndex,learning.grade))}>⚡ ついかチャレンジ（3もん）</button></section>}
     {daily.coreDone && daily.okawariIndex<OKAWARI_MAX && <section className="study-section"><h2>🍭 おかわり</h2><button className="secondary huge" onClick={()=>onStartTask(buildOkawariTask(daily.okawariIndex,learning.grade))}>もう1タスク べんきょうする（あと {OKAWARI_MAX-daily.okawariIndex}）</button></section>}
 
-    <details className="study-secondary-modes">
-      <summary>ほかの まなび</summary>
+    <section className="study-section study-other-modes">
+      <h2>ほかの まなび</h2>
       <div className="study-menu-grid">
         <button onClick={()=>go('free')}><span>📖</span><strong>じゆうべんきょう</strong><small>好きな教科・チケットなし</small></button>
         <button onClick={()=>go('review')}><span>🎯</span><strong>とっくん</strong><small>きょう復習 {reviewCount}こ</small></button>
-        <button onClick={()=>go('trial')}><span>🌟</span><strong>ほしのしれん</strong><small>{trial.unlocked?'ちょうせんできる！':`あと ${trial.missing.length}たんげん`}</small></button>
+        <button onClick={()=>go('trial')}><span>🌟</span><strong>ほしのしれん</strong><small>{trial.unlocked?'ちょうせんできる！':`あと ${trial.missing.length}こ`}</small></button>
         <button onClick={()=>go('dictionary')}><span>🔤</span><strong>えいごずかん</strong><small>単語・発音・4問練習</small></button>
       </div>
-    </details>
+    </section>
 
     {learning.gradeMax > learning.grade && <section className="study-section grade-opened"><h2>🎉 つぎの がくねんが ひらいたよ！</h2><p>つぎへ すすむときは、おうちのひとに きいてね。</p></section>}
   </main>
@@ -132,6 +151,10 @@ export default function App() {
   const [monsterLayoutSurface, setMonsterLayoutSurface] = useState(LAYOUT_SURFACES.COMPACT)
   const scrollByViewRef = useRef(Object.create(null))
   const today = dayNumber()
+
+  useEffect(() => {
+    rememberDeviceProfile(learning.activeProfileId || 'child-1')
+  }, [learning.activeProfileId])
 
   useEffect(() => {
     const profileId = learning.activeProfileId || 'child-1'
@@ -211,11 +234,12 @@ export default function App() {
   const focusView=isFocusedAppView(view)
   const showTopLevelNavigation=shouldShowTopLevelNavigation(view,{activeBattle})
   const layoutSurface=layoutSurfaceForApp({view,activeBattle,monsterSurface:monsterLayoutSurface})
+  const childProfileSwitchAllowed=isTopLevelChildView(view)&&!activeBattle
 
-  return <div className={`app-shell${focusView?' app-shell--focus':''}`} data-layout-contract="d021" data-layout-surface={layoutSurface}>
-    {!focusView && <header className="game-header"><div className="logo"><span className="logo-gem">◆</span><b>マナ</b><strong>エボ</strong><small>まなびが、進化になる。</small></div><StatusBar game={game} today={today}/></header>}
+  return <div className={`app-shell ux-bundle-a${focusView?' app-shell--focus':''}`} data-layout-contract="d021" data-layout-surface={layoutSurface}>
+    {!focusView && <header className="game-header game-header--compact"><div className="logo"><span className="logo-gem">◆</span><b>マナ</b><strong>エボ</strong><small>まなぶと、進化する。</small></div><ChildProfileSwitcher learning={learning} dispatch={learningDispatch} disabled={!childProfileSwitchAllowed}/><StatusBar game={game} today={today}/></header>}
     {view==='home' && <Home learning={learning} game={game} go={setView} today={today}/>} 
-    {view==='study' && <StudyHub learning={learning} dispatch={learningDispatch} onStartTask={startTask} go={setView}/>} 
+    {view==='study' && <StudyHub learning={learning} onStartTask={startTask} go={setView}/>} 
     {view==='activity' && activeTask && <ActivityPlayer task={activeTask} onDone={()=>{setActiveTask(null);setView('study')}}/>}
     {view==='free' && <FreeStudyScreen onBack={()=>setView('study')} onStartTask={startTask} onEnglishDictionary={()=>setView('dictionary')}/>} 
     {view==='review' && <ReviewScreen onBack={()=>setView('study')} onStartTask={startTask}/>} 
