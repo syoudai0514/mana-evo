@@ -80,7 +80,7 @@ test('Parent remains PIN-gated for adult mutations while registered profile swit
   ]) assert.match(parent, new RegExp(adultControl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
 
   assert.match(parent, /名前の追加・変更、学年、難易度、クラウド、TEST、復元などはここで管理します/)
-  assert.match(switcher, /type:'SWITCH_PROFILE'/)
+  assert.match(switcher, /type:\s*['"]SWITCH_PROFILE['"]/)
   assert.doesNotMatch(switcher, /CREATE_PROFILE|RENAME_PROFILE|openAdultCloudControls|serializeForExport|parseImport|importKidsQuestProgress/)
   assert.match(parent, /Kids Quest側の保存やモンスター・バトル状態は変更しません/)
 })
