@@ -85,6 +85,7 @@ export function CapturePresentation({ sequence, onComplete, intervalMs = 520 }) 
           : frame.type === 'ring_closed' ? 'is-sealed'
             : 'is-waiting'
   const stateClass = `${frame.type === 'throw' ? '' : 'has-impact'} ${phaseClass}`.trim()
+  const escapedNote = sequence?.postWin ? 'もう たおしているから、あいての こうげきは ないよ' : 'バトルは まだ つづくよ'
 
   return <div className="evolution-overlay capture-sequence-overlay" role="dialog" aria-modal="true" aria-label="捕獲演出">
     <section className={`evolution-celebration-card capture-cinematic ${stateClass}`} data-testid="capture-sequence" data-frame-type={frame.type || 'stars'} data-lit-stars={lit} aria-live="polite">
@@ -100,7 +101,7 @@ export function CapturePresentation({ sequence, onComplete, intervalMs = 520 }) 
         </div>
       </div>
       <h2>{message}</h2>
-      <p className="capture-cinematic-note">{frame.type === 'caught' ? `${display.label}が しっかり とじた！` : frame.type === 'escaped' || frame.type === 'ring_scatter' ? 'バトルは まだ つづくよ' : '4つ ひかったら GET！'}</p>
+      <p className="capture-cinematic-note">{frame.type === 'caught' ? `${display.label}が しっかり とじた！` : frame.type === 'escaped' || frame.type === 'ring_scatter' ? escapedNote : '4つ ひかったら GET！'}</p>
     </section>
   </div>
 }
@@ -108,7 +109,8 @@ export function CapturePresentation({ sequence, onComplete, intervalMs = 520 }) 
 export function CapturePanel({ game, battle, captureDisabled = false, onCapture, onCancel }) {
   const [selectedBall, setSelectedBall] = useState(null)
   const panelRef = useRef(null)
-  const captureHpReady = battle.enemy.hp > 0 && battle.enemy.hp / battle.enemy.maxHp <= 0.5
+  const postWinCapture = battle.status === 'won' && battle.enemy.hp <= 0
+  const captureHpReady = postWinCapture || (battle.enemy.hp > 0 && battle.enemy.hp / battle.enemy.maxHp <= 0.5)
   const captureAttemptsLeft = Math.max(0, MAX_CAPTURE_ATTEMPTS - (battle.captureAttempts || 0))
   const options = CAPTURE_ITEM_IDS.map((id) => {
     const meta = CAPTURE_META[id]
@@ -156,13 +158,13 @@ export function CapturePanel({ game, battle, captureDisabled = false, onCapture,
   }, [battle.battleId, battle.captureAttempts, recommended, selectedBall])
 
   if (captureDisabled) {
-    return <section ref={panelRef} className="battle-tools capture-panel" role="dialog" aria-label="つかまえる"><strong>👑 このバトルでは GETできないよ</strong><p>ボールは なげられない バトルだよ。たおして すすもう！</p><button className="secondary" onClick={onCancel}>バトルへ もどる</button></section>
+    return <section ref={panelRef} className="battle-tools capture-panel" role="dialog" aria-label="つかまえる"><strong>👑 このバトルでは GETできないよ</strong><p>ボールは なげられない バトルだよ。たおして すすもう！</p><button className="secondary" onClick={onCancel}>{postWinCapture ? '結果へ もどる' : 'バトルへ もどる'}</button></section>
   }
 
   return <section ref={panelRef} className={`battle-tools capture-panel ${captureHpReady ? 'capture-open' : 'capture-locked'}`} role="dialog" aria-label="どのボールをつかう？">
     <div className={'capture-main-cta ' + (captureHpReady && captureAttemptsLeft > 0 ? 'ready' : 'locked')}><CaptureBallIcon itemType={selected?.id || recommended || 'star'} compact /><div><strong>どのボールを つかう？</strong><small>のこり {captureAttemptsLeft}かい</small></div></div>
-    <h2>{captureAttemptsLeft <= 0 ? 'ボールは 3かい なげたよ' : captureHpReady ? 'ボールを えらぼう！' : '🔒 HPを はんぶんいかに！'}</h2>
-    <p>{captureAttemptsLeft <= 0 ? 'このバトルでは もう ボールを なげられないよ。' : captureHpReady ? '★と「おすすめ！」を みて えらぼう。' : `あいての HPを ${Math.floor(battle.enemy.maxHp / 2)} いかまで へらそう。いまは ${battle.enemy.hp}。`}</p>
+    <h2>{captureAttemptsLeft <= 0 ? 'ボールは 3かい なげたよ' : postWinCapture ? 'たおしたあとも GETできる！' : captureHpReady ? 'ボールを えらぼう！' : '🔒 HPを はんぶんいかに！'}</h2>
+    <p>{captureAttemptsLeft <= 0 ? 'このバトルでは もう ボールを なげられないよ。' : postWinCapture ? '勝利はもう確定！ ボールをえらんで GETをねらおう。失敗しても反撃はないよ。' : captureHpReady ? '★と「おすすめ！」を みて えらぼう。' : `あいての HPを ${Math.floor(battle.enemy.maxHp / 2)} いかまで へらそう。いまは ${battle.enemy.hp}。`}</p>
 
     <div className="capture-item-grid">{options.map((option) => {
       const isSelected = option.id === selectedBall
@@ -188,7 +190,7 @@ export function CapturePanel({ game, battle, captureDisabled = false, onCapture,
 
     <div className="battle-action-row capture-actions">
       <button className="primary" disabled={!selected} onClick={() => selected && onCapture(selected.id)}>{selected ? `${selected.display.label}を なげる！` : 'ボールを えらんでね'}</button>
-      <button className="secondary" onClick={onCancel}>バトルへ もどる</button>
+      <button className="secondary" onClick={onCancel}>{postWinCapture ? '結果へ もどる' : 'バトルへ もどる'}</button>
     </div>
   </section>
 }
