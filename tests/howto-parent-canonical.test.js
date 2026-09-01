@@ -54,9 +54,10 @@ test('HowTo explains canonical exploration, capture and self-evolution boundarie
   assert.doesNotMatch(howto, /シンカしても そのまま もっている/)
 })
 
-test('Parent remains behind the established PIN gate with adult-only controls', () => {
+test('Parent remains PIN-gated for adult mutations while registered profile switching is child-safe', () => {
   const gate = read('src/parent/ParentGate.jsx')
   const parent = read('src/kids-quest-study/screens/ParentScreen.jsx')
+  const switcher = read('src/platform/ChildProfileSwitcher.jsx')
 
   assert.match(gate, /mana-evo-parent-pin-v1/)
   assert.match(gate, /\^\\d\{4\}\$/)
@@ -70,14 +71,17 @@ test('Parent remains behind the established PIN gate with adult-only controls', 
     "type:'LOWER_GRADE_MAX'",
     "setSetting('mode'",
     "setSetting('tts'",
-    "type:'SWITCH_PROFILE'",
+    "type:'RENAME_PROFILE'",
     "type:'CREATE_PROFILE'",
+    'openAdultCloudControls',
     'serializeForExport',
     'parseImport',
     'importKidsQuestProgress'
   ]) assert.match(parent, new RegExp(adultControl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
 
-  assert.match(parent, /子ども画面からは変更できません/)
+  assert.match(parent, /名前の追加・変更、学年、難易度、クラウド、TEST、復元などはここで管理します/)
+  assert.match(switcher, /type:'SWITCH_PROFILE'/)
+  assert.doesNotMatch(switcher, /CREATE_PROFILE|RENAME_PROFILE|openAdultCloudControls|serializeForExport|parseImport|importKidsQuestProgress/)
   assert.match(parent, /Kids Quest側の保存やモンスター・バトル状態は変更しません/)
 })
 
