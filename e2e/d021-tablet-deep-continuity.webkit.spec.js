@@ -260,13 +260,16 @@ test('D-021 active Learning feedback remains reachable at keyboard-like low heig
   await keypad.getByRole('button', { name: '0', exact: true }).click()
   await keypad.getByRole('button', { name: 'OK', exact: true }).click()
 
-  const feedback = page.locator('.feedback')
-  await expect(feedback).toBeVisible()
-  await expectReachable(page, feedback)
-  const geometry = await feedback.boundingBox()
-  const viewport = page.viewportSize()
-  expect(geometry).not.toBeNull()
-  expect(viewport).not.toBeNull()
-  expect(geometry.x).toBeGreaterThanOrEqual(-1)
-  expect(geometry.x + geometry.width).toBeLessThanOrEqual(viewport.width + 1)
+  // Feedback is deliberately transient. Check visibility + geometry atomically so
+  // the assertion cannot race its normal dismissal timer between two locator calls.
+  await expect.poll(async () => page.evaluate(() => {
+    const node = document.querySelector('.feedback')
+    if (!node) return false
+    const rect = node.getBoundingClientRect()
+    const style = getComputedStyle(node)
+    const visible = style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity || 1) > 0
+    return visible && rect.width > 0 && rect.height > 0 &&
+      rect.left >= -1 && rect.right <= window.innerWidth + 1 &&
+      rect.top >= -1 && rect.bottom <= window.innerHeight + 1
+  }), { timeout: 2000 }).toBe(true)
 })
