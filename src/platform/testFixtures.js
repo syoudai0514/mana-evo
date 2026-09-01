@@ -5,8 +5,8 @@ import { xpToNext } from '../game/engine.js'
 
 export const TEST_FIXTURE_LABELS = Object.freeze({
   all: '全開放・全キャラ',
-  stage1: '第1形態・進化できる',
-  stage2: '第2形態・最終進化できる'
+  stage1: '第1形態・次のLvUPで進化確認',
+  stage2: '第2形態・次のLvUP/条件で最終進化確認'
 })
 
 function localDayNumber(d = new Date()) {
