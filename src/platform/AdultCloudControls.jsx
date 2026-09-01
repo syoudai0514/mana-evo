@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { PARENT_PIN_KEY } from '../parent/ParentGate.jsx'
+import { isParentVerificationActive } from '../parent/parentVerification.js'
 
 function storedPin() {
   try { return localStorage.getItem(PARENT_PIN_KEY) || '' } catch { return '' }
@@ -10,8 +11,9 @@ export default function AdultCloudControls({ children, alreadyVerified = false }
   const [pin, setPin] = useState('')
   const [message, setMessage] = useState('')
   const pinExists = storedPin().length === 4
+  const trustedParentSession = alreadyVerified && isParentVerificationActive()
 
-  if (alreadyVerified || unlocked) return <>{children}</>
+  if (trustedParentSession || unlocked) return <>{children}</>
 
   const unlock = () => {
     if (!pinExists) {

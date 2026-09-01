@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import ParentScreen from '../kids-quest-study/screens/ParentScreen.jsx'
+import { clearParentVerification, markParentVerification } from './parentVerification.js'
 
 export const PARENT_PIN_KEY = 'mana-evo-parent-pin-v1'
 
@@ -41,7 +42,13 @@ export default function ParentGate({ onBack }) {
   const [message, setMessage] = useState('')
   const challenge = useMemo(makeAdultCheck, [recovering, pinExists])
 
+  useEffect(() => {
+    clearParentVerification()
+    return clearParentVerification
+  }, [])
+
   const exit = () => {
+    clearParentVerification()
     setUnlocked(false)
     setPin('')
     setPinConfirm('')
@@ -54,6 +61,7 @@ export default function ParentGate({ onBack }) {
 
   const unlock = () => {
     if (pin === storedPin()) {
+      markParentVerification()
       setUnlocked(true)
       setPin('')
       setMessage('')
@@ -76,6 +84,7 @@ export default function ParentGate({ onBack }) {
       return
     }
     savePin(pin)
+    markParentVerification()
     setPinExists(true)
     setRecovering(false)
     setUnlocked(true)

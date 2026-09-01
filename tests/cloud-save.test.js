@@ -144,13 +144,18 @@ test('cloud snapshot includes the learning-to-game reward bridge in the same rev
   assert.match(source, /importLearningRewardEnvelope\(payload\.learningRewardEnvelope\)/)
 })
 
-test('player switching test fixtures conflicts backup restore and cloud auth are behind Parent PIN', () => {
+test('cloud mutations require PIN or an explicit live Parent verification session', () => {
   const shell = fs.readFileSync(new URL('../src/platform/CloudAccountShell.jsx', import.meta.url), 'utf8')
   const gate = fs.readFileSync(new URL('../src/platform/AdultCloudControls.jsx', import.meta.url), 'utf8')
+  const parentGate = fs.readFileSync(new URL('../src/parent/ParentGate.jsx', import.meta.url), 'utf8')
+  const verification = fs.readFileSync(new URL('../src/parent/parentVerification.js', import.meta.url), 'utf8')
   assert.match(shell, /<AdultCloudControls\s+alreadyVerified=\{parentScreenOpen\}>/)
   assert.match(gate, /PARENT_PIN_KEY/)
   assert.match(gate, /保護者専用/)
-  assert.match(gate, /alreadyVerified\s*\|\|\s*unlocked/)
+  assert.match(gate, /alreadyVerified\s*&&\s*isParentVerificationActive\(\)/)
+  assert.match(parentGate, /markParentVerification\(\)/)
+  assert.match(parentGate, /clearParentVerification\(\)/)
+  assert.match(verification, /let active = false/)
   assert.doesNotMatch(gate, /querySelector\(['"]\.parent-screen/)
   assert.doesNotMatch(shell, /cloud-test-banner[^\n]+onClick=\{stopTest\}/)
 })
