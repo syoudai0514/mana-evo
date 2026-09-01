@@ -168,19 +168,40 @@ async function runPool(items, worker, concurrency) {
 
 export async function downloadDexArtPack({ onProgress, signal, concurrency = 4 } = {}) {
   const frozen = await loadDexArtManifest({ cache: 'no-store', refresh: true })
-  let audit = await auditDexArtPack(frozen)
-  onProgress?.(audit)
+  const initialAudit = await auditDexArtPack(frozen)
+  const remaining = new Map(initialAudit.missing.map((asset) => [asset.speciesId, asset]))
+  let complete = initialAudit.complete
+  let downloadedBytes = initialAudit.downloadedBytes
 
-  await runPool(audit.missing, async (asset) => {
+  const progressSnapshot = () => ({
+    manifest: frozen,
+    complete,
+    total: frozen.assets.length,
+    downloadedBytes,
+    totalBytes: frozen.totalBytes,
+    missing: [...remaining.values()],
+    isComplete: complete === frozen.assets.length
+  })
+  onProgress?.(progressSnapshot())
+
+  await runPool(initialAudit.missing, async (asset) => {
     if (signal?.aborted) throw new DOMException('Download cancelled', 'AbortError')
-    await fetchVerifyAndCacheAsset(asset, { signal })
-    audit = await auditDexArtPack(frozen)
-    onProgress?.(audit)
+    const result = await fetchVerifyAndCacheAsset(asset, { signal })
+    // CacheStorage commit already succeeded at this boundary. Progress can now be
+    // updated in memory; an authoritative full audit still runs after the pool.
+    if (remaining.delete(asset.speciesId)) {
+      complete += 1
+      downloadedBytes += Number(result.bytes || asset.byteLength || 0)
+      onProgress?.(progressSnapshot())
+    }
   }, concurrency)
 
+  // Final cache truth remains authoritative; the in-memory counter is only UI.
   const completedFrozen = await auditDexArtPack(frozen)
   const latest = await loadDexArtManifest({ cache: 'no-store', refresh: true })
-  const latestAudit = await auditDexArtPack(latest)
+  const latestAudit = frozen.manifestRevision === latest.manifestRevision
+    ? completedFrozen
+    : await auditDexArtPack(latest)
   await pruneDexArtCache(latest)
   notifyServiceWorkerManifestRefresh()
 
@@ -224,9 +245,9 @@ export function formatBytes(bytes) {
   return `${(value / 1024 / 1024).toFixed(1)} MB`
 }
 
-export function notifyServiceWorkerManifestRefresh() {
+export function notifyServiceWorkerManifestRefresh({ prune = false } = {}) {
   try {
-    navigator.serviceWorker?.controller?.postMessage({ type: 'MANA_EVO_DEX_ART_REFRESH_MANIFEST' })
+    navigator.serviceWorker?.controller?.postMessage({ type: 'MANA_EVO_DEX_ART_REFRESH_MANIFEST', prune })
   } catch {}
 }
 

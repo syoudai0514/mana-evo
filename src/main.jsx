@@ -20,14 +20,12 @@ import './ui/dex-art-pack.css'
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     const baseUrl = import.meta.env.BASE_URL || '/'
+    // Registering is enough for the browser to perform its normal update check.
+    // Do not force an extra Service Worker update or a full Dex-art maintenance
+    // sweep on every app launch: CacheStorage enumeration/pruning is control-plane work.
     navigator.serviceWorker.register(`${baseUrl}sw.js`, {
       scope: baseUrl,
       updateViaCache: 'none'
-    }).then(async (registration) => {
-      await registration.update()
-      const ready = await navigator.serviceWorker.ready
-      const worker = navigator.serviceWorker.controller || ready.active
-      worker?.postMessage({ type: 'MANA_EVO_DEX_ART_REFRESH_MANIFEST' })
     }).catch((error) => {
       console.warn('ManaEvo service worker registration failed', error)
     })

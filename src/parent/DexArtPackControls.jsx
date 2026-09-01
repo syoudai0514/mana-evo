@@ -25,7 +25,7 @@ export default function DexArtPackControls() {
       const manifest = await loadDexArtManifest({ cache: 'no-store', refresh: true })
       const next = await auditDexArtPack(manifest)
       setStatus(next)
-      setMessage(next.isComplete ? '✅ 現在の238体を保存済みです' : next.complete ? `不足分があります（${next.complete}/238）` : 'この端末にはまだ一括保存されていません')
+      setMessage(next.isComplete ? '✅ 現在の238体を端末で利用できます' : next.complete ? `不足分があります（${next.complete}/238）` : 'この端末にはまだ一括保存されていません')
       setEstimate(await dexStorageEstimate())
     } catch (error) {
       setMessage(`⚠️ 保存状態を確認できません: ${error.message}`)
@@ -57,7 +57,7 @@ export default function DexArtPackControls() {
       })
       setStatus(result)
       setMessage(result.isComplete && !result.updateAvailable
-        ? '✅ 238/238 保存済みです。オフラインでも確認できます。'
+        ? '✅ 238/238 完了です。オフラインでも確認できます。'
         : `更新または不足があります（${result.complete}/${result.total}）`)
     } catch (error) {
       if (error?.name === 'AbortError') setMessage('一時停止しました。保存済みの画像は残っています。')
