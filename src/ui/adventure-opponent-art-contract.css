@@ -1,0 +1,8 @@
+/* Opponent-selection card artwork only.
+   Keep battle-scene portrait positioning untouched. */
+@media (max-width: 760px) {
+  .adventure-map .formal-stage-card.daily-stage-card .encounter-art .placeholder-monster.monster-art {
+    transform: translate(5px, 1px) scale(0.70);
+    transform-origin: center;
+  }
+}
