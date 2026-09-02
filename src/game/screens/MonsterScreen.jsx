@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { MonsterArt } from '../PlaceholderMonster.jsx'
-import { EVOLUTION_ITEMS, SPECIES, speciesOf } from '../content.js'
+import { groupBoxByFamily, projectBoxMonsters } from '../boxProjection.js'
+import { EVOLUTION_ITEMS, speciesOf } from '../content.js'
 import {
   canNormalEvolve,
   describeEvolutionCondition,
@@ -16,62 +17,6 @@ import { DexGrid } from './DexScreen.jsx'
 import { EvolutionCelebration } from './EvolutionOverlay.jsx'
 import { TypePills } from './GameScreenPrimitives.jsx'
 import { LAYOUT_SURFACES } from '../../ui/layoutSurface.js'
-
-function speciesNoValue(species) {
-  const value = Number(species?.no)
-  if (Number.isFinite(value)) return value
-  const match = /m(\d+)/.exec(String(species?.id || ''))
-  return match ? Number(match[1]) : Number.MAX_SAFE_INTEGER
-}
-
-const FAMILY_MIN_NO = (() => {
-  const values = new Map()
-  for (const species of Object.values(SPECIES || {})) {
-    const family = species.family || species.id
-    values.set(family, Math.min(values.get(family) ?? Number.MAX_SAFE_INTEGER, speciesNoValue(species)))
-  }
-  return values
-})()
-
-function familyKeyOf(monster) {
-  const species = speciesOf(monster?.speciesId)
-  return species?.family || species?.id || monster?.speciesId || 'unknown'
-}
-
-function evolutionOrder(a, b) {
-  const aSpecies = speciesOf(a.speciesId)
-  const bSpecies = speciesOf(b.speciesId)
-  const aFamily = familyKeyOf(a)
-  const bFamily = familyKeyOf(b)
-  const familyDiff = (FAMILY_MIN_NO.get(aFamily) ?? speciesNoValue(aSpecies)) - (FAMILY_MIN_NO.get(bFamily) ?? speciesNoValue(bSpecies))
-  if (familyDiff) return familyDiff
-  const stageDiff = Number(aSpecies?.stage || 1) - Number(bSpecies?.stage || 1)
-  if (stageDiff) return stageDiff
-  const speciesDiff = speciesNoValue(aSpecies) - speciesNoValue(bSpecies)
-  if (speciesDiff) return speciesDiff
-  const levelDiff = Number(b.level || 1) - Number(a.level || 1)
-  if (levelDiff) return levelDiff
-  return String(a.instanceId).localeCompare(String(b.instanceId))
-}
-
-function levelOrder(a, b) {
-  const levelDiff = Number(b.level || 1) - Number(a.level || 1)
-  if (levelDiff) return levelDiff
-  const speciesDiff = speciesNoValue(speciesOf(a.speciesId)) - speciesNoValue(speciesOf(b.speciesId))
-  if (speciesDiff) return speciesDiff
-  return String(a.instanceId).localeCompare(String(b.instanceId))
-}
-
-function groupByFamily(monsters) {
-  const groups = []
-  for (const monster of monsters) {
-    const family = familyKeyOf(monster)
-    const last = groups[groups.length - 1]
-    if (last?.family === family) last.monsters.push(monster)
-    else groups.push({ family, monsters: [monster] })
-  }
-  return groups
-}
 
 function MonsterRow({ monster, game, setGame, selected, setSelected, showcase = false, slotIndex = null }) {
   const species = speciesOf(monster.speciesId)
@@ -227,11 +172,12 @@ export function MonsterScreen({ game, setGame, onLayoutSurfaceChange }) {
   const [boxSort, setBoxSort] = useState('evolution')
   const [evolvableOnly, setEvolvableOnly] = useState(false)
   const allBox = useMemo(() => Object.values(game.box || {}), [game.box])
-  const box = useMemo(() => {
-    const filtered = evolvableOnly ? allBox.filter((monster) => canNormalEvolve(monster, game)) : allBox
-    return [...filtered].sort(boxSort === 'level' ? levelOrder : evolutionOrder)
-  }, [allBox, boxSort, evolvableOnly, game])
-  const familyGroups = useMemo(() => boxSort === 'evolution' ? groupByFamily(box) : [], [box, boxSort])
+  const box = useMemo(() => projectBoxMonsters(game, {
+    sort: boxSort,
+    evolvableOnly,
+    canEvolve: canNormalEvolve
+  }), [game, boxSort, evolvableOnly])
+  const familyGroups = useMemo(() => boxSort === 'evolution' ? groupBoxByFamily(box) : [], [box, boxSort])
   const team = game.team.map((id) => game.box[id]).filter(Boolean)
   const evolvableCount = useMemo(() => allBox.filter((monster) => canNormalEvolve(monster, game)).length, [allBox, game])
 
