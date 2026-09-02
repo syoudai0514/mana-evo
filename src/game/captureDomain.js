@@ -103,7 +103,8 @@ export function defaultBaseCaptureChance({ hp, maxHp, catchRank = 1 }, tuning = 
   const rank = captureRank(catchRank)
   const baseAt50 = Number(tuning?.baseAt50ByRank?.[rank] ?? DEFAULT_CAPTURE_TUNING.baseAt50ByRank[rank])
   const lowHpBonus = Number(tuning?.lowHpBonusByRank?.[rank] ?? DEFAULT_CAPTURE_TUNING.lowHpBonusByRank[rank])
-  return clamp(0, baseAt50 + lowHpBonus * eligibleDepth, 1)
+  const interpolated = clamp(0, baseAt50 + lowHpBonus * eligibleDepth, 1)
+  return Number(interpolated.toFixed(6))
 }
 
 export function captureProbability(baseChance, itemType = 'star') {
