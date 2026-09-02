@@ -1,18 +1,61 @@
 import * as core from './progressionCore.js'
 import { applyLearningGameReward } from './learningRewardBridge.js'
 import { speciesOf } from './content.js'
+import {
+  getEvolutionTransition,
+  normalizePendingEvolution,
+  qualifyMaxLevelHeldItemEvolution
+} from './evolutionDomain.js'
 import { hasSpecialFormEntitlement, isSpecialFormTarget } from './specialFormsDomain.js'
 import { withSharedRuntimeState } from './sharedRuntimeState.js'
 
-export const CURRENT_GAME_VERSION = 10
+export const CURRENT_GAME_VERSION = 11
 export const CAPTURE_ITEM_IDS = core.CAPTURE_ITEM_IDS
 export const TICKET_TTL_DAYS = core.TICKET_TTL_DAYS
 
 export const canonicalSpeciesId = core.canonicalSpeciesId
 export const availableTicketCount = core.availableTicketCount
 
+function migrationPending(monster, rawMonster, sourceVersion) {
+  if (Number(sourceVersion || 0) >= CURRENT_GAME_VERSION) return null
+  const transition = getEvolutionTransition(monster?.speciesId)
+  if (!transition || transition.method === 'stone') return null
+  const qualified = transition.method === 'level'
+    ? Number(monster?.level || 0) >= Number(transition.level || Infinity)
+    : transition.method === 'held_item_levelup' && rawMonster?.evolutionReady === true && monster?.heldItemId === transition.itemId
+  if (!qualified) return null
+  const sourceOperationId = `migration:v${CURRENT_GAME_VERSION}:${monster.instanceId}:${transition.fromSpeciesId}->${transition.toSpeciesId}`
+  return {
+    qualificationId: `evo:${sourceOperationId}:${monster.instanceId}:${transition.fromSpeciesId}->${transition.toSpeciesId}`,
+    sourceOperationId,
+    fromSpeciesId: transition.fromSpeciesId,
+    toSpeciesId: transition.toSpeciesId,
+    method: transition.method,
+    qualifiedAtLevel: Math.max(1, Number(monster.level) || 1),
+    ...(transition.method === 'held_item_levelup' ? { itemId: transition.itemId } : {}),
+    qualificationKind: 'migration'
+  }
+}
+
+function preservePendingEvolution(target, source) {
+  if (!target?.box || typeof target.box !== 'object') return target
+  const sourceBox = source?.box && typeof source.box === 'object' ? source.box : {}
+  for (const [instanceId, monster] of Object.entries(target.box)) {
+    const targetPending = normalizePendingEvolution(monster, monster?.pendingEvolution)
+    const sourcePending = normalizePendingEvolution(monster, sourceBox?.[instanceId]?.pendingEvolution)
+    const migrated = targetPending || sourcePending || migrationPending(monster, sourceBox?.[instanceId], source?.version)
+    target.box[instanceId] = {
+      ...monster,
+      pendingEvolution: migrated || null,
+      evolutionReady: !!migrated
+    }
+  }
+  return target
+}
+
 function preserve(source, next) {
   const merged = withSharedRuntimeState(next, source)
+  preservePendingEvolution(merged, source)
   merged.version = CURRENT_GAME_VERSION
   return merged
 }
@@ -51,7 +94,15 @@ export function grantEvolutionItem(game, kind, itemId, count = 1, today) {
 }
 
 export function equipHeldItem(game, instanceId, itemId, today) {
-  return preserveResult(game, core.equipHeldItem(game, instanceId, itemId, today))
+  const equipped = preserveResult(game, core.equipHeldItem(game, instanceId, itemId, today))
+  if (!equipped?.ok) return equipped
+  const recovered = qualifyMaxLevelHeldItemEvolution(equipped.game, {
+    instanceId,
+    operationId: `max-level-held-item:${instanceId}:${equipped.game.box?.[instanceId]?.speciesId || 'unknown'}:${itemId}`
+  })
+  return recovered.ok
+    ? { ...equipped, game: preserve(equipped.game, recovered.game), pendingEvolution: recovered.pendingEvolution || null }
+    : equipped
 }
 
 // Compatibility entry point for callers that have not moved to applyLearningQueues yet.
