@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { SPECIES, STAGES, speciesOf } from '../src/game/content.js'
-import { adventureZoneProgress, applyXpToInstance, isAdventureZoneUnlocked, isStageUnlocked, makeMonster, xpToNext } from '../src/game/engine.js'
+import { adventureZoneProgress, applyXpToInstance, evolveInstance, isAdventureZoneUnlocked, isStageUnlocked, makeMonster, xpToNext } from '../src/game/engine.js'
 import { getEvolutionTransition } from '../src/game/evolutionDomain.js'
 import { createGameState, normalizeGameState } from '../src/game/progression.js'
 
@@ -52,18 +52,26 @@ test('evolved wild unlock requires explicit self-evolution discovery, not dex ow
   assert.equal(isStageUnlocked(game, stage), true)
 })
 
-test('actual level-up records self-evolution discovery and save migration keeps current location', () => {
+test('actual level-up creates readiness; confirmation records self-evolution discovery and migration keeps current location', () => {
   let game = createGameState()
   const instanceId = game.activeMonsterId
   const transition = getEvolutionTransition('m001')
   game.box[instanceId] = makeMonster('m001', transition.level - 1, instanceId)
   game.dex.caught.m001 = true
-  const evolved = applyXpToInstance(game, {
+  const qualified = applyXpToInstance(game, {
     instanceId,
     amount: xpToNext(game.box[instanceId].level),
     operationId: 'progression-review:self-evolution'
   })
+  assert.equal(qualified.ok, true)
+  assert.equal(qualified.game.box[instanceId].speciesId, 'm001')
+  assert.equal(qualified.game.box[instanceId].evolutionReady, true)
+  assert.equal(qualified.game.box[instanceId].pendingEvolution?.toSpeciesId, transition.toSpeciesId)
+  assert.equal(qualified.game.evolutionDiscoveries[transition.toSpeciesId], undefined)
+
+  const evolved = evolveInstance(qualified.game, instanceId)
   assert.equal(evolved.ok, true)
+  assert.equal(evolved.game.box[instanceId].speciesId, transition.toSpeciesId)
   assert.equal(evolved.game.evolutionDiscoveries[transition.toSpeciesId], true)
   evolved.game.adventureLocation = { area: 1, zoneId: 'forest' }
   const normalized = normalizeGameState(evolved.game, 9999)
