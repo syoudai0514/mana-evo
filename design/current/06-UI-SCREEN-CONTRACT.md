@@ -1266,3 +1266,110 @@ Do not:
 D-021 is satisfied only when the specification and acceptance together can determine that:
 
 > From the 375px-class mobile baseline through full/reduced iPad portrait and landscape, the active primary decision remains visible/reachable without unintended clipping, Navigation ownership and Layout Surface remain independent, and presentation changes preserve the same semantic transaction plus meaningful active interaction substate while retaining stricter domain contracts such as D-020 Dex continuity.
+
+---
+
+# 17. D-029 / D-030 later authority — Bundle B child presentation
+
+This section is later authority for the affected Battle / Capture / Monster / Evolution / BOX presentation only. It does not weaken the existing Home/Study/Adventure/Dex/Parent contracts or D-021 responsive/continuity requirements.
+
+## 17.1 Battle — ordered domain trace is the presentation source
+
+A move tap resolves the semantic transaction exactly once. The Battle domain returns an immutable, ordered `presentationEvents[]` sidecar reflecting the **actual semantic action order**, including speed-order cases where the enemy acts first and both actors act within one transaction.
+
+Each event exposes semantic presentation facts as applicable:
+
+- stable `eventId`;
+- battle/turn identity and `ordinal`;
+- actor / target;
+- event kind / move ID;
+- HP before / after;
+- effectiveness / critical / status;
+- terminal outcome.
+
+The UI must not reconstruct action order from only a before/after snapshot and must not parse human-readable battle-log text to recover semantics.
+
+Presentation sequence may include:
+
+```text
+enemy enters
+→ `○○が あらわれた！`
+→ species-seeded cry
+→ command
+→ committed presentationEvents[] in ordinal order
+→ swoosh / attack FX
+→ hit / hitBig / effectiveness text
+→ already-committed HP state
+→ defeat beat / `○○を たおした！` / fanfare
+→ reward / post-win capture where applicable
+```
+
+Hard rule: timers, CSS animation callbacks, SFX completion and presentation cursors **never** call move/damage/AI/reward/ticket/capture settlement. They only display a semantic result that already committed. Rotation/re-render may normalize/replay a harmless visual cue but may not duplicate semantics.
+
+`prefers-reduced-motion: reduce` removes travel/shake transforms while preserving semantic text, usable controls, and the independent sound setting.
+
+## 17.2 Capture — D-029 deterministic labels and recommendation
+
+Capture keeps the §6 focused flow and D-017 one-ball/four-star presentation. Its ease label and recommendation now come from D-029 rather than implementation judgment.
+
+One-throw final-chance bands:
+
+- `<20%` → `かなり つかまえにくい`
+- `20–<40%` → `つかまえにくい`
+- `40–<60%` → `ふつう`
+- `60–<80%` → `つかまえやすい`
+- `>=80%` → `ほとんど つかまる`
+
+Recommendation considers owned inventory only: choose the weakest owned non-rainbow ball reaching `>=70%`; otherwise the owned non-rainbow ball with the highest chance. Rainbow is never automatic recommendation in an ordinary encounter; an explicit encounter-level override may recommend it only when owned. Rainbow alone may use guaranteed wording such as `かならず GET`.
+
+The selected actionable throw CTA must visually read as active; selected vs disabled states must not be ambiguous.
+
+## 17.3 Monster / BOX — manual evolution ownership
+
+D-030 changes `evolution ready` from a passive/immediate-mutation aftermath into a child action.
+
+- A dormant `pendingEvolution` shows `✨ シンカできる！` on the relevant individual.
+- Monster detail exposes a dominant `✨ シンカする！` action for that token.
+- Confirming enters the same focused Evolution owner only **after** the domain has successfully committed the species change.
+- `あとで` leaves readiness visible and actionable later.
+
+BOX information architecture:
+
+- default sort `シンカ順`: family groups by lowest species No.; inside family, stage1→stage2→stage3/final; same-species duplicates stay adjacent, ordered by level desc then stable instanceId;
+- secondary sort: `レベル順`;
+- independent toggle/filter: `✨ シンカできるだけ`;
+- Team badge may be shown, but BOX sorting/filtering never mutates Team order or instance identity;
+- no `GET順` until authoritative acquisition timestamps exist for legacy/new instances.
+
+## 17.4 Evolution — qualification choice vs reveal acknowledgement
+
+A qualifying level/held-item LvUP does not itself open a reveal of a species that has not yet changed.
+
+Immediate result flow:
+
+```text
+reward / LvUP
+→ `○○は シンカできる！`
+→ [✨ シンカする！] dominant
+→ [あとで] secondary
+```
+
+If `シンカする！` succeeds, the full-screen Evolution owner presents before→after celebration and `つづける！`. If the child selects `あとで`, no reveal occurs; readiness persists in Monster/BOX.
+
+If multiple teammates qualify in one reward settlement, prompts are ordered deterministically by stable instance identity; each token is independently confirmable/idempotent. Capture/duplicate-choice/forced-switch/post-win capture takes presentation priority over an evolution prompt; persistent tokens ensure readiness is not lost.
+
+During active evolution confirm/reveal acknowledgement, D-023 child profile switching remains locked. Dormant readiness alone does not lock routine profile switching.
+
+## 17.5 Bundle B responsive acceptance
+
+The existing D-021 Contextual interactive contract remains authority. Bundle B additionally requires representative 375 / 390 / 430 mobile plus tablet smoke for:
+
+- appearance copy and ordered Battle event playback;
+- primary action remaining reachable during/after FX;
+- rotation during FX not duplicating move/reward/ticket/capture semantics;
+- reduced-motion usability;
+- Capture label/recommendation matching D-029;
+- pending evolution immediate `シンカする！ / あとで`, persistence after `あとで`, and later confirmation from Monster/BOX;
+- family grouping, duplicate adjacency, evolvable-only filter, and unchanged Team order.
+
+Historical sections above remain useful screen provenance; where their evolution timing or unspecified capture recommendation conflicts, **D-029/D-030 and this §17 are later authority**.
