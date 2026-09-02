@@ -105,6 +105,8 @@ test('child can see and switch the active profile without Parent PIN, with per-p
   await expect(page.getByRole('button', { name: 'いまのプレイヤー みどり' })).toBeVisible()
   await expect(page.locator('.resource-pill.mana strong')).toHaveText('22')
 
+  const stored = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)), LEARNING_KEY)
+  expect(stored.profiles['child-1'].name).toBe('ぼうけんしゃ 1')
   const games = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)).gameByProfile, GAME_KEY)
   expect(games['child-1'].mana).toBe(11)
   expect(games['child-2'].mana).toBe(22)
@@ -136,6 +138,42 @@ test('Parent can rename a profile and open cloud management without entering the
   await expect(page.getByRole('button', { name: 'いまのプレイヤー まさき' })).toBeVisible()
   await page.reload()
   await expect(page.getByRole('button', { name: 'いまのプレイヤー まさき' })).toBeVisible()
+})
+
+test('Evolution acknowledgement disables child profile switching until it is acknowledged', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  const fixture = twoProfileFixture()
+  const game = fixture.games['child-1']
+  const instanceId = game.team[0]
+  game.box[instanceId] = {
+    ...game.box[instanceId],
+    speciesId: 'm026',
+    level: 30,
+    xp: 0,
+    heldItemId: null,
+    evolutionReady: false
+  }
+  game.team = [instanceId]
+  game.activeMonsterId = instanceId
+  game.dex.seen.m026 = true
+  game.dex.caught.m026 = true
+  game.evolutionItems.stones.thunder = 1
+  await install(page, fixture)
+  await page.goto('/')
+
+  const profileTrigger = page.getByRole('button', { name: 'いまのプレイヤー なまえをきめよう' })
+  await expect(profileTrigger).toBeEnabled()
+  await page.getByRole('navigation', { name: 'メインメニュー' }).getByRole('button', { name: /モンスター/ }).click()
+  await page.getByRole('button', { name: /いま シンカする！/ }).click()
+
+  const celebration = page.getByRole('dialog', { name: 'シンカ！' })
+  await expect(celebration).toBeVisible()
+  await expect(profileTrigger).toBeDisabled()
+  await expect(page.getByRole('dialog', { name: 'だれが つかう？' })).toHaveCount(0)
+
+  await celebration.getByRole('button', { name: 'つづける！' }).click()
+  await expect(celebration).toHaveCount(0)
+  await expect(profileTrigger).toBeEnabled()
 })
 
 test('Study presents one guided daily action, a visible grade goal, and always-visible other learning modes', async ({ page }) => {
@@ -180,30 +218,38 @@ test('shared chrome is thinner but keeps 44px-class tap targets in portrait and 
   }
 })
 
-test('Adventure encounter rank and art do not overlap at iPhone width', async ({ page }) => {
+test('Adventure encounter rank and art geometry stays separated across supported phone widths and iPad', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   const today = dayNumber()
   const game = addTickets(createGameState(), 3, today)
   await install(page, { learning: learningState({ coreDone: true }), games: { 'child-1': game } })
   await page.goto('/')
-
   await page.getByRole('navigation', { name: 'メインメニュー' }).getByRole('button', { name: /ぼうけん/ }).click()
-  const card = page.locator('.formal-stage-card').first()
-  await expect(card).toBeVisible()
-  const geometry = await card.evaluate((element) => {
-    const number = element.querySelector('.stage-number')?.getBoundingClientRect()
-    const art = element.querySelector('.encounter-art')?.getBoundingClientRect()
-    const tag = element.querySelector('.recommendation-tag')?.getBoundingClientRect()
-    return number && art ? {
-      numberRight: number.right,
-      artLeft: art.left,
-      artRight: art.right,
-      tagLeft: tag?.left ?? Number.POSITIVE_INFINITY
-    } : null
-  })
-  expect(geometry).not.toBeNull()
-  expect(geometry.numberRight).toBeLessThanOrEqual(geometry.artLeft + 1)
-  expect(geometry.artRight).toBeLessThanOrEqual(geometry.tagLeft + 1)
+
+  for (const viewport of [
+    { width: 375, height: 812, label: 'iPhone 375' },
+    { width: 390, height: 844, label: 'iPhone 390' },
+    { width: 430, height: 932, label: 'iPhone 430' },
+    { width: 834, height: 1194, label: 'iPad portrait' }
+  ]) {
+    await page.setViewportSize(viewport)
+    const card = page.locator('.formal-stage-card').first()
+    await expect(card).toBeVisible()
+    const geometry = await card.evaluate((element) => {
+      const number = element.querySelector('.stage-number')?.getBoundingClientRect()
+      const art = element.querySelector('.encounter-art')?.getBoundingClientRect()
+      const tag = element.querySelector('.recommendation-tag')?.getBoundingClientRect()
+      return number && art ? {
+        numberRight: number.right,
+        artLeft: art.left,
+        artRight: art.right,
+        tagLeft: tag?.left ?? Number.POSITIVE_INFINITY
+      } : null
+    })
+    expect(geometry, viewport.label).not.toBeNull()
+    expect(geometry.numberRight, `${viewport.label}: rank vs art`).toBeLessThanOrEqual(geometry.artLeft + 1)
+    expect(geometry.artRight, `${viewport.label}: art vs recommendation`).toBeLessThanOrEqual(geometry.tagLeft + 1)
+  }
 })
 
 test('selected capture ball produces an unmistakably enabled throw CTA', async ({ page }) => {
