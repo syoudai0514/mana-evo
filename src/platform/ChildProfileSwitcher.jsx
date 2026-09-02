@@ -1,16 +1,24 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { rememberDeviceProfile } from './deviceProfile.js'
 import { profileDisplayName } from './profileUi.js'
+import { isChildProfileSwitchLocked, subscribeChildProfileSwitchLock } from './childProfileSwitchLock.js'
 
 export default function ChildProfileSwitcher({ learning, dispatch, disabled = false }) {
   const [open, setOpen] = useState(false)
+  const [interactionLocked, setInteractionLocked] = useState(isChildProfileSwitchLocked)
   const profiles = Object.entries(learning?.profiles || {})
   const activeId = learning?.activeProfileId || profiles[0]?.[0] || 'child-1'
   const activeProfile = learning?.profiles?.[activeId]
   const activeName = profileDisplayName(activeProfile)
+  const effectivelyDisabled = disabled || interactionLocked
+
+  useEffect(() => subscribeChildProfileSwitchLock((locked) => {
+    setInteractionLocked(locked)
+    if (locked) setOpen(false)
+  }), [])
 
   const choose = (profileId) => {
-    if (disabled || profileId === activeId) {
+    if (effectivelyDisabled || profileId === activeId) {
       setOpen(false)
       return
     }
@@ -26,8 +34,8 @@ export default function ChildProfileSwitcher({ learning, dispatch, disabled = fa
       aria-label={`いまのプレイヤー ${activeName}`}
       aria-haspopup="dialog"
       aria-expanded={open}
-      disabled={disabled}
-      onClick={() => !disabled && setOpen(true)}
+      disabled={effectivelyDisabled}
+      onClick={() => !effectivelyDisabled && setOpen(true)}
     >
       <span aria-hidden="true">👤</span><strong>{activeName}</strong><b aria-hidden="true">⌄</b>
     </button>
