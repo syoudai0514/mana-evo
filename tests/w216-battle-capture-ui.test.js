@@ -69,15 +69,17 @@ test('W-216 growth shards redeem only through current-team buttons and canonical
   assert.ok(battle.includes('growth-shard-targets'))
 })
 
-test('W-216 hands automatic battle/capture/shard evolutions to EvolutionCelebration once, without manual retrigger', () => {
-  assert.ok(battle.includes('result.rewards?.evolutionsByInstance'))
-  assert.ok(battle.includes('result.evolutionsByInstance'))
-  assert.ok(battle.includes('if (result.evolution) enqueueEvolutions'))
-  assert.ok(battle.includes('seenEvolutionKeys'))
+test('W-216 queues battle/capture/shard evolution readiness for explicit confirmation before celebration', () => {
+  assert.ok(battle.includes('result.rewards?.pendingEvolutionsByInstance'))
+  assert.ok(battle.includes('result.pendingEvolutionsByInstance'))
+  assert.ok(battle.includes('if (result.pendingEvolution) enqueuePendingEvolutions'))
+  assert.ok(battle.includes('seenQualificationIds'))
+  assert.ok(battle.includes('EvolutionPrompt'))
+  assert.ok(battle.includes('confirmEvolution'))
+  assert.ok(battle.includes('deferPendingEvolution'))
   assert.ok(battle.includes('EvolutionCelebration'))
   assert.ok(!battle.includes('evolveInstance'))
   assert.ok(!battle.includes('canNormalEvolve'))
-  assert.ok(!battle.includes('✨ いま シンカする！'))
 })
 
 test('W-216 removes obsolete transition-trial reward copy', () => {
