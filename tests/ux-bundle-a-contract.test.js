@@ -8,6 +8,8 @@ import {
   profileDisplayName,
   profileEditableName
 } from '../src/platform/profileUi.js'
+import { profilesForPersistence } from '../src/platform/cloudSnapshot.js'
+import { makeCloudPayload, payloadHash } from '../src/platform/cloudSaveModel.js'
 
 const appSource = fs.readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8')
 const parentSource = fs.readFileSync(new URL('../src/kids-quest-study/screens/ParentScreen.jsx', import.meta.url), 'utf8')
@@ -15,6 +17,8 @@ const navSource = fs.readFileSync(new URL('../src/navigation/AppNavigation.jsx',
 const cssSource = fs.readFileSync(new URL('../src/ui/ux-bundle-a.css', import.meta.url), 'utf8')
 const cssDeclarations = cssSource.replace(/\/\*[\s\S]*?\*\//g, '')
 const mainSource = fs.readFileSync(new URL('../src/main.jsx', import.meta.url), 'utf8')
+const switcherSource = fs.readFileSync(new URL('../src/platform/ChildProfileSwitcher.jsx', import.meta.url), 'utf8')
+const evolutionSource = fs.readFileSync(new URL('../src/game/screens/EvolutionOverlay.jsx', import.meta.url), 'utf8')
 
 test('Bundle A hides legacy automatic adventurer names but preserves real names', () => {
   assert.equal(UNNAMED_PROFILE_LABEL, 'なまえをきめよう')
@@ -25,6 +29,33 @@ test('Bundle A hides legacy automatic adventurer names but preserves real names'
   }
   assert.equal(profileDisplayName({ name: 'まさき' }), 'まさき')
   assert.equal(profileEditableName({ name: 'まさき' }), 'まさき')
+})
+
+test('Bundle A display placeholder never rewrites the raw profile name used by cloud hashing', () => {
+  const childState = { grade: 0, daily: { coreDone: false } }
+  const learning = {
+    version: 4,
+    contentVersion: 16,
+    ...childState,
+    activeProfileId: 'child-1',
+    profiles: {
+      'child-1': { name: 'ぼうけんしゃ 1', state: childState }
+    }
+  }
+  const profiles = profilesForPersistence(learning)
+  assert.equal(profileDisplayName(profiles['child-1']), 'なまえをきめよう')
+  assert.equal(profiles['child-1'].name, 'ぼうけんしゃ 1')
+
+  const rawPayload = makeCloudPayload({
+    learning: { version: 4, contentVersion: 16, profiles },
+    gameEnvelope: { formatVersion: 2, gameByProfile: { 'child-1': { marker: 'same' } } },
+    learningRewardEnvelope: { version: 1, byProfile: {} },
+    capturedAt: '2026-09-02T00:00:00.000Z'
+  })
+  const displayMutatedPayload = structuredClone(rawPayload)
+  displayMutatedPayload.learning.profiles['child-1'].name = 'なまえをきめよう'
+  assert.notEqual(payloadHash(rawPayload), payloadHash(displayMutatedPayload))
+  assert.equal(rawPayload.learning.profiles['child-1'].name, 'ぼうけんしゃ 1')
 })
 
 test('Bundle A Home and Study use the approved child-facing hierarchy', () => {
@@ -45,6 +76,13 @@ test('Bundle A exposes child profile switching while keeping rename and cloud ma
   assert.match(parentSource, /名前を保存/)
   assert.match(parentSource, /クラウド・TESTをひらく/)
   assert.match(parentSource, /openAdultCloudControls/)
+})
+
+test('Bundle A profile switching participates in the Evolution acknowledgement interaction lock', () => {
+  assert.match(evolutionSource, /setChildProfileSwitchLock\('evolution-acknowledgement', true\)/)
+  assert.match(evolutionSource, /setChildProfileSwitchLock\('evolution-acknowledgement', false\)/)
+  assert.match(switcherSource, /subscribeChildProfileSwitchLock/)
+  assert.match(switcherSource, /effectivelyDisabled = disabled \|\| interactionLocked/)
 })
 
 test('Bundle A compacts shared chrome without shrinking tap targets below 44px', () => {
