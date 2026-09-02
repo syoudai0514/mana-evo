@@ -4,6 +4,38 @@ import { speciesOf } from '../content.js'
 import { statsFor } from '../engine.js'
 import { setChildProfileSwitchLock } from '../../platform/childProfileSwitchLock.js'
 
+export function EvolutionPrompt({ prompt, onConfirm, onLater }) {
+  useEffect(() => {
+    if (!prompt) return undefined
+    setChildProfileSwitchLock('evolution-prompt', true)
+    return () => setChildProfileSwitchLock('evolution-prompt', false)
+  }, [prompt])
+
+  if (!prompt) return null
+  const pending = prompt.pendingEvolution || prompt.pending || null
+  const from = speciesOf(pending?.fromSpeciesId)
+  const to = speciesOf(pending?.toSpeciesId)
+  if (!pending || !from || !to) return null
+
+  return <div className="evolution-overlay evolution-prompt-overlay" data-layout-surface="contextual" role="dialog" aria-modal="true" aria-label="シンカできる！">
+    <section className="evolution-celebration-card evolution-prompt-card">
+      <p className="evolution-kicker">✨ シンカできる！ ✨</p>
+      <div className="evolution-pair evolution-prompt-pair">
+        <div className="evolution-old"><MonsterArt speciesId={from.id} /><strong>{from.name}</strong></div>
+        <span className="evolution-arrow">→</span>
+        <div className="evolution-new"><div className="evolution-glow"/><MonsterArt speciesId={to.id} excited /><strong>{to.name}</strong></div>
+      </div>
+      <h2>{from.name}を<br/><b>{to.name}</b>に シンカさせる？</h2>
+      <p>じぶんで ボタンを おして シンカさせよう！</p>
+      <div className="evolution-prompt-actions">
+        <button className="primary huge" onClick={() => onConfirm?.(prompt)}>✨ シンカする！</button>
+        <button className="secondary" onClick={() => onLater?.(prompt)}>あとで</button>
+      </div>
+      <small className="evolution-prompt-note">あとでを えらんでも、モンスターから いつでも シンカできるよ。</small>
+    </section>
+  </div>
+}
+
 export function EvolutionCelebration({ reveal, onClose }) {
   useEffect(() => {
     if (!reveal) return undefined
