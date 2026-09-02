@@ -822,3 +822,193 @@ AC-RSP-011 and AC-RSP-012 are mandatory production-release gates after the orien
 ## AC-RSP-014 — Visual regression is supplemental
 
 Representative screenshots may supplement the gate, but do not replace geometry/state assertions. Canonical success is un-clipped usable behavior and transaction/interaction continuity, not pixel-identical rendering across viewport classes.
+
+---
+
+# 20. D-029 / D-030 Bundle B later acceptance authority
+
+This section is later authority for the Bundle B semantics approved in PR #151 V1.1. Where older AC-CAP / AC-EVO wording above leaves concrete capture tuning undefined or describes evolution eligibility without the new confirmation boundary, this §20 controls. Unrelated acceptance remains cumulative.
+
+## AC-BB-CAP-001 — D-029 V1 TUNING-DEFAULT exact values
+
+For `catchRank` 1..5, star-ball base chance at exactly HP50% is:
+
+```text
+0.55 / 0.42 / 0.28 / 0.16 / 0.10
+```
+
+At HP0 the added bonus is:
+
+```text
++0.15 / +0.13 / +0.10 / +0.08 / +0.05
+```
+
+Between HP50% and HP0, the bonus interpolates linearly and monotonically. Tests assert these exact V1 values deterministically. They are **TUNING GATE** values: canonical for this implementation but explicitly retunable by a later approved playtest decision without redefining structural capture rules.
+
+## AC-BB-CAP-002 — Multipliers / cap / guarantee / attempts remain structural
+
+For the same base chance:
+
+- star ×1.00;
+- silver ×1.20;
+- gold ×1.50;
+- non-rainbow final chance <=92%;
+- rainbow exactly 100%;
+- maximum 3 attempts shared across pre-KO and post-win capture.
+
+A failed post-win attempt consumes the selected ball/attempt but must not cause enemy retaliation, replay victory rewards, or create another ticket settlement.
+
+## AC-BB-CAP-003 — Deterministic child bands
+
+The current one-throw final probability maps exactly to:
+
+- `<20%` → `かなり つかまえにくい`
+- `20–<40%` → `つかまえにくい`
+- `40–<60%` → `ふつう`
+- `60–<80%` → `つかまえやすい`
+- `>=80%` → `ほとんど つかまる`
+
+Rainbow alone may carry guaranteed wording (`かならず GET` or equivalent). No non-rainbow path may claim guaranteed success.
+
+## AC-BB-CAP-004 — Deterministic recommendation uses owned inventory
+
+Given current owned counts and current one-throw chances:
+
+1. recommend the weakest owned non-rainbow ball reaching `>=70%`;
+2. otherwise recommend the owned non-rainbow ball with the highest chance;
+3. do not automatically recommend rainbow for ordinary encounters;
+4. an explicit encounter-level rainbow-recommendation override is effective only when rainbow is owned;
+5. no usable owned ball → no recommendation.
+
+Tests cover inventory permutations and ties without an implementation-defined “material improvement” threshold.
+
+## AC-BB-CAP-005 — Capture economy boundary
+
+Bundle B does not introduce a new acquisition source. Existing canonical star/silver/gold reward paths remain owned by learning/mastery contracts. Rainbow allocation remains unresolved/outside Bundle B. A runtime/test change that invents a rainbow source to make capture UX convenient fails this gate.
+
+Representative deterministic resource-burn checks include early rank1/rank2 and rank3–5 cases; they validate that the reviewed tuning table is being used rather than running flaky statistical samples.
+
+## AC-BB-BTL-001 — Domain returns actual ordered presentation trace
+
+A semantic battle move transaction that may include both player and enemy actions returns an immutable ordered `presentationEvents[]` sidecar that follows the actual speed/action order.
+
+For representative speed-order cases, assertions cover event identity/order and intermediate semantic facts including actor, move/action, hpBefore/hpAfter, effectiveness and terminal state as applicable. A before/after-only reconstruction or parsing display log text is insufficient.
+
+## AC-BB-BTL-002 — Presentation never executes semantics
+
+Once the semantic transaction has committed, UI timers/animation callbacks/SFX completion may only advance presentation state/cursor. They must not invoke:
+
+- move/damage resolution;
+- enemy AI;
+- reward/XP/Mana settlement;
+- ticket reserve/commit/refund;
+- capture attempt/result settlement.
+
+One child tap produces one semantic transaction. Re-render, timer completion, `animationend`, reduced-motion mode, or presentation replay cannot produce another turn/reward.
+
+## AC-BB-BTL-003 — Battle experience sequence and accessibility
+
+A deterministic child-flow browser test observes an enemy-appearance beat (`○○が あらわれた！`), then usable command state, ordered attack/impact/effectiveness feedback, and victory feedback where applicable. Existing ManaEvo WebAudio effects may be used; no external franchise identity is required/copied.
+
+With `prefers-reduced-motion: reduce`, travel/shake motion is removed/reduced while semantic text, command reachability and independent sound setting remain usable.
+
+## AC-BB-EVO-001 — Qualifying LvUP creates pending token without species mutation
+
+For both `level` and `held_item_levelup`, a qualifying real LvUP:
+
+- commits Lv/XP immediately;
+- leaves the current species unchanged;
+- creates one structured `pendingEvolution` token;
+- exposes `シンカする！` / `あとで` in the appropriate result flow.
+
+Stone evolution remains manually committed and does not create this token merely because a stone is owned.
+
+## AC-BB-EVO-002 — Qualification ID is deterministic / confirmation exactly-once
+
+`qualificationId` is derived deterministically from the causal semantic operation/reward identity + instanceId + from→to transition, not wall-clock/randomness.
+
+Confirming the CURRENT matching token:
+
+- changes species once;
+- preserves instanceId/Lv/XP/history;
+- writes the evolution discovery once;
+- clears that token once.
+
+Repeating the same confirm request or reopening result UI cannot perform another species mutation/reward.
+
+## AC-BB-EVO-003 — Save/schema migration round-trips readiness
+
+The implementation bumps/handles game schema explicitly. Normalization validates and preserves `pendingEvolution` rather than dropping it as an unknown box field.
+
+Test matrix includes:
+
+- local save → reload;
+- cloud snapshot/hash round-trip;
+- backup/export → restore/import where supported;
+- profile A → B → A isolation;
+- repeated migration idempotency.
+
+Migration rules tested:
+
+- matching legacy held-item `evolutionReady=true` source form → migration pending token;
+- legacy level source form already at/above threshold → migration pending token;
+- already-evolved species stays evolved;
+- owned stone alone does not create pending token.
+
+## AC-BB-EVO-004 — Held-item qualification persists and item is retained
+
+A held-item pending token is earned by the historical qualifying LvUP. Swapping/removing the held item after qualification does not invalidate that token.
+
+After confirmed held-item evolution, the held item is **not consumed**. Stone evolution remains the consumed-item class and spends exactly one stone once.
+
+## AC-BB-EVO-005 — Delayed next-stage remains explicit and cannot brick
+
+After confirming a delayed stage1 evolution:
+
+- never automatically mutate again to stage2;
+- if the newly reached species has a level transition already satisfied by the existing level, create a new separate pending token;
+- require another explicit child confirmation for that next mutation.
+
+If the compatibility max-level prevents any future LvUP and the newly reached species requires `held_item_levelup`, equipping the required held item may create a **max-level-recovery-only** pending token. The same equip-only behavior below max level must remain blocked.
+
+## AC-BB-EVO-006 — `あとで` persists / active acknowledgement locks profile switch
+
+Selecting `あとで` only dismisses the immediate prompt. Readiness persists and remains visible/actionable from Monster/BOX after reload.
+
+An active evolution confirmation/reveal acknowledgement blocks child profile switching under D-023. A dormant pending token by itself does not block ordinary switching between already-registered profiles.
+
+## AC-BB-BOX-001 — Family-first ordering preserves identity
+
+Default `シンカ順` groups by evolution family, ordered by the family's lowest species No. Within a family, species order follows stage progression and same-species duplicates stay adjacent; same-species duplicates use level-desc then stable instanceId ordering.
+
+Sorting does not merge duplicates, change instanceId, or change Team order.
+
+## AC-BB-BOX-002 — Secondary level sort and evolvable-only filter
+
+BOX provides:
+
+- default `シンカ順`;
+- one secondary `レベル順`;
+- independent `✨ シンカできるだけ` filter/toggle.
+
+The filter includes instances with valid pending evolution readiness. `GET順` is absent until authoritative acquisition timing is defined for legacy/new saves.
+
+## AC-BB-RSP-001 — Bundle B mobile/tablet presentation gate
+
+Automated WebKit covers representative 375 / 390 / 430 widths plus representative tablet responsive smoke for Battle/Capture/Evolution/BOX. It remains cumulative with AC-RSP and D-021.
+
+At minimum verify:
+
+- appearance/attack/hit/victory presentation does not permanently block the primary action;
+- rotation/resize while FX is active preserves the same semantic Battle and does not duplicate move/reward/ticket/capture settlement;
+- Capture exact detail/band/recommendation matches D-029;
+- pending evolution prompt survives intended flow, `あとで` persists, and later BOX confirmation mutates once;
+- family grouping/duplicate adjacency/evolvable filter remain usable;
+- reduced motion remains usable;
+- no new `!important`/clipping workaround is accepted as evidence of responsive correctness.
+
+## AC-BB-REL-001 — Bundle B release evidence
+
+An implementation PR claiming Bundle B completion must report the exact implementation head and map concrete tests to AC-BB-CAP / BTL / EVO / BOX / RSP IDs. Full unit/integration, production build, release-readiness and WebKit must pass on that exact head, followed by independent implementation review before merge/release.
+
+Older AC-CAP/AC-EVO text remains provenance where non-conflicting; **D-029/D-030 and §20 are later authority** for the changed semantics.
