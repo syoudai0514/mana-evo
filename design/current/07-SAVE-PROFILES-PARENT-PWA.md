@@ -1,6 +1,6 @@
 # ManaEvo CURRENT — Save / Profiles / Parent / Cloud / PWA
 
-Status: **CURRENT normative contract (W-107 + D-018 + D-019 + D-022 normalization)**  
+Status: **CURRENT normative contract (W-107 + D-018 + D-019 + D-023 normalization)**  
 Phase: Rebuild / platform normalization  
 Scope: save ownership, profiles, Parent controls, Kids Quest isolation/import, cloud persistence, backups, migrations, test-mode isolation, Vercel production/PWA, monster-asset cache/versioning
 
@@ -18,7 +18,7 @@ Authority order follows `REBUILD-START-HERE.md` and `design/rebuild/DECISION-LOG
 6. runtime implementation;
 7. review/completion history.
 
-This normalization incorporates the later explicit decisions in **D-018** (shared account/cloud save/test data), **D-019** (Vercel as the sole production canonical host), and **D-022** (child-safe switching among registered profiles plus Parent-owned profile naming). Those decisions supersede earlier W-107 assumptions where they conflict.
+This normalization incorporates the later explicit decisions in **D-018** (shared account/cloud save/test data), **D-019** (Vercel as the sole production canonical host), and **D-023** (child-safe switching among registered profiles plus Parent-owned profile naming). Those decisions supersede earlier W-107 assumptions where they conflict.
 
 Runtime files named later are implementation evidence. They do not outrank the contract.
 
@@ -162,7 +162,7 @@ Adult-only controls include:
 - backup creation/restore/import;
 - account logout and other destructive account/save actions.
 
-Choosing among already-registered profiles is not an adult mutation under D-022; it is a child-safe device-local selection action, subject to the transactional/focused interaction lock in section 3. A child cannot create profiles, rename them, enter TEST mode, resolve cloud conflicts, restore backups, or otherwise cross the Parent boundary through that switcher.
+Choosing among already-registered profiles is not an adult mutation under D-023; it is a child-safe device-local selection action, subject to the transactional/focused interaction lock in section 3. A child cannot create profiles, rename them, enter TEST mode, resolve cloud conflicts, restore backups, or otherwise cross the Parent boundary through that switcher.
 
 Email/password sign-in may be offered on a fresh device so the family can recover its cloud save, but mutation of Parent-owned player/test/restore controls remains behind the local Parent gate.
 
@@ -466,7 +466,7 @@ W-107 owns platform/save/hosting boundaries and does not redefine other domain r
 - **W-103 / Capture** — capture/duplicate settlement state persisted per profile;
 - **W-104 / Evolution** — item/evolution state persisted per profile;
 - **W-105 / World** — adventure location/progression persisted per profile;
-- **W-106 / UI** — Parent remains focused adult-owned UI while D-022 allows child-safe registered-profile selection;
+- **W-106 / UI** — Parent remains focused adult-owned UI while D-023 allows child-safe registered-profile selection;
 - **W-108 / Acceptance** — behavioral acceptance machinery;
 - **W-109 / Monster art** — formal/candidate identity and revision input for PWA caching.
 
@@ -559,7 +559,7 @@ If a later implementation needs one of these as a product decision, recover or o
 
 ## 17. D-021 PWA orientation / tablet presentation contract
 
-This section is later cross-cutting authority under **D-021**. It supplements the existing W-107/D-018/D-019/D-022 platform contract and does not supersede CURRENT D-020 Dex cache/browse/history semantics.
+This section is later cross-cutting authority under **D-021**. It supplements the existing W-107/D-018/D-019/D-023 platform contract and does not supersede CURRENT D-020 Dex cache/browse/history semantics.
 
 ### 17.1 No ManaEvo orientation preference
 
