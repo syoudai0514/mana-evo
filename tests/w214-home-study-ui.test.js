@@ -18,13 +18,13 @@ test('W-214 Home keeps only compact next-action context and partner motivation',
   assert.ok(!home.includes('<span>マナ</span><strong>💎'))
 })
 
-test('W-214 Study puts required learning before progressive optional modes', () => {
+test('W-214 Study puts required learning first and keeps optional modes always visible', () => {
   const requiredIndex = study.indexOf('きょうの ミッション')
-  const optionalIndex = study.indexOf('study-secondary-modes')
+  const optionalIndex = study.indexOf('study-other-modes')
   assert.ok(requiredIndex >= 0)
   assert.ok(optionalIndex > requiredIndex)
-  assert.ok(study.includes('<details className="study-secondary-modes">'))
-  assert.ok(study.includes('<summary>ほかの まなび</summary>'))
+  assert.ok(!study.includes('<details className="study-secondary-modes">'))
+  assert.ok(study.includes('<h2>ほかの まなび</h2>'))
   for (const optional of ['じゆうべんきょう', 'とっくん', 'ほしのしれん', 'えいごずかん']) assert.ok(study.includes(optional), optional)
 })
 

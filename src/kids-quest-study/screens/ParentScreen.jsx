@@ -10,6 +10,8 @@ import { GRADES, MAX_GRADE, gradeOf } from '../data/grades.js'
 import { AppHeader, Starfield } from '../components/common.jsx'
 import { trialUnlocked, unitLabel } from '../engine/learningUnits.js'
 import { importKidsQuestProgress } from '../../platform/kidsQuestImport.js'
+import { openAdultCloudControls } from '../../platform/cloudUiEvents.js'
+import { profileDisplayName, profileEditableName } from '../../platform/profileUi.js'
 import DexArtPackControls from '../../parent/DexArtPackControls.jsx'
 
 function Stat({ label, value, sub }) {
@@ -26,6 +28,20 @@ function statusText(status) {
 
 function jumpTo(id) {
   document.getElementById(id)?.scrollIntoView({ behavior:'smooth', block:'start' })
+}
+
+function ProfileEditor({ id, profile, active, dispatch }) {
+  const [draft, setDraft] = useState(() => profileEditableName(profile))
+  useEffect(() => setDraft(profileEditableName(profile)), [id, profile?.name])
+  const currentDisplay = profileDisplayName(profile)
+  const clean = draft.trim()
+
+  return <div className="parent-profile-editor">
+    <span>{active ? `✓ いま使っている：${currentDisplay}` : currentDisplay}</span>
+    <input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="なまえを いれてね" aria-label={`${currentDisplay}の なまえ`} />
+    <button className="btn btn--ghost" disabled={!clean || clean === profile?.name} onClick={() => dispatch({ type:'RENAME_PROFILE', profileId:id, name:clean })}>名前を保存</button>
+    {!active && <button className="btn btn--ghost" style={{gridColumn:'1/3'}} onClick={() => dispatch({type:'SWITCH_PROFILE',profileId:id})}>この人に切り替える</button>}
+  </div>
 }
 
 export default function ParentScreen({ onBack }) {
@@ -90,21 +106,30 @@ export default function ParentScreen({ onBack }) {
     }
   }
 
+  const cleanNewProfileName = newProfileName.trim()
+
   return <div className="screen fade-in parent-screen"><Starfield /><AppHeader onBack={onBack} title="👨‍👩‍👧 保護者メニュー" right={<span>🔒</span>}/>
     <div className="scroll-y parent-scroll"><div className="parent-content">
       <section className="parent-control-note">
-        <strong>🔒 子ども画面からは変更できません</strong>
-        <p>学年・先取り・むずかしさ・音声・プロフィール・端末保存は、この保護者メニューだけで変更します。</p>
+        <strong>🔒 おとなだけが変える設定</strong>
+        <p>子どもは登録済みの人を自分で切り替えられます。名前の追加・変更、学年、難易度、クラウド、TEST、復元などはここで管理します。</p>
       </section>
 
       <section className="parent-shortcuts">
-        <button onClick={()=>jumpTo('parent-grade')}>🎓<strong>学年・先取り</strong></button>
-        <button onClick={()=>jumpTo('parent-voice')}>🌙<strong>つくよみちゃん</strong></button>
-        <button onClick={()=>jumpTo('parent-difficulty')}>🔥<strong>むずかしさ</strong></button>
         <button onClick={()=>jumpTo('parent-profile')}>🧒<strong>プロフィール</strong></button>
+        <button onClick={()=>jumpTo('parent-grade')}>🎓<strong>学年・先取り</strong></button>
+        <button onClick={()=>jumpTo('parent-difficulty')}>🔥<strong>むずかしさ</strong></button>
+        <button onClick={()=>jumpTo('parent-voice')}>🌙<strong>読み上げ</strong></button>
+        <button onClick={()=>jumpTo('parent-cloud')}>☁️<strong>クラウド・TEST</strong></button>
         <button onClick={()=>jumpTo('parent-monster-images')}>🖼️<strong>画像を端末保存</strong></button>
-        <button onClick={()=>jumpTo('parent-backup')}>📦<strong>バックアップ</strong></button>
+        <button onClick={()=>jumpTo('parent-backup')}>📦<strong>手動ひきつぎ</strong></button>
       </section>
+
+      <section id="parent-profile"><h3>🧒 子どもプロフィール</h3><div className="card" style={{display:'grid',gap:10}}>
+        <p className="muted" style={{margin:0,lineHeight:1.6}}>子ども画面では、ここで登録した人どうしをPINなしで切り替えられます。名前を変えても学習・モンスターのデータIDは変わりません。</p>
+        <div className="parent-profile-editor-list">{Object.entries(state.profiles || {}).map(([id,profile]) => <ProfileEditor key={id} id={id} profile={profile} active={id===state.activeProfileId} dispatch={dispatch} />)}</div>
+        <div className="row wrap" style={{gap:8}}><input value={newProfileName} onChange={(e)=>setNewProfileName(e.target.value)} placeholder="追加する人の なまえ" style={{minHeight:46,flex:1,borderRadius:12,padding:'0 10px'}}/><button className="btn btn--sun" disabled={!cleanNewProfileName} onClick={()=>{dispatch({type:'CREATE_PROFILE',name:cleanNewProfileName});setNewProfileName('')}}>＋ 追加</button></div>
+      </div></section>
 
       <section id="parent-grade"><h3>🎓 学年・先取り</h3><div className="card"><p className="muted" style={{lineHeight:1.6}}>現在の学習学年: <b>{gradeOf(state.grade).short}</b> ／ 解放済み: <b>{gradeOf(state.gradeMax).short}</b> まで。子どもは学年を変更できません。通常は必須単元を別日に定着させ、ほしのしれんをクリアすると次の学年が解放されます。先取りさせる場合だけ、ここで保護者が解放してください。</p>
         <div className="row wrap" style={{gap:8}}>{state.gradeMax<MAX_GRADE && <button className="btn btn--sun" onClick={()=>dispatch({type:'FORCE_GRADE_MAX',gradeMax:state.gradeMax+1})}>⏭ {gradeOf(state.gradeMax+1).short} を先取り解放</button>}{state.gradeMax>0 && <button className="btn btn--ghost" onClick={()=>dispatch({type:'LOWER_GRADE_MAX',gradeMax:state.gradeMax-1})}>⏪ 解放を {gradeOf(state.gradeMax-1).short} まで戻す</button>}</div>
@@ -125,10 +150,7 @@ export default function ParentScreen({ onBack }) {
         <p className="muted" style={{fontSize:12,lineHeight:1.6,margin:0}}>つくよみちゃんのモデルは初回だけ端末に保存します。読み上げる文章を外部サーバーへ送信しません。</p>
       </div></section>
 
-      <section id="parent-profile"><h3>🧒 子どもプロフィール</h3><div className="card">
-        <div className="row wrap" style={{gap:8}}>{Object.entries(state.profiles || {}).map(([id,p]) => <button key={id} className={'btn '+(id===state.activeProfileId?'btn--primary':'btn--ghost')} onClick={() => dispatch({type:'SWITCH_PROFILE',profileId:id})}>{id===state.activeProfileId?'✓ ':''}{p.name}</button>)}</div>
-        <div className="row wrap" style={{gap:8,marginTop:10}}><input value={newProfileName} onChange={(e)=>setNewProfileName(e.target.value)} placeholder="なまえ" style={{minHeight:46,flex:1,borderRadius:12,padding:'0 10px'}}/><button className="btn btn--sun" onClick={()=>{dispatch({type:'CREATE_PROFILE',name:newProfileName});setNewProfileName('')}}>＋ ついか</button></div>
-      </div></section>
+      <section id="parent-cloud" className="parent-cloud-entry"><h3>☁️ クラウド・バックアップ・TEST</h3><div className="card" style={{display:'grid',gap:9}}><p className="muted" style={{margin:0,lineHeight:1.6}}>ログイン、端末間同期、競合確認、クラウドバックアップ、TESTデータをここからまとめて開きます。いま保護者PINを確認済みなので、同じPINをもう一度入れる必要はありません。</p><button className="btn btn--primary" onClick={openAdultCloudControls}>☁️ クラウド・TESTをひらく</button></div></section>
 
       <section><h3>📊 きょうの がんばり</h3><div className="row wrap"><Stat label="クリアした タスク" value={daily.tasksClearedToday}/><Stat label="といた もんだい" value={daily.attemptsToday}/><Stat label="せいかい率" value={`${accuracy}%`}/><Stat label="追加チケット" value={daily.ticketsEarnedToday}/><Stat label="連続日数" value={`${state.streak}日`}/><Stat label="克服した数" value={state.conquered}/></div></section>
 
@@ -142,7 +164,7 @@ export default function ParentScreen({ onBack }) {
 
       <section id="parent-monster-images"><h3>🖼️ モンスター画像を端末に保存</h3><DexArtPackControls /></section>
 
-      <section id="parent-backup"><h3>📦 学習データひきつぎ</h3><div className="card" style={{display:'grid',gap:8}}><button className="btn btn--ghost" onClick={exportData}>📋 学習データをコピー</button><textarea value={importText} onChange={e=>setImportText(e.target.value)} placeholder="バックアップコードを貼り付け" style={{minHeight:90,borderRadius:12,padding:10}}/><button className="btn btn--ghost" disabled={!importText.trim()} onClick={importData}>⬇️ 読み込む</button><div className="muted" style={{fontSize:12,lineHeight:1.6}}>同じ端末のKids Questに対応する学習進捗がある場合だけ、読み取り専用でManaEvoへコピーできます。Kids Quest側の保存やモンスター・バトル状態は変更しません。</div><button className="btn btn--ghost" onClick={importKidsQuestData}>↪ Kids Questの学習進捗を読み込む</button>{message && <div className="muted">{message}</div>}</div></section>
+      <section id="parent-backup"><h3>📦 手動の学習データひきつぎ</h3><div className="card" style={{display:'grid',gap:8}}><button className="btn btn--ghost" onClick={exportData}>📋 学習データをコピー</button><textarea value={importText} onChange={e=>setImportText(e.target.value)} placeholder="バックアップコードを貼り付け" style={{minHeight:90,borderRadius:12,padding:10}}/><button className="btn btn--ghost" disabled={!importText.trim()} onClick={importData}>⬇️ 読み込む</button><div className="muted" style={{fontSize:12,lineHeight:1.6}}>同じ端末のKids Questに対応する学習進捗がある場合だけ、読み取り専用でManaEvoへコピーできます。Kids Quest側の保存やモンスター・バトル状態は変更しません。</div><button className="btn btn--ghost" onClick={importKidsQuestData}>↪ Kids Questの学習進捗を読み込む</button>{message && <div className="muted">{message}</div>}</div></section>
     </div></div>
   </div>
 }

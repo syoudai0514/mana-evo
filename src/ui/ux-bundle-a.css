@@ -1,0 +1,342 @@
+/* 2026-09-02 real-device UX Bundle A.
+ * Feature-owned modifier rules only. This file is intentionally loaded before
+ * premium-ui-v4.css; explicit modifier specificity, not load order, owns the
+ * changed surfaces. No !important and no domain/game-rule changes live here.
+ */
+
+/* ---------- shared chrome ---------- */
+.app-shell.ux-bundle-a{
+  padding-bottom:calc(62px + var(--safe-bottom));
+}
+.app-shell.ux-bundle-a .game-header.game-header--compact{
+  display:grid;
+  grid-template-columns:auto minmax(70px,1fr) auto;
+  gap:7px;
+  min-height:calc(54px + var(--safe-top));
+  padding:calc(var(--safe-top) + 5px) 9px 5px;
+  align-items:center;
+}
+.app-shell.ux-bundle-a .game-header.game-header--compact .logo{
+  min-width:86px;
+  padding-left:17px;
+  transform:none;
+  white-space:nowrap;
+}
+.app-shell.ux-bundle-a .game-header.game-header--compact .logo b,
+.app-shell.ux-bundle-a .game-header.game-header--compact .logo strong{
+  font-size:18px;
+}
+.app-shell.ux-bundle-a .game-header.game-header--compact .logo small{
+  display:none;
+}
+.app-shell.ux-bundle-a .game-header.game-header--compact .resource-bar{
+  gap:4px;
+}
+.app-shell.ux-bundle-a .game-header.game-header--compact .resource-pill{
+  min-width:43px;
+  height:40px;
+  grid-template-columns:16px auto;
+  grid-template-rows:15px 11px;
+  padding:3px 5px;
+  border-radius:14px;
+}
+.app-shell.ux-bundle-a .game-header.game-header--compact .resource-pill>i{font-size:14px}
+.app-shell.ux-bundle-a .game-header.game-header--compact .resource-pill>strong{font-size:14px}
+.app-shell.ux-bundle-a .game-header.game-header--compact .resource-pill>small{font-size:6.5px}
+
+.app-shell.ux-bundle-a .game-bottom-nav.game-bottom-nav--compact{
+  gap:3px;
+  padding:4px 7px calc(4px + var(--safe-bottom));
+  border-top-width:2px;
+}
+.app-shell.ux-bundle-a .game-bottom-nav.game-bottom-nav--compact button{
+  min-height:46px;
+  padding:4px 2px;
+  border-radius:15px;
+  font-size:18px;
+}
+.app-shell.ux-bundle-a .game-bottom-nav.game-bottom-nav--compact button span{
+  font-size:8px;
+  line-height:1.05;
+}
+.app-shell.ux-bundle-a .game-bottom-nav.game-bottom-nav--compact button.active{
+  transform:translateY(-1px);
+}
+
+/* ---------- child profile chooser ---------- */
+.app-shell.ux-bundle-a .child-profile-trigger{
+  min-width:0;
+  width:100%;
+  min-height:44px;
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto;
+  align-items:center;
+  gap:3px;
+  padding:5px 7px;
+  border:1px solid rgba(168,224,255,.84);
+  border-bottom:2px solid rgba(255,203,76,.88);
+  border-radius:14px;
+  background:linear-gradient(180deg,rgba(3,61,124,.78),rgba(2,42,92,.92));
+  color:#fff;
+  box-shadow:inset 0 1px rgba(255,255,255,.24),0 3px 8px rgba(0,27,65,.2);
+}
+.app-shell.ux-bundle-a .child-profile-trigger>span{font-size:14px}
+.app-shell.ux-bundle-a .child-profile-trigger>strong{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:9px;
+  text-align:left;
+}
+.app-shell.ux-bundle-a .child-profile-trigger>b{font-size:10px;color:#bcecff}
+.app-shell.ux-bundle-a .child-profile-trigger:disabled{opacity:.7;cursor:default}
+
+.child-profile-backdrop{
+  position:fixed;
+  z-index:180;
+  inset:0;
+  display:grid;
+  place-items:center;
+  padding:calc(18px + var(--safe-top)) 14px calc(18px + var(--safe-bottom));
+  background:rgba(1,18,42,.58);
+  backdrop-filter:blur(6px);
+}
+.child-profile-dialog{
+  width:min(370px,100%);
+  max-height:min(620px,calc(100dvh - 36px - var(--safe-top) - var(--safe-bottom)));
+  overflow:auto;
+  border:2px solid #fff;
+  border-radius:26px;
+  padding:17px;
+  background:linear-gradient(180deg,#f6fcff,#e9f6ff);
+  color:#0b294d;
+  box-shadow:0 24px 60px rgba(0,27,61,.32);
+}
+.child-profile-dialog>header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.child-profile-dialog>header small{color:#4c7ba5;font-weight:1000;letter-spacing:.12em}
+.child-profile-dialog>header h2{margin:3px 0 0;font-size:24px}
+.child-profile-dialog>header>button{
+  width:44px;height:44px;border-radius:50%;background:#e3f2fc;color:#315f89;font-size:22px;
+}
+.child-profile-options{display:grid;gap:9px;margin:16px 0 12px}
+.child-profile-options>button{
+  min-height:62px;
+  display:grid;
+  grid-template-columns:32px minmax(0,1fr);
+  grid-template-rows:auto auto;
+  align-items:center;
+  column-gap:8px;
+  padding:10px 12px;
+  border:2px solid #d4e8f6;
+  border-radius:18px;
+  background:#fff;
+  color:#153a61;
+  text-align:left;
+  box-shadow:0 5px 12px rgba(4,55,104,.07);
+}
+.child-profile-options>button>span{grid-row:1/3;font-size:20px;text-align:center}
+.child-profile-options>button>strong{font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.child-profile-options>button>small{font-size:10px;color:#607e9d}
+.child-profile-options>button.active{border-color:#55c8f7;background:#e9f9ff;box-shadow:inset 0 0 0 1px #8de5ff}
+.child-profile-dialog>p{margin:0;color:#617c98;font-size:11px;line-height:1.6}
+
+/* ---------- Study: one primary required-learning action ---------- */
+.app-shell.ux-bundle-a .study-hub.study-hub--guided .study-mission-primary{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:10px;
+  align-items:center;
+  padding:12px;
+  border-radius:18px;
+  background:linear-gradient(135deg,#eefaff,#fff8d9);
+  border:1px solid #cfe8f6;
+}
+.app-shell.ux-bundle-a .study-hub.study-hub--guided .study-next-subject{
+  min-width:0;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.app-shell.ux-bundle-a .study-hub.study-hub--guided .study-next-subject>span{font-size:34px}
+.app-shell.ux-bundle-a .study-hub.study-hub--guided .study-next-subject strong{display:block;font-size:16px}
+.app-shell.ux-bundle-a .study-hub.study-hub--guided .study-next-subject small{display:block;color:#617c98;font-size:10px;margin-top:3px}
+.app-shell.ux-bundle-a .study-hub.study-hub--guided .study-mission-primary>button{
+  min-width:142px;
+  min-height:54px;
+  padding:9px 12px;
+}
+.app-shell.ux-bundle-a .study-hub.study-hub--guided .study-required-progress{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+  margin-top:10px;
+}
+.app-shell.ux-bundle-a .study-hub.study-hub--guided .study-progress-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  min-height:28px;
+  padding:4px 8px;
+  border-radius:999px;
+  background:#edf5fb;
+  color:#557593;
+  border:1px solid #d5e5f2;
+  font-size:10px;
+  font-weight:900;
+}
+.app-shell.ux-bundle-a .study-hub.study-hub--guided .study-progress-chip.current{
+  background:#dff6ff;
+  border-color:#72d5fa;
+  color:#0b5b9c;
+}
+.app-shell.ux-bundle-a .study-hub.study-hub--guided .study-goal-card{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:12px;
+  margin-top:10px;
+  padding:14px;
+  border:2px solid #f3c64f;
+  border-radius:20px;
+  background:radial-gradient(circle at 90% 20%,rgba(255,235,120,.7),transparent 28%),linear-gradient(135deg,#fffdf2,#edf9ff);
+  box-shadow:0 8px 20px rgba(8,62,109,.1);
+}
+.app-shell.ux-bundle-a .study-hub.study-hub--guided .study-goal-card .eyebrow{color:#8d6810}
+.app-shell.ux-bundle-a .study-hub.study-hub--guided .study-goal-card h2{margin:3px 0 5px;font-size:20px}
+.app-shell.ux-bundle-a .study-hub.study-hub--guided .study-goal-card p{margin:0;color:#5d7691;font-size:11px;line-height:1.45}
+.app-shell.ux-bundle-a .study-hub.study-hub--guided .study-goal-card>button{min-width:98px;min-height:48px}
+.app-shell.ux-bundle-a .study-hub.study-hub--guided .study-other-modes{margin-top:10px}
+.app-shell.ux-bundle-a .study-hub.study-hub--guided .study-menu-grid{margin-top:8px}
+
+/* ---------- Adventure geometry ---------- */
+.app-shell.ux-bundle-a .adventure-map .world-area-route{
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:3px;
+  padding-left:1px;
+  padding-right:1px;
+}
+.app-shell.ux-bundle-a .adventure-map .world-area-node{
+  min-height:106px;
+  padding-left:1px;
+  padding-right:1px;
+}
+.app-shell.ux-bundle-a .adventure-map .world-area-node>span{
+  width:clamp(49px,13vw,62px);
+  height:clamp(49px,13vw,62px);
+  font-size:clamp(23px,7vw,30px);
+}
+.app-shell.ux-bundle-a .adventure-map .world-area-node>b{font-size:clamp(9px,2.7vw,11px);padding:3px 5px;white-space:nowrap}
+.app-shell.ux-bundle-a .adventure-map .world-area-node>small{font-size:7px;white-space:nowrap}
+.app-shell.ux-bundle-a .adventure-map .world-area-route:before{left:6%;right:6%;bottom:65px;z-index:0}
+.app-shell.ux-bundle-a .adventure-map .world-area-node{z-index:2}
+
+@media (max-width:520px){
+  .app-shell.ux-bundle-a .adventure-map .formal-stage-card{
+    grid-template-columns:32px 58px minmax(0,1fr) 76px;
+    grid-template-rows:minmax(64px,auto);
+    gap:4px;
+    min-height:76px;
+    padding:6px;
+  }
+  .app-shell.ux-bundle-a .adventure-map .formal-stage-card>.stage-number{
+    position:static;
+    grid-column:1;
+    grid-row:1;
+    align-self:center;
+    justify-self:center;
+    transform:none;
+    min-width:28px;
+    min-height:28px;
+    display:grid;
+    place-items:center;
+    margin:0;
+  }
+  .app-shell.ux-bundle-a .adventure-map .formal-stage-card>.recommendation-tag{
+    left:101px;
+    top:5px;
+  }
+  .app-shell.ux-bundle-a .adventure-map .formal-stage-card .encounter-art{
+    grid-column:2;
+    grid-row:1;
+    width:56px;
+    height:60px;
+    margin:0;
+  }
+  .app-shell.ux-bundle-a .adventure-map .formal-stage-card .stage-copy{
+    grid-column:3;
+    grid-row:1;
+    padding:13px 0 0;
+  }
+  .app-shell.ux-bundle-a .adventure-map .formal-stage-card .stage-actions{
+    grid-column:4;
+    grid-row:1;
+    min-width:0;
+  }
+  .app-shell.ux-bundle-a .adventure-map .formal-stage-card .stage-actions>button{
+    min-height:44px;
+  }
+}
+
+/* ---------- Capture: enabled must look enabled ---------- */
+.app-shell.ux-bundle-a .capture-panel .capture-actions .primary:not(:disabled){
+  color:#fff;
+  background:linear-gradient(180deg,#20aef0 0,#0873cd 100%);
+  border:2px solid #8ae9ff;
+  border-bottom:5px solid #0756a5;
+  box-shadow:0 8px 18px rgba(2,91,164,.24),inset 0 1px rgba(255,255,255,.45);
+  opacity:1;
+  filter:none;
+}
+.app-shell.ux-bundle-a .capture-panel .capture-actions .primary:not(:disabled):active{
+  transform:translateY(2px);
+  border-bottom-width:3px;
+}
+.app-shell.ux-bundle-a .capture-panel .capture-actions .primary:disabled{
+  background:#dfe7ed;
+  color:#8294a5;
+  border-color:#cdd9e2;
+  box-shadow:none;
+  opacity:.82;
+}
+
+/* ---------- Parent profile editor ---------- */
+.app-shell.ux-bundle-a .parent-profile-editor-list{display:grid;gap:9px}
+.app-shell.ux-bundle-a .parent-profile-editor{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:7px;
+  align-items:center;
+  padding:9px;
+  border:1px solid #d8e8f4;
+  border-radius:14px;
+  background:#f8fcff;
+}
+.app-shell.ux-bundle-a .parent-profile-editor>span{grid-column:1/3;font-size:11px;font-weight:900;color:#507293}
+.app-shell.ux-bundle-a .parent-profile-editor input{min-width:0;min-height:44px;border:1px solid #c8ddec;border-radius:11px;padding:0 10px}
+.app-shell.ux-bundle-a .parent-profile-editor button{min-height:44px}
+.app-shell.ux-bundle-a .parent-cloud-entry button{min-height:48px;width:100%}
+
+@media (max-width:390px){
+  .app-shell.ux-bundle-a .game-header.game-header--compact{
+    grid-template-columns:82px minmax(60px,1fr) auto;
+    gap:4px;
+    padding-left:7px;
+    padding-right:7px;
+  }
+  .app-shell.ux-bundle-a .game-header.game-header--compact .logo{min-width:78px;padding-left:15px}
+  .app-shell.ux-bundle-a .game-header.game-header--compact .logo b,
+  .app-shell.ux-bundle-a .game-header.game-header--compact .logo strong{font-size:16px}
+  .app-shell.ux-bundle-a .game-header.game-header--compact .resource-pill{min-width:40px;padding-left:4px;padding-right:4px}
+  .app-shell.ux-bundle-a .child-profile-trigger{padding-left:5px;padding-right:5px}
+  .app-shell.ux-bundle-a .child-profile-trigger>strong{font-size:8px}
+  .app-shell.ux-bundle-a .study-hub.study-hub--guided .study-mission-primary{grid-template-columns:1fr}
+  .app-shell.ux-bundle-a .study-hub.study-hub--guided .study-mission-primary>button{width:100%}
+}
+
+@media (max-height:500px) and (orientation:landscape){
+  .app-shell.ux-bundle-a{padding-bottom:calc(56px + var(--safe-bottom))}
+  .app-shell.ux-bundle-a .game-header.game-header--compact{min-height:calc(50px + var(--safe-top));padding-top:calc(var(--safe-top) + 3px);padding-bottom:3px}
+  .app-shell.ux-bundle-a .game-bottom-nav.game-bottom-nav--compact{padding-top:2px;padding-bottom:calc(2px + var(--safe-bottom))}
+  .app-shell.ux-bundle-a .game-bottom-nav.game-bottom-nav--compact button{min-height:44px}
+}

@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import ParentScreen from '../kids-quest-study/screens/ParentScreen.jsx'
+import { clearParentVerification, markParentVerification } from './parentVerification.js'
 
 export const PARENT_PIN_KEY = 'mana-evo-parent-pin-v1'
 
@@ -41,7 +42,13 @@ export default function ParentGate({ onBack }) {
   const [message, setMessage] = useState('')
   const challenge = useMemo(makeAdultCheck, [recovering, pinExists])
 
+  useEffect(() => {
+    clearParentVerification()
+    return clearParentVerification
+  }, [])
+
   const exit = () => {
+    clearParentVerification()
     setUnlocked(false)
     setPin('')
     setPinConfirm('')
@@ -54,6 +61,7 @@ export default function ParentGate({ onBack }) {
 
   const unlock = () => {
     if (pin === storedPin()) {
+      markParentVerification()
       setUnlocked(true)
       setPin('')
       setMessage('')
@@ -76,6 +84,7 @@ export default function ParentGate({ onBack }) {
       return
     }
     savePin(pin)
+    markParentVerification()
     setPinExists(true)
     setRecovering(false)
     setUnlocked(true)
@@ -93,7 +102,7 @@ export default function ParentGate({ onBack }) {
       <div className="parent-gate-icon">🔒</div>
       <p className="eyebrow">おうちのひと せんよう</p>
       <h1>{setupMode ? '保護者PINを設定' : '保護者PIN'}</h1>
-      <p className="parent-gate-note">学年・先取り・むずかしさ・つくよみちゃん・プロフィール・バックアップは、ここからだけ変更できます。</p>
+      <p className="parent-gate-note">学年・先取り・むずかしさ・つくよみちゃん・プロフィールの追加や名前変更・クラウドやバックアップは、ここからだけ変更できます。登録済みプロフィールの切替は子ども画面でもできます。</p>
 
       {setupMode ? <>
         <div className="adult-check">

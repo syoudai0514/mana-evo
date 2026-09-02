@@ -80,7 +80,7 @@ async function installSave(page, game, { learning = baseLearningSave(true), pin 
 async function enterKeypadActivity(page) {
   await page.goto('/')
   await page.getByRole('button', { name: 'まなぶ！' }).click()
-  await page.locator('.study-task').first().click()
+  await page.getByRole('button', { name: /(?:おまかせで|つづきから) まなぶ！/ }).click()
   await expect(page.locator('.activity-screen')).toBeVisible()
   await expect(page.locator('.keypad')).toBeVisible()
 }

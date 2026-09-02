@@ -10,7 +10,7 @@ const NAV_ITEMS = Object.freeze({
 })
 
 export default function AppNavigation({ view, onNavigate }) {
-  return <nav className="game-bottom-nav" aria-label="メインメニュー">
+  return <nav className="game-bottom-nav game-bottom-nav--compact" aria-label="メインメニュー">
     {TOP_LEVEL_CHILD_VIEWS.map((id) => {
       const [icon, label] = NAV_ITEMS[id]
       return <button key={id} className={view === id ? 'active' : ''} onClick={() => onNavigate(id)}>{icon}<span>{label}</span></button>

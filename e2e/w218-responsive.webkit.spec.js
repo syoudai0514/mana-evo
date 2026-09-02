@@ -99,7 +99,7 @@ for (const width of PORTRAIT_WIDTHS) {
     await expectNoHorizontalOverflow(page)
 
     await page.getByRole('navigation', { name: 'メインメニュー' }).getByRole('button', { name: /まなぶ/ }).click()
-    await expectFirstDecisionVisible(page, page.locator('.study-task').first())
+    await expectFirstDecisionVisible(page, page.getByRole('button', { name: /(?:おまかせで|つづきから) まなぶ！/ }))
     await expectNoHorizontalOverflow(page)
 
     await page.getByRole('button', { name: '← ホーム' }).click()
