@@ -439,3 +439,97 @@ W-103/Capture UI実装担当は、少なくとも以下を満たすこと。
 19. BD-01〜BD-04を実装者の推測で埋めない。
 
 ---
+
+## 13. D-029 later authority — Capture V1 TUNING-DEFAULT / deterministic child UI
+
+**D-029 is later authority.** It supersedes only the older statements in §1.1 / §2.2 / §4 / §10 / BD-02 / §12 that say HP-depth tuning, concrete `catchRank` values, five-band thresholds, and recommendation selection are unresolved or must not be tested. BD-01 / BD-03 / BD-04 remain unresolved and are not changed by D-029.
+
+### 13.1 V1 capture tuning
+
+For an eligible enemy (`hpRatio <= 0.50`):
+
+```text
+eligibleDepth = clamp((0.50 - hpRatio) / 0.50, 0, 1)
+
+baseAt50 = {
+  1: 0.55,
+  2: 0.42,
+  3: 0.28,
+  4: 0.16,
+  5: 0.10
+}
+
+lowHpBonus = {
+  1: 0.15,
+  2: 0.13,
+  3: 0.10,
+  4: 0.08,
+  5: 0.05
+}
+
+baseChance = baseAt50[catchRank]
+           + lowHpBonus[catchRank] * eligibleDepth
+```
+
+Then keep the existing structural contract:
+
+```text
+star   = baseChance × 1.00
+silver = baseChance × 1.20
+gold   = baseChance × 1.50
+non-rainbow final chance = min(result, 0.92)
+rainbow = 1.00 guaranteed
+```
+
+The five base values and five HP bonuses are **V1 TUNING-DEFAULT** values: canonical for the Bundle B runtime/tests, but intentionally retunable by a later explicit, playtest-backed product decision. The keys, multipliers, cap, HP<=50% eligibility, 3-attempt maximum, and rainbow guarantee remain structural D-017 authority.
+
+### 13.2 Deterministic five-band mapping
+
+Map the current **one-throw final chance** to exactly one child label:
+
+| chance | label |
+|---:|---|
+| `< 20%` | `かなり つかまえにくい` |
+| `20%–<40%` | `つかまえにくい` |
+| `40%–<60%` | `ふつう` |
+| `60%–<80%` | `つかまえやすい` |
+| `>=80%` | `ほとんど つかまる` |
+
+Rainbow additionally uses `かならず GET` / equivalent guaranteed wording. No non-rainbow ball may be described as guaranteed.
+
+### 13.3 Deterministic recommendation
+
+Recommendation considers **owned inventory only**.
+
+1. Among owned non-rainbow balls, select the weakest tier whose current one-throw chance is `>=70%`.
+2. If none reaches 70%, select the owned non-rainbow ball with the highest current chance.
+3. Rainbow is never automatic recommendation in an ordinary encounter.
+4. Rainbow may be recommended only when the encounter explicitly opts into a rainbow-recommendation contract and the player owns one.
+5. If no usable ball is owned, no recommendation is emitted.
+
+There is no implementation-defined `materially improves` branch.
+
+### 13.4 Economy boundary
+
+Existing canonical learning sources remain:
+
+- star: daily / additional-learning reward paths owned by W-101/learning reward authority;
+- silver: normal MASTER;
+- gold: hard MASTER.
+
+**Rainbow allocation/source remains unresolved and is outside Bundle B.** Runtime implementation must not invent a rainbow acquisition source merely to support the new probability UI.
+
+### 13.5 Acceptance delta
+
+Later implementation/tests must now lock:
+
+- exact rank1..5 base values at HP50%;
+- exact HP0 values after the low-HP bonus;
+- monotonic linear interpolation between HP50% and HP0;
+- existing 1.0 / 1.2 / 1.5 multipliers, 92% cap, rainbow 100%;
+- max 3 attempts including pre/post-KO continuity;
+- deterministic five bands and owned-inventory recommendation;
+- rank1/rank2 early-play sanity and representative expected resource burn;
+- no new rainbow supply source.
+
+Historical §2.2 / BD-02 text remains in this document as provenance but is **superseded by D-029**.

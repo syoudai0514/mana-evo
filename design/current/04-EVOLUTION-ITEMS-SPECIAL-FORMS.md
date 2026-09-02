@@ -644,3 +644,85 @@ W-104の根幹は確定しており、以下の局所詳細だけを勝手に創
 3. **W104-BD03:** GigaKeyの具体的な付与stage/event。権利の「1個・永久・非消費」は確定。
 
 これらは進化155件、探索5pt/80-20/pity、対象12+8、特殊形態効果、No.142、Star Awakening除外をブロックしない。Phase 2 commanderが横断reviewで解消できる形に留める。
+
+---
+
+## 14. D-030 later authority — player-confirmed normal evolution
+
+**D-030 is later authority.** It supersedes only the older timing/ownership statements in §1 item 3, §2.1, §2.3, §11, §12 normal-evolution clauses, and W104-BD01. The 155-transition master, stone behavior, exploration/item acquisition, Giga/Burst, No.142, and Star Awakening exclusion remain unchanged.
+
+### 14.1 Qualification creates persistent readiness, not an immediate species mutation
+
+For `level` and `held_item_levelup`:
+
+1. XP/reward settlement commits the real LvUP first.
+2. If the transition condition is satisfied by that actual semantic event, the instance keeps its current species and receives a structured `pendingEvolution` token.
+3. The result flow may immediately offer `✨ シンカする！` and secondary `あとで`.
+4. `あとで` dismisses presentation only; the token remains persistent.
+5. Species changes only when the child explicitly confirms evolution.
+
+Stone remains manual and does **not** use this readiness token; one required stone is consumed exactly once when the child uses it successfully.
+
+### 14.2 Authoritative pending token
+
+```text
+pendingEvolution = {
+  qualificationId,
+  fromSpeciesId,
+  toSpeciesId,
+  method,                 // level | held_item_levelup
+  qualifiedAtLevel,
+  itemId?,                // evidence for held-item qualification
+  sourceOperationId
+}
+```
+
+`qualificationId` must be deterministic from the causal semantic operation/reward ID + `instanceId` + `fromSpeciesId -> toSpeciesId`; never derive it from wall-clock time or randomness.
+
+`confirmEvolution(game, instanceId, qualificationId)` validates CURRENT game state, commits the species mutation at most once, preserves instanceId/Lv/XP/history, writes `evolutionDiscoveries[toSpeciesId]` exactly once, and clears the matching token atomically. Replaying stale/duplicate confirmation is an idempotent no-op/error path, not a second evolution/reward.
+
+### 14.3 Save / migration / cloud contract
+
+Implementation must bump the game schema/version and make the normalizer explicitly validate and round-trip `pendingEvolution` rather than dropping unknown fields.
+
+Migration rules:
+
+- legacy held-item `evolutionReady=true` with the matching required held item on the appropriate source species → create deterministic migration-only pending token;
+- legacy level-method source species already at/above its threshold → create deterministic migration-only pending token;
+- already-evolved species remain evolved; migration never devolves them;
+- stone transitions are not grandfathered into pending tokens merely because the stone is owned;
+- local save, cloud snapshot/hash, backup/restore and A→B→A profile switching preserve the token without cross-profile leakage.
+
+### 14.4 Held-item qualification is earned and item is retained
+
+For `held_item_levelup`, the required item must be equipped **at the actual qualifying LvUP**. Once that event creates the pending token, later swapping/removing the held item does **not** revoke the earned qualification. `itemId` in the token is historical evidence of the qualifying condition.
+
+On confirmed held-item evolution, the held item is **retained / not consumed**. This formally resolves and supersedes W104-BD01. Stone remains the consumed evolution-item class.
+
+### 14.5 Delayed multi-stage evolution / max-level recovery
+
+Never silently auto-chain species mutations.
+
+After confirming one evolution:
+
+- re-evaluate the newly reached species;
+- if its next transition is `level` and the monster's existing level already meets the threshold, generate a **new separate pending token** and require another explicit `シンカする！`;
+- no second species mutation occurs until that second confirmation;
+- if the next transition is ordinary `held_item_levelup`, another qualifying actual LvUP with the required item is normally required;
+- **max-level recovery only:** when the implementation's current compatibility max level prevents any further LvUP and the new species' next transition is `held_item_levelup`, explicitly equipping the required item may create a separate recovery pending token. This exception does not create a general equip-only held-item evolution below max level.
+
+### 14.6 Updated normal-evolution Acceptance
+
+Later runtime/tests must verify:
+
+- qualifying level/held-item LvUP creates token without immediate species change;
+- `あとで` survives local save/reload/cloud/backup/profile switching;
+- deterministic qualification IDs and migration idempotency;
+- confirm mutates species/discovery exactly once;
+- held-item token remains valid after item swap and item is retained after evolution;
+- stone remains manual and consumes one stone once;
+- delayed next-level threshold creates a new pending token, not an automatic chain;
+- max-level held-item recovery is limited to the explicit no-further-LvUP case;
+- active Evolution acknowledgement continues to block child profile switching under D-023, while dormant readiness alone does not block routine profile switching.
+
+Historical immediate-evolution text above remains as provenance but is **superseded by D-030**.
