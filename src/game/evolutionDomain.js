@@ -188,9 +188,68 @@ function recordOperation(game, operationId) {
   const id = String(operationId)
   game.appliedEvolutionOperationIds = [...new Set([...(game.appliedEvolutionOperationIds || []), id])].slice(-APPLIED_OPERATION_LIMIT)
 }
+function qualificationIdFor({ sourceOperationId, instanceId, transition }) {
+  return `evo:${String(sourceOperationId)}:${String(instanceId)}:${transition.fromSpeciesId}->${transition.toSpeciesId}`
+}
 
 export function getEvolutionTransition(speciesId) {
   return EVOLUTION_TRANSITION_BY_FROM[String(speciesId || '')] || null
+}
+
+export function normalizePendingEvolution(monster, pending = monster?.pendingEvolution) {
+  if (!monster || !pending || typeof pending !== 'object' || Array.isArray(pending)) return null
+  const transition = getEvolutionTransition(monster.speciesId)
+  if (!transition || transition.method === 'stone') return null
+  const qualificationId = String(pending.qualificationId || '')
+  const sourceOperationId = String(pending.sourceOperationId || '')
+  if (!qualificationId || !sourceOperationId) return null
+  if (pending.fromSpeciesId !== monster.speciesId || pending.fromSpeciesId !== transition.fromSpeciesId || pending.toSpeciesId !== transition.toSpeciesId || pending.method !== transition.method) return null
+  const normalized = {
+    qualificationId,
+    sourceOperationId,
+    fromSpeciesId: transition.fromSpeciesId,
+    toSpeciesId: transition.toSpeciesId,
+    method: transition.method,
+    qualifiedAtLevel: Math.max(1, positiveInt(pending.qualifiedAtLevel) || positiveInt(monster.level) || 1),
+    qualificationKind: String(pending.qualificationKind || 'levelup')
+  }
+  if (transition.method === 'held_item_levelup') normalized.itemId = String(pending.itemId || transition.itemId)
+  return normalized
+}
+
+function pendingToken(monster, transition, {
+  sourceOperationId,
+  qualificationKind = 'levelup',
+  itemId = null
+}) {
+  const source = String(sourceOperationId || '')
+  if (!source) return null
+  const token = {
+    qualificationId: qualificationIdFor({ sourceOperationId: source, instanceId: monster.instanceId, transition }),
+    sourceOperationId: source,
+    fromSpeciesId: transition.fromSpeciesId,
+    toSpeciesId: transition.toSpeciesId,
+    method: transition.method,
+    qualifiedAtLevel: Math.max(1, positiveInt(monster.level) || 1),
+    qualificationKind
+  }
+  if (transition.method === 'held_item_levelup') token.itemId = String(itemId || transition.itemId)
+  return token
+}
+
+function setPendingEvolution(game, instanceId, transition, options) {
+  const next = cloneGame(game)
+  const monster = next.box?.[instanceId]
+  if (!monster) return { ok: false, game: next, reason: 'UNKNOWN_MONSTER' }
+  const existing = normalizePendingEvolution(monster)
+  if (existing) {
+    next.box[instanceId] = { ...monster, pendingEvolution: existing, evolutionReady: true }
+    return { ok: true, game: next, pendingEvolution: existing, alreadyQualified: true }
+  }
+  const pending = pendingToken(monster, transition, options)
+  if (!pending) return { ok: false, game: next, reason: 'SOURCE_OPERATION_ID_REQUIRED' }
+  next.box[instanceId] = { ...monster, pendingEvolution: pending, evolutionReady: true }
+  return { ok: true, game: next, pendingEvolution: pending, alreadyQualified: false }
 }
 
 export function evolutionTriggerStatus(monster, game, {
@@ -212,6 +271,13 @@ export function evolutionTriggerStatus(monster, game, {
       : { ready: false, reason: 'ITEM_NOT_OWNED', transition }
   }
 
+  const pending = normalizePendingEvolution(monster)
+  if (trigger === 'confirm') {
+    return pending
+      ? { ready: true, reason: null, transition, pendingEvolution: pending }
+      : { ready: false, reason: 'PENDING_EVOLUTION_REQUIRED', transition }
+  }
+
   if (trigger !== 'level_up') return { ready: false, reason: 'LEVEL_UP_REQUIRED', transition }
   const before = positiveInt(previousLevel)
   const after = positiveInt(newLevel)
@@ -229,35 +295,100 @@ export function evolutionTriggerStatus(monster, game, {
   return { ready: false, reason: 'UNKNOWN_EVOLUTION_METHOD', transition }
 }
 
-export function evolveInstance(game, {
+export function qualifyEvolutionAfterLevelUp(game, {
   instanceId,
-  trigger,
   previousLevel = null,
   newLevel = null,
-  itemId = null,
   operationId = null
 } = {}) {
+  const next = cloneGame(game)
+  const monster = next.box?.[instanceId]
+  if (!monster) return { ok: false, game: next, reason: 'UNKNOWN_MONSTER' }
+  const status = evolutionTriggerStatus(monster, next, { trigger: 'level_up', previousLevel, newLevel })
+  if (!status.ready) return { ok: false, game: next, reason: status.reason, transition: status.transition }
+  const sourceOperationId = operationId || `levelup:${instanceId}:${monster.speciesId}:${positiveInt(previousLevel)}->${positiveInt(newLevel)}`
+  const qualified = setPendingEvolution(next, instanceId, status.transition, {
+    sourceOperationId,
+    qualificationKind: 'levelup',
+    itemId: status.transition.method === 'held_item_levelup' ? status.transition.itemId : null
+  })
+  return {
+    ...qualified,
+    fromSpeciesId: status.transition.fromSpeciesId,
+    toSpeciesId: status.transition.toSpeciesId,
+    transition: status.transition
+  }
+}
+
+export function qualifyMaxLevelHeldItemEvolution(game, {
+  instanceId,
+  operationId = null
+} = {}) {
+  const next = cloneGame(game)
+  const monster = next.box?.[instanceId]
+  if (!monster) return { ok: false, game: next, reason: 'UNKNOWN_MONSTER' }
+  const transition = getEvolutionTransition(monster.speciesId)
+  if (!transition || transition.method !== 'held_item_levelup') return { ok: false, game: next, reason: 'HELD_ITEM_LEVELUP_NOT_APPLICABLE', transition }
+  if (positiveInt(monster.level) < 100) return { ok: false, game: next, reason: 'MAX_LEVEL_RECOVERY_NOT_REQUIRED', transition }
+  if (monster.heldItemId !== transition.itemId) return { ok: false, game: next, reason: 'REQUIRED_HELD_ITEM_NOT_EQUIPPED', transition }
+  const sourceOperationId = operationId || `max-level-held-item:${instanceId}:${transition.fromSpeciesId}->${transition.toSpeciesId}:${transition.itemId}`
+  const qualified = setPendingEvolution(next, instanceId, transition, {
+    sourceOperationId,
+    qualificationKind: 'max-level-held-item-recovery',
+    itemId: transition.itemId
+  })
+  return { ...qualified, fromSpeciesId: transition.fromSpeciesId, toSpeciesId: transition.toSpeciesId, transition }
+}
+
+function applyPostCommitQualification(game, instanceId, parentQualificationId) {
+  const monster = game?.box?.[instanceId]
+  if (!monster) return { game, pendingEvolution: null }
+  const transition = getEvolutionTransition(monster.speciesId)
+  if (!transition || transition.method === 'stone') return { game, pendingEvolution: null }
+
+  if (transition.method === 'level' && positiveInt(monster.level) >= transition.level) {
+    const qualified = setPendingEvolution(game, instanceId, transition, {
+      sourceOperationId: `post-confirm:${parentQualificationId}:${instanceId}:${transition.fromSpeciesId}->${transition.toSpeciesId}`,
+      qualificationKind: 'post-confirm-threshold'
+    })
+    return { game: qualified.game, pendingEvolution: qualified.pendingEvolution || null }
+  }
+
+  if (transition.method === 'held_item_levelup' && positiveInt(monster.level) >= 100 && monster.heldItemId === transition.itemId) {
+    const qualified = qualifyMaxLevelHeldItemEvolution(game, {
+      instanceId,
+      operationId: `max-level-held-item:${instanceId}:${transition.fromSpeciesId}->${transition.toSpeciesId}:${transition.itemId}`
+    })
+    return { game: qualified.game, pendingEvolution: qualified.pendingEvolution || null }
+  }
+
+  return { game, pendingEvolution: null }
+}
+
+function commitTransition(game, {
+  instanceId,
+  transition,
+  operationId,
+  parentQualificationId,
+  consumeStone = false
+}) {
   const next = cloneGame(game)
   if (operationAlreadyApplied(next, operationId)) return { ok: true, alreadyApplied: true, game: next }
   const monster = next.box?.[instanceId]
   if (!monster) return { ok: false, game: next, reason: 'UNKNOWN_MONSTER' }
-  const status = evolutionTriggerStatus(monster, next, { trigger, previousLevel, newLevel, itemId })
-  if (!status.ready) return { ok: false, game: next, reason: status.reason, transition: status.transition }
+  if (monster.speciesId !== transition.fromSpeciesId) return { ok: false, game: next, reason: 'STALE_EVOLUTION_SOURCE', transition }
+  if (!isActiveSpeciesId(transition.fromSpeciesId) || !isActiveSpeciesId(transition.toSpeciesId)) return { ok: false, game: next, reason: 'INACTIVE_SPECIES_TRANSITION' }
 
-  const transition = status.transition
-  if (!isActiveSpeciesId(transition.fromSpeciesId) || !isActiveSpeciesId(transition.toSpeciesId)) {
-    return { ok: false, game: next, reason: 'INACTIVE_SPECIES_TRANSITION' }
-  }
-
-  if (transition.method === 'stone') {
+  if (consumeStone) {
     const stones = next.evolutionItems?.stones || {}
     const remaining = positiveInt(stones[transition.itemId]) - 1
+    if (remaining < 0) return { ok: false, game: next, reason: 'ITEM_NOT_OWNED', transition }
     if (remaining > 0) stones[transition.itemId] = remaining
     else delete stones[transition.itemId]
   }
 
   const firstEvolutionDiscovery = !next.evolutionDiscoveries?.[transition.toSpeciesId]
-  next.box[instanceId] = { ...monster, speciesId: transition.toSpeciesId, evolutionReady: false }
+  next.box[instanceId] = { ...monster, speciesId: transition.toSpeciesId, pendingEvolution: null, evolutionReady: false }
   next.dex ||= { seen: {}, caught: {} }
   next.dex.seen ||= {}
   next.dex.caught ||= {}
@@ -267,18 +398,72 @@ export function evolveInstance(game, {
   next.evolutionDiscoveries[transition.toSpeciesId] = true
   recordOperation(next, operationId)
 
+  const chained = applyPostCommitQualification(next, instanceId, parentQualificationId || operationId)
   return {
     ok: true,
-    game: next,
+    game: chained.game,
     fromSpeciesId: transition.fromSpeciesId,
     toSpeciesId: transition.toSpeciesId,
     transition,
-    firstEvolutionDiscovery
+    firstEvolutionDiscovery,
+    nextPendingEvolution: chained.pendingEvolution
   }
 }
 
+export function confirmEvolution(game, {
+  instanceId,
+  qualificationId
+} = {}) {
+  const next = cloneGame(game)
+  const operationId = qualificationId ? `confirm:${qualificationId}` : null
+  if (operationAlreadyApplied(next, operationId)) return { ok: true, alreadyApplied: true, game: next }
+  const monster = next.box?.[instanceId]
+  if (!monster) return { ok: false, game: next, reason: 'UNKNOWN_MONSTER' }
+  const pending = normalizePendingEvolution(monster)
+  if (!pending) return { ok: false, game: next, reason: 'PENDING_EVOLUTION_REQUIRED' }
+  if (!qualificationId || pending.qualificationId !== qualificationId) return { ok: false, game: next, reason: 'STALE_EVOLUTION_QUALIFICATION' }
+  const transition = getEvolutionTransition(monster.speciesId)
+  return commitTransition(next, {
+    instanceId,
+    transition,
+    operationId,
+    parentQualificationId: pending.qualificationId,
+    consumeStone: false
+  })
+}
+
+export function evolveInstance(game, {
+  instanceId,
+  trigger,
+  previousLevel = null,
+  newLevel = null,
+  itemId = null,
+  operationId = null,
+  qualificationId = null
+} = {}) {
+  if (trigger === 'level_up') return qualifyEvolutionAfterLevelUp(game, { instanceId, previousLevel, newLevel, operationId })
+  if (trigger === 'confirm') return confirmEvolution(game, { instanceId, qualificationId })
+  if (trigger !== 'stone') return { ok: false, game: cloneGame(game), reason: 'UNKNOWN_EVOLUTION_TRIGGER' }
+
+  const next = cloneGame(game)
+  if (operationAlreadyApplied(next, operationId)) return { ok: true, alreadyApplied: true, game: next }
+  const monster = next.box?.[instanceId]
+  if (!monster) return { ok: false, game: next, reason: 'UNKNOWN_MONSTER' }
+  const status = evolutionTriggerStatus(monster, next, { trigger: 'stone', itemId })
+  if (!status.ready) return { ok: false, game: next, reason: status.reason, transition: status.transition }
+  return commitTransition(next, {
+    instanceId,
+    transition: status.transition,
+    operationId: operationId || `stone:${instanceId}:${status.transition.fromSpeciesId}->${status.transition.toSpeciesId}`,
+    parentQualificationId: operationId || `stone:${instanceId}:${status.transition.fromSpeciesId}->${status.transition.toSpeciesId}`,
+    consumeStone: true
+  })
+}
+
+// Compatibility name retained for callers; D-030 changes its semantics from
+// auto-commit to persistent qualification.
 export function evolveAfterLevelUp(game, args = {}) {
-  return evolveInstance(game, { ...args, trigger: 'level_up' })
+  return qualifyEvolutionAfterLevelUp(game, args)
 }
 
 export function evolveWithStone(game, args = {}) {
