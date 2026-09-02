@@ -3,13 +3,16 @@ import assert from 'node:assert/strict'
 
 import {
   CAPTURE_BOUNDARIES,
+  CAPTURE_EASE_BANDS,
   DEFAULT_CAPTURE_TUNING,
   GROWTH_SHARD_RULE,
   buildCapturePresentation,
   captureBattleXpRecipients,
+  captureEaseCue,
   captureEligibility,
   captureProbability,
   defaultBaseCaptureChance,
+  recommendCaptureItem,
   redeemGrowthShards,
   resolveCaptureRoll,
   resolveDuplicateChoice,
@@ -56,7 +59,24 @@ test('capture eligibility is exactly HP <= 50%, max three attempts, and requires
   assert.deepEqual(captureEligibility(game, battle(), 'star', { captureDisabled: true }), { eligible: false, reason: 'CAPTURE_DISABLED' })
 })
 
-test('canonical ring multipliers and non-rainbow 92% cap are independent of base-chance tuning', () => {
+test('D-029 V1 tuning exposes exact rank values at HP50 and HP0 and interpolates monotonically', () => {
+  const expectedAt50 = [0.55, 0.42, 0.28, 0.16, 0.10]
+  const expectedAt0 = [0.70, 0.55, 0.38, 0.24, 0.15]
+  assert.deepEqual(Object.values(DEFAULT_CAPTURE_TUNING.baseAt50ByRank), expectedAt50)
+  assert.deepEqual(Object.values(DEFAULT_CAPTURE_TUNING.lowHpBonusByRank), [0.15, 0.13, 0.10, 0.08, 0.05])
+
+  for (let rank = 1; rank <= 5; rank += 1) {
+    const at50 = defaultBaseCaptureChance({ hp: 50, maxHp: 100, catchRank: rank })
+    const at25 = defaultBaseCaptureChance({ hp: 25, maxHp: 100, catchRank: rank })
+    const at0 = defaultBaseCaptureChance({ hp: 0, maxHp: 100, catchRank: rank })
+    assert.equal(at50, expectedAt50[rank - 1])
+    assert.equal(at0, expectedAt0[rank - 1])
+    assert.ok(at25 > at50)
+    assert.ok(at25 < at0)
+  }
+})
+
+test('canonical ball multipliers and non-rainbow 92% cap remain structural', () => {
   assert.equal(CAPTURE_BOUNDARIES.ringMultipliers.star, 1)
   assert.equal(CAPTURE_BOUNDARIES.ringMultipliers.silver, 1.2)
   assert.equal(CAPTURE_BOUNDARIES.ringMultipliers.gold, 1.5)
@@ -65,12 +85,38 @@ test('canonical ring multipliers and non-rainbow 92% cap are independent of base
   assert.equal(captureProbability(0.8, 'silver'), 0.92)
   assert.equal(captureProbability(0.8, 'gold'), 0.92)
   assert.equal(captureProbability(0, 'rainbow'), 1)
-
-  const defaultChance = defaultBaseCaptureChance({ hp: 25, maxHp: 100, catchRank: 2 })
-  const changedTuning = { ...DEFAULT_CAPTURE_TUNING, baseChance: DEFAULT_CAPTURE_TUNING.baseChance + 0.1 }
-  const tunedChance = defaultBaseCaptureChance({ hp: 25, maxHp: 100, catchRank: 2 }, changedTuning)
-  assert.notEqual(defaultChance, tunedChance)
   assert.equal(captureProbability(0.99, 'gold'), 0.92)
+})
+
+test('five child-facing capture bands have exact deterministic boundaries', () => {
+  assert.deepEqual(CAPTURE_EASE_BANDS.map((band) => band.min), [0.8, 0.6, 0.4, 0.2, 0])
+  assert.deepEqual(captureEaseCue(0.1999), { min: 0, level: 1, label: 'かなりつかまえにくい' })
+  assert.deepEqual(captureEaseCue(0.2), { min: 0.2, level: 2, label: 'つかまえにくい' })
+  assert.deepEqual(captureEaseCue(0.4), { min: 0.4, level: 3, label: 'ふつう' })
+  assert.deepEqual(captureEaseCue(0.6), { min: 0.6, level: 4, label: 'つかまえやすい' })
+  assert.deepEqual(captureEaseCue(0.8), { min: 0.8, level: 5, label: 'ほとんどつかまる' })
+})
+
+test('capture recommendation is inventory-aware, cheapest above 70%, and never auto-picks rainbow', () => {
+  const options = [
+    { id: 'star', ready: true, owned: 3, chance: 0.7 },
+    { id: 'silver', ready: true, owned: 2, chance: 0.84 },
+    { id: 'gold', ready: true, owned: 1, chance: 0.92 },
+    { id: 'rainbow', ready: true, owned: 1, chance: 1 }
+  ]
+  assert.equal(recommendCaptureItem(options), 'star')
+  assert.equal(recommendCaptureItem(options.map((option) => option.id === 'star' ? { ...option, owned: 0, ready: false } : option)), 'silver')
+
+  const noneAt70 = options.map((option) => option.id === 'star'
+    ? { ...option, chance: 0.42 }
+    : option.id === 'silver'
+      ? { ...option, chance: 0.504 }
+      : option.id === 'gold'
+        ? { ...option, chance: 0.63 }
+        : option)
+  assert.equal(recommendCaptureItem(noneAt70), 'gold')
+  assert.equal(recommendCaptureItem([{ id: 'rainbow', ready: true, owned: 1, chance: 1 }]), null)
+  assert.equal(recommendCaptureItem([{ id: 'rainbow', ready: true, owned: 1, chance: 1 }], { rainbowRecommended: true }), 'rainbow')
 })
 
 test('one deterministic success roll decides probability while presentation stays temporal and separate', () => {
