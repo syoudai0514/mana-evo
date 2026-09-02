@@ -13,16 +13,34 @@ export const CAPTURE_BOUNDARIES = Object.freeze({
   guaranteedRings: Object.freeze(['rainbow'])
 })
 
-// Compatibility tuning only. These values mirror the pre-rebuild runtime and are
-// intentionally separate from CAPTURE_BOUNDARIES because CURRENT does not make
-// the base-chance formula or its coefficients a product invariant.
+// D-029 V1 TUNING-DEFAULT. Structural capture rules remain in
+// CAPTURE_BOUNDARIES; these rank values are intentionally isolated so a later
+// playtest-backed tuning decision can change them without rewriting the domain
+// contract.
 export const DEFAULT_CAPTURE_TUNING = Object.freeze({
-  minChance: 0.12,
-  baseChance: 0.34,
-  missingHpWeight: 0.62,
-  catchRankWeight: 0.07,
-  maxChance: 0.90
+  baseAt50ByRank: Object.freeze({
+    1: 0.55,
+    2: 0.42,
+    3: 0.28,
+    4: 0.16,
+    5: 0.10
+  }),
+  lowHpBonusByRank: Object.freeze({
+    1: 0.15,
+    2: 0.13,
+    3: 0.10,
+    4: 0.08,
+    5: 0.05
+  })
 })
+
+export const CAPTURE_EASE_BANDS = Object.freeze([
+  Object.freeze({ min: 0.8, level: 5, label: 'ほとんどつかまる' }),
+  Object.freeze({ min: 0.6, level: 4, label: 'つかまえやすい' }),
+  Object.freeze({ min: 0.4, level: 3, label: 'ふつう' }),
+  Object.freeze({ min: 0.2, level: 2, label: 'つかまえにくい' }),
+  Object.freeze({ min: 0, level: 1, label: 'かなりつかまえにくい' })
+])
 
 export const GROWTH_SHARD_RULE = Object.freeze({
   shardsPerUse: 3,
@@ -73,16 +91,19 @@ export function captureEligibility(game, battle, itemType = 'star', { captureDis
   return { eligible: true, reason: null }
 }
 
+function captureRank(catchRank) {
+  return clamp(1, Math.floor(Number(catchRank) || 1), 5)
+}
+
 export function defaultBaseCaptureChance({ hp, maxHp, catchRank = 1 }, tuning = DEFAULT_CAPTURE_TUNING) {
   const safeMaxHp = Math.max(1, Number(maxHp) || 1)
   const safeHp = clamp(0, Number(hp) || 0, safeMaxHp)
-  const missingHpRatio = 1 - safeHp / safeMaxHp
-  const rank = Math.max(0, Number(catchRank) || 0)
-  return clamp(
-    Number(tuning.minChance),
-    Number(tuning.baseChance) + missingHpRatio * Number(tuning.missingHpWeight) - rank * Number(tuning.catchRankWeight),
-    Number(tuning.maxChance)
-  )
+  const hpRatio = safeHp / safeMaxHp
+  const eligibleDepth = clamp(0, (CAPTURE_BOUNDARIES.eligibilityHpRatio - hpRatio) / CAPTURE_BOUNDARIES.eligibilityHpRatio, 1)
+  const rank = captureRank(catchRank)
+  const baseAt50 = Number(tuning?.baseAt50ByRank?.[rank] ?? DEFAULT_CAPTURE_TUNING.baseAt50ByRank[rank])
+  const lowHpBonus = Number(tuning?.lowHpBonusByRank?.[rank] ?? DEFAULT_CAPTURE_TUNING.lowHpBonusByRank[rank])
+  return clamp(0, baseAt50 + lowHpBonus * eligibleDepth, 1)
 }
 
 export function captureProbability(baseChance, itemType = 'star') {
@@ -90,6 +111,34 @@ export function captureProbability(baseChance, itemType = 'star') {
   if (CAPTURE_BOUNDARIES.guaranteedRings.includes(itemType)) return 1
   const base = clamp(0, Number(baseChance) || 0, 1)
   return Math.min(base * CAPTURE_BOUNDARIES.ringMultipliers[itemType], CAPTURE_BOUNDARIES.nonRainbowCap)
+}
+
+export function captureEaseCue(chance) {
+  const safeChance = clamp(0, Number(chance) || 0, 1)
+  return CAPTURE_EASE_BANDS.find((band) => safeChance >= band.min) || CAPTURE_EASE_BANDS[CAPTURE_EASE_BANDS.length - 1]
+}
+
+export function recommendCaptureItem(options = [], { rainbowRecommended = false } = {}) {
+  const ready = options.filter((option) => option?.ready && Number(option?.owned) > 0)
+  if (rainbowRecommended) {
+    const rainbow = ready.find((option) => option.id === 'rainbow')
+    if (rainbow) return rainbow.id
+  }
+
+  const order = ['star', 'silver', 'gold']
+  const nonRainbow = ready.filter((option) => order.includes(option.id))
+  if (!nonRainbow.length) return null
+
+  const reachingTarget = nonRainbow
+    .filter((option) => Number(option.chance) >= 0.70)
+    .sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id))
+  if (reachingTarget.length) return reachingTarget[0].id
+
+  return [...nonRainbow].sort((a, b) => {
+    const chanceDiff = Number(b.chance) - Number(a.chance)
+    if (Math.abs(chanceDiff) > Number.EPSILON) return chanceDiff
+    return order.indexOf(a.id) - order.indexOf(b.id)
+  })[0]?.id || null
 }
 
 export function buildCapturePresentation(success, { failureStars = 1 } = {}) {
