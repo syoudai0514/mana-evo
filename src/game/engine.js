@@ -1,14 +1,38 @@
 import {
   attemptCapture as attemptCaptureShared,
-  canAttemptCapture as canAttemptCaptureShared
+  canAttemptCapture as canAttemptCaptureShared,
+  useMove as useMoveShared,
+  useProtect as useProtectShared
 } from './engineSharedRuntime.js'
 import {
   attemptPostWinCapture,
   canAttemptPostWinCapture,
   isPostWinCapturePhase
 } from './postWinCapture.js'
+import {
+  buildMovePresentationEvents,
+  buildProtectPresentationEvents
+} from './battlePresentationDomain.js'
 
 export * from './engineSharedRuntime.js'
+
+export function useMove(game, battle, moveId, options = {}) {
+  const result = useMoveShared(game, battle, moveId, options)
+  if (!result?.ok) return result
+  return {
+    ...result,
+    presentationEvents: buildMovePresentationEvents(game, battle, moveId, result)
+  }
+}
+
+export function useProtect(game, battle, options = {}) {
+  const result = useProtectShared(game, battle, options)
+  if (!result?.ok) return result
+  return {
+    ...result,
+    presentationEvents: buildProtectPresentationEvents(game, battle, result)
+  }
+}
 
 export function canAttemptCapture(game, battle, itemType = 'star') {
   if (isPostWinCapturePhase(battle)) return canAttemptPostWinCapture(game, battle, itemType)
