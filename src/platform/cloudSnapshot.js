@@ -2,6 +2,7 @@ import { exportGameEnvelope, importGameEnvelope } from '../game/saveStore.js'
 import { loadState, profileSnapshot, saveState } from '../kids-quest-study/engine/storage.js'
 import { exportLearningRewardEnvelope, importLearningRewardEnvelope } from '../kids-quest-study/state/learningRewardStore.js'
 import { createTestGameFixture, TEST_FIXTURE_LABELS } from './testFixtures.js'
+import { profileDisplayName } from './profileUi.js'
 import {
   DEVICE_PROFILE_KEY,
   TEST_MODE_KEY,
@@ -25,16 +26,24 @@ function removeLocal(key) {
   try { localStorage.removeItem(key) } catch {}
 }
 
-function normalizedProfiles(learning) {
+export function profilesForPersistence(learning) {
   const profiles = clone(learning?.profiles || {})
   const activeId = learning?.activeProfileId
   if (activeId) {
     profiles[activeId] = {
-      name: profiles[activeId]?.name || 'ぼうけんしゃ',
+      ...(profiles[activeId] || {}),
       state: profileSnapshot(learning)
     }
   }
   return profiles
+}
+
+function profilesForDisplay(learning) {
+  const profiles = profilesForPersistence(learning)
+  return Object.fromEntries(Object.entries(profiles).map(([id, profile]) => [id, {
+    ...profile,
+    name: profileDisplayName(profile)
+  }]))
 }
 
 export function currentDeviceProfileId() {
@@ -43,7 +52,7 @@ export function currentDeviceProfileId() {
 
 export function getLocalProfiles() {
   const learning = loadState() || {}
-  const profiles = normalizedProfiles(learning)
+  const profiles = profilesForDisplay(learning)
   return {
     activeProfileId: learning.activeProfileId || null,
     deviceProfileId: currentDeviceProfileId(),
@@ -53,7 +62,7 @@ export function getLocalProfiles() {
 
 export function captureCloudPayload() {
   const learning = loadState() || {}
-  const profiles = normalizedProfiles(learning)
+  const profiles = profilesForPersistence(learning)
   const activeId = learning.activeProfileId || Object.keys(profiles)[0] || 'child-1'
   return makeCloudPayload({
     learning: {
@@ -103,7 +112,7 @@ export function applyCloudPayload(payload, { preferredProfileId = currentDeviceP
 
 export function switchDeviceProfile(profileId) {
   const learning = loadState() || {}
-  const profiles = normalizedProfiles(learning)
+  const profiles = profilesForPersistence(learning)
   if (!profiles[profileId]) throw new Error('unknown profile')
   const next = {
     ...clone(profiles[profileId].state || {}),

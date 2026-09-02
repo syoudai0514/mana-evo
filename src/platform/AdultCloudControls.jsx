@@ -1,17 +1,19 @@
 import React, { useState } from 'react'
 import { PARENT_PIN_KEY } from '../parent/ParentGate.jsx'
+import { isParentVerificationActive } from '../parent/parentVerification.js'
 
 function storedPin() {
   try { return localStorage.getItem(PARENT_PIN_KEY) || '' } catch { return '' }
 }
 
-export default function AdultCloudControls({ children }) {
+export default function AdultCloudControls({ children, alreadyVerified = false }) {
   const [unlocked, setUnlocked] = useState(false)
   const [pin, setPin] = useState('')
   const [message, setMessage] = useState('')
   const pinExists = storedPin().length === 4
+  const trustedParentSession = alreadyVerified && isParentVerificationActive()
 
-  if (unlocked) return <>{children}</>
+  if (trustedParentSession || unlocked) return <>{children}</>
 
   const unlock = () => {
     if (!pinExists) {
@@ -31,7 +33,7 @@ export default function AdultCloudControls({ children }) {
     <div className="adult-cloud-gate__icon">🔒</div>
     <div>
       <h3>保護者専用</h3>
-      <p>プレイヤー切替・テストデータ・競合解決・バックアップ復元は、保護者PINを確認してから操作します。</p>
+      <p>クラウド認証・同期・TESTデータ・競合解決・バックアップ復元などは、保護者PINを確認してから操作します。</p>
     </div>
     {pinExists ? <>
       <input
@@ -48,7 +50,7 @@ export default function AdultCloudControls({ children }) {
       <button disabled={pin.length !== 4} onClick={unlock}>🔓 保護者メニューをひらく</button>
     </> : <>
       <div className="cloud-gate-note">この端末には保護者PINがまだありません。</div>
-      <small>ホームの「保護者メニュー」でPINを設定すると、ここからパパ・まさき・ウタノの切替やテストデータを操作できます。</small>
+      <small>ホームの「保護者メニュー」でPINを設定すると、クラウド認証・同期やテストデータを使えます。</small>
     </>}
     {message && <div className="cloud-gate-message">{message}</div>}
   </section>
