@@ -176,7 +176,7 @@
 ## D-018 共通アカウント・クラウドセーブ・テストデータ
 - Status: CONFIRMED_CHANGE / USER-DECISION
 - Baseline / prior CURRENT: ManaEvoは端末内のManaEvo-owned storageを正本とし、stable child profile IDで学習・game stateを分離し、Parentからprofile切替とbackup/export/importを行う。端末間同期・オンラインアカウントは必須ではなかった。
-- Runtime before decision: learning envelope、game `gameByProfile`、学習→ゲーム報酬bridgeはlocalStorage中心で、iPhone / iPad間では自動共有されない。monster個体は`instanceId / speciesId / level / xp / held item`等を保持し、学習側は学年・習熟・SRS・英語・試練・履歴等を保持する。
+- Runtime before decision: learning envelope、game `gameByProfile`、学習→game reward bridgeはlocalStorage中心で、iPhone / iPad間では自動共有されない。monster個体は`instanceId / speciesId / level / xp / held item`等を保持し、学習側は学年・習熟・SRS・英語・試練・履歴等を保持する。
 - Evidence of approval: 2026-08-28 ユーザーが、子どもがiPad・保護者端末など複数端末で利用するためDB保存とID/PWログインを要求。その後、最後のSupabase project枠をManaEvo専用ではなく今後の自作ゲームでも利用できる汎用backendにし、家族アカウント内でパパ・まさき・ウタノ等のplayer profileを切り替え、端末ごとに普段使うplayerを記憶し、全開放/第1形態/第2形態のテストデータとbackupを持つ案を明示承認した。
 - Decision — account/backend: Family Opsとは分離した汎用personal-app backendを使用し、認証ユーザーは複数の自作appで共有可能とする。各appの保存データは`app_id`で分離し、ManaEvoは`app_id = mana-evo`を使用する。ManaEvoの通常認証は保護者向けemail + passwordとし、端末sessionを保持して毎回の再ログインを要求しない。password resetは認証基盤の回復フローを使う。clientへsecret/service-role credentialを配布しない。
 - Decision — profile/device ownership: Auth accountとchild/player profileは別概念とする。1つの家族アカウント内にパパ・まさき・ウタノ等のstable profileを追加でき、各profileのlearning/game progressを混在させない。**どのprofileをこの端末で開くかだけはdevice-local preference**とし、iPadでまさきを選んでもiPhoneのcurrent playerを変更しない。cloud payloadはactive profile selectionを共有device authorityにしない。
@@ -219,7 +219,7 @@
 - Status: CONFIRMED_CHANGE / USER-DECISION / INDEPENDENT-DESIGN-PASS
 - Baseline / prior CURRENT: UI/Acceptanceは375〜430px級iPhone portraitをprimary contractとしており、iPad/tablet portrait/landscape/reduced-window/rotationを正式release gateとして定義していなかった。CURRENT D-020はDex Offline Art Pack / Detail UXのlater authorityであり、本Decisionはそれを置換しない。
 - Runtime before decision: global shellは概ね`max-width:520px`。学習nested layoutには`94–96vw`等が残り、ancestor clippingと組み合わさるとtabletでrequired contentが欠損し得る。PWA manifestは`orientation: portrait-primary`。PlaywrightはiPhone/WebKit中心。またBattle/Capture/Evolution/Dex/Parent等にはdomain stateとは別のmeaningful component-local interaction stateがあり、presentation-only remountで失われる余地がある。
-- Evidence of approval: 2026-09-01 ユーザーがiPad実機のportrait lock/right-side clippingを確認し、個別bug修正より先にtablet supportをproduct contract化することを承認。PR #135 V1.0/V1.1/V1.2を複数回独立レビューし、Navigation/Layout分離、active interaction continuity、Evolution rotation、non-Compact leakage gate、existing-installed PWA pass/fail、CURRENT rebase、D-020累積authorityを補強。PR #135 head `759b30448dee1fa8e278e9b22d606a1c48b57ea1` に対し `DESIGN PASS — IPAD/TABLET SUPPORT CONTRACT READY FOR CANONICAL PROMOTION` を取得。
+- Evidence of approval: 2026-09-01 ユーザーがiPad実機のportrait lock/right-side clippingを確認し、個別bug修正より先にtablet supportをproduct contract化することを承認。PR #135 V1.0/V1.1/V1.2を複数回独立レビューし、Navigation/Layout分離、active interaction continuity、Evolution rotation、non-Compact leakage gate、existing-installed PWA pass/fail、CURRENT rebase、D-020累積authorityを補強。PR #135 head `759b30448dee1fa8e278e9b22d606a1c48b57ea1` に対して `DESIGN PASS — IPAD/TABLET SUPPORT CONTRACT READY FOR CANONICAL PROMOTION` を取得。
 - Decision — support: existing 375〜430px mobile baselineを維持し、iPad-class full-screen portrait/landscapeおよびreduced multi-windowをsupported presentationへ追加する。device model/UAではなくcurrent available layout viewportをauthorityとする。
 - Decision — axes: Navigation ownership / Layout Surface / Runtime Continuityを独立contractとし、TOP LEVEL/FOCUSED/CONTEXTUALをwidth policyの代用にしない。
 - Decision — layout: `Compact ≈520px`、`Workspace outer ≈760px`、`Contextual interactive outer ≈760px / primary decision ≈620–680px`をinitial directionとする。bounded nested componentはparent-relative sizingを基本とし、viewport `vw`を通常bounded childの独立width authorityにしない。Workspace/ContextualをCompact ceilingへ誤拘束しない。
@@ -246,3 +246,30 @@
 - Reason: 兄弟が同じ端末を使う日常導線では、登録済みprofile切替に毎回Parent PINを要求すると操作負荷が高い。一方、profile作成/renameやcloud/destructive操作は大人の管理境界を維持する必要がある。また表示fallbackを保存データへ混ぜると、UI改善だけでcloud semantic hashが変わりfalse push/conflictを起こし得るため、presentationとpersistenceを分離する必要がある。
 - Affected areas: W-107 / profile UI / learning+game profile switching / cloud snapshot+hash / Parent profile management / Evolution acknowledgement / Bundle A WebKit acceptance。profile stable ID、game rules、capture probability、learning schedulerは変更しない。
 - Tests required: child registered-profile A→B→A isolation + reload / Parent rename preserves stable ID / raw legacy name remains unchanged in local/cloud persistence / UI fallback does not create semantic hash change / active Battle-Capture-Evolution acknowledgement blocks switch / post-acknowledgement re-enables switch / 375・390・430・representative iPad geometry / full unit+build+release-readiness+WebKit regression。
+
+## D-029 捕獲V1 TUNING-DEFAULTと決定論UI
+- Status: CONFIRMED_CHANGE / USER-DECISION / INDEPENDENT-DESIGN-PASS / TUNING-DEFAULT
+- Baseline / prior CURRENT: D-004/D-017はHP50%以下gate、stable keys、倍率1.0/1.2/1.5、非rainbow92% cap、rainbow100%、最大3投を固定したが、HP50%以下でさらに削る補正・catchRank具体値・5段階threshold・おすすめ選定は未確定だった。runtimeのcompatibility係数は正本ではなかった。
+- Evidence of approval: 2026-09-02ユーザーが過去設計を基準に序盤の捕獲ストレスを抑えつつ球tierの価値を残す方向を承認。PR #151 V1.1 head `65b789a626c230e0968b00bd5fcd91c8c7c256bd` が独立再レビューで `DESIGN PASS — READY FOR BUNDLE B IMPLEMENTATION`。
+- Decision — chance: `catchRank` 1..5のstar baseをHP50%で `0.55/0.42/0.28/0.16/0.10`、HP0で加算 `+0.15/+0.13/+0.10/+0.08/+0.05` とし、50→0%を線形補間する。非rainbowは従来倍率を適用して92% cap、rainbowは100%。これら具体値はV1 TUNING-DEFAULTであり、後続実機playtestの明示判断で再調整可能。
+- Decision — child UI: 1投確率の5段階は `<20 / 20–<40 / 40–<60 / 60–<80 / >=80%`。ラベルは `かなりつかまえにくい / つかまえにくい / ふつう / つかまえやすい / ほとんどつかまる`。所持中の非rainbowで70%以上になる最も弱い球をおすすめし、該当なしなら所持中非rainbowで最高確率の球。rainbowは通常自動おすすめにせず、明示encounter override時かつ所持時のみおすすめ可。
+- Decision — economy boundary: star/daily・追加学習、silver/通常MASTER、gold/hard MASTERという既存取得源を維持。rainbowの学習側供給はBundle Bで新設しない。
+- Supersedes/refines: W-103のBD-02と「baseChance具体値/5段階thresholdは未確定」という部分を本Decisionで置換する。D-017のstable keys、名称、倍率、92% cap、HP50% eligibility、最大3投、4星presentationは維持する。
+- Reason: 最大3投かつ状態異常補正のないManaEvoでは、序盤rank1/2が低すぎると捕獲失敗が学習後の報酬体験を損なう。一方、撃破時starをほぼ100%にすると上位球が無意味になるため、累積成功率とtier価値を両立する明示tableが必要。
+- Affected areas: W-103 Capture domain/UI、W-106 Capture presentation、W-108 acceptance、capture tests。learning reward source自体は変更しない。
+- Tests required: exact rank values at HP50/0、HP monotonic interpolation、multipliers/cap/rainbow、3 attempts、post-win idempotency、5 bands/recommendation determinism、rank1/2 early-play resource sanity。
+
+## D-030 Player-confirmed進化・ordered Battle presentation trace・BOX family UX
+- Status: CONFIRMED_CHANGE / USER-DECISION / INDEPENDENT-DESIGN-PASS
+- Baseline / prior CURRENT: W-104はlevel/held_item_levelupの条件成立LvUPで即species変更していた。Battle UIはdomain結果の表現が薄く、1transaction内のspeed順による複数行動をbefore/after snapshotだけから正確に再生する契約がなかった。BOXはlevel順中心で進化familyや進化可能個体を探しにくかった。
+- Evidence of approval: 2026-09-02ユーザーが「自分で進化ボタンを押す」体験、Battleの出現コメント/SFX/FX強化、BOX整理を明示要求。PR #151 V1.1 head `65b789a626c230e0968b00bd5fcd91c8c7c256bd` が独立再レビューで `DESIGN PASS — READY FOR BUNDLE B IMPLEMENTATION`。
+- Decision — battle trace: semantic transactionを一度だけcommitし、domainが実行順どおりのimmutable `presentationEvents[]` sidecarを返す。各eventはstable eventId/turn/ordinal/actor/kind/move/target/hpBefore/hpAfter/effectiveness/terminal等を持つ。timer/animation/SFXはcursorを進めるだけで、damage/AI/reward/ticket/capture settlementを起動しない。
+- Decision — readiness: level/held_item_levelupの実LvUPで条件を満たしたらspeciesを即変更せず、deterministic `qualificationId`を持つpersistent `pendingEvolution`を生成する。子どもが `シンカする！` を押した時に同一instanceをexactly-onceで進化させる。`あとで`はpresentationだけを閉じtokenはsave/cloud/backup/profile round-tripで保持する。
+- Decision — migration: game schemaを明示更新し、normalizeBoxはpending tokenをvalidate/round-tripする。legacy `evolutionReady=true` + matching held itemはpendingへ移行し、legacy level source formが既に閾値以上ならmigration-only tokenをgrandfatherする。already-evolved speciesは戻さない。
+- Decision — held item: qualifying LvUP時点で資格は確定し、その後持ち物を交換してもpendingを失効させない。held itemは進化確定時にも**消費せず保持**する。stoneは従来どおり手動使用・1個消費。
+- Decision — delayed chain/Lv100: stage1確定後に新speciesの次level条件を既に満たす場合、speciesを自動連鎖変更せず別pending tokenを新規生成して再度本人確認を要求する。Lv100で次がheld_item_levelupかつ追加LvUP不能の場合のみ、必要item装備を明示max-level recovery qualificationとしてpending生成可能。
+- Decision — BOX: default `シンカ順`でfamily→stage→same-species duplicatesを隣接させ、secondary `レベル順`と `✨シンカできるだけ` filterを持つ。GET順はlegacy取得時刻が権威化されるまで導入しない。Team順/instanceIdは変更しない。
+- Supersedes/refines: W-104のlevel/held-item即時species変更、W104-BD01を本Decisionで置換する。W-106 Battle/Evolution/Monster/BOX presentation、W-108 acceptanceを本Decisionへ合わせる。D-021/D-023のactive interaction continuity/profile switch lockは累積適用する。
+- Reason: 進化を本人の選択として感じられること、Battleの実行順と演出を一致させること、進化可能個体を容易に見つけることを、save互換・exactly-once・rotation/profile continuityを壊さず実現するため。
+- Affected areas: Battle engine sidecar/UI/SFX/FX、Evolution domain/save migration/cloud、Monster/BOX UI、W-104/W-106/W-108。
+- Tests required: ordered trace/speed order/intermediate HP、timer semantic no-op、rotation/reload no duplicate settlement、pending deterministic migration/round-trip/idempotency、held-item retain、delayed next-token/Lv100 recovery、stone unchanged、family grouping/filter/team order、375/390/430/tablet WebKit。
