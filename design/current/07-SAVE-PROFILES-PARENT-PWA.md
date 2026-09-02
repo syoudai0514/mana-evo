@@ -1,6 +1,6 @@
 # ManaEvo CURRENT — Save / Profiles / Parent / Cloud / PWA
 
-Status: **CURRENT normative contract (W-107 + D-018 + D-019 normalization)**  
+Status: **CURRENT normative contract (W-107 + D-018 + D-019 + D-022 normalization)**  
 Phase: Rebuild / platform normalization  
 Scope: save ownership, profiles, Parent controls, Kids Quest isolation/import, cloud persistence, backups, migrations, test-mode isolation, Vercel production/PWA, monster-asset cache/versioning
 
@@ -18,7 +18,7 @@ Authority order follows `REBUILD-START-HERE.md` and `design/rebuild/DECISION-LOG
 6. runtime implementation;
 7. review/completion history.
 
-This normalization incorporates the later explicit decisions in **D-018** (shared account/cloud save/test data) and **D-019** (Vercel as the sole production canonical host). Those decisions supersede the earlier W-107 GitHub Pages/local-only assumptions where they conflict.
+This normalization incorporates the later explicit decisions in **D-018** (shared account/cloud save/test data), **D-019** (Vercel as the sole production canonical host), and **D-022** (child-safe switching among registered profiles plus Parent-owned profile naming). Those decisions supersede earlier W-107 assumptions where they conflict.
 
 Runtime files named later are implementation evidence. They do not outrank the contract.
 
@@ -59,7 +59,9 @@ A Supabase Auth account is the **family/parent account** used to access shared c
 
 One Auth account may own multiple stable ManaEvo player profiles. Creating another child profile does not require another Auth user.
 
-A player profile must have a stable ID independent of display name. Display-name changes, if later supported, must not create a new save identity or orphan game/learning data.
+A player profile must have a stable ID independent of display name. Parent-authorized display-name changes are supported and must not create a new save identity, orphan game/learning data, or rewrite the stable profile ID.
+
+A legacy automatic name such as `ぼうけんしゃ 1` may be rendered to the child as `なまえをきめよう`, but that substitution is **presentation-only**. It must not rewrite the raw stored/cloud profile name, and it must not create a cloud hash/revision change merely because the UI label changed.
 
 ### 2.2 Device-local state
 
@@ -113,7 +115,13 @@ Unconsumed/processed learning-to-game reward bridge state is part of the recover
 
 ## 3. Profile switching contract
 
-Profile creation/switching is Parent-controlled.
+Profile **creation and display-name changes are Parent-controlled**. Switching among profiles that have already been registered by a Parent is child-safe and may be performed without entering the Parent PIN again from normal child-owned top-level UI.
+
+Child profile switching is not available while a transactional/focused interaction is active and changing player could abandon or rebind in-flight state. At minimum this includes:
+
+- active Battle;
+- active Capture sequence / forced-switch flow;
+- Evolution result/acknowledgement that has not yet been dismissed.
 
 When switching A → B:
 
@@ -130,9 +138,11 @@ Required invariants:
 - switching does not duplicate tickets, XP, items, rewards, mastery or profiles;
 - a new profile starts from approved fresh defaults, not a clone of the active player;
 - switching never writes to Kids Quest source data;
-- migration/import preserves stable profile IDs once created.
+- migration/import preserves stable profile IDs once created;
+- switching does not mutate a raw profile name merely to produce a child-facing fallback label;
+- a presentation-only fallback such as `なまえをきめよう` is not cloud-save authority and must not create a false push/conflict.
 
-Profile deletion/rename product policy remains unresolved unless separately approved.
+Profile rename is supported as a Parent-owned operation and preserves the stable profile ID. Profile deletion product policy remains unresolved unless separately approved.
 
 ---
 
@@ -146,11 +156,13 @@ Adult-only controls include:
 - ahead-learning controls;
 - difficulty;
 - audio/TTS settings owned by Parent;
-- profile creation/selection/switching;
+- profile creation and profile display-name changes;
 - cloud conflict resolution;
 - TEST-mode entry/exit;
 - backup creation/restore/import;
 - account logout and other destructive account/save actions.
+
+Choosing among already-registered profiles is not an adult mutation under D-022; it is a child-safe device-local selection action, subject to the transactional/focused interaction lock in section 3. A child cannot create profiles, rename them, enter TEST mode, resolve cloud conflicts, restore backups, or otherwise cross the Parent boundary through that switcher.
 
 Email/password sign-in may be offered on a fresh device so the family can recover its cloud save, but mutation of Parent-owned player/test/restore controls remains behind the local Parent gate.
 
@@ -180,11 +192,13 @@ Cloud save is a recoverable, versioned ManaEvo snapshot, not a progress summary.
 
 A cloud revision must preserve enough information to restore:
 
-- profile registry;
+- profile registry, including the raw persisted profile names;
 - all included per-profile learning state;
 - the matching game envelope;
 - learning-to-game reward bridge state;
 - save schema/content version metadata.
+
+Child-facing fallback labels are render-time presentation and must not be substituted into the cloud payload unless a Parent actually performs a rename operation.
 
 The device-local selected profile is **not** cloud authority and must not be allowed to make devices fight over which player is currently open.
 
@@ -221,6 +235,8 @@ Stable player profiles are independent conflict domains inside the family snapsh
 
 If the **same stable profile** changed differently on both devices, or a registry/schema change cannot be proven compatible, stop and surface an adult conflict decision rather than guessing. Before destructive overwrite/pull/restore boundaries, preserve a backup according to the backup contract.
 
+A render-only profile-label substitution is not a meaningful profile edit and must not perturb the semantic payload hash used for sync/conflict decisions.
+
 Silent last-write-wins that can destroy another device's progress is prohibited.
 
 ---
@@ -256,6 +272,7 @@ A migration must:
 
 - preserve valid existing progress;
 - preserve stable profile/monster/learning IDs;
+- preserve raw profile names unless an explicit Parent rename operation changes them;
 - map legacy single-profile data deterministically once;
 - avoid granting gameplay rewards merely because migration ran;
 - write only ManaEvo-owned storage/cloud rows;
@@ -426,7 +443,7 @@ These observations are useful for locating reusable implementation and are not i
 | Learning save | ManaEvo-specific versioned learning storage/export | reusable; preserve Kids Quest semantics |
 | Game save | `gameByProfile` envelope | aligns with stable profile ownership |
 | Reward bridge | persisted learning→game envelope | must be included in cloud revision |
-| Profiles | stable profile snapshots | aligns; selected device profile stays local |
+| Profiles | stable profile snapshots + child-safe registered-profile selection | aligns; selected device profile stays local, names stay raw in persistence |
 | Parent gate | local 4-digit PIN + adult check | valid local safety boundary |
 | Cloud | generic Supabase `app_id=mana-evo` + revisioned snapshot | D-018 direction |
 | Backup | manual/destructive-boundary cloud snapshots | D-018 direction |
@@ -449,7 +466,7 @@ W-107 owns platform/save/hosting boundaries and does not redefine other domain r
 - **W-103 / Capture** — capture/duplicate settlement state persisted per profile;
 - **W-104 / Evolution** — item/evolution state persisted per profile;
 - **W-105 / World** — adventure location/progression persisted per profile;
-- **W-106 / UI** — Parent remains focused adult-owned UI;
+- **W-106 / UI** — Parent remains focused adult-owned UI while D-022 allows child-safe registered-profile selection;
 - **W-108 / Acceptance** — behavioral acceptance machinery;
 - **W-109 / Monster art** — formal/candidate identity and revision input for PWA caching.
 
@@ -461,9 +478,13 @@ W-107 owns platform/save/hosting boundaries and does not redefine other domain r
 
 - [ ] every learning/game save is attributable to a stable profile ID;
 - [ ] switching A → B → A restores each profile's own learning and game state without leakage;
-- [ ] profile switching/creation does not duplicate progress/rewards;
+- [ ] switching among already-registered profiles is available to the child without Parent PIN in normal top-level child UI;
+- [ ] profile switching is unavailable during active Battle/Capture/forced-switch/Evolution acknowledgement transactional state;
+- [ ] profile switching/creation/rename does not duplicate progress/rewards or change stable IDs;
+- [ ] Parent owns profile creation and display-name changes;
+- [ ] `なまえをきめよう` or another legacy fallback label remains UI-only and does not rewrite the raw local/cloud profile name or alter sync hash by itself;
 - [ ] device A selecting a player does not force device B to switch player;
-- [ ] player/test/conflict/restore controls are Parent-owned;
+- [ ] TEST/conflict/restore and other destructive controls are Parent-owned;
 - [ ] child flow cannot silently bypass Parent controls.
 
 ### Cloud / Auth
@@ -475,6 +496,7 @@ W-107 owns platform/save/hosting boundaries and does not redefine other domain r
 - [ ] fresh device adopts existing cloud state;
 - [ ] disjoint edits to different stable profiles merge without losing either profile;
 - [ ] divergent edits to the same stable profile surface a conflict rather than silent overwrite;
+- [ ] render-only profile label changes do not cause a false cloud push/conflict;
 - [ ] session persists/refreshes correctly;
 - [ ] email confirmation and password recovery return to Vercel production for production flows.
 
@@ -486,7 +508,7 @@ W-107 owns platform/save/hosting boundaries and does not redefine other domain r
 - [ ] stage1/stage2 fixtures follow current evolution transitions;
 - [ ] backup restore preserves correct profile learning/game pairing;
 - [ ] destructive restore/overwrite retains a recoverable pre-change backup;
-- [ ] migrations are versioned/idempotent and preserve stable IDs;
+- [ ] migrations are versioned/idempotent and preserve stable IDs and raw profile names;
 - [ ] later species additions do not corrupt old saves.
 
 ### Kids Quest isolation/import
@@ -522,7 +544,7 @@ W-107 owns platform/save/hosting boundaries and does not redefine other domain r
 
 This contract does not independently define:
 
-- profile deletion/rename UX;
+- profile deletion UX;
 - encrypted/cloud Parent-PIN recovery;
 - the exact adult-check puzzle;
 - a Kids Quest ↔ ManaEvo live-sync model;
@@ -537,7 +559,7 @@ If a later implementation needs one of these as a product decision, recover or o
 
 ## 17. D-021 PWA orientation / tablet presentation contract
 
-This section is later cross-cutting authority under **D-021**. It supplements the existing W-107/D-018/D-019 platform contract and does not supersede CURRENT D-020 Dex cache/browse/history semantics.
+This section is later cross-cutting authority under **D-021**. It supplements the existing W-107/D-018/D-019/D-022 platform contract and does not supersede CURRENT D-020 Dex cache/browse/history semantics.
 
 ### 17.1 No ManaEvo orientation preference
 
