@@ -1,9 +1,16 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { MonsterArt } from '../PlaceholderMonster.jsx'
 import { speciesOf } from '../content.js'
 import { statsFor } from '../engine.js'
+import { setChildProfileSwitchLock } from '../../platform/childProfileSwitchLock.js'
 
 export function EvolutionCelebration({ reveal, onClose }) {
+  useEffect(() => {
+    if (!reveal) return undefined
+    setChildProfileSwitchLock('evolution-acknowledgement', true)
+    return () => setChildProfileSwitchLock('evolution-acknowledgement', false)
+  }, [reveal])
+
   if (!reveal) return null
   const from = speciesOf(reveal.fromId)
   const to = speciesOf(reveal.toId)
