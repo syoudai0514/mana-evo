@@ -392,9 +392,15 @@ function captureTeamXp(game, battle, capturedInstanceId, xp) {
 
 export function attemptCapture(game, battle, rolls = null, itemType = 'star', { today = null } = {}) {
   const current = game?.activeBattle
-  if (!current || (current.battleId && battle?.battleId && current.battleId !== battle.battleId)) {
+  const currentAttempts = Number(current?.captureAttempts) || 0
+  const suppliedAttempts = Number(battle?.captureAttempts) || 0
+  if (!current ||
+      (current.battleId && battle?.battleId && current.battleId !== battle.battleId) ||
+      current.status !== battle?.status ||
+      currentAttempts !== suppliedAttempts) {
     return { ok: false, game, battle: current || battle, reason: 'STALE_BATTLE' }
   }
+
   const stage = stageById(battle?.stageId)
   const eligibility = captureEligibility(game, battle, itemType, { captureDisabled: !!stage?.captureDisabled })
   if (!eligibility.eligible) {
@@ -404,6 +410,7 @@ export function attemptCapture(game, battle, rolls = null, itemType = 'star', { 
     return { ok: false, game, battle, reason }
   }
 
+  const postWinCapture = battle.status === 'won' && Number(battle.enemy?.hp) === 0
   const successRoll = Array.isArray(rolls) ? Number(rolls[0]) : (Number.isFinite(Number(rolls)) ? Number(rolls) : Math.random())
   const resolution = resolveCaptureRoll({
     baseChance: baseCaptureChance(battle),
@@ -413,9 +420,33 @@ export function attemptCapture(game, battle, rolls = null, itemType = 'star', { 
   })
 
   if (!resolution.success) {
-    // Failed-capture action economy is still a blocked product decision in W-103.
-    // Preserve the existing enemy-turn compatibility path, but force it to failure;
-    // the legacy probability calculation can no longer decide the outcome.
+    if (postWinCapture) {
+      const nextGame = structuredClone(game)
+      nextGame.captureItems[itemType] -= 1
+      const nextBattle = structuredClone(battle)
+      nextBattle.captureAttempts = (Number(nextBattle.captureAttempts) || 0) + 1
+      nextBattle.captureStars = resolution.presentation.starCount
+      nextBattle.capturePresentation = resolution.presentation.frames
+      nextBattle.lastPlayerAction = 'capture'
+      nextBattle.log = [
+        ...(nextBattle.log || []).slice(-4),
+        `「わ」を なげた！ ${resolution.presentation.starCount}こ 光った！ でも逃げられた！`
+      ].slice(-8)
+      nextGame.activeBattle = structuredClone(nextBattle)
+      return {
+        ok: true,
+        caught: false,
+        stars: resolution.presentation.starCount,
+        chance: resolution.chance,
+        capturePresentation: resolution.presentation,
+        game: nextGame,
+        battle: nextBattle
+      }
+    }
+
+    // Failed in-battle capture still consumes the player's action and preserves
+    // the existing enemy-turn compatibility path. Post-win failure is handled
+    // above so a defeated enemy can never retaliate or replay victory rewards.
     const compatibility = core.attemptCapture(game, battle, [1, 1, 1, 1], itemType, { today })
     if (!compatibility.ok) return compatibility
     const nextBattle = structuredClone(compatibility.battle)
@@ -443,14 +474,26 @@ export function attemptCapture(game, battle, rolls = null, itemType = 'star', { 
   nextBattle.lastPlayerAction = 'capture'
   nextBattle.rewardResolutionId ||= `${nextBattle.battleId || nextBattle.stageId}:reward`
 
-  const firstClear = !(nextGame.stagesCleared || []).includes(stage.id)
-  const xp = battleXpForStage(stage)
   const captured = core.makeMonster(
     battle.enemy.speciesId,
     pacedCaptureLevel(battle.enemy.speciesId, battle.enemy.level)
   )
-  const gained = captureTeamXp(nextGame, battle, captured.instanceId, xp)
-  nextGame = gained.game
+  let xp = 0
+  let firstClear = false
+  let gained = {
+    game: nextGame,
+    levelsByInstance: {},
+    pendingEvolutionsByInstance: {},
+    evolutionsByInstance: {},
+    xpByInstance: {}
+  }
+
+  if (!postWinCapture) {
+    firstClear = !(nextGame.stagesCleared || []).includes(stage.id)
+    xp = battleXpForStage(stage)
+    gained = captureTeamXp(nextGame, battle, captured.instanceId, xp)
+    nextGame = gained.game
+  }
 
   const settlementResult = settleCaptureSuccess(nextGame, {
     resolutionId: `${nextBattle.rewardResolutionId}:capture`,
@@ -461,13 +504,20 @@ export function attemptCapture(game, battle, rolls = null, itemType = 'star', { 
   if (!settlementResult.ok) return { ok: false, game, battle, reason: settlementResult.reason }
   nextGame = settlementResult.game
 
-  // Capture Mana is still blocked in W-103; retain the existing compatibility value
-  // without promoting it to a canonical constant.
-  nextGame.mana = (nextGame.mana || 0) + Math.floor((Number(stage.mana) || 0) / 2)
-  nextGame = recordNormalFirstClearSnapshot(nextGame, stage, battle)
-  if (firstClear) nextGame.stagesCleared = [...new Set([...(nextGame.stagesCleared || []), stage.id])]
+  if (!postWinCapture) {
+    // Capture Mana is still blocked in W-103; retain the existing compatibility
+    // value for an in-battle capture only. A post-win capture must not replay
+    // the already-committed victory reward transaction.
+    nextGame.mana = (nextGame.mana || 0) + Math.floor((Number(stage.mana) || 0) / 2)
+    nextGame = recordNormalFirstClearSnapshot(nextGame, stage, battle)
+    if (firstClear) nextGame.stagesCleared = [...new Set([...(nextGame.stagesCleared || []), stage.id])]
+  }
+
   const activeXp = gained.xpByInstance?.[battle.activeInstanceId] || 0
-  nextBattle.log = [...(nextBattle.log || []).slice(-4), `★★★★ ボールを なげた！ 4つ ひかって ゲット！ XP +${activeXp}`]
+  const captureLog = postWinCapture
+    ? '★★★★ ボールを なげた！ 4つ ひかって ゲット！'
+    : `★★★★ ボールを なげた！ 4つ ひかって ゲット！ XP +${activeXp}`
+  nextBattle.log = [...(nextBattle.log || []).slice(-4), captureLog]
   nextGame.activeBattle = structuredClone(nextBattle)
 
   return {
