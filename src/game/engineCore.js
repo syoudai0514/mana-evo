@@ -494,19 +494,40 @@ function statusLabel(status) {
   return ({ burn: 'やけど', paralysis: 'まひ', poison: 'どく', sleep: 'ねむり' })[status] || status
 }
 
+function createBattlePresentationEmitter(battle) {
+  const events = []
+  const presentationBattleId = battle?.battleId || battle?.stageId || 'battle'
+  const turn = Number(battle?.turn || 0)
+  const emit = (actor, kind, data = {}) => {
+    const ordinal = events.length
+    const discriminator = [data.moveId, data.target, data.status, data.terminalStatus].filter(Boolean).join(':') || 'na'
+    events.push({
+      eventId: `${presentationBattleId}:${turn}:${ordinal}:${actor}:${kind}:${discriminator}`,
+      battleId: presentationBattleId,
+      turn,
+      ordinal,
+      actor,
+      kind,
+      ...data
+    })
+  }
+  return { events, emit }
+}
+
 function applyMoveStatus(battle, move, target, log, actor) {
   const spec = moveStatusSpec(move)
-  if (!spec?.type || !Object.values(BATTLE_STATUS).includes(spec.type)) return
-  if (battleRoll(battle, actor, 'status-chance', move.id || move.moveId) >= normalizedChance(spec.chance)) return
+  if (!spec?.type || !Object.values(BATTLE_STATUS).includes(spec.type)) return null
+  if (battleRoll(battle, actor, 'status-chance', move.id || move.moveId) >= normalizedChance(spec.chance)) return null
   const targetSpecies = target === 'enemy' ? speciesOf(battle.enemy.speciesId) : speciesOf(battleMonsterStatusSpeciesId(battle, target))
   const current = target === 'enemy' ? battle.enemy.status : playerStatus(battle, target)
   const applied = tryApplyBattleStatus(current, spec.type, targetSpecies?.types || [], {
     sleepRoll: battleRoll(battle, actor, 'sleep-turns', move.id || move.moveId)
   })
-  if (!applied.applied) return
+  if (!applied.applied) return null
   if (target === 'enemy') battle.enemy.status = applied.status
   else setPlayerStatus(battle, target, applied.status)
   log.push(`${target === 'enemy' ? speciesOf(battle.enemy.speciesId)?.name : 'なかま'} は ${statusLabel(spec.type)}！`)
+  return applied.status
 }
 
 function actorCanAct(battle, actor, log) {
@@ -518,7 +539,7 @@ function actorCanAct(battle, actor, log) {
   return result.canAct
 }
 
-function enemyAttackOnce(game, battle, log, { blocked = false, plannedMove = null } = {}) {
+function enemyAttackOnce(game, battle, log, { blocked = false, plannedMove = null, emitPresentation = null } = {}) {
   if (battle.enemy.hp <= 0) return null
   const player = battleMonster(game, battle)
   if (!player || currentPlayerHp(battle) <= 0) return null
@@ -532,13 +553,16 @@ function enemyAttackOnce(game, battle, log, { blocked = false, plannedMove = nul
     afterBossAction(stage, battle, log, false)
     return { damage: 0, statusBlocked: true, move: enemyMove }
   }
+  emitPresentation?.('enemy', 'move', { moveId: enemyMove.id || enemyMove.moveId, target: 'player' })
   if (blocked) {
     log.push(`🛡️ まもる！ ${enemySpecies.name} の ${enemyMove.name}を ふせいだ！`)
+    emitPresentation?.('player', 'protect-impact', { moveId: enemyMove.id || enemyMove.moveId, target: 'player' })
     afterBossAction(stage, battle, log, useBigMove)
     return { blocked: true, move: enemyMove }
   }
   if (!deterministicHit(enemyMove, battle, 'enemy')) {
     log.push(`${enemySpecies.name} の ${enemyMove.name}！ でも はずれた！`)
+    emitPresentation?.('enemy', 'miss', { moveId: enemyMove.id || enemyMove.moveId, target: 'player' })
     afterBossAction(stage, battle, log, useBigMove)
     return { damage: 0, missed: true, move: enemyMove }
   }
@@ -546,28 +570,44 @@ function enemyAttackOnce(game, battle, log, { blocked = false, plannedMove = nul
     criticalRoll: battleRoll(battle, 'enemy', 'critical', enemyMove.id || enemyMove.moveId),
     randomRoll: battleRoll(battle, 'enemy', 'damage-random', enemyMove.id || enemyMove.moveId)
   })
-  battle.partyHp[battle.activeInstanceId] = Math.max(0, currentPlayerHp(battle) - result.damage)
+  const hpBefore = currentPlayerHp(battle)
+  battle.partyHp[battle.activeInstanceId] = Math.max(0, hpBefore - result.damage)
+  const hpAfter = currentPlayerHp(battle)
   const woke = wakeSleepOnDamagingHit(playerStatus(battle), result.damage)
   setPlayerStatus(battle, battle.activeInstanceId, woke)
-  if (result.damage > 0) applyMoveStatus(battle, enemyMove, battle.activeInstanceId, log, 'enemy')
+  const appliedStatus = result.damage > 0 ? applyMoveStatus(battle, enemyMove, battle.activeInstanceId, log, 'enemy') : null
+  emitPresentation?.('enemy', 'damage', {
+    moveId: enemyMove.id || enemyMove.moveId,
+    target: 'player',
+    hpBefore,
+    hpAfter,
+    effectiveness: result.effectiveness,
+    critical: result.critical > 1
+  })
+  if (appliedStatus?.type) emitPresentation?.('enemy', 'status', { moveId: enemyMove.id || enemyMove.moveId, target: 'player', status: appliedStatus.type })
   log.push(`${enemySpecies.name} の ${enemyMove.name}！ ${result.damage} ダメージ${result.critical > 1 ? ' きゅうしょ！' : ''}`)
   afterBossAction(stage, battle, log, useBigMove)
   return { ...result, move: enemyMove }
 }
 
-function applyEndTurnStatuses(game, battle, log) {
+function applyEndTurnStatuses(game, battle, log, emitPresentation = null) {
   if (battle.enemy.hp > 0 && battle.enemy.status) {
     const damage = statusEndTurnDamage(battle.enemy.status, battle.enemy.maxHp)
     if (damage > 0) {
-      battle.enemy.hp = Math.max(0, battle.enemy.hp - damage)
-      log.push(`${speciesOf(battle.enemy.speciesId).name} は ${statusLabel(battle.enemy.status.type)}で ${damage} ダメージ`)
+      const hpBefore = battle.enemy.hp
+      const status = battle.enemy.status.type
+      battle.enemy.hp = Math.max(0, hpBefore - damage)
+      emitPresentation?.('system', 'status-damage', { target: 'enemy', status, hpBefore, hpAfter: battle.enemy.hp })
+      log.push(`${speciesOf(battle.enemy.speciesId).name} は ${statusLabel(status)}で ${damage} ダメージ`)
     }
   }
   if (currentPlayerHp(battle) > 0) {
     const status = playerStatus(battle)
     const damage = statusEndTurnDamage(status, currentPlayerMaxHp(game, battle))
     if (damage > 0) {
-      battle.partyHp[battle.activeInstanceId] = Math.max(0, currentPlayerHp(battle) - damage)
+      const hpBefore = currentPlayerHp(battle)
+      battle.partyHp[battle.activeInstanceId] = Math.max(0, hpBefore - damage)
+      emitPresentation?.('system', 'status-damage', { target: 'player', status: status.type, hpBefore, hpAfter: currentPlayerHp(battle) })
       log.push(`なかまは ${statusLabel(status.type)}で ${damage} ダメージ`)
     }
   }
@@ -689,24 +729,29 @@ export function availableBattleMoveIds(game, battle) {
   return ids
 }
 
-function playerAttackOnce(game, battle, move, log) {
+function playerAttackOnce(game, battle, move, log, emitPresentation = null) {
   const player = battleMonster(game, battle)
   const playerSpecies = speciesOf(player.speciesId)
   if (!actorCanAct(battle, 'player', log)) return { damage: 0, statusBlocked: true }
+  emitPresentation?.('player', 'move', { moveId: move.id || move.moveId, target: move.effect?.type === 'heal' ? 'player' : 'enemy' })
   if (!deterministicHit(move, battle, 'player')) {
     log.push(`${playerSpecies.name} の ${move.name}！ でも はずれた！`)
+    emitPresentation?.('player', 'miss', { moveId: move.id || move.moveId, target: 'enemy' })
     return { damage: 0, effectiveness: 1, missed: true }
   }
   if (move.effect?.type === 'heal') {
     const maxHp = currentPlayerMaxHp(game, battle)
     const heal = Math.max(1, Math.floor(maxHp * (move.effect.healRatio || 0.20)))
-    const before = currentPlayerHp(battle)
-    battle.partyHp[battle.activeInstanceId] = Math.min(maxHp, before + heal)
-    log.push(`${playerSpecies.name} の ${move.name}！ HPが ${battle.partyHp[battle.activeInstanceId] - before} かいふく！`)
-    return { damage: 0, heal: battle.partyHp[battle.activeInstanceId] - before }
+    const hpBefore = currentPlayerHp(battle)
+    battle.partyHp[battle.activeInstanceId] = Math.min(maxHp, hpBefore + heal)
+    const hpAfter = currentPlayerHp(battle)
+    emitPresentation?.('player', 'heal', { moveId: move.id || move.moveId, target: 'player', hpBefore, hpAfter })
+    log.push(`${playerSpecies.name} の ${move.name}！ HPが ${hpAfter - hpBefore} かいふく！`)
+    return { damage: 0, heal: hpAfter - hpBefore }
   }
   if (move.effect?.type === 'status') {
-    applyMoveStatus(battle, move, 'enemy', log, 'player')
+    const appliedStatus = applyMoveStatus(battle, move, 'enemy', log, 'player')
+    if (appliedStatus?.type) emitPresentation?.('player', 'status', { moveId: move.id || move.moveId, target: 'enemy', status: appliedStatus.type })
     log.push(`${playerSpecies.name} の ${move.name}！`)
     return { damage: 0 }
   }
@@ -715,10 +760,21 @@ function playerAttackOnce(game, battle, move, log) {
     criticalRoll: battleRoll(battle, 'player', 'critical', move.id || move.moveId),
     randomRoll: battleRoll(battle, 'player', 'damage-random', move.id || move.moveId)
   })
-  battle.enemy.hp = Math.max(0, battle.enemy.hp - result.damage)
+  const hpBefore = battle.enemy.hp
+  battle.enemy.hp = Math.max(0, hpBefore - result.damage)
+  const hpAfter = battle.enemy.hp
   battle.enemy.status = wakeSleepOnDamagingHit(battle.enemy.status, result.damage)
-  if (result.damage > 0) applyMoveStatus(battle, move, 'enemy', log, 'player')
+  const appliedStatus = result.damage > 0 ? applyMoveStatus(battle, move, 'enemy', log, 'player') : null
   battle.lastEffect = result.effectiveness
+  emitPresentation?.('player', 'damage', {
+    moveId: move.id || move.moveId,
+    target: 'enemy',
+    hpBefore,
+    hpAfter,
+    effectiveness: result.effectiveness,
+    critical: result.critical > 1
+  })
+  if (appliedStatus?.type) emitPresentation?.('player', 'status', { moveId: move.id || move.moveId, target: 'enemy', status: appliedStatus.type })
   log.push(`${playerSpecies.name} の ${move.name}！ ${result.damage} ダメージ${result.critical > 1 ? ' きゅうしょ！' : ''}`)
   return result
 }
@@ -735,6 +791,7 @@ export function useMove(game, battle, moveId, { today = null } = {}) {
 
   const next = structuredClone(battle)
   const log = []
+  const presentation = createBattlePresentationEmitter(next)
   const useKey = moveUseKey(playerRaw.instanceId, moveId)
   if (move.effect?.usesPerBattle && (next.moveUses?.[useKey] || 0) >= move.effect.usesPerBattle) {
     return { ok: false, game, battle, reason: 'MOVE_USE_LIMIT' }
@@ -753,14 +810,14 @@ export function useMove(game, battle, moveId, { today = null } = {}) {
     : speedOrder(playerStats.speed, enemyStats.speed, battleRoll(next, 'turn', 'speed-tie'))
 
   if (order === 'player') {
-    playerAttackOnce(game, next, move, log)
-    if (next.enemy.hp > 0) enemyAttackOnce(game, next, log, { plannedMove: plannedEnemyMove })
+    playerAttackOnce(game, next, move, log, presentation.emit)
+    if (next.enemy.hp > 0) enemyAttackOnce(game, next, log, { plannedMove: plannedEnemyMove, emitPresentation: presentation.emit })
   } else {
-    enemyAttackOnce(game, next, log, { plannedMove: plannedEnemyMove })
-    if (currentPlayerHp(next) > 0) playerAttackOnce(game, next, move, log)
+    enemyAttackOnce(game, next, log, { plannedMove: plannedEnemyMove, emitPresentation: presentation.emit })
+    if (currentPlayerHp(next) > 0) playerAttackOnce(game, next, move, log, presentation.emit)
   }
 
-  applyEndTurnStatuses(game, next, log)
+  applyEndTurnStatuses(game, next, log, presentation.emit)
   if (next.playerSpecial?.type === 'burst' && next.playerSpecial.instanceId === next.activeInstanceId) endBurstIfNeeded(game, next, log)
   next.turn += 1
   next.log = [...next.log.slice(-4), ...log].slice(-8)
@@ -772,13 +829,18 @@ export function useMove(game, battle, moveId, { today = null } = {}) {
     next.rewardResolutionId ||= `${next.battleId || next.stageId}:reward`
     const rewards = awardWin(game, next)
     next.log.push(`かち！ XP +${rewards.xp} / マナ +${rewards.mana}`)
+    presentation.emit('system', 'defeat', { target: 'enemy', hpBefore: 0, hpAfter: 0, terminalStatus: 'won' })
+    presentation.emit('system', 'reward-marker', { target: 'player', terminalStatus: 'won' })
     const synced = syncActiveBattle(rewards.game, next)
-    return { ok: true, game: synced, battle: next, rewards }
+    return { ok: true, game: synced, battle: next, rewards, presentationEvents: presentation.events }
   }
 
   resolvePlayerFaint(game, next)
+  if (['needs_switch', 'lost'].includes(next.status) && currentPlayerHp(next) <= 0) {
+    presentation.emit('system', 'defeat', { target: 'player', hpBefore: 0, hpAfter: 0, terminalStatus: next.status })
+  }
   const resolved = refundLostBattleIfNeeded(game, next, today)
-  return { ok: true, game: syncActiveBattle(resolved.game, resolved.battle), battle: resolved.battle }
+  return { ok: true, game: syncActiveBattle(resolved.game, resolved.battle), battle: resolved.battle, presentationEvents: presentation.events }
 }
 
 export function canUseProtect(battle) {
@@ -791,17 +853,22 @@ export function useProtect(game, battle, { today = null } = {}) {
   if (!canUseProtect(battle)) return { ok: false, game, battle, reason: battle.lastPlayerAction === 'protect' ? 'PROTECT_CONSECUTIVE' : 'PROTECT_COOLDOWN' }
   const next = structuredClone(battle)
   const log = ['🛡️ まもる！']
+  const presentation = createBattlePresentationEmitter(next)
   const plannedEnemyMove = planEnemyMove(game, next)
   next.lastPlayerAction = 'protect'
   next.protectCooldownUntilTurn = next.turn + 1
-  enemyAttackOnce(game, next, log, { blocked: true, plannedMove: plannedEnemyMove })
-  applyEndTurnStatuses(game, next, log)
+  presentation.emit('player', 'protect', { target: 'player' })
+  enemyAttackOnce(game, next, log, { blocked: true, plannedMove: plannedEnemyMove, emitPresentation: presentation.emit })
+  applyEndTurnStatuses(game, next, log, presentation.emit)
   if (next.playerSpecial?.type === 'burst' && next.playerSpecial.instanceId === next.activeInstanceId) endBurstIfNeeded(game, next, log)
   next.turn += 1
   next.log = [...next.log.slice(-4), ...log].slice(-8)
   resolvePlayerFaint(game, next)
+  if (['needs_switch', 'lost'].includes(next.status) && currentPlayerHp(next) <= 0) {
+    presentation.emit('system', 'defeat', { target: 'player', hpBefore: 0, hpAfter: 0, terminalStatus: next.status })
+  }
   const resolved = refundLostBattleIfNeeded(game, next, today)
-  return { ok: true, game: syncActiveBattle(resolved.game, resolved.battle), battle: resolved.battle }
+  return { ok: true, game: syncActiveBattle(resolved.game, resolved.battle), battle: resolved.battle, presentationEvents: presentation.events }
 }
 
 function activateSpecial(game, battle, type) {
