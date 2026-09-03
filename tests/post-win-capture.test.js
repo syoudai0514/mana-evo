@@ -2,7 +2,9 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 
-import { captureEligibility } from '../src/game/captureDomain.js'
+import {
+  postWinCaptureEligibility
+} from '../src/game/postWinCapture.js'
 import {
   attemptCapture,
   canAttemptCapture,
@@ -60,19 +62,22 @@ function victorySnapshot(game, battle, day) {
   }
 }
 
-test('won + HP0 remains capture-eligible while remaining throws exist', () => {
+test('won + HP0 remains capture-eligible through the dedicated post-win domain while remaining throws exist', () => {
   const day = 3300
   const won = withCaptureAttempts(winWithDefeatedEnemy(day, { star: 2 }), 2)
 
-  assert.deepEqual(captureEligibility(won.game, won.battle, 'star'), { eligible: true, reason: null })
+  assert.deepEqual(postWinCaptureEligibility(won.game, won.battle, 'star'), { eligible: true, reason: null })
   assert.equal(canAttemptCapture(won.game, won.battle, 'star'), true)
 
   const exhausted = structuredClone(won.battle)
   exhausted.captureAttempts = 3
-  assert.deepEqual(captureEligibility(won.game, exhausted, 'star'), { eligible: false, reason: 'CAPTURE_LIMIT' })
+  const exhaustedGame = structuredClone(won.game)
+  exhaustedGame.activeBattle = structuredClone(exhausted)
+  assert.deepEqual(postWinCaptureEligibility(exhaustedGame, exhausted, 'star'), { eligible: false, reason: 'CAPTURE_LIMIT' })
+  assert.equal(canAttemptCapture(exhaustedGame, exhausted, 'star'), false)
 })
 
-test('failed post-win capture consumes only one ring/attempt and never retaliates or replays victory rewards', () => {
+test('failed post-win capture consumes only one ring/attempt, never retaliates or replays victory rewards, and rejects the stale pre-throw snapshot', () => {
   const day = 3400
   const won = withCaptureAttempts(winWithDefeatedEnemy(day, { star: 2 }), 1)
   const before = victorySnapshot(won.game, won.battle, day)
@@ -90,6 +95,16 @@ test('failed post-win capture consumes only one ring/attempt and never retaliate
   assert.equal(failed.game.monstersCaught, caughtBefore)
   assert.deepEqual(victorySnapshot(failed.game, failed.battle, day), before)
   assert.equal(canAttemptCapture(failed.game, failed.battle, 'star'), true)
+
+  const staleRingCount = failed.game.captureItems.star
+  const staleCaughtCount = failed.game.monstersCaught
+  const stale = attemptCapture(failed.game, won.battle, 0, 'star')
+  assert.equal(stale.ok, false)
+  assert.equal(stale.reason, 'STALE_BATTLE')
+  assert.equal(stale.battle.captureAttempts, 2)
+  assert.equal(stale.game.captureItems.star, staleRingCount)
+  assert.equal(stale.game.monstersCaught, staleCaughtCount)
+  assert.deepEqual(victorySnapshot(stale.game, stale.battle, day), before)
 })
 
 test('post-win success after reload settles capture only and stale replay cannot spend or reward twice', () => {
