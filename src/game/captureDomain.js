@@ -72,13 +72,17 @@ function ownsSpecies(game, speciesId) {
 export function captureEligibility(game, battle, itemType = 'star', { captureDisabled = false } = {}) {
   if (!ringKnown(itemType)) return { eligible: false, reason: 'UNKNOWN_RING' }
   if (captureDisabled) return { eligible: false, reason: 'CAPTURE_DISABLED' }
-  if (battle?.status !== 'fighting') return { eligible: false, reason: 'BATTLE_NOT_FIGHTING' }
 
   const hp = Number(battle?.enemy?.hp)
   const maxHp = Number(battle?.enemy?.maxHp)
-  if (!Number.isFinite(hp) || !Number.isFinite(maxHp) || maxHp <= 0 || hp <= 0) {
+  if (!Number.isFinite(hp) || !Number.isFinite(maxHp) || maxHp <= 0 || hp < 0) {
     return { eligible: false, reason: 'ENEMY_NOT_CAPTURABLE' }
   }
+
+  const inBattle = battle?.status === 'fighting'
+  const postWin = battle?.status === 'won' && hp === 0
+  if (!inBattle && !postWin) return { eligible: false, reason: 'BATTLE_NOT_FIGHTING' }
+  if (inBattle && hp <= 0) return { eligible: false, reason: 'ENEMY_NOT_CAPTURABLE' }
   if (hp / maxHp > CAPTURE_BOUNDARIES.eligibilityHpRatio) {
     return { eligible: false, reason: 'HP_TOO_HIGH' }
   }
