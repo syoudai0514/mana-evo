@@ -2,6 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 
 import { speciesOf } from '../src/game/content.js'
+import { useMove as useMoveDomain } from '../src/game/engineCore.js'
 import { addTickets, createGameState } from '../src/game/progression.js'
 import { startBattle, useMove } from '../src/game/engine.js'
 
@@ -27,6 +28,25 @@ function syncBattle(started, mutate) {
   game.activeBattle = structuredClone(battle)
   return { game, battle }
 }
+
+test('D-030 semantic engine emits the presentation trace without a presentation-side rerun', () => {
+  const started = startedBattle()
+  const { game, battle } = syncBattle(started, (next) => {
+    next.enemy.hp = 1
+    next.enemy.statMultipliers = { hp: 1, attack: 1, defense: 1, speed: 0.05 }
+  })
+  const moveId = firstDamageMove(game, battle)
+  const result = useMoveDomain(game, battle, moveId, { today: DAY })
+  assert.equal(result.ok, true)
+  assert.equal(result.battle.status, 'won')
+  assert.ok(Array.isArray(result.presentationEvents))
+  assert.deepEqual(result.presentationEvents.filter((event) => event.kind === 'move').map((event) => event.actor), ['player'])
+  const damage = result.presentationEvents.find((event) => event.actor === 'player' && event.kind === 'damage')
+  assert.equal(damage.hpBefore, 1)
+  assert.equal(damage.hpAfter, 0)
+  assert.ok(result.presentationEvents.some((event) => event.kind === 'defeat' && event.target === 'enemy'))
+  assert.ok(result.presentationEvents.some((event) => event.kind === 'reward-marker'))
+})
 
 test('D-030 presentation events use stable increasing ordinals and deterministic ids', () => {
   const started = startedBattle()
