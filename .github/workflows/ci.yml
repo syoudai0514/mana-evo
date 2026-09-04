@@ -11,13 +11,37 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
       - uses: actions/setup-node@v4
         with:
           node-version: 24
       - name: Install dependencies
         run: npm ci
       - name: Audit dependencies
-        run: npm audit --audit-level=high
+        shell: bash
+        run: |
+          set -uo pipefail
+          audit_output="$(mktemp)"
+
+          set +e
+          npm audit --audit-level=high 2>&1 | tee "$audit_output"
+          audit_status=${PIPESTATUS[0]}
+          set -e
+
+          if [ "$audit_status" -eq 0 ]; then
+            exit 0
+          fi
+
+          if grep -Eq '503 Service Unavailable|network timeout|audit endpoint returned an error|ECONNRESET|ETIMEDOUT' "$audit_output"; then
+            if git rev-parse HEAD^ >/dev/null 2>&1 && git diff --quiet HEAD^ -- package.json package-lock.json npm-shrinkwrap.json; then
+              echo "::warning::npm audit service unavailable; dependency manifests are unchanged, so this non-dependency change may proceed on the existing locked dependency graph."
+              exit 0
+            fi
+            echo "::error::npm audit service unavailable and dependency manifests changed or could not be compared; failing closed."
+          fi
+
+          exit "$audit_status"
       - name: Unit and integration tests
         run: npm test
       - name: Build
