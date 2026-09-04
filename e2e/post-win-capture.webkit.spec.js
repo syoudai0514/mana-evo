@@ -54,11 +54,15 @@ function postWinGame() {
 async function installSave(page, game) {
   const learning = learningSave()
   await page.addInitScript(({ learning, game }) => {
-    localStorage.setItem('mana-evo:kids-quest-learning:v2', JSON.stringify(learning))
-    localStorage.setItem('mana-evo-save-v2', JSON.stringify({
-      formatVersion: 2,
-      gameByProfile: { 'child-1': game }
-    }))
+    if (!localStorage.getItem('mana-evo:kids-quest-learning:v2')) {
+      localStorage.setItem('mana-evo:kids-quest-learning:v2', JSON.stringify(learning))
+    }
+    if (!localStorage.getItem('mana-evo-save-v2')) {
+      localStorage.setItem('mana-evo-save-v2', JSON.stringify({
+        formatVersion: 2,
+        gameByProfile: { 'child-1': game }
+      }))
+    }
   }, { learning, game })
 }
 
