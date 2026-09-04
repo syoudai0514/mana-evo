@@ -1,0 +1,141 @@
+/* Bundle B / D-029 + D-030 presentation layer.
+   Semantic state lives in the game domains; these classes are visual-only. */
+
+.capture-throw-cta.ready:not(:disabled){
+  background:linear-gradient(135deg,#ff9d22,#ffbf48);
+  color:#fff;
+  border-color:#e28718;
+  box-shadow:0 5px 0 #c9710d,0 9px 18px rgba(128,72,10,.18);
+}
+.capture-throw-cta.ready:not(:disabled):active{transform:translateY(2px);box-shadow:0 3px 0 #c9710d}
+
+.battle-arena-v2{position:relative}
+.battle-entry-cue,.battle-presentation-cue{
+  position:absolute;
+  z-index:8;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  max-width:88%;
+  padding:9px 15px;
+  border-radius:999px;
+  background:rgba(18,39,78,.88);
+  color:#fff;
+  font-weight:950;
+  font-size:clamp(.86rem,3.6vw,1.08rem);
+  line-height:1.25;
+  text-align:center;
+  box-shadow:0 8px 24px rgba(12,31,66,.24);
+  pointer-events:none;
+}
+.battle-entry-cue{animation:battle-cue-in .72s ease both}
+.battle-presentation-cue{animation:battle-cue-pop .36s ease both}
+.battle-presentation-cue.cue-damage{background:rgba(111,42,35,.9)}
+.battle-presentation-cue.cue-heal{background:rgba(30,110,73,.9)}
+.battle-presentation-cue.cue-protect,.battle-presentation-cue.cue-protect-impact{background:rgba(35,82,139,.92)}
+
+.battle-entry-active .enemy-fighter .fighter-art{animation:battle-enemy-entry .72s cubic-bezier(.2,.9,.2,1) both}
+.battle-entry-active::after{
+  content:'';
+  position:absolute;
+  right:9%;
+  top:24%;
+  width:34%;
+  height:12%;
+  border-radius:50%;
+  border:3px solid rgba(255,255,255,.72);
+  opacity:0;
+  animation:battle-ground-pulse .72s ease-out both;
+  pointer-events:none;
+}
+
+.presentation-actor-player.presentation-kind-move .player-fighter .fighter-art{animation:battle-player-lunge .3s ease both}
+.presentation-actor-enemy.presentation-kind-move .enemy-fighter .fighter-art{animation:battle-enemy-lunge .3s ease both}
+.fighter.is-hit .fighter-art{animation:battle-hit-shake .38s ease both}
+.fighter.is-hit .fighter-art::after{
+  content:'';
+  position:absolute;
+  inset:12%;
+  border-radius:50%;
+  border:4px solid rgba(255,238,150,.84);
+  box-shadow:0 0 0 10px rgba(255,194,76,.18);
+  animation:battle-hit-ring .4s ease-out both;
+  pointer-events:none;
+}
+.fighter-art{position:relative}
+.fighter.is-healing .fighter-art{filter:drop-shadow(0 0 12px rgba(100,255,177,.8));animation:battle-heal-rise .42s ease both}
+.fighter.is-protecting .fighter-art::before{
+  content:'';
+  position:absolute;
+  inset:-5%;
+  border:4px solid rgba(151,214,255,.88);
+  border-radius:50%;
+  box-shadow:0 0 20px rgba(109,196,255,.55),inset 0 0 16px rgba(255,255,255,.55);
+  animation:battle-shield .42s ease both;
+  pointer-events:none;
+  z-index:3;
+}
+.presentation-kind-defeat.presentation-target-enemy .enemy-fighter{animation:battle-defeat .68s ease both}
+.presentation-kind-defeat.presentation-target-player .player-fighter{animation:battle-defeat .68s ease both}
+
+@keyframes battle-enemy-entry{0%{opacity:0;transform:translateX(28px) scale(.75)}70%{opacity:1;transform:translateX(-4px) scale(1.05)}100%{transform:none}}
+@keyframes battle-ground-pulse{0%{opacity:.8;transform:scale(.4)}100%{opacity:0;transform:scale(1.35)}}
+@keyframes battle-player-lunge{50%{transform:translate(18px,-5px) scale(1.04)}100%{transform:none}}
+@keyframes battle-enemy-lunge{50%{transform:translate(-18px,5px) scale(1.04)}100%{transform:none}}
+@keyframes battle-hit-shake{0%,100%{transform:none}25%{transform:translateX(-7px)}50%{transform:translateX(7px)}75%{transform:translateX(-4px)}}
+@keyframes battle-hit-ring{0%{opacity:.95;transform:scale(.35)}100%{opacity:0;transform:scale(1.25)}}
+@keyframes battle-heal-rise{50%{transform:translateY(-8px) scale(1.03)}100%{transform:none}}
+@keyframes battle-shield{0%{opacity:0;transform:scale(.7)}45%{opacity:1;transform:scale(1.06)}100%{opacity:.1;transform:scale(1)}}
+@keyframes battle-defeat{0%{opacity:1;transform:none}70%{opacity:.35;transform:translateY(8px) scale(.93)}100%{opacity:.18;transform:translateY(12px) scale(.9)}}
+@keyframes battle-cue-in{0%{opacity:0;transform:translate(-50%,-42%) scale(.82)}45%{opacity:1;transform:translate(-50%,-50%) scale(1.04)}100%{opacity:1;transform:translate(-50%,-50%)}}
+@keyframes battle-cue-pop{0%{opacity:0;transform:translate(-50%,-50%) scale(.72)}55%{opacity:1;transform:translate(-50%,-50%) scale(1.08)}100%{opacity:1;transform:translate(-50%,-50%)}}
+
+.evolution-prompt-card{display:flex;flex-direction:column;gap:9px;align-items:stretch}
+.evolution-prompt-card h2{margin:0}
+.evolution-prompt-pair{margin:2px auto}
+.evolution-prompt-actions{display:grid;gap:8px;margin-top:4px}
+.evolution-prompt-actions .secondary{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.32)}
+.evolution-prompt-note{display:block;line-height:1.55;opacity:.78}
+.evolution-confirm-cta{font-size:1.05rem;box-shadow:0 5px 0 rgba(113,75,0,.22)}
+.evo-progress.ready{border-color:#efbd41;background:linear-gradient(135deg,#fff5cb,#fffdf2);box-shadow:0 7px 18px rgba(173,119,12,.12)}
+
+.box-toolbar{display:grid;gap:9px;margin:12px 0;padding:11px;border-radius:18px;background:#f4f8fc;border:1px solid #dce8f3}
+.box-sort-controls{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.box-sort-controls button,.box-evolvable-filter{min-height:44px;border-radius:13px;border:1px solid #cfdeec;background:#fff;color:#355572;font-weight:900;padding:9px 11px}
+.box-sort-controls button.active,.box-evolvable-filter.active{background:#183d70;color:#fff;border-color:#183d70;box-shadow:0 5px 12px rgba(24,61,112,.18)}
+.box-evolvable-filter{display:flex;justify-content:center;align-items:center;gap:7px;width:100%}
+.box-evolvable-filter b{display:grid;place-items:center;min-width:24px;height:24px;padding:0 6px;border-radius:999px;background:rgba(24,61,112,.1)}
+.box-evolvable-filter.active b{background:rgba(255,255,255,.2)}
+.box-list-area{display:grid;gap:13px;margin-top:12px}
+.box-family-group{display:grid;gap:7px;padding:9px;border-radius:19px;background:#f7fafc;border:1px solid #dde8f2}
+.box-family-group.has-evolution-ready{border-color:#edc653;background:linear-gradient(135deg,#fffdf1,#f8fbff)}
+.box-family-header{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;padding:3px 5px 5px}
+.box-family-header div{display:flex;flex-direction:column;gap:1px;min-width:0}
+.box-family-header small{font-size:.62rem;letter-spacing:.08em;color:#7590aa;font-weight:900}
+.box-family-header strong{font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#24415f}
+.box-family-header>span{font-size:.7rem;font-weight:900;color:#657e97;text-align:right}
+.monster-row.evolution-ready{border-color:#edc653;background:linear-gradient(100deg,#fff9dc,#fff)}
+.monster-row-name{display:flex;align-items:center;gap:6px;min-width:0}
+.monster-row-name>strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.team-compact-badge{flex:0 0 auto;padding:2px 6px;border-radius:999px;background:#e5f2ff;color:#276799;font-size:.62rem}
+.box-empty-state{text-align:center;padding:24px 15px;margin-top:12px;border-radius:20px;background:#f7fafc;border:1px dashed #cbdce9}
+.box-empty-state>span{font-size:2rem}.box-empty-state h2{font-size:1.05rem;margin:7px 0}.box-empty-state p{font-size:.82rem;line-height:1.6;color:#657e97}
+
+@media(max-width:380px){
+  .box-family-header{align-items:flex-start;flex-direction:column;gap:3px}
+  .box-family-header>span{text-align:left}
+  .battle-entry-cue,.battle-presentation-cue{top:48%}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .battle-entry-active .enemy-fighter .fighter-art,
+  .presentation-actor-player.presentation-kind-move .player-fighter .fighter-art,
+  .presentation-actor-enemy.presentation-kind-move .enemy-fighter .fighter-art,
+  .fighter.is-hit .fighter-art,
+  .fighter.is-healing .fighter-art,
+  .presentation-kind-defeat.presentation-target-enemy .enemy-fighter,
+  .presentation-kind-defeat.presentation-target-player .player-fighter,
+  .battle-entry-cue,.battle-presentation-cue{animation:none!important;transform:none}
+  .battle-entry-cue,.battle-presentation-cue{transform:translate(-50%,-50%)}
+  .battle-entry-active::after,.fighter.is-hit .fighter-art::after,.fighter.is-protecting .fighter-art::before{display:none}
+}

@@ -19,10 +19,12 @@ import {
   settleCaptureSuccess
 } from './captureDomain.js'
 import {
+  confirmEvolution as confirmEvolutionDomain,
   evolveAfterLevelUp,
   evolveWithStone,
   evolutionTriggerStatus,
-  getEvolutionTransition
+  getEvolutionTransition,
+  normalizePendingEvolution
 } from './evolutionDomain.js'
 import {
   SPECIAL_FORM_EFFECTS,
@@ -117,6 +119,7 @@ export function levelsUntilEvolution(monster) {
 export function describeEvolutionCondition(monster) {
   const transition = getEvolutionTransition(monster?.speciesId)
   if (!transition) return '通常進化：最終形'
+  if (normalizePendingEvolution(monster)) return '✨ シンカできる！'
   if (transition.method === 'level') return `Lv.${transition.level}で進化`
   if (transition.method === 'stone') return `${EVOLUTION_ITEMS.stones[transition.itemId]?.name || transition.itemId || '進化アイテム'}で進化`
   if (transition.method === 'held_item_levelup') return `${EVOLUTION_ITEMS.heldItems[transition.itemId]?.name || transition.itemId || '特定アイテム'}をもって レベルアップすると進化`
@@ -126,8 +129,8 @@ export function describeEvolutionCondition(monster) {
 export function evolutionConditionMet(monster, _species = null, game = null) {
   const transition = getEvolutionTransition(monster?.speciesId)
   if (!transition) return false
-  if (transition.method !== 'stone') return false
-  return evolutionTriggerStatus(monster, game, { trigger: 'stone', itemId: transition.itemId }).ready
+  if (transition.method === 'stone') return evolutionTriggerStatus(monster, game, { trigger: 'stone', itemId: transition.itemId }).ready
+  return !!normalizePendingEvolution(monster)
 }
 
 export function canNormalEvolve(monster, game = null) {
@@ -143,11 +146,18 @@ export function evolveInstance(game, instanceId) {
   if (!monster) return { ok: false, game, reason: 'UNKNOWN_MONSTER' }
   const transition = getEvolutionTransition(monster.speciesId)
   if (!transition) return { ok: false, game, reason: 'NO_EVOLUTION' }
-  if (transition.method !== 'stone') return { ok: false, game, reason: 'LEVEL_UP_REQUIRED', transition }
-  return mapEvolutionResult(evolveWithStone(game, {
+  if (transition.method === 'stone') {
+    return mapEvolutionResult(evolveWithStone(game, {
+      instanceId,
+      itemId: transition.itemId,
+      operationId: `stone:${instanceId}:${transition.fromSpeciesId}->${transition.toSpeciesId}`
+    }))
+  }
+  const pending = normalizePendingEvolution(monster)
+  if (!pending) return { ok: false, game, reason: 'PENDING_EVOLUTION_REQUIRED', transition }
+  return mapEvolutionResult(confirmEvolutionDomain(game, {
     instanceId,
-    itemId: transition.itemId,
-    operationId: `stone:${instanceId}:${transition.fromSpeciesId}->${transition.toSpeciesId}`
+    qualificationId: pending.qualificationId
   }))
 }
 
@@ -161,26 +171,20 @@ export function applyXpToInstance(game, {
   const gained = core.gainXp(current, amount)
   let next = structuredClone(game)
   next.box[instanceId] = gained.monster
-  let evolution = null
+  let pendingEvolution = null
   if (gained.levels.length > 0) {
-    const evolved = evolveAfterLevelUp(next, {
+    const qualified = evolveAfterLevelUp(next, {
       instanceId,
       previousLevel: current.level,
       newLevel: gained.monster.level,
       operationId: operationId || `xp:${instanceId}:${current.speciesId}:${current.level}:${current.xp || 0}:${Math.max(0, Number(amount) || 0)}`
     })
-    if (evolved.ok && !evolved.alreadyApplied && evolved.toSpeciesId) {
-      next = evolved.game
-      evolution = {
-        from: evolved.fromSpeciesId,
-        to: evolved.toSpeciesId,
-        firstEvolutionDiscovery: evolved.firstEvolutionDiscovery
-      }
-    } else if (evolved.ok && evolved.alreadyApplied) {
-      next = evolved.game
+    if (qualified.ok) {
+      next = qualified.game
+      pendingEvolution = qualified.pendingEvolution || next.box?.[instanceId]?.pendingEvolution || null
     }
   }
-  return { ok: true, game: next, levels: gained.levels, evolution }
+  return { ok: true, game: next, levels: gained.levels, evolution: null, pendingEvolution }
 }
 
 function battleXpForRecipient(baseXp, battle, instanceId) {
@@ -226,33 +230,32 @@ function applyBattleXpPacing(originalGame, result) {
   }
 }
 
-function integrateBattleXpEvolutions(originalGame, result) {
+function integrateBattleXpEvolutionReadiness(originalGame, result) {
   if (!result?.ok || !result?.game || !result?.rewards?.levelsByInstance) return result
   let next = result.game
-  const evolutionsByInstance = {}
+  const pendingEvolutionsByInstance = {}
   const prefix = result.battle?.rewardResolutionId || `${result.battle?.battleId || result.battle?.stageId || 'battle'}:reward`
   for (const [instanceId, levels] of Object.entries(result.rewards.levelsByInstance)) {
     if (!Array.isArray(levels) || !levels.length) continue
     const before = originalGame?.box?.[instanceId]
     const after = next?.box?.[instanceId]
     if (!before || !after) continue
-    const evolved = evolveAfterLevelUp(next, {
+    const qualified = evolveAfterLevelUp(next, {
       instanceId,
       previousLevel: before.level,
       newLevel: after.level,
       operationId: `${prefix}:evolution:${instanceId}`
     })
-    if (evolved.ok) {
-      next = evolved.game
-      if (!evolved.alreadyApplied && evolved.toSpeciesId) {
-        evolutionsByInstance[instanceId] = { from: evolved.fromSpeciesId, to: evolved.toSpeciesId }
-      }
+    if (qualified.ok) {
+      next = qualified.game
+      const pending = qualified.pendingEvolution || next.box?.[instanceId]?.pendingEvolution
+      if (pending) pendingEvolutionsByInstance[instanceId] = pending
     }
   }
   return {
     ...result,
     game: next,
-    rewards: { ...result.rewards, evolutionsByInstance }
+    rewards: { ...result.rewards, evolutionsByInstance: {}, pendingEvolutionsByInstance }
   }
 }
 
@@ -274,7 +277,7 @@ function integrateBossFirstClear(originalGame, result) {
 
 export function useMove(game, battle, moveId, options = {}) {
   const result = applyBattleXpPacing(game, core.useMove(game, battle, moveId, options))
-  return integrateBossFirstClear(game, integrateBattleXpEvolutions(game, result))
+  return integrateBossFirstClear(game, integrateBattleXpEvolutionReadiness(game, result))
 }
 
 function activeMonster(game, battle) {
@@ -372,7 +375,7 @@ function commitCaptureBattle(battle) {
 function captureTeamXp(game, battle, capturedInstanceId, xp) {
   let next = game
   const levelsByInstance = {}
-  const evolutionsByInstance = {}
+  const pendingEvolutionsByInstance = {}
   const xpByInstance = {}
   const prefix = `${battle?.battleId || battle?.stageId || 'capture'}:capture-xp`
   for (const instanceId of captureBattleXpRecipients(battle?.teamAtStart || [], capturedInstanceId)) {
@@ -382,9 +385,9 @@ function captureTeamXp(game, battle, capturedInstanceId, xp) {
     next = applied.game
     levelsByInstance[instanceId] = applied.levels
     xpByInstance[instanceId] = amount
-    if (applied.evolution) evolutionsByInstance[instanceId] = applied.evolution
+    if (applied.pendingEvolution) pendingEvolutionsByInstance[instanceId] = applied.pendingEvolution
   }
-  return { game: next, levelsByInstance, evolutionsByInstance, xpByInstance }
+  return { game: next, levelsByInstance, pendingEvolutionsByInstance, evolutionsByInstance: {}, xpByInstance }
 }
 
 export function attemptCapture(game, battle, rolls = null, itemType = 'star', { today = null } = {}) {
@@ -464,7 +467,7 @@ export function attemptCapture(game, battle, rolls = null, itemType = 'star', { 
   nextGame = recordNormalFirstClearSnapshot(nextGame, stage, battle)
   if (firstClear) nextGame.stagesCleared = [...new Set([...(nextGame.stagesCleared || []), stage.id])]
   const activeXp = gained.xpByInstance?.[battle.activeInstanceId] || 0
-  nextBattle.log = [...(nextBattle.log || []).slice(-4), `★★★★ 「わ」を なげた！ 4つ ひかって ゲット！ XP +${activeXp}`]
+  nextBattle.log = [...(nextBattle.log || []).slice(-4), `★★★★ ボールを なげた！ 4つ ひかって ゲット！ XP +${activeXp}`]
   nextGame.activeBattle = structuredClone(nextBattle)
 
   return {
@@ -477,7 +480,8 @@ export function attemptCapture(game, battle, rolls = null, itemType = 'star', { 
     xp,
     xpByInstance: gained.xpByInstance,
     levelsByInstance: gained.levelsByInstance,
-    evolutionsByInstance: gained.evolutionsByInstance,
+    evolutionsByInstance: {},
+    pendingEvolutionsByInstance: gained.pendingEvolutionsByInstance,
     captureSettlement: settlementResult.settlement,
     duplicateChoiceRequired: settlementResult.settlement.status === 'pending_duplicate_choice',
     evolutionReward: null,
@@ -504,16 +508,17 @@ export function redeemGrowthShardXp(game, {
   if (!redeemed.ok || redeemed.idempotent || !before || !redeemed.redemption?.levels?.length) return redeemed
   const after = redeemed.game?.box?.[instanceId]
   if (!after) return redeemed
-  const evolved = evolveAfterLevelUp(redeemed.game, {
+  const qualified = evolveAfterLevelUp(redeemed.game, {
     instanceId,
     previousLevel: before.level,
     newLevel: after.level,
     operationId: `${redemptionId}:evolution`
   })
-  if (!evolved.ok) return redeemed
+  if (!qualified.ok) return redeemed
   return {
     ...redeemed,
-    game: evolved.game,
-    evolution: evolved.toSpeciesId ? { from: evolved.fromSpeciesId, to: evolved.toSpeciesId } : null
+    game: qualified.game,
+    evolution: null,
+    pendingEvolution: qualified.pendingEvolution || qualified.game.box?.[instanceId]?.pendingEvolution || null
   }
 }

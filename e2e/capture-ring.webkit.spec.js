@@ -208,10 +208,14 @@ test('iPhone WebKit restores duplicate choice after reload and redeems three sha
   await expect(page.getByText(/そだちのかけら 0こ/).first()).toBeVisible()
 })
 
-test('iPhone WebKit celebrates automatic battle-earned evolution exactly once', async ({ page }) => {
+test('iPhone WebKit confirms battle-earned evolution before celebrating exactly once', async ({ page }) => {
   await installSave(page, battleGameAtHalfHp({ rainbow: true, nearEvolution: true }))
   await page.goto('/')
   await throwRainbow(page)
+
+  const prompt = page.getByRole('dialog', { name: 'シンカできる！' })
+  await expect(prompt).toBeVisible({ timeout: 9000 })
+  await prompt.getByRole('button', { name: /シンカする/ }).click()
 
   const evolution = page.getByRole('dialog', { name: 'シンカ！' })
   await expect(evolution).toBeVisible()

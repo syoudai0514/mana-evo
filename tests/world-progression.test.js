@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { AREA_META, SPECIES, STAGES, speciesOf } from '../src/game/content.js'
 import { buildEnemyPlan } from '../src/game/balance.js'
-import { applyXpToInstance, isStageUnlocked, xpToNext } from '../src/game/engine.js'
+import { applyXpToInstance, evolveInstance, isStageUnlocked, xpToNext } from '../src/game/engine.js'
 import { getEvolutionTransition } from '../src/game/evolutionDomain.js'
 import { createGameState } from '../src/game/progression.js'
 
@@ -13,7 +13,7 @@ test('world areas expose explicit progression bands and zones', () => {
   assert.ok(AREA_META.every((a) => a.zones.length === 3))
 })
 
-test('second-form wild encounter is locked until that form has been obtained by own evolution', () => {
+test('second-form wild encounter is locked until that form has been obtained by own confirmed evolution', () => {
   const stage = STAGES.find((s) => s.kind === 'wild' && s.area === 1 && speciesOf(s.enemySpeciesId)?.stage === 2 && speciesOf(s.enemySpeciesId)?.evolution)
   assert.ok(stage, 'area1 should contain a non-final second form')
   assert.equal(stage.firstAcquireByEvolution, true)
@@ -39,11 +39,18 @@ test('second-form wild encounter is locked until that form has been obtained by 
   }
   assert.equal(isStageUnlocked(game, stage), false)
 
-  const evolved = applyXpToInstance(game, {
+  const qualified = applyXpToInstance(game, {
     instanceId: 'evo',
     amount: xpToNext(game.box.evo.level),
     operationId: 'world-progression:self-evolution'
   })
+  assert.equal(qualified.ok, true)
+  assert.equal(qualified.game.box.evo.speciesId, predecessor.id)
+  assert.equal(qualified.game.box.evo.evolutionReady, true)
+  assert.equal(qualified.game.evolutionDiscoveries[stage.enemySpeciesId], undefined)
+  assert.equal(isStageUnlocked(qualified.game, stage), false)
+
+  const evolved = evolveInstance(qualified.game, 'evo')
   assert.equal(evolved.ok, true)
   assert.equal(evolved.game.box.evo.speciesId, stage.enemySpeciesId)
   assert.equal(evolved.game.dex.caught[stage.enemySpeciesId], true)

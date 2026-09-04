@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { MonsterArt } from '../PlaceholderMonster.jsx'
+import { groupBoxByFamily, projectBoxMonsters } from '../boxProjection.js'
 import { EVOLUTION_ITEMS, speciesOf } from '../content.js'
 import {
   canNormalEvolve,
@@ -39,11 +40,11 @@ function MonsterRow({ monster, game, setGame, selected, setSelected, showcase = 
         ? describeEvolutionCondition(monster)
         : `シンカまで あと ${evoLeft} レベル`
 
-  return <article className={`monster-row ${showcase ? 'showcase' : ''} ${selected ? 'selected' : ''}`} onClick={() => setSelected(monster.instanceId)} aria-current={selected ? 'true' : undefined}>
+  return <article className={`monster-row ${showcase ? 'showcase' : ''} ${selected ? 'selected' : ''} ${canNormalEvolve(monster, game) ? 'evolution-ready' : ''}`} onClick={() => setSelected(monster.instanceId)} aria-current={selected ? 'true' : undefined}>
     {slotIndex != null && <span className="team-slot-badge">{slotIndex + 1}ばん{slotIndex === 0 ? '・さいしょ' : ''}</span>}
     <MonsterArt speciesId={monster.speciesId} size={showcase ? 92 : 56} compact={!showcase} />
     <div className="monster-row-main">
-      <strong>No.{species.no} {species.name}</strong>
+      <div className="monster-row-name"><strong>No.{species.no} {species.name}</strong>{inTeam && <b className="team-compact-badge">チーム</b>}</div>
       <span>Lv.{monster.level}　XP {monster.xp}/{xpToNext(monster.level)}</span>
       <TypePills types={species.types} />
       <small>{evolutionHint}</small>
@@ -80,7 +81,7 @@ function DetailPanel({ game, setGame, instanceId, onEvolution }) {
     const fromId = monster.speciesId
     const level = monster.level
     const result = evolveInstance(game, instanceId)
-    if (result.ok) {
+    if (result.ok && !result.alreadyApplied && result.to) {
       setGame(result.game)
       onEvolution?.({
         fromId,
@@ -88,6 +89,8 @@ function DetailPanel({ game, setGame, instanceId, onEvolution }) {
         level,
         firstEvolutionDiscovery: result.firstEvolutionDiscovery === true
       })
+    } else if (result.ok) {
+      setGame(result.game)
     }
   }
 
@@ -109,17 +112,18 @@ function DetailPanel({ game, setGame, instanceId, onEvolution }) {
       </div>
     </div>
 
-    <div className="evo-progress">
+    <div className={`evo-progress ${ready ? 'ready' : ''}`}>
       <strong>つぎの シンカ</strong>
       {species.evolution ? <>
         <p>→ No.{nextSpecies?.no} {nextSpecies?.name}</p>
-        <p>{ready ? '✨ じゅんび OK！' : describeEvolutionCondition(monster)}</p>
+        <p>{ready ? '✨ じゅんび OK！ じぶんで シンカさせよう！' : describeEvolutionCondition(monster)}</p>
+        {monster.pendingEvolution && <small>シンカの じゅんびは ほぞんされているよ。あとででも だいじょうぶ！</small>}
         {species.evolution.method === 'stone' && <small>もっている：{EVOLUTION_ITEMS.stones[species.evolution.itemId]?.name} ×{game.evolutionItems?.stones?.[species.evolution.itemId] || 0}</small>}
         {species.evolution.method === 'held_item_levelup' && <>
           <small>もっている：{EVOLUTION_ITEMS.heldItems[species.evolution.heldItemId]?.name} ×{game.evolutionItems?.heldItems?.[species.evolution.heldItemId] || 0} ／ もたせた：{monster.heldItemId === species.evolution.heldItemId ? 'OK' : 'まだ'}</small>
-          {monster.heldItemId !== species.evolution.heldItemId && (game.evolutionItems?.heldItems?.[species.evolution.heldItemId] || 0) > 0 && <button className="secondary" onClick={equipRequiredItem}>ひつような もちものを もたせる</button>}
+          {!monster.pendingEvolution && monster.heldItemId !== species.evolution.heldItemId && (game.evolutionItems?.heldItems?.[species.evolution.heldItemId] || 0) > 0 && <button className="secondary" onClick={equipRequiredItem}>ひつような もちものを もたせる</button>}
         </>}
-        {ready && <button className="primary" onClick={evolve}>✨ いま シンカする！</button>}
+        {ready && <button className="primary evolution-confirm-cta" onClick={evolve}>✨ シンカする！</button>}
       </> : <p>この すがたが さいしゅうけいたい！</p>}
     </div>
 
@@ -136,7 +140,7 @@ function DetailPanel({ game, setGame, instanceId, onEvolution }) {
     {showEvolutionHelp && <section className="evolution-explain-card">
       <h3>シンカの せつめい</h3>
       <p>{species.evolution ? `この子は「${describeEvolutionCondition(monster)}」だよ。` : 'この子は もう さいしゅうけいたいだよ。'}</p>
-      <p>じぶんで シンカすると、その すがたが ずかんに のこり、ぼうけんで であえる こうほになるよ。</p>
+      <p>じぶんで シンカすると、その すがたが ずかんに のこり、ぼうけんで であえる こうほに なったことが きろくされるよ。</p>
     </section>}
 
     {(special.giga.eligibleSpecies || special.burst.eligibleSpecies) && <section className="special-cards" aria-label="とくべつな すがた">
@@ -146,17 +150,47 @@ function DetailPanel({ game, setGame, instanceId, onEvolution }) {
   </section>
 }
 
+function FamilyGroup({ group, game, setGame, selected, setSelected }) {
+  const first = group.monsters[0]
+  const firstSpecies = speciesOf(first?.speciesId)
+  const readyCount = group.monsters.filter((monster) => canNormalEvolve(monster, game)).length
+  return <section className={`box-family-group ${readyCount ? 'has-evolution-ready' : ''}`}>
+    <header className="box-family-header">
+      <div><small>FAMILY</small><strong>{firstSpecies?.family || group.family}</strong></div>
+      <span>{group.monsters.length}たい{readyCount ? ` ・ ✨${readyCount}たい シンカOK` : ''}</span>
+    </header>
+    <div className="monster-list">
+      {group.monsters.map((monster) => <MonsterRow key={monster.instanceId} monster={monster} game={game} setGame={setGame} selected={selected === monster.instanceId} setSelected={setSelected} />)}
+    </div>
+  </section>
+}
+
 export function MonsterScreen({ game, setGame, onLayoutSurfaceChange }) {
   const [tab, setTab] = useState('team')
   const [selected, setSelected] = useState(game.activeMonsterId || game.team?.[0] || Object.keys(game.box || {})[0] || null)
   const [evolutionReveal, setEvolutionReveal] = useState(null)
-  const box = useMemo(() => Object.values(game.box || {}).sort((a, b) => b.level - a.level), [game.box])
+  const [boxSort, setBoxSort] = useState('evolution')
+  const [evolvableOnly, setEvolvableOnly] = useState(false)
+  const allBox = useMemo(() => Object.values(game.box || {}), [game.box])
+  const box = useMemo(() => projectBoxMonsters(game, {
+    sort: boxSort,
+    evolvableOnly,
+    canEvolve: canNormalEvolve
+  }), [game, boxSort, evolvableOnly])
+  const familyGroups = useMemo(() => boxSort === 'evolution' ? groupBoxByFamily(box) : [], [box, boxSort])
   const team = game.team.map((id) => game.box[id]).filter(Boolean)
+  const evolvableCount = useMemo(() => allBox.filter((monster) => canNormalEvolve(monster, game)).length, [allBox, game])
 
   useEffect(() => {
     onLayoutSurfaceChange?.(tab === 'dex' ? LAYOUT_SURFACES.WORKSPACE : LAYOUT_SURFACES.COMPACT)
     return () => onLayoutSurfaceChange?.(LAYOUT_SURFACES.COMPACT)
   }, [tab, onLayoutSurfaceChange])
+
+  useEffect(() => {
+    if (tab !== 'box' || !evolvableOnly) return
+    if (box.some((monster) => monster.instanceId === selected)) return
+    setSelected(box[0]?.instanceId || null)
+  }, [tab, evolvableOnly, box, selected])
 
   return <main className="screen monster-screen-v2">
     {evolutionReveal && <EvolutionCelebration reveal={evolutionReveal} onClose={() => setEvolutionReveal(null)} />}
@@ -172,7 +206,7 @@ export function MonsterScreen({ game, setGame, onLayoutSurfaceChange }) {
 
     <div className="monster-tabs" aria-label="モンスターの メニュー">
       <button className={tab === 'team' ? 'active' : ''} onClick={() => setTab('team')}>⚔️ チーム {team.length}/3</button>
-      <button className={tab === 'box' ? 'active' : ''} onClick={() => setTab('box')}>📦 ボックス {box.length}</button>
+      <button className={tab === 'box' ? 'active' : ''} onClick={() => setTab('box')}>📦 ボックス {allBox.length}</button>
       <button className={tab === 'dex' ? 'active' : ''} onClick={() => setTab('dex')}>📖 ずかん</button>
     </div>
 
@@ -185,11 +219,23 @@ export function MonsterScreen({ game, setGame, onLayoutSurfaceChange }) {
     </>}
 
     {tab === 'box' && <>
-      <p className="kid-note">ボックスは もっている モンスター。チームは そのなかから 3たいまで えらべるよ。</p>
-      <DetailPanel game={game} setGame={setGame} instanceId={selected} onEvolution={setEvolutionReveal} />
-      <div className="monster-list">
-        {box.map((monster) => <MonsterRow key={monster.instanceId} monster={monster} game={game} setGame={setGame} selected={selected === monster.instanceId} setSelected={setSelected} />)}
-      </div>
+      <p className="kid-note">おなじ シンカの なかまは となりに ならぶよ。✨が ついた子は いま シンカできるよ。</p>
+      <section className="box-toolbar" aria-label="ボックスの ならべかた">
+        <div className="box-sort-controls" role="group" aria-label="ならべかえ">
+          <button className={boxSort === 'evolution' ? 'active' : ''} aria-pressed={boxSort === 'evolution'} onClick={() => setBoxSort('evolution')}>シンカ順</button>
+          <button className={boxSort === 'level' ? 'active' : ''} aria-pressed={boxSort === 'level'} onClick={() => setBoxSort('level')}>レベル順</button>
+        </div>
+        <button className={`box-evolvable-filter ${evolvableOnly ? 'active' : ''}`} aria-pressed={evolvableOnly} onClick={() => setEvolvableOnly((value) => !value)}>✨ シンカできるだけ <b>{evolvableCount}</b></button>
+      </section>
+
+      {box.length > 0 ? <>
+        <DetailPanel game={game} setGame={setGame} instanceId={selected} onEvolution={setEvolutionReveal} />
+        <div className="box-list-area">
+          {boxSort === 'evolution'
+            ? familyGroups.map((group) => <FamilyGroup key={group.family} group={group} game={game} setGame={setGame} selected={selected} setSelected={setSelected} />)
+            : <div className="monster-list">{box.map((monster) => <MonsterRow key={monster.instanceId} monster={monster} game={game} setGame={setGame} selected={selected === monster.instanceId} setSelected={setSelected} />)}</div>}
+        </div>
+      </> : <section className="box-empty-state"><span>🌱</span><h2>いま シンカできる子は いないよ</h2><p>レベルを あげたり、シンカの どうぐを みつけると ここに でてくるよ。</p><button className="secondary" onClick={() => setEvolvableOnly(false)}>ぜんぶの モンスターを みる</button></section>}
     </>}
 
     {tab === 'dex' && <DexGrid game={game} />}

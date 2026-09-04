@@ -8,7 +8,7 @@ import {
   startBattle,
   useMove
 } from '../src/game/engine.js'
-import { evolveAfterLevelUp, evolveWithStone } from '../src/game/evolutionDomain.js'
+import { confirmEvolution, evolveAfterLevelUp, evolveWithStone } from '../src/game/evolutionDomain.js'
 import {
   addTickets,
   availableTicketCount,
@@ -197,7 +197,7 @@ test('one ticket reserves, survives reload semantics, refunds on abandon, and co
   assert.equal(availableTicketCount(won.game, DAY), 0)
 })
 
-test('manual stone evolution records discovery and own evolution gates later-world encounter behavior', () => {
+test('manual evolution records discovery and own evolution gates later-world encounter behavior', () => {
   const stoneGame = createGameState()
   const stoneInstanceId = stoneGame.activeMonsterId
   stoneGame.box[stoneInstanceId] = {
@@ -223,11 +223,19 @@ test('manual stone evolution records discovery and own evolution gates later-wor
   const levelInstanceId = levelGame.activeMonsterId
   levelGame.box[levelInstanceId].speciesId = 'm001'
   levelGame.box[levelInstanceId].level = 17
-  const level = evolveAfterLevelUp(levelGame, {
+  const qualified = evolveAfterLevelUp(levelGame, {
     instanceId: levelInstanceId,
     previousLevel: 16,
     newLevel: 17,
     operationId: 'w219-level'
+  })
+  assert.equal(qualified.ok, true)
+  assert.equal(qualified.game.box[levelInstanceId].speciesId, 'm001')
+  assert.equal(qualified.game.box[levelInstanceId].evolutionReady, true)
+  assert.equal(qualified.game.evolutionDiscoveries.m002, undefined)
+  const level = confirmEvolution(qualified.game, {
+    instanceId: levelInstanceId,
+    qualificationId: qualified.pendingEvolution.qualificationId
   })
   assert.equal(level.ok, true)
   assert.equal(level.game.box[levelInstanceId].speciesId, 'm002')

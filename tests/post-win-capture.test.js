@@ -3,6 +3,9 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 
 import {
+  postWinCaptureEligibility
+} from '../src/game/postWinCapture.js'
+import {
   attemptCapture,
   canAttemptCapture,
   startBattle,
@@ -34,68 +37,121 @@ function winWithDefeatedEnemy(day, captureItems = {}) {
   return won
 }
 
+function withCaptureAttempts(result, attempts) {
+  const game = structuredClone(result.game)
+  const battle = structuredClone(result.battle)
+  battle.captureAttempts = attempts
+  game.activeBattle = structuredClone(battle)
+  return { game, battle }
+}
+
 function victorySnapshot(game, battle, day) {
-  const active = game.box[battle.activeInstanceId]
+  const teamAtStart = battle.teamAtStart || []
   return {
     battlesWon: game.battlesWon,
     mana: game.mana,
-    stagesCleared: [...(game.stagesCleared || [])],
-    activeSpeciesId: active.speciesId,
-    activeLevel: active.level,
-    activeXp: active.xp,
+    stagesCleared: structuredClone(game.stagesCleared || []),
+    normalStageSnapshots: structuredClone(game.normalStageSnapshots || {}),
     ticketSettlement: battle.ticketSettlement,
     tickets: availableTicketCount(game, day),
-    team: [...(game.team || [])]
+    team: [...(game.team || [])],
+    teamMonsters: Object.fromEntries(teamAtStart.map((instanceId) => [instanceId, structuredClone(game.box[instanceId])])),
+    partyHp: structuredClone(battle.partyHp || {}),
+    turn: battle.turn,
+    rewardResolutionId: battle.rewardResolutionId
   }
 }
 
-test('defeated capturable enemy still allows a ball and successful capture does not replay victory rewards', () => {
+test('won + HP0 remains capture-eligible through the dedicated post-win domain while remaining throws exist', () => {
   const day = 3300
-  const won = winWithDefeatedEnemy(day, { rainbow: 1 })
-  const before = victorySnapshot(won.game, won.battle, day)
-  const caughtBefore = Number(won.game.monstersCaught) || 0
+  const won = withCaptureAttempts(winWithDefeatedEnemy(day, { star: 2 }), 2)
 
-  assert.equal(canAttemptCapture(won.game, won.battle, 'rainbow'), true)
-  const captured = attemptCapture(won.game, won.battle, [1], 'rainbow')
+  assert.deepEqual(postWinCaptureEligibility(won.game, won.battle, 'star'), { eligible: true, reason: null })
+  assert.equal(canAttemptCapture(won.game, won.battle, 'star'), true)
 
-  assert.equal(captured.ok, true)
-  assert.equal(captured.caught, true)
-  assert.equal(captured.battle.status, 'caught')
-  assert.equal(captured.battle.captureAttempts, 1)
-  assert.equal(captured.game.captureItems.rainbow, 0)
-  assert.equal(captured.game.monstersCaught, caughtBefore + 1)
-  assert.equal(captured.game.dex.caught[won.battle.enemy.speciesId], true)
-  assert.equal(captured.captureSettlement.status, 'settled')
-  assert.equal(captured.xp, 0)
-  assert.deepEqual(victorySnapshot(captured.game, captured.battle, day), before)
-
-  const replay = attemptCapture(captured.game, won.battle, [1], 'rainbow')
-  assert.equal(replay.ok, false)
-  assert.equal(replay.reason, 'CAPTURE_NOT_READY')
-  assert.equal(replay.game.monstersCaught, caughtBefore + 1)
+  const exhausted = structuredClone(won.battle)
+  exhausted.captureAttempts = 3
+  const exhaustedGame = structuredClone(won.game)
+  exhaustedGame.activeBattle = structuredClone(exhausted)
+  assert.deepEqual(postWinCaptureEligibility(exhaustedGame, exhausted, 'star'), { eligible: false, reason: 'CAPTURE_LIMIT' })
+  assert.equal(canAttemptCapture(exhaustedGame, exhausted, 'star'), false)
 })
 
-test('failed post-win capture consumes only the ball and attempt; defeated enemy never retaliates', () => {
+test('failed post-win capture consumes only one ring/attempt, never retaliates or replays victory rewards, and rejects the stale pre-throw snapshot', () => {
   const day = 3400
-  const won = winWithDefeatedEnemy(day, { star: 2 })
+  const won = withCaptureAttempts(winWithDefeatedEnemy(day, { star: 2 }), 1)
   const before = victorySnapshot(won.game, won.battle, day)
-  const playerHpBefore = won.battle.partyHp[won.battle.activeInstanceId]
-  const turnBefore = won.battle.turn
+  const starBefore = won.game.captureItems.star
   const caughtBefore = Number(won.game.monstersCaught) || 0
 
-  assert.equal(canAttemptCapture(won.game, won.battle, 'star'), true)
-  const failed = attemptCapture(won.game, won.battle, [1], 'star')
+  const failed = attemptCapture(won.game, won.battle, 1, 'star')
 
   assert.equal(failed.ok, true)
   assert.equal(failed.caught, false)
   assert.equal(failed.battle.status, 'won')
-  assert.equal(failed.battle.captureAttempts, 1)
-  assert.equal(failed.game.captureItems.star, won.game.captureItems.star - 1)
-  assert.equal(failed.battle.partyHp[failed.battle.activeInstanceId], playerHpBefore)
-  assert.equal(failed.battle.turn, turnBefore)
+  assert.equal(failed.battle.enemy.hp, 0)
+  assert.equal(failed.battle.captureAttempts, 2)
+  assert.equal(failed.game.captureItems.star, starBefore - 1)
   assert.equal(failed.game.monstersCaught, caughtBefore)
   assert.deepEqual(victorySnapshot(failed.game, failed.battle, day), before)
   assert.equal(canAttemptCapture(failed.game, failed.battle, 'star'), true)
+
+  const staleRingCount = failed.game.captureItems.star
+  const staleCaughtCount = failed.game.monstersCaught
+  const stale = attemptCapture(failed.game, won.battle, 0, 'star')
+  assert.equal(stale.ok, false)
+  assert.equal(stale.reason, 'STALE_BATTLE')
+  assert.equal(stale.battle.captureAttempts, 2)
+  assert.equal(stale.game.captureItems.star, staleRingCount)
+  assert.equal(stale.game.monstersCaught, staleCaughtCount)
+  assert.deepEqual(victorySnapshot(stale.game, stale.battle, day), before)
+})
+
+test('post-win success after reload settles capture only and stale replay cannot spend or reward twice', () => {
+  const day = 3500
+  const won = withCaptureAttempts(winWithDefeatedEnemy(day, { star: 2, rainbow: 1 }), 1)
+  const victory = victorySnapshot(won.game, won.battle, day)
+
+  const failed = attemptCapture(won.game, won.battle, 1, 'star')
+  assert.equal(failed.ok, true)
+  assert.equal(failed.caught, false)
+
+  const reloadedGame = JSON.parse(JSON.stringify(failed.game))
+  const reloadedBattle = reloadedGame.activeBattle
+  const rainbowBefore = reloadedGame.captureItems.rainbow
+  const caughtBefore = Number(reloadedGame.monstersCaught) || 0
+
+  const captured = attemptCapture(reloadedGame, reloadedBattle, 1, 'rainbow')
+
+  assert.equal(captured.ok, true)
+  assert.equal(captured.caught, true)
+  assert.equal(captured.battle.status, 'caught')
+  assert.equal(captured.battle.captureAttempts, 3)
+  assert.equal(captured.game.captureItems.rainbow, rainbowBefore - 1)
+  assert.equal(captured.game.monstersCaught, caughtBefore + 1)
+  assert.equal(captured.game.dex.caught[won.battle.enemy.speciesId], true)
+  assert.equal(captured.captureSettlement.status, 'settled')
+  assert.equal(captured.xp, 0)
+  assert.deepEqual(captured.xpByInstance, {})
+  assert.deepEqual(captured.levelsByInstance, {})
+
+  const captureResultForVictorySnapshot = {
+    ...captured.battle,
+    ticketSettlement: victory.ticketSettlement,
+    partyHp: victory.partyHp,
+    turn: victory.turn,
+    rewardResolutionId: victory.rewardResolutionId,
+    teamAtStart: won.battle.teamAtStart
+  }
+  assert.deepEqual(victorySnapshot(captured.game, captureResultForVictorySnapshot, day), victory)
+
+  const ringAfter = captured.game.captureItems.rainbow
+  const caughtAfter = captured.game.monstersCaught
+  const replay = attemptCapture(captured.game, reloadedBattle, 0, 'rainbow')
+  assert.equal(replay.ok, false)
+  assert.equal(replay.reason, 'STALE_BATTLE')
+  assert.equal(replay.game.captureItems.rainbow, ringAfter)
+  assert.equal(replay.game.monstersCaught, caughtAfter)
 })
 
 test('battle result UI exposes post-win capture without reopening normal battle commands', () => {

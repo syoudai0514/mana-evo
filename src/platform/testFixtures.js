@@ -82,23 +82,21 @@ export function createAllClearGameFixture() {
   return normalizeGameState(game, localDayNumber())
 }
 
-function evolutionReadyMonster(transition) {
+function evolutionTriggerMonster(transition) {
   if (transition.method === 'level') {
-    const level = Math.max(1, Number(transition.level) || 1)
+    const level = Math.max(1, Number(transition.level) - 1)
     return instance(transition.fromSpeciesId, level, {
-      xp: Math.max(0, xpToNext(level) - 1),
-      evolutionReady: true
+      xp: Math.max(0, xpToNext(level) - 1)
     })
   }
   if (transition.method === 'held_item_levelup') {
     const level = 40
     return instance(transition.fromSpeciesId, level, {
       xp: Math.max(0, xpToNext(level) - 1),
-      heldItemId: transition.itemId,
-      evolutionReady: true
+      heldItemId: transition.itemId
     })
   }
-  return instance(transition.fromSpeciesId, 40, { evolutionReady: true })
+  return instance(transition.fromSpeciesId, 40)
 }
 
 export function createEvolutionTestGameFixture(stage) {
@@ -106,7 +104,7 @@ export function createEvolutionTestGameFixture(stage) {
   if (![1, 2].includes(wantedStage)) throw new Error('test evolution stage must be 1 or 2')
   const transitions = EVOLUTION_TRANSITIONS.filter((transition) => Number(SPECIES[transition.fromSpeciesId]?.stage) === wantedStage)
   const box = Object.fromEntries(transitions.map((transition) => {
-    const monster = evolutionReadyMonster(transition)
+    const monster = evolutionTriggerMonster(transition)
     return [monster.instanceId, monster]
   }))
   const ids = transitions.map((transition) => transition.fromSpeciesId)

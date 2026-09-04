@@ -50,8 +50,6 @@ function keypadLearningSave() {
         'math:compareCards': readyUnitStat('compare'),
         'math:add10': readyUnitStat('add10'),
         'math:make10': readyUnitStat('make10'),
-        // Keep this unit intentionally in progress so nextLearningUnit selects it,
-        // while attempts>0 + lessonSeen bypasses the lesson interstitial.
         'math:countKeypad': {
           attempts: 1,
           firstAttemptCorrect: 1,
@@ -230,7 +228,7 @@ test('D-021 Monster-origin Evolution acknowledgement survives rotation without d
   await page.getByRole('navigation', { name: 'メインメニュー' }).getByRole('button', { name: /モンスター/ }).click()
   const shell = page.locator('.app-shell[data-layout-contract="d021"]')
   await expect(shell).toHaveAttribute('data-layout-surface', 'compact')
-  await page.getByRole('button', { name: /いま シンカする/ }).click()
+  await page.getByRole('button', { name: /シンカする/ }).click()
 
   const evolution = page.getByRole('dialog', { name: 'シンカ！' })
   await expect(evolution).toBeVisible()
@@ -260,8 +258,6 @@ test('D-021 active Learning feedback remains reachable at keyboard-like low heig
   await keypad.getByRole('button', { name: '0', exact: true }).click()
   await keypad.getByRole('button', { name: 'OK', exact: true }).click()
 
-  // Feedback is deliberately transient. Check visibility + geometry atomically so
-  // the assertion cannot race its normal dismissal timer between two locator calls.
   await expect.poll(async () => page.evaluate(() => {
     const node = document.querySelector('.feedback')
     if (!node) return false

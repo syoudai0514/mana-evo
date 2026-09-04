@@ -239,7 +239,7 @@ test('manual stone evolution is Monster-owned, modal, and records first evolutio
   await expect(navigation.getByRole('button', { name: /バトル|GET|ずかん|シンカ/ })).toHaveCount(0)
 
   await navigation.getByRole('button', { name: /モンスター/ }).click()
-  const evolve = page.getByRole('button', { name: /いま シンカする！/ })
+  const evolve = page.getByRole('button', { name: /シンカする/ })
   await expect(evolve).toBeVisible()
   await evolve.click()
 

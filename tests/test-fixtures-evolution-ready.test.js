@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 
 import { SPECIES } from '../src/game/content.js'
 import { EVOLUTION_TRANSITIONS, evolutionTriggerStatus } from '../src/game/evolutionDomain.js'
-import { applyXpToInstance, xpToNext } from '../src/game/engine.js'
+import { applyXpToInstance, evolveInstance, xpToNext } from '../src/game/engine.js'
 import { createEvolutionTestGameFixture, TEST_FIXTURE_LABELS } from '../src/platform/testFixtures.js'
 
 function transitionsForStage(stage) {
@@ -18,31 +18,43 @@ function assertFixtureReady(stage) {
   for (const transition of transitions) {
     const monster = game.box[`test-${transition.fromSpeciesId}`]
     assert.ok(monster, `${transition.fromSpeciesId} must exist in stage ${stage} fixture`)
-    assert.equal(monster.evolutionReady, true, `${transition.fromSpeciesId} must be marked evolution-ready`)
 
     if (transition.method === 'level') {
-      assert.equal(monster.level, transition.level, `${transition.fromSpeciesId} must already be at its evolution condition level`)
-      assert.equal(monster.xp, Math.max(0, xpToNext(monster.level) - 1), `${transition.fromSpeciesId} should be one XP from the next actual level-up trigger`)
-      const evolved = applyXpToInstance(game, {
+      assert.equal(monster.evolutionReady, false, `${transition.fromSpeciesId} must wait for the qualifying level-up`)
+      assert.equal(monster.level, transition.level - 1, `${transition.fromSpeciesId} must start one level below its condition`)
+      assert.equal(monster.xp, Math.max(0, xpToNext(monster.level) - 1), `${transition.fromSpeciesId} should be one XP from the qualifying level-up`)
+      const qualified = applyXpToInstance(game, {
         instanceId: monster.instanceId,
         amount: 1,
         operationId: `test-ready:${stage}:${transition.fromSpeciesId}`
       })
+      assert.equal(qualified.ok, true)
+      assert.equal(qualified.game.box[monster.instanceId].speciesId, transition.fromSpeciesId)
+      assert.equal(qualified.game.box[monster.instanceId].evolutionReady, true)
+      assert.equal(qualified.game.box[monster.instanceId].pendingEvolution?.toSpeciesId, transition.toSpeciesId)
+      const evolved = evolveInstance(qualified.game, monster.instanceId)
       assert.equal(evolved.ok, true)
-      assert.equal(evolved.game.box[monster.instanceId].speciesId, transition.toSpeciesId, `${transition.fromSpeciesId} must evolve on the next level-up`)
+      assert.equal(evolved.game.box[monster.instanceId].speciesId, transition.toSpeciesId, `${transition.fromSpeciesId} must evolve only after confirmation`)
       continue
     }
 
     if (transition.method === 'held_item_levelup') {
+      assert.equal(monster.evolutionReady, false, `${transition.fromSpeciesId} must wait for the qualifying level-up`)
       assert.equal(monster.heldItemId, transition.itemId, `${transition.fromSpeciesId} must already hold the required item`)
       assert.equal(monster.xp, Math.max(0, xpToNext(monster.level) - 1), `${transition.fromSpeciesId} should be one XP from a level-up trigger`)
-      const evolved = applyXpToInstance(game, {
+      const qualified = applyXpToInstance(game, {
         instanceId: monster.instanceId,
         amount: 1,
         operationId: `test-ready:${stage}:${transition.fromSpeciesId}`
       })
+      assert.equal(qualified.ok, true)
+      assert.equal(qualified.game.box[monster.instanceId].speciesId, transition.fromSpeciesId)
+      assert.equal(qualified.game.box[monster.instanceId].evolutionReady, true)
+      assert.equal(qualified.game.box[monster.instanceId].pendingEvolution?.toSpeciesId, transition.toSpeciesId)
+      const evolved = evolveInstance(qualified.game, monster.instanceId)
       assert.equal(evolved.ok, true)
-      assert.equal(evolved.game.box[monster.instanceId].speciesId, transition.toSpeciesId, `${transition.fromSpeciesId} must evolve with the held item on the next level-up`)
+      assert.equal(evolved.game.box[monster.instanceId].speciesId, transition.toSpeciesId, `${transition.fromSpeciesId} must evolve only after confirmation`)
+      assert.equal(evolved.game.box[monster.instanceId].heldItemId, transition.itemId)
       continue
     }
 
@@ -52,6 +64,9 @@ function assertFixtureReady(stage) {
         itemId: transition.itemId
       })
       assert.equal(status.ready, true, `${transition.fromSpeciesId} must have the required stone available`)
+      const evolved = evolveInstance(game, monster.instanceId)
+      assert.equal(evolved.ok, true)
+      assert.equal(evolved.game.box[monster.instanceId].speciesId, transition.toSpeciesId)
     }
   }
 }

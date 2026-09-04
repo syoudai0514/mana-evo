@@ -277,6 +277,10 @@ test('D-021 Evolution acknowledgement survives rotation with the same from-to re
   await page.locator('.capture-item-grid').getByRole('button', { name: /にじボール/ }).click()
   await page.getByRole('button', { name: /にじボールを なげる！/ }).click()
 
+  const prompt = page.getByRole('dialog', { name: 'シンカできる！' })
+  await expect(prompt).toBeVisible({ timeout: 9000 })
+  await prompt.getByRole('button', { name: /シンカする/ }).click()
+
   const evolution = page.getByRole('dialog', { name: 'シンカ！' })
   await expect(evolution).toBeVisible({ timeout: 9000 })
   const beforeText = semanticText(await evolution.locator('h2').textContent())

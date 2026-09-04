@@ -2,10 +2,13 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   EVOLUTION_TRANSITIONS,
+  confirmEvolution,
   evolveAfterLevelUp,
   evolveWithStone,
   evolutionTriggerStatus,
-  getEvolutionTransition
+  getEvolutionTransition,
+  normalizePendingEvolution,
+  qualifyMaxLevelHeldItemEvolution
 } from '../src/game/evolutionDomain.js'
 import {
   EVOLUTION_ITEM_RATE,
@@ -27,7 +30,7 @@ import {
 
 function baseGame(monster) {
   return {
-    box: { one: { instanceId: 'one', xp: 77, heldItemId: null, evolutionReady: false, ...monster } },
+    box: { one: { instanceId: 'one', xp: 77, heldItemId: null, evolutionReady: false, pendingEvolution: null, ...monster } },
     dex: { seen: {}, caught: {} },
     evolutionDiscoveries: {},
     evolutionItems: { stones: {}, heldItems: {} }
@@ -55,37 +58,93 @@ test('canonical evolution master is exactly 155 active stable-ID transitions', (
   })
 })
 
-test('level evolution requires an actual level-up and is atomic/idempotent with discovery', () => {
+test('D-030 level-up creates deterministic readiness and confirm mutates species exactly once', () => {
   const game = baseGame({ speciesId: 'm001', level: 40 })
   const notLevelUp = evolutionTriggerStatus(game.box.one, game, { trigger: 'level_up', previousLevel: 40, newLevel: 40 })
   assert.equal(notLevelUp.ready, false)
   assert.equal(notLevelUp.reason, 'ACTUAL_LEVEL_UP_REQUIRED')
 
-  const first = evolveAfterLevelUp(game, { instanceId: 'one', previousLevel: 16, newLevel: 40, operationId: 'xp-event-1' })
-  assert.equal(first.ok, true)
-  assert.equal(first.game.box.one.instanceId, 'one')
-  assert.equal(first.game.box.one.speciesId, 'm002')
-  assert.equal(first.game.box.one.level, 40)
-  assert.equal(first.game.box.one.xp, 77)
-  assert.equal(first.game.dex.seen.m002, true)
-  assert.equal(first.game.dex.caught.m002, true)
-  assert.equal(first.game.evolutionDiscoveries.m002, true)
+  const qualified = evolveAfterLevelUp(game, { instanceId: 'one', previousLevel: 16, newLevel: 40, operationId: 'xp-event-1' })
+  assert.equal(qualified.ok, true)
+  assert.equal(qualified.game.box.one.instanceId, 'one')
+  assert.equal(qualified.game.box.one.speciesId, 'm001')
+  assert.equal(qualified.game.box.one.level, 40)
+  assert.equal(qualified.game.box.one.xp, 77)
+  assert.equal(qualified.game.box.one.evolutionReady, true)
+  assert.equal(qualified.pendingEvolution.fromSpeciesId, 'm001')
+  assert.equal(qualified.pendingEvolution.toSpeciesId, 'm002')
+  assert.equal(qualified.pendingEvolution.qualificationId, 'evo:xp-event-1:one:m001->m002')
+  assert.equal(qualified.game.evolutionDiscoveries.m002, undefined)
 
-  const replay = evolveAfterLevelUp(first.game, { instanceId: 'one', previousLevel: 16, newLevel: 40, operationId: 'xp-event-1' })
+  const replay = evolveAfterLevelUp(qualified.game, { instanceId: 'one', previousLevel: 16, newLevel: 40, operationId: 'xp-event-1' })
   assert.equal(replay.ok, true)
-  assert.equal(replay.alreadyApplied, true)
-  assert.equal(replay.game.box.one.speciesId, 'm002')
+  assert.equal(replay.alreadyQualified, true)
+  assert.equal(replay.pendingEvolution.qualificationId, qualified.pendingEvolution.qualificationId)
+  assert.equal(replay.game.box.one.speciesId, 'm001')
+
+  const confirmed = confirmEvolution(qualified.game, { instanceId: 'one', qualificationId: qualified.pendingEvolution.qualificationId })
+  assert.equal(confirmed.ok, true)
+  assert.equal(confirmed.game.box.one.instanceId, 'one')
+  assert.equal(confirmed.game.box.one.speciesId, 'm002')
+  assert.equal(confirmed.game.box.one.level, 40)
+  assert.equal(confirmed.game.box.one.xp, 77)
+  assert.equal(confirmed.game.dex.seen.m002, true)
+  assert.equal(confirmed.game.dex.caught.m002, true)
+  assert.equal(confirmed.game.evolutionDiscoveries.m002, true)
+  assert.equal(confirmed.nextPendingEvolution?.fromSpeciesId, 'm002', 'delayed high-level stage1 confirm creates a separate stage2 token')
+  assert.equal(confirmed.nextPendingEvolution?.toSpeciesId, 'm003')
+  assert.equal(confirmed.game.box.one.speciesId, 'm002', 'one confirmation performs at most one species mutation')
+  assert.equal(confirmed.game.evolutionDiscoveries.m003, undefined)
+
+  const duplicateConfirm = confirmEvolution(confirmed.game, { instanceId: 'one', qualificationId: qualified.pendingEvolution.qualificationId })
+  assert.equal(duplicateConfirm.ok, true)
+  assert.equal(duplicateConfirm.alreadyApplied, true)
+  assert.equal(duplicateConfirm.game.box.one.speciesId, 'm002')
 })
 
-test('held-item evolution fires only on a real level-up while equipped', () => {
+test('D-030 held-item qualification requires a real level-up, persists after item changes, and does not consume the held item', () => {
   const game = baseGame({ speciesId: 'm058', level: 23, heldItemId: null })
   const equippedOnly = evolutionTriggerStatus({ ...game.box.one, heldItemId: 'emberwick' }, game, { trigger: 'level_up', previousLevel: 23, newLevel: 23 })
   assert.equal(equippedOnly.ready, false)
+
   game.box.one.heldItemId = 'emberwick'
   game.box.one.level = 24
-  const evolved = evolveAfterLevelUp(game, { instanceId: 'one', previousLevel: 23, newLevel: 24, operationId: 'held-lvup-1' })
-  assert.equal(evolved.ok, true)
-  assert.equal(evolved.game.box.one.speciesId, 'm059')
+  const qualified = evolveAfterLevelUp(game, { instanceId: 'one', previousLevel: 23, newLevel: 24, operationId: 'held-lvup-1' })
+  assert.equal(qualified.ok, true)
+  assert.equal(qualified.game.box.one.speciesId, 'm058')
+  assert.equal(qualified.pendingEvolution.method, 'held_item_levelup')
+  assert.equal(qualified.pendingEvolution.itemId, 'emberwick')
+
+  const changedAfterQualification = structuredClone(qualified.game)
+  changedAfterQualification.box.one.heldItemId = null
+  const persisted = normalizePendingEvolution(changedAfterQualification.box.one)
+  assert.equal(persisted.qualificationId, qualified.pendingEvolution.qualificationId)
+
+  const confirmed = confirmEvolution(changedAfterQualification, { instanceId: 'one', qualificationId: qualified.pendingEvolution.qualificationId })
+  assert.equal(confirmed.ok, true)
+  assert.equal(confirmed.game.box.one.speciesId, 'm059')
+  assert.equal(confirmed.game.box.one.heldItemId, null)
+
+  const keptItemGame = baseGame({ speciesId: 'm058', level: 24, heldItemId: 'emberwick' })
+  const keptQualified = evolveAfterLevelUp(keptItemGame, { instanceId: 'one', previousLevel: 23, newLevel: 24, operationId: 'held-lvup-2' })
+  const keptConfirmed = confirmEvolution(keptQualified.game, { instanceId: 'one', qualificationId: keptQualified.pendingEvolution.qualificationId })
+  assert.equal(keptConfirmed.game.box.one.heldItemId, 'emberwick', 'held-item evolution retains the equipped item')
+})
+
+test('D-030 Lv100 held-item recovery creates readiness only and still requires explicit confirmation', () => {
+  const game = baseGame({ speciesId: 'm058', level: 100, heldItemId: 'emberwick' })
+  const recovered = qualifyMaxLevelHeldItemEvolution(game, { instanceId: 'one' })
+  assert.equal(recovered.ok, true)
+  assert.equal(recovered.game.box.one.speciesId, 'm058')
+  assert.equal(recovered.pendingEvolution.qualificationKind, 'max-level-held-item-recovery')
+  const replay = qualifyMaxLevelHeldItemEvolution(recovered.game, { instanceId: 'one' })
+  assert.equal(replay.ok, true)
+  assert.equal(replay.alreadyQualified, true)
+  assert.equal(replay.pendingEvolution.qualificationId, recovered.pendingEvolution.qualificationId)
+
+  const confirmed = confirmEvolution(recovered.game, { instanceId: 'one', qualificationId: recovered.pendingEvolution.qualificationId })
+  assert.equal(confirmed.ok, true)
+  assert.equal(confirmed.game.box.one.speciesId, 'm059')
 })
 
 test('stone evolution is manual and consumes exactly one owned stone', () => {
@@ -98,6 +157,10 @@ test('stone evolution is manual and consumes exactly one owned stone', () => {
   assert.equal(evolved.ok, true)
   assert.equal(evolved.game.box.one.speciesId, 'm027')
   assert.equal(evolved.game.evolutionItems.stones.thunder, 1)
+  const replay = evolveWithStone(evolved.game, { instanceId: 'one', itemId: 'thunder', operationId: 'stone-use-1' })
+  assert.equal(replay.ok, true)
+  assert.equal(replay.alreadyApplied, true)
+  assert.equal(replay.game.evolutionItems.stones.thunder, 1)
 })
 
 test('exploration costs 5, uses 80/20, and keeps pity isolated per area', () => {

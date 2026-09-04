@@ -67,12 +67,18 @@ function publicFailureReason(reason) {
 
 export function attemptPostWinCapture(game, battle, rolls = undefined, itemType = 'star') {
   const current = game?.activeBattle
-  if (!current || (current.battleId && battle?.battleId && current.battleId !== battle.battleId)) {
+  const currentAttempts = Number(current?.captureAttempts) || 0
+  const suppliedAttempts = Number(battle?.captureAttempts) || 0
+  if (!current ||
+      (current.battleId && battle?.battleId && current.battleId !== battle.battleId) ||
+      current.status !== battle?.status ||
+      currentAttempts !== suppliedAttempts) {
     return { ok: false, game, battle: current || battle, reason: 'STALE_BATTLE' }
   }
 
-  // activeBattle is the authority. A stale `won` object must never be able to
-  // replay capture after the same battle has already moved to `caught`.
+  // activeBattle is authoritative. A stale `won` snapshot must never replay a
+  // post-win throw after another throw or a successful capture has advanced the
+  // battle transaction.
   const authoritativeBattle = current
   const eligibility = postWinCaptureEligibility(game, authoritativeBattle, itemType)
   if (!eligibility.eligible) {

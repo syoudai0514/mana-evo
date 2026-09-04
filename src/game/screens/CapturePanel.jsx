@@ -1,18 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { CAPTURE_CONFIG } from '../content.js'
 import { MAX_CAPTURE_ATTEMPTS, canAttemptCapture, captureChance } from '../engine.js'
+import { captureEaseCue, recommendCaptureItem } from '../captureDomain.js'
 import { CAPTURE_ITEM_IDS } from '../progression.js'
 import { captureDisplayOf } from '../captureDisplay.js'
 import PlaceholderMonster from '../PlaceholderMonster.jsx'
 
 const CAPTURE_META = CAPTURE_CONFIG
-
-function starRating(chance, guaranteed = false) {
-  if (guaranteed) return 5
-  // Display-only child cue. CURRENT intentionally does not freeze the numeric
-  // thresholds behind the five-step wording as a product probability rule.
-  return Math.max(1, Math.min(5, Math.ceil(Math.max(0, Math.min(1, chance)) * 5)))
-}
 
 function StarCue({ count, max = 5 }) {
   return <span className="capture-ease-stars" aria-label={`つかまえやすさ ${count}/${max}`}>{Array.from({ length: max }, (_, index) => index < count ? '★' : '☆').join('')}</span>
@@ -117,6 +111,7 @@ export function CapturePanel({ game, battle, captureDisabled = false, onCapture,
     const display = captureDisplayOf(id)
     const ready = !captureDisabled && canAttemptCapture(game, battle, id)
     const chance = captureChance(battle, id)
+    const cue = captureEaseCue(chance)
     return {
       id,
       meta,
@@ -124,10 +119,11 @@ export function CapturePanel({ game, battle, captureDisabled = false, onCapture,
       ready,
       chance,
       owned: game.captureItems?.[id] || 0,
-      stars: starRating(chance, !!meta.guaranteed)
+      stars: cue.level,
+      easeLabel: cue.label
     }
   })
-  const recommended = [...options].filter((option) => option.ready).sort((a, b) => b.chance - a.chance)[0]?.id || null
+  const recommended = recommendCaptureItem(options)
   const selected = options.find((option) => option.id === selectedBall && option.ready) || null
 
   useEffect(() => {
@@ -169,6 +165,7 @@ export function CapturePanel({ game, battle, captureDisabled = false, onCapture,
     <div className="capture-item-grid">{options.map((option) => {
       const isSelected = option.id === selectedBall
       const isRecommended = option.id === recommended
+      const guaranteed = option.id === 'rainbow'
       return <button
         key={option.id}
         type="button"
@@ -178,7 +175,7 @@ export function CapturePanel({ game, battle, captureDisabled = false, onCapture,
         onClick={() => setSelectedBall(option.id)}
       >
         <CaptureBallIcon itemType={option.id} compact />
-        <span className="capture-item-copy"><strong>{option.display.label}</strong><StarCue count={option.stars} /><small>もってる：{option.owned}こ</small></span>
+        <span className="capture-item-copy"><strong>{option.display.label}</strong><StarCue count={option.stars} /><small>{guaranteed ? 'かならず GET' : option.easeLabel}</small><small>もってる：{option.owned}こ</small></span>
         {isRecommended && option.ready && <b className="capture-recommended-badge">おすすめ！</b>}
       </button>
     })}</div>
@@ -189,7 +186,7 @@ export function CapturePanel({ game, battle, captureDisabled = false, onCapture,
     </details>
 
     <div className="battle-action-row capture-actions">
-      <button className="primary" disabled={!selected} onClick={() => selected && onCapture(selected.id)}>{selected ? `${selected.display.label}を なげる！` : 'ボールを えらんでね'}</button>
+      <button className={`primary capture-throw-cta ${selected ? 'ready' : ''}`} disabled={!selected} onClick={() => selected && onCapture(selected.id)}>{selected ? `${selected.display.label}を なげる！` : 'ボールを えらんでね'}</button>
       <button className="secondary" onClick={onCancel}>{postWinCapture ? '結果へ もどる' : 'バトルへ もどる'}</button>
     </div>
   </section>

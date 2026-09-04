@@ -164,7 +164,7 @@ test('Evolution acknowledgement disables child profile switching until it is ack
   const profileTrigger = page.getByRole('button', { name: 'いまのプレイヤー なまえをきめよう' })
   await expect(profileTrigger).toBeEnabled()
   await page.getByRole('navigation', { name: 'メインメニュー' }).getByRole('button', { name: /モンスター/ }).click()
-  await page.getByRole('button', { name: /いま シンカする！/ }).click()
+  await page.getByRole('button', { name: /シンカする/ }).click()
 
   const celebration = page.getByRole('dialog', { name: 'シンカ！' })
   await expect(celebration).toBeVisible()

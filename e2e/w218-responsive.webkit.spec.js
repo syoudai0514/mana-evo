@@ -144,7 +144,7 @@ for (const width of PORTRAIT_WIDTHS) {
     await expectNoHorizontalOverflow(page)
   })
 
-  test(`iPhone WebKit ${width}px keeps evolution completion action in the focused viewport`, async ({ page }) => {
+  test(`iPhone WebKit ${width}px keeps evolution confirmation and completion actions in the focused viewport`, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 })
     await installSave(page, battleGameAtHalfHp({ rainbow: true, nearEvolution: true }))
     await page.goto('/')
@@ -152,6 +152,12 @@ for (const width of PORTRAIT_WIDTHS) {
     const rainbow = page.locator('.capture-item-grid').getByRole('button', { name: /にじボール/ })
     await rainbow.click()
     await page.getByRole('button', { name: /にじボールを なげる！/ }).click()
+
+    const prompt = page.getByRole('dialog', { name: 'シンカできる！' })
+    await expect(prompt).toBeVisible({ timeout: 9000 })
+    const confirm = prompt.getByRole('button', { name: /シンカする/ })
+    await expectFirstDecisionVisible(page, confirm)
+    await confirm.click()
 
     const evolution = page.getByRole('dialog', { name: 'シンカ！' })
     await expect(evolution).toBeVisible({ timeout: 9000 })
