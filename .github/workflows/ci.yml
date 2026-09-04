@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -18,6 +20,9 @@ jobs:
         run: npm ci
       - name: Audit dependencies
         run: npm audit --audit-level=high
+      - name: Verify Monster Art PR exact scope
+        if: github.event_name == 'pull_request'
+        run: npm run verify:monster-art-scope
       - name: Unit and integration tests
         run: npm test
       - name: Build
@@ -26,5 +31,7 @@ jobs:
         run: npm run verify:release
       - name: Install WebKit browser
         run: npx playwright install --with-deps webkit
+      - name: Monster Art real WebKit decode integration
+        run: npm run test:monster-art-webkit
       - name: iPhone WebKit E2E
         run: npm run test:e2e

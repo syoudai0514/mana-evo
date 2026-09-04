@@ -1,336 +1,166 @@
 # ManaEvo Monster Art Maintenance Runbook
 
-Status: **CURRENT OPERATIONAL RUNBOOK**
+Status: **CURRENT PROCEDURE AFTER PR #133 REVIEW; FAST LANE USE REQUIRES MAIN RULESET**
 
-Use this document after the 238-species closeout when one or more FORMAL images need maintenance. The normal case is a small, explicitly scoped replacement — not a new global production wave.
+Use this for targeted replacement of existing FORMAL Monster Art. Do not rerun the 238-species closeout for ordinary cosmetic iteration.
 
-## 0. Golden rule
+## 1. Start from CURRENT
 
-Never start by editing an image.
+Fresh-read:
 
-Start by proving **which species it is, what CURRENT says it is, which bytes are live, and which gate you are trying to complete**.
+- current `main` HEAD;
+- target manifest FORMAL SHA;
+- target/current family metadata;
+- every family member's current FORMAL SHA and image;
+- target provenance/history;
+- current style lock.
 
-Active scope is `m001`–`m238`. `m239` is excluded historical reference and must not enter runtime/FORMAL scope.
+Do not use an old chat SHA or ZIP as CURRENT.
 
-## 1. Freeze the current baseline
+## 2. Generate and select before repository mutation
 
-Before any mutation, record:
+From a short request, generate 2–3 options without GitHub mutation. For a family set, review the set together.
 
-- repository: `syoudai0514/mana-evo`;
-- branch/ref being treated as CURRENT;
-- exact HEAD SHA;
-- target species IDs;
-- current manifest state for each target;
-- current `formalAsset` and `formalSha256` when FORMAL;
-- current `public/monsters/mNNN.webp` raw SHA-256 and byte count when available;
-- current species/family metadata;
-- existing provenance/history;
-- requested change and reason.
+The selected option/set becomes the visual approval event. Then finalize exact 512×512 transparent WebP and perform visual QA.
 
-Do not reuse a SHA copied from an old chat, ZIP or previous worker without refetching CURRENT.
+## 3. ART READY ZIP contract
 
-### Required source reads
+ZIP transport is allowed and convenient across ChatGPT/worker sessions. The ZIP is only a container; its metadata is revalidated.
 
-At minimum inspect:
+Use bundle schema `ManaEvo.formal-art-replacement.v2` with:
 
-- `design/current/monster-asset-manifest.json`;
-- CURRENT monster metadata/descriptions for the species/family;
-- `public/monsters/mNNN.webp` identity/checksum;
-- `design/rebuild/asset-production/candidate-provenance/mNNN.json` when present;
-- relevant `candidate-history/mNNN/` entries;
-- `PHASE-4-STYLE-LOCK.md`.
+- unique transactionId;
+- baseHeadSha;
+- intent REPLACE;
+- exact 1–3 target scope;
+- expectedCurrentSha256 per target;
+- new SHA/bytes per target;
+- all CURRENT family member SHAs under familyReferences;
+- user-selection approval evidence;
+- visual QA PASS.
 
-If metadata and old artwork disagree, metadata/CURRENT identity wins until an explicit product decision says otherwise.
+Never manually edit these values from memory; derive them from CURRENT and actual bytes.
 
-## 2. Classify the work before doing it
+## 4. Dry-run
 
-Choose one disposition per species.
-
-### KEEP
-
-No actual defect requiring a binary change. Stop; do not create a no-op replacement.
-
-### NORMALIZE
-
-Only canvas/scale/placement/format cleanup is required and the creature identity/semantic artwork can remain unchanged.
-
-Examples:
-
-- exact dimension correction;
-- safe uniform scale adjustment within transparent canvas;
-- hidden-RGB cleanup;
-- non-semantic export correction.
-
-### REPAIR
-
-A local artifact can be removed without inventing missing anatomy or redesigning the species.
-
-Examples:
-
-- unrelated detached fragment;
-- clearly separable background plate;
-- accidental crop/canvas issue that does not require semantic reconstruction.
-
-### REGENERATE
-
-The existing pixels cannot be safely repaired without semantic deletion/reconstruction, or the visual identity is wrong.
-
-Examples:
-
-- background/scenery is inseparable from the creature;
-- collage/cut-out structure prevents a valid independent silhouette;
-- wrong species/body-plan interpretation;
-- family continuity is fundamentally broken.
-
-If unsure whether repair is semantically safe, stop and classify it for visual review instead of repeatedly erasing/reconstructing pixels.
-
-## 3. Produce the replacement
-
-### Required output contract
-
-Every new release candidate must be checked for:
-
-- exact `512×512` dimensions;
-- RIFF/WEBP;
-- actual alpha/transparency;
-- full intended creature silhouette inside safe canvas margin;
-- no accidental edge contact/crop;
-- no baked checkerboard;
-- no white/colored rectangular background plate;
-- no scenery/frame/text/UI/type label;
-- no unrelated second creature;
-- no unrelated detached artifact;
-- no rectangular collage boundary;
-- correct CURRENT species/family identity;
-- correct evolution-family continuity when applicable.
-
-For newly generated or normalized assets, normalize RGB to `(0,0,0)` wherever alpha is `0` before the final lossless WebP export when the encoder permits exact preservation. Verify the final decoded WebP rather than trusting the pre-export canvas.
-
-### Visual QA comes before “technical PASS”
-
-Mechanical checks cannot decide species identity or whether a cut-out still looks like scenery. Review the actual decoded image at normal game size and enlarged size.
-
-Ask:
-
-- Does this read as one creature without relying on a label?
-- Is the defining silhouette complete?
-- Does it match the canonical motif/body plan?
-- Are background/scenery elements mistakenly fused into the asset?
-- Are there rectangular seams or foreign components?
-- For an evolution family, does it still belong to the same lineage?
-
-Do not promote a technically transparent image that fails these questions.
-
-## 4. Package/handoff contract
-
-GitHub-native binary handoff is preferred. See `PHASE-4-GITHUB-BINARY-HANDOFF.md`.
-
-If ZIP is deliberately used, the ZIP must include `manifest.json` and the receiving worker must treat the manifest as expected metadata to verify — not as proof.
-
-Recommended multi-species shape:
-
-```json
-{
-  "schema": "ManaEvo.art-ready.bundle.v1",
-  "scope": ["mNNN"],
-  "species": {
-    "mNNN": {
-      "speciesId": "mNNN",
-      "bytes": 123456,
-      "sha256": "...",
-      "width": 512,
-      "height": 512,
-      "format": "WEBP",
-      "repairPolicy": "..."
-    }
-  }
-}
-```
-
-Before repository mutation, reopen the ZIP, decode every WebP and verify:
-
-- actual entry count/scope;
-- `512×512`;
-- RIFF/WEBP;
-- actual alpha;
-- raw bytes == manifest bytes;
-- raw SHA-256 == manifest SHA-256.
-
-First failure stops the registration. Report the **first unsatisfied gate** precisely.
-
-## 5. Register without losing history
-
-### CANDIDATE path
-
-For non-FORMAL candidate work, use the repository ingestion tooling rather than manually simulating candidate semantics:
+After ZIP extraction:
 
 ```bash
-node scripts/monster-art/candidate-ingestion.mjs \
-  --species mNNN \
-  --source /path/to/mNNN.webp \
-  --source-label "reason/source"
+npm run replace:monster-art -- --bundle-dir /path/to/unzipped-bundle
 ```
 
-Execute only when intended:
+Dry-run fails on:
+
+- stale base HEAD;
+- stale target or family-reference SHA;
+- wrong/new ID;
+- unrelated family in multi-target bundle;
+- unexpected extra WebP;
+- bytes/SHA mismatch;
+- bad WebP/decode/dimension/alpha;
+- visible edge contact or margin under 4 px;
+- current manifest/revision mismatch;
+- provenance latest SHA mismatch;
+- ambiguous or accidental no-op.
+
+Warnings for tight margins/rectangular-background suspicion must be visually reviewed before execute.
+
+## 5. Execute
 
 ```bash
-node scripts/monster-art/candidate-ingestion.mjs \
-  --species mNNN \
-  --source /path/to/mNNN.webp \
-  --source-label "reason/source" \
-  --execute
+npm run replace:monster-art -- --bundle-dir /path/to/unzipped-bundle --execute
 ```
 
-`candidate-ingestion.mjs` intentionally refuses to replace a species already marked FORMAL. Do not bypass that guard merely to make a replacement appear successful.
+Execution:
 
-### Existing FORMAL replacement path
+- validates the same base HEAD again;
+- verifies/reuses old history only if its actual SHA is correct;
+- archives old FORMAL binary when needed;
+- replaces only target binary/binaries;
+- appends transaction-bound provenance including previous approval evidence;
+- updates target FORMAL SHA/approval;
+- regenerates revisions;
+- verifies whole FORMAL repository consistency;
+- writes `change-plans/<transactionId>.json` for PR CI;
+- rolls back snapshotted files on handled post-write failure.
 
-A FORMAL replacement is a release change, not ordinary W-302 candidate ingestion. Follow a reviewed replacement flow that preserves the same invariants demonstrated by the final closeout:
+A repeat of the exact transaction is `ALREADY_APPLIED` only when the same transactionId/new SHA exists in provenance. A coincidental byte-identical bundle is a failure.
 
-1. fresh-read current FORMAL SHA/state;
-2. verify replacement binary contract;
-3. archive/preserve the previous FORMAL binary where repository history policy requires it;
-4. append old/new provenance rather than overwrite it;
-5. install the replacement at `public/monsters/mNNN.webp`;
-6. update the manifest to the new FORMAL SHA only with explicit approval evidence;
-7. synchronize review/runtime revision data;
-8. prove only intended species changed.
+## 6. PR gate
 
-Do not invent a one-off script or direct JSON mutation that skips history/provenance/approval unless that exact procedure is reviewed as the new canonical tooling.
+Create one scoped PR from the same base. Do not mix unrelated code/content into an art replacement PR.
 
-## 6. Idempotency check
-
-Before writing a target binary, compare the supplied raw SHA-256 to CURRENT.
-
-If it is already byte-identical to the intended current FORMAL binary:
-
-- do not replace it again;
-- do not append duplicate provenance/history;
-- count it as `ALREADY_MATCHES` / idempotent PASS;
-- continue validating the remaining scope.
-
-This rule prevented duplicate ingestion for five of the final seven closeout species.
-
-## 7. FORMAL approval
-
-FORMAL is a separate gate from generation, packaging and candidate registration.
-
-When using the formal promotion tooling for an eligible non-FORMAL candidate, evidence must explicitly identify the species and current approval. Historical/current examples follow this shape:
-
-```json
-{
-  "speciesId": "mNNN",
-  "approved": true,
-  "approvalType": "CURRENT_FORMAL",
-  "approvedBy": "explicit approver identity",
-  "approvedAt": "ISO-8601 timestamp",
-  "source": "explicit approval evidence"
-}
-```
-
-Then dry-run and execute according to `W-302-OPERATOR-GUIDE.md`.
-
-For an already-FORMAL binary replacement, do not assume a promotion command designed for CANDIDATE automatically models replacement semantics. Preserve the current FORMAL state and attach new approval evidence through the reviewed replacement flow.
-
-## 8. Registry and revision synchronization
-
-After all intended species are approved:
-
-- recount manifest states;
-- verify active scope remains exactly 238 species;
-- verify `m239` is excluded;
-- regenerate/synchronize `public/monster-asset-revisions.json` using the repository's current release tooling/process;
-- verify every FORMAL revision equals the intended raw WebP SHA-256;
-- verify no unexpected species revision changed.
-
-For a full-roster release the hard gate is:
-
-- FORMAL `238`;
-- CANDIDATE `0`;
-- PLACEHOLDER `0`.
-
-For a targeted maintenance release, counts may remain 238/0/0 throughout; therefore also compare target SHAs and unexpected changed IDs, not counts alone.
-
-## 9. Tests and build
-
-Use the repository's current required test/build commands. Baseline development commands are:
+CI runs:
 
 ```bash
-npm install
+npm run verify:monster-art-scope
 npm test
 npm run build
+npm run verify:release
+npm run test:monster-art-webkit
+npm run test:e2e
 ```
 
-The final 2026-08-31 closeout evidence was 290/290 tests PASS plus Vite production build PASS, but future test counts may legitimately change as the suite grows. **Do not hard-code 290 as a permanent expected count.** Require zero failing current tests instead.
+The scope verifier compares PR merge-base to HEAD and requires:
 
-If a wrapper build fails only because an external cloud/config pre-step is unavailable, distinguish that environment failure from the actual Vite build result. Do not silently treat one as the other; report both.
+- selected binary changes exactly present;
+- manifest/provenance/revision species exactly match target scope;
+- history only for planned targets;
+- no unrelated changed file;
+- base old SHA and HEAD new SHA match the transaction plan.
 
-## 10. PR/main release gate
+Therefore both “selected image omitted” and “other monster silently mixed in” fail CI.
 
-Before merge, the PR/report should include:
+## 7. Merge and production
 
-- exact target species scope;
-- base/head SHAs;
-- old → new raw SHA for each actual replacement;
-- idempotent/already-matching species separately;
-- manifest state before/after;
-- archive/provenance evidence;
-- unexpected species changes count/list;
-- test result;
-- production build result;
-- explicit statement that `m239` is excluded.
+Before merge, confirm current PR CI is green against current main. Do not rely on an old green run if main moved.
 
-Merge to `main` only after the intended repository state is proven.
+After merge:
 
-## 11. Production verification
+1. fresh-read main HEAD;
+2. confirm intended target SHA/plan are present;
+3. confirm Vercel production uses intended main commit;
+4. check live revision endpoint target SHA;
+5. visually inspect target in the app.
 
-Do not stop at “Vercel deployed”. Verify the live application and live asset revision data.
+Only then report LIVE VERIFIED.
 
-Check:
+## 8. Production rollback
 
-1. `https://mana-evo.vercel.app/` returns successfully;
-2. `https://mana-evo.vercel.app/monster-asset-revisions.json` returns successfully;
-3. target species state is `FORMAL`;
-4. target revision matches the expected new SHA-256;
-5. for full-roster closeout, 238 species are FORMAL;
-6. optionally fetch the target live image and visually inspect it when the maintenance reason was visual.
+If a live visual defect is discovered:
 
-A production deployment serving an old commit/revision is not a completed release.
+- use provenance/history to identify previous FORMAL SHA and exact binary;
+- create a new transaction bound to CURRENT;
+- restore through the same PR/CI/main/deploy/live flow;
+- do not leave Vercel permanently rolled back to a commit that disagrees with GitHub main.
 
-## 12. Stop conditions
+## 9. 3-stage family replacement
 
-Stop immediately and report the first unsatisfied gate when any of these occurs:
+For 2–3 targets from one evolution family:
 
-- species identity cannot be determined from CURRENT;
-- supplied/reference binary is stale or does not match its claimed SHA;
-- image is not exact 512×512;
-- WebP/alpha validation fails;
-- visual QA identifies wrong identity, scenery/collage or unrelated artifact;
-- repair requires ambiguous semantic reconstruction;
-- manifest package metadata does not match actual bytes;
-- replacement would overwrite history/provenance without an approved path;
-- required FORMAL approval evidence is absent;
-- unexpected species changes are detected;
-- tests/build fail for a relevant source reason;
-- production serves a different revision from the intended release.
+- one transactionId;
+- one bundle;
+- familyVisualQa PASS;
+- familyReferences cover the entire CURRENT family;
+- one change plan and one PR.
 
-Do not continue through later gates to create a misleading “mostly done” report.
+Do not execute three unrelated scripts/PRs for a family redesign.
 
-## 13. Special lessons from the final closeout
+## 10. Main protection prerequisite
 
-- **m160**: a bundle can contain the right-looking art at the wrong resolution. Validate dimensions from the actual binary before any registry write.
-- **m220/m221**: disconnected foreign fragments may be safely repairable when clearly separable; preserve body/VFX/thin edges.
-- **m229**: when a rectangular background plate cannot be separated safely without damaging character/VFX, stop repair and regenerate.
-- **m235**: canonical identity can overturn the obvious visual interpretation. It is F080 `ユグドラシア`, the world tree itself; do not animalize it or treat a foreground companion as the species.
-- **40-state omission**: finished images are not enough. Always verify final FORMAL/CANDIDATE/PLACEHOLDER state and live revision output.
-- **stale references**: reference ZIPs are convenience only; CURRENT GitHub SHA and canonical metadata win.
+Normal FAST LANE production operation begins only after GitHub main is physically protected by the documented one-person Ruleset:
 
-## 14. Related documents
+PR required + `test-and-build` required + 0 human approvals + no force-push + no deletion.
 
-- `docs/MONSTER-ART-FINAL-HANDOFF-20260831.md`
-- `docs/MONSTER-ART-TIPS-AND-PITFALLS.md`
-- `docs/monster-production-status.md`
-- `design/rebuild/asset-production/PHASE-4-STYLE-LOCK.md`
-- `design/rebuild/asset-production/PHASE-4-GITHUB-BINARY-HANDOFF.md`
-- `design/rebuild/asset-production/W-302-OPERATOR-GUIDE.md`
-- `design/rebuild/HANDOFF-TEMPLATE.md`
+Until this real repository setting exists, do not describe FAST LANE as fully operationally enabled.
+
+## 11. New monsters
+
+New IDs/families are not FORMAL replacements. Use `docs/MONSTER-ROSTER-EXPANSION-LANE.md`.
+
+Related:
+
+- `docs/MONSTER-ART-FAST-LANE.md`
+- `docs/MONSTER-ROSTER-EXPANSION-LANE.md`
+- `docs/REPOSITORY-RELEASE-GUARD.md`
+- `design/review/MONSTER-ART-MAINTENANCE-LANES-V1.md`
