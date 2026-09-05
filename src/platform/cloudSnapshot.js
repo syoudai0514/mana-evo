@@ -100,12 +100,12 @@ function restoreLearningEnvelope(cloudLearning, preferredProfileId = null) {
   }
 }
 
-export function applyCloudPayload(payload, { preferredProfileId = currentDeviceProfileId() } = {}) {
+export function applyCloudPayload(payload, { preferredProfileId = currentDeviceProfileId(), emitLocal = false } = {}) {
   if (!payload?.learning?.profiles || !payload?.gameEnvelope) throw new Error('invalid ManaEvo cloud payload')
   const learning = restoreLearningEnvelope(payload.learning, preferredProfileId)
-  saveState(learning)
-  importGameEnvelope(payload.gameEnvelope, learning.activeProfileId)
-  if (payload.learningRewardEnvelope) importLearningRewardEnvelope(payload.learningRewardEnvelope)
+  saveState(learning, { emit: emitLocal })
+  importGameEnvelope(payload.gameEnvelope, learning.activeProfileId, { emitLocal })
+  if (payload.learningRewardEnvelope) importLearningRewardEnvelope(payload.learningRewardEnvelope, { emit: emitLocal })
   writeLocal(DEVICE_PROFILE_KEY, learning.activeProfileId)
   return learning.activeProfileId
 }

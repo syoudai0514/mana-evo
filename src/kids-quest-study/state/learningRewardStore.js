@@ -81,8 +81,8 @@ export function exportLearningRewardEnvelope() {
   return readEnvelope()
 }
 
-export function importLearningRewardEnvelope(value) {
-  return writeEnvelope(value)
+export function importLearningRewardEnvelope(value, { emit = true } = {}) {
+  return writeEnvelope(value, { emit })
 }
 
 export function acknowledgeLearningGameRewards(runtime, ids) {

@@ -141,7 +141,7 @@ test('cloud snapshot includes the learning-to-game reward bridge in the same rev
   const source = fs.readFileSync(new URL('../src/platform/cloudSnapshot.js', import.meta.url), 'utf8')
   assert.match(source, /exportLearningRewardEnvelope\(\)/)
   assert.match(source, /learningRewardEnvelope:/)
-  assert.match(source, /importLearningRewardEnvelope\(payload\.learningRewardEnvelope\)/)
+  assert.match(source, /importLearningRewardEnvelope\(payload\.learningRewardEnvelope(?:,\s*\{[^}]*\})?\)/)
 })
 
 test('cloud mutations require PIN or an explicit live Parent verification session', () => {

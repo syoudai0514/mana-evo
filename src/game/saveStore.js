@@ -25,10 +25,10 @@ function emitLocalSaveChanged(source = 'game') {
   try { globalThis.dispatchEvent(new CustomEvent(LOCAL_SAVE_CHANGED_EVENT, { detail: { source } })) } catch {}
 }
 
-function writeEnvelope(envelope, { emit = false } = {}) {
+function writeEnvelope(envelope, { emit = false, emitLocal = true } = {}) {
   try {
     globalThis.localStorage?.setItem(GAME_SAVE_KEY, JSON.stringify(envelope))
-    emitLocalSaveChanged('game')
+    if (emitLocal) emitLocalSaveChanged('game')
     if (emit && typeof globalThis.dispatchEvent === 'function' && typeof globalThis.CustomEvent === 'function') {
       globalThis.dispatchEvent(new CustomEvent(GAME_SAVE_EVENT))
     }
@@ -94,8 +94,8 @@ export function exportGameEnvelope(fallbackProfileId = 'child-1') {
   return loadGameEnvelope(fallbackProfileId)
 }
 
-export function importGameEnvelope(raw, fallbackProfileId = 'child-1') {
+export function importGameEnvelope(raw, fallbackProfileId = 'child-1', { emitLocal = true } = {}) {
   if (!isSupportedGameEnvelope(raw)) throw new Error('unsupported ManaEvo game save format')
   const envelope = normalizeGameEnvelope(raw, fallbackProfileId)
-  return writeEnvelope(envelope, { emit: true })
+  return writeEnvelope(envelope, { emit: true, emitLocal })
 }

@@ -11,8 +11,11 @@ function emitLocalSaveChanged(source = 'learning') {
 export function loadState() {
   try { const raw = localStorage.getItem(KEY); return raw ? JSON.parse(raw) : null } catch { return null }
 }
-export function saveState(state) {
-  try { localStorage.setItem(KEY, JSON.stringify(state)); emitLocalSaveChanged('learning') } catch {}
+export function saveState(state, { emit = true } = {}) {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(state))
+    if (emit) emitLocalSaveChanged('learning')
+  } catch {}
 }
 export function clearState() {
   try { localStorage.removeItem(KEY); emitLocalSaveChanged('learning-clear') } catch {}
