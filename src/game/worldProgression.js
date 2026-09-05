@@ -172,7 +172,6 @@ export function isAdventureAreaUnlocked(game, area, { exUnlocked = null } = {}) 
   if (normalized !== 5) return false
 
   // CURRENT preserves the existing all-main-bosses EX rule only as a continuity default.
-  // A future canonical EX decision can override this without changing Area1-4 progression.
   if (typeof exUnlocked === 'boolean') return exUnlocked
   const cleared = clearedStageSet(game)
   return MAIN_ADVENTURE_AREAS.every((main) => cleared.has(bossStageId(main)))
@@ -270,7 +269,12 @@ export function enrichStage(stage, species) {
   if (isTraining) {
     next.captureDisabled = true
     next.requiresEvolutionDiscoverySpeciesId = species?.id || stage.enemySpeciesId
-    next.trainingEvolutionStage = Math.max(2, Number(stage.trainingEvolutionStage) || formStage)
+    next.trainingFinalForm = !species?.evolution
+    // The existing XP tier consumer uses >=3 as the final tier. A two-stage
+    // family therefore normalizes its stage-2 final form into the final tier.
+    next.trainingEvolutionStage = next.trainingFinalForm
+      ? 3
+      : Math.max(2, Number(stage.trainingEvolutionStage) || formStage)
     next.routeProgressEligible = false
   }
 
