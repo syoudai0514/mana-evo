@@ -41,6 +41,11 @@ function sessionLabel(session) {
   return session?.user?.email || session?.user?.phone || 'ログイン済み'
 }
 
+function cloudUpdatedLabel(cloud) {
+  if (!cloud?.updated_at) return '更新時刻なし'
+  try { return new Date(cloud.updated_at).toLocaleString('ja-JP') } catch { return '更新時刻なし' }
+}
+
 export default function CloudAccountShell({ children }) {
   const [open, setOpen] = useState(false)
   const [session, setSession] = useState(null)
@@ -55,6 +60,7 @@ export default function CloudAccountShell({ children }) {
   const [busy, setBusy] = useState(false)
   const [parentScreenOpen, setParentScreenOpen] = useState(false)
   const syncTimer = useRef(null)
+  const resolvingConflict = useRef(false)
   const testMode = getTestMode()
   const config = cloudConfig()
   const profileInfo = useMemo(() => getLocalProfiles(), [open, status, testMode?.kind])
@@ -84,6 +90,7 @@ export default function CloudAccountShell({ children }) {
   }, [session])
 
   const syncNow = useCallback(async ({ quiet = false } = {}) => {
+    if (resolvingConflict.current) return
     if (testMode) {
       setStatus('TEST中・クラウド同期停止')
       return
@@ -105,11 +112,13 @@ export default function CloudAccountShell({ children }) {
     if (decision.action === 'push-new') {
       const row = await insertMainSave(localPayload)
       setMeta(valid.user.id, row)
+      setConflict(null)
       setStatus('クラウド同期済み')
       return
     }
     if (decision.action === 'adopt' || decision.action === 'noop') {
       setMeta(valid.user.id, cloud)
+      setConflict(null)
       setStatus('クラウド同期済み')
       return
     }
@@ -118,6 +127,7 @@ export default function CloudAccountShell({ children }) {
       const row = await updateMainSave(localPayload, cloud.revision)
       if (!row) throw new Error('別の端末で更新されました。もう一度同期してください')
       setMeta(valid.user.id, row)
+      setConflict(null)
       setStatus('クラウド同期済み')
       return
     }
@@ -126,6 +136,7 @@ export default function CloudAccountShell({ children }) {
       const row = await updateMainSave(decision.payload, cloud.revision)
       if (!row) throw new Error('統合中に別の端末で更新されました。もう一度同期してください')
       setMeta(valid.user.id, row)
+      setConflict(null)
       setStatus('別プレイヤーの変更を安全に統合')
       applyCloudPayload(row.payload)
       window.location.reload()
@@ -133,17 +144,19 @@ export default function CloudAccountShell({ children }) {
     }
     if (decision.action === 'pull') {
       setMeta(valid.user.id, cloud)
+      setConflict(null)
       setStatus('別端末の最新データを取得')
       applyCloudPayload(cloud.payload)
       window.location.reload()
       return
     }
     setConflict({ cloud, localPayload })
-    setStatus('同期するデータを選んでください')
+    setStatus('保存データを選んでください')
     setOpen(true)
   }, [config.configured, maybeBackupCloud, setMeta, testMode])
 
   const scheduleSync = useCallback(() => {
+    if (resolvingConflict.current) return
     if (syncTimer.current) clearTimeout(syncTimer.current)
     syncTimer.current = setTimeout(() => syncNow({ quiet: true }).catch(() => setStatus('同期待ち・端末には保存済み')), 1400)
   }, [syncNow])
@@ -214,18 +227,49 @@ export default function CloudAccountShell({ children }) {
   })
 
   const chooseCloud = () => run(async () => {
-    const valid = await getValidSession(); if (!valid || !conflict?.cloud) return
-    await maybeBackupCloud(conflict.cloud, 'before-conflict-pull')
-    setMeta(valid.user.id, conflict.cloud)
-    applyCloudPayload(conflict.cloud.payload)
-    setConflict(null); window.location.reload()
+    const valid = await getValidSession()
+    const chosenCloud = conflict?.cloud
+    if (!valid || !chosenCloud) return
+    resolvingConflict.current = true
+    if (syncTimer.current) clearTimeout(syncTimer.current)
+    try {
+      await maybeBackupCloud(chosenCloud, 'before-conflict-pull')
+      applyCloudPayload(chosenCloud.payload)
+
+      // Import normalization must not leave local state immediately divergent from the chosen cloud.
+      const settledLocalPayload = captureCloudPayload()
+      let settledRow = chosenCloud
+      if (payloadHash(settledLocalPayload) !== payloadHash(chosenCloud.payload)) {
+        settledRow = await updateMainSave(settledLocalPayload, chosenCloud.revision)
+        if (!settledRow) throw new Error('別端末でさらに更新されました。もう一度選んでください')
+      }
+      setMeta(valid.user.id, settledRow)
+      setConflict(null)
+      setStatus('クラウドのデータにそろえました')
+      setOpen(false)
+      window.location.reload()
+    } finally {
+      resolvingConflict.current = false
+    }
   })
+
   const chooseLocal = () => run(async () => {
-    const valid = await getValidSession(); if (!valid || !conflict?.cloud) return
-    await maybeBackupCloud(conflict.cloud, 'before-conflict-overwrite')
-    const row = await updateMainSave(conflict.localPayload, conflict.cloud.revision)
-    if (!row) throw new Error('別端末でさらに更新されました')
-    setMeta(valid.user.id, row); setConflict(null); setStatus('この端末のデータを同期しました')
+    const valid = await getValidSession()
+    const chosenConflict = conflict
+    if (!valid || !chosenConflict?.cloud) return
+    resolvingConflict.current = true
+    if (syncTimer.current) clearTimeout(syncTimer.current)
+    try {
+      await maybeBackupCloud(chosenConflict.cloud, 'before-conflict-overwrite')
+      const row = await updateMainSave(chosenConflict.localPayload, chosenConflict.cloud.revision)
+      if (!row) throw new Error('別端末でさらに更新されました。もう一度選んでください')
+      setMeta(valid.user.id, row)
+      setConflict(null)
+      setStatus('この端末のデータをクラウドに保存しました')
+      setOpen(false)
+    } finally {
+      resolvingConflict.current = false
+    }
   })
 
   const manualBackup = () => run(async () => {
@@ -281,15 +325,27 @@ export default function CloudAccountShell({ children }) {
         <AdultCloudControls alreadyVerified={parentScreenOpen}>
           {recoveryMode && <div className="cloud-card"><h3>🔑 新しいパスワード</h3><input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="新しいパスワード"/><button disabled={busy || newPassword.length < 8} onClick={doUpdatePassword}>パスワードを変更</button></div>}
 
-          {!session ? <div className="cloud-card"><h3>☁️ 保護者アカウント</h3><label>メールアドレス<input type="email" autoCapitalize="none" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)}/></label><label>パスワード<input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)}/></label><div className="cloud-actions"><button disabled={busy || !config.configured || !email || !password} onClick={doSignIn}>ログイン</button><button className="secondary" disabled={busy || !config.configured || !email || password.length < 8} onClick={doSignUp}>新規登録</button></div><button className="cloud-link" disabled={busy || !config.configured || !email} onClick={doReset}>パスワードを忘れた</button><small>一度ログインした端末はセッションを保持します。</small></div> : <div className="cloud-card"><div className="cloud-row"><div><h3>👤 {sessionLabel(session)}</h3><small>共通アカウント</small></div><span>☁️</span></div><button disabled={busy || !!testMode} onClick={() => run(() => syncNow())}>☁️ 今すぐ同期</button></div>}
+          {!session ? <div className="cloud-card"><h3>☁️ 保護者アカウント</h3><label>メールアドレス<input type="email" autoCapitalize="none" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)}/></label><label>パスワード<input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)}/></label><div className="cloud-actions"><button disabled={busy || !config.configured || !email || !password} onClick={doSignIn}>ログイン</button><button className="secondary" disabled={busy || !config.configured || !email || password.length < 8} onClick={doSignUp}>新規登録</button></div><button className="cloud-link" disabled={busy || !config.configured || !email} onClick={doReset}>パスワードを忘れた</button><small>一度ログインした端末はセッションを保持します。</small></div> : <div className="cloud-card"><div className="cloud-row"><div><h3>👤 {sessionLabel(session)}</h3><small>共通アカウント</small></div><span>☁️</span></div><button disabled={busy || !!testMode || !!conflict} onClick={() => run(() => syncNow())}>☁️ 今すぐ同期</button></div>}
 
-          {session && conflict && <div className="cloud-card cloud-conflict"><h3>⚠️ iPhone/iPadの同じプレイヤーに両方の変更があります</h3><p>別プレイヤー同士なら自動統合します。同じプレイヤーを両端末で変更した場合だけ、自動で上書きせず止めます。残したい方を選んでください。</p><button disabled={busy} onClick={chooseCloud}>☁️ クラウド側を使う</button><button className="secondary" disabled={busy} onClick={chooseLocal}>📱 この端末側を使う</button></div>}
+          {session && conflict && <div className="cloud-card cloud-conflict">
+            <h3>⚠️ 保存データが2つあります</h3>
+            <p>同じプレイヤーがiPhone/iPadの両方で変わりました。<strong>残したい方を1つ選ぶと、この保存確認は終わります。</strong> 選ぶ前のクラウドデータは自動でバックアップします。</p>
+            <div className="cloud-conflict-option">
+              <span><strong>☁️ クラウドの保存データ</strong><small>更新：{cloudUpdatedLabel(conflict.cloud)}</small></span>
+              <button disabled={busy} onClick={chooseCloud}>クラウドのデータにそろえる</button>
+            </div>
+            <div className="cloud-conflict-option local">
+              <span><strong>📱 この端末の現在のデータ</strong><small>このiPhone/iPadで今見えている進み具合</small></span>
+              <button className="secondary" disabled={busy} onClick={chooseLocal}>この端末のデータを残す</button>
+            </div>
+            <small>迷う場合は、モンスター・Lv・マナなど今残したい進み具合が見えている端末側を選んでください。</small>
+          </div>}
 
           <div className="cloud-card"><h3>👨‍👩‍👧 プレイヤー</h3><p>この端末で開く人だけを切り替えます。他の端末の選択は変わりません。</p><div className="cloud-profile-list">{Object.entries(profileInfo.profiles || {}).map(([id, profile]) => <button key={id} className={id === profileInfo.activeProfileId ? 'active' : ''} onClick={() => switchProfile(id)}>{id === profileInfo.activeProfileId ? '✓ ' : ''}{profile.name || id}</button>)}</div><small>パパ・まさき・ウタノなどのプロフィール追加は保護者メニューからできます。</small></div>
 
           <div className="cloud-card"><h3>🧪 テストデータ</h3>{testMode ? <><p><b>{testMode.label}</b> で確認中。実データとクラウドは変更されません。</p><button onClick={stopTest}>テストを終了して実データへ戻る</button></> : <div className="test-fixture-grid"><button onClick={() => startTest('all')}>全開放・全キャラ</button><button onClick={() => startTest('stage1')}>第1形態・進化直前</button><button onClick={() => startTest('stage2')}>第2形態・最終進化直前</button></div>}<small>進化fixtureはレベル進化/持ち物進化を次の1XP直前、石進化は必要アイテム所持にします。</small></div>
 
-          {session && <div className="cloud-card"><div className="cloud-row"><h3>📦 バックアップ</h3><button className="secondary" disabled={busy || !!testMode} onClick={manualBackup}>今の状態を保存</button></div><p>日次の同期前・競合解決前・復元前にも自動で世代を残します。</p><div className="cloud-backups">{backups.length ? backups.map((backup) => <div key={backup.id}><span><strong>{new Date(backup.created_at).toLocaleString('ja-JP')}</strong><small>rev.{backup.revision} / {backup.reason}</small></span><button className="secondary" disabled={busy || !!testMode} onClick={() => restoreBackup(backup)}>復元</button></div>) : <small>バックアップはまだありません。</small>}</div><button className="secondary" disabled={busy} onClick={doSignOut}>この端末からログアウト</button></div>}
+          {session && <details className="cloud-card cloud-recovery"><summary>📦 バックアップ・復元（困ったとき）</summary><div className="cloud-recovery-body"><div className="cloud-row"><p>通常の同期では使いません。データを以前の状態へ戻したいときだけ開いてください。</p><button className="secondary" disabled={busy || !!testMode} onClick={manualBackup}>今の状態を保存</button></div><div className="cloud-backups">{backups.length ? backups.map((backup) => <div key={backup.id}><span><strong>{new Date(backup.created_at).toLocaleString('ja-JP')}</strong><small>rev.{backup.revision} / {backup.reason}</small></span><button className="secondary" disabled={busy || !!testMode} onClick={() => restoreBackup(backup)}>復元</button></div>) : <small>バックアップはまだありません。</small>}</div><button className="secondary" disabled={busy} onClick={doSignOut}>この端末からログアウト</button></div></details>}
         </AdultCloudControls>
 
         {message && <div className="cloud-message">{message}</div>}
