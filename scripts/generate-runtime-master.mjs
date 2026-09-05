@@ -251,9 +251,9 @@ for (let area = 1; area <= 4; area += 1) {
     })
   }
 
-  // D-031: zone ③ stays meaningful without exposing evolved-form acquisition.
-  // Re-use only first-form species as stronger deep-route rematches. They remain
-  // normal wild clears/captures, while evolved forms are handled by training below.
+  // D-031: zone ③ is a training-only deep route. Re-use only first-form species
+  // as stronger rematches, but never expose these high-level encounters as a GET
+  // shortcut. Acquisition of first forms remains owned by the ordinary ①/② route.
   for (const row of growth.filter((entry) => num(entry.area) === area && num(entry.stage) === 1 && bool(entry.wildCatchable))) {
     const rank = num(row.catchRank, 1)
     stages.push({
@@ -268,6 +268,8 @@ for (let area = 1; area <= 4; area += 1) {
       mana: 12 + area * 5 + rank * 2,
       zoneHint: 'deep',
       deepRematch: true,
+      captureDisabled: true,
+      captureDisabledReason: 'DEEP_TRAINING_ONLY',
       areaGateBossId: area > 1 ? areaBossIds[area - 1] : null
     })
   }
