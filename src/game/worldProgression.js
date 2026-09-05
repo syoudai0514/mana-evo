@@ -63,7 +63,7 @@ export const WORLD_AREA_META = Object.freeze([
 ])
 
 export const MAIN_ADVENTURE_AREAS = Object.freeze([1, 2, 3, 4])
-// D-031: each next normal zone opens after three distinct normal encounter clears.
+// D-031: each next normal zone opens after three distinct enemy species clears.
 export const ROUTE_CLEAR_TUNING_DEFAULT = 3
 export const AREA_BOSS_REQUIREMENT = Object.freeze({ minPoints: 12, minUniqueSkills: 2 })
 
@@ -237,6 +237,7 @@ export function enrichStage(stage, species) {
   const zoneIndex = Math.max(0, meta.zones.findIndex((entry) => entry.id === zone.id))
   const formStage = Math.max(1, Number(species?.stage) || 1)
   const isEvolvedWild = stage.kind === 'wild' && formStage >= 2
+  const isDeepRematch = stage.kind === 'wild' && !!stage.deepRematch
   const isTraining = stage.kind === 'training'
   const next = {
     ...stage,
@@ -253,7 +254,7 @@ export function enrichStage(stage, species) {
     maxEnemyLevel: zone.maxLevel,
     levelLabel: `Lv.${zone.minLevel}〜${zone.maxLevel}`,
     firstAcquireByEvolution: formStage >= 2,
-    routeProgressEligible: stage.kind === 'wild' && formStage === 1 && !stage.deepRematch
+    routeProgressEligible: stage.kind === 'wild' && formStage === 1 && !isDeepRematch
   }
 
   // D-031 supersedes the old evolved-wild placement rule: evolved forms remain
@@ -263,6 +264,15 @@ export function enrichStage(stage, species) {
     next.captureDisabled = true
     next.retiredEvolvedWild = true
     next.advancedEvolutionWild = false
+  }
+
+  // Zone ③ is training-only even though it reuses first-form opponents. Keep this
+  // runtime guard in addition to generated stage metadata so stale generated data
+  // cannot re-open the high-level acquisition shortcut.
+  if (isDeepRematch) {
+    next.captureDisabled = true
+    next.captureDisabledReason = stage.captureDisabledReason || 'DEEP_TRAINING_ONLY'
+    next.routeProgressEligible = false
   }
 
   // Self-evolution is the authority that unlocks the separate training battle.
@@ -293,7 +303,7 @@ function stagesClearedInZone(game, stages, area, zoneId) {
     .filter((stage) => Number(stage.adventureArea || stage.area) === Number(area))
     .filter((stage) => stage.zoneId === zoneId)
     .filter((stage) => cleared.has(stage.id))
-    .map((stage) => stage.id)).size
+    .map((stage) => stage.enemySpeciesId || stage.id)).size
 }
 
 export function adventureZoneProgress(game, stages, area, zoneId, { exUnlocked = null } = {}) {
