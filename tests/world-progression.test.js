@@ -13,15 +13,23 @@ test('world areas expose explicit progression bands and zones', () => {
   assert.ok(AREA_META.every((a) => a.zones.length === 3))
 })
 
-test('second-form wild encounter is locked until that form has been obtained by own confirmed evolution', () => {
-  const stage = STAGES.find((s) => s.kind === 'wild' && s.area === 1 && speciesOf(s.enemySpeciesId)?.stage === 2 && speciesOf(s.enemySpeciesId)?.evolution)
-  assert.ok(stage, 'area1 should contain a non-final second form')
-  assert.equal(stage.firstAcquireByEvolution, true)
-  assert.equal(stage.requiresEvolutionDiscoverySpeciesId, stage.enemySpeciesId)
+test('confirmed self evolution unlocks training while the retired evolved-wild stage stays hidden', () => {
+  const retired = STAGES.find((s) => s.kind === 'wild' && s.area === 1 && speciesOf(s.enemySpeciesId)?.stage === 2)
+  assert.ok(retired, 'generated compatibility stage for an area1 second form should exist')
+  assert.equal(retired.hidden, true)
+  assert.equal(retired.captureDisabled, true)
+  assert.equal(isStageUnlocked(createGameState(), retired), false)
 
-  const predecessor = Object.values(SPECIES).find((s) => getEvolutionTransition(s.id)?.toSpeciesId === stage.enemySpeciesId)
+  const targetSpeciesId = retired.enemySpeciesId
+  const training = STAGES.find((s) => s.kind === 'training' && s.enemySpeciesId === targetSpeciesId)
+  assert.ok(training, 'every evolved form should have a training stage')
+  assert.equal(training.captureDisabled, true)
+  assert.equal(training.requiresEvolutionDiscoverySpeciesId, targetSpeciesId)
+
+  const predecessor = Object.values(SPECIES).find((s) => getEvolutionTransition(s.id)?.toSpeciesId === targetSpeciesId)
   const transition = predecessor ? getEvolutionTransition(predecessor.id) : null
   assert.ok(predecessor && transition?.method === 'level', 'needs a level-evolution predecessor for the test')
+
   const game = createGameState()
   game.box = {
     evo: {
@@ -32,12 +40,7 @@ test('second-form wild encounter is locked until that form has been obtained by 
   game.team = ['evo']
   game.activeMonsterId = 'evo'
   game.dex = { seen: { [predecessor.id]: true }, caught: { [predecessor.id]: true } }
-  game.stagesCleared = ['a1-boss', 'a2-boss']
-  for (const zoneId of ['coast', 'frost', 'city', 'skyway']) {
-    const route = STAGES.filter((entry) => entry.kind === 'wild' && entry.adventureArea === stage.adventureArea && entry.zoneId === zoneId).slice(0, 2)
-    if (route.length === 2) game.stagesCleared.push(...route.map((entry) => entry.id))
-  }
-  assert.equal(isStageUnlocked(game, stage), false)
+  assert.equal(isStageUnlocked(game, training), false)
 
   const qualified = applyXpToInstance(game, {
     instanceId: 'evo',
@@ -47,23 +50,41 @@ test('second-form wild encounter is locked until that form has been obtained by 
   assert.equal(qualified.ok, true)
   assert.equal(qualified.game.box.evo.speciesId, predecessor.id)
   assert.equal(qualified.game.box.evo.evolutionReady, true)
-  assert.equal(qualified.game.evolutionDiscoveries[stage.enemySpeciesId], undefined)
-  assert.equal(isStageUnlocked(qualified.game, stage), false)
+  assert.equal(isStageUnlocked(qualified.game, training), false)
 
   const evolved = evolveInstance(qualified.game, 'evo')
   assert.equal(evolved.ok, true)
-  assert.equal(evolved.game.box.evo.speciesId, stage.enemySpeciesId)
-  assert.equal(evolved.game.dex.caught[stage.enemySpeciesId], true)
-  assert.equal(evolved.game.evolutionDiscoveries[stage.enemySpeciesId], true)
-  assert.equal(isStageUnlocked(evolved.game, stage), true)
+  assert.equal(evolved.game.box.evo.speciesId, targetSpeciesId)
+  assert.equal(evolved.game.dex.caught[targetSpeciesId], true)
+  assert.equal(evolved.game.evolutionDiscoveries[targetSpeciesId], true)
+  assert.equal(isStageUnlocked(evolved.game, training), true)
+  assert.equal(isStageUnlocked(evolved.game, retired), false, 'self evolution must not resurrect retired wild capture routes')
 })
 
-test('final evolved forms are not normal wild map targets', () => {
-  const illegal = STAGES.filter((s) => s.kind === 'wild' && !s.legacy).filter((s) => {
-    const species = speciesOf(s.enemySpeciesId)
-    return species?.stage > 1 && !species?.evolution && !s.hidden
-  })
+test('all evolved forms are absent from visible normal wild targets', () => {
+  const illegal = STAGES.filter((s) => s.kind === 'wild' && !s.legacy && !s.hidden).filter((s) => speciesOf(s.enemySpeciesId)?.stage > 1)
   assert.equal(illegal.length, 0)
+})
+
+test('each main area has enough first-form route encounters to satisfy the three-clear gate', () => {
+  for (const meta of AREA_META) {
+    for (const zone of meta.zones.slice(0, 2)) {
+      const eligible = STAGES.filter((stage) =>
+        stage.kind === 'wild' && !stage.hidden && stage.routeProgressEligible !== false &&
+        (stage.adventureArea || stage.area) === meta.area && stage.zoneId === zone.id &&
+        speciesOf(stage.enemySpeciesId)?.stage === 1)
+      assert.ok(eligible.length >= 3, `area${meta.area}/${zone.id} needs at least three eligible route encounters`)
+    }
+  }
+})
+
+test('deep zones contain strong first-form rematches and no evolved capture targets', () => {
+  for (const meta of AREA_META) {
+    const deep = meta.zones[2]
+    const stages = STAGES.filter((stage) => !stage.hidden && (stage.adventureArea || stage.area) === meta.area && stage.zoneId === deep.id)
+    assert.ok(stages.some((stage) => stage.kind === 'wild' && stage.deepRematch && speciesOf(stage.enemySpeciesId)?.stage === 1), `area${meta.area} needs a deep first-form rematch`)
+    assert.equal(stages.filter((stage) => stage.kind === 'wild' && speciesOf(stage.enemySpeciesId)?.stage > 1).length, 0)
+  }
 })
 
 test('normal encounter scaling is clamped to the zone level band', () => {
