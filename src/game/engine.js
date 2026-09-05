@@ -25,10 +25,13 @@ function captureBlocked(battle) {
 }
 
 export function canAttemptCapture(game, battle, itemType = 'star') {
+  // Use persisted activeBattle only to establish the authoritative stage/species
+  // prohibition. The supplied battle remains the transaction snapshot consumed by
+  // the existing capture APIs (HP changes, stale-battle detection, post-win phase).
   const authoritativeBattle = game?.activeBattle || battle
   if (captureBlocked(authoritativeBattle)) return false
-  if (isPostWinCapturePhase(authoritativeBattle)) return canAttemptPostWinCapture(game, authoritativeBattle, itemType)
-  return canAttemptCaptureShared(game, authoritativeBattle, itemType)
+  if (isPostWinCapturePhase(battle)) return canAttemptPostWinCapture(game, battle, itemType)
+  return canAttemptCaptureShared(game, battle, itemType)
 }
 
 // Preserve the public default while ensuring null means "no caller-supplied roll".
@@ -39,8 +42,8 @@ export function attemptCapture(game, battle, rolls = null, itemType = 'star', op
     return { ok: false, game, battle: authoritativeBattle, reason: 'CAPTURE_DISABLED' }
   }
   const normalizedRolls = rolls === null ? undefined : rolls
-  if (isPostWinCapturePhase(authoritativeBattle)) {
-    return attemptPostWinCapture(game, authoritativeBattle, normalizedRolls, itemType, options)
+  if (isPostWinCapturePhase(battle)) {
+    return attemptPostWinCapture(game, battle, normalizedRolls, itemType, options)
   }
-  return attemptCaptureShared(game, authoritativeBattle, normalizedRolls, itemType, options)
+  return attemptCaptureShared(game, battle, normalizedRolls, itemType, options)
 }
