@@ -183,7 +183,7 @@ export function StageMap({ game, onStart, onExplore, goStudy, goHome, dailyCompl
         const danger = teamLevel < zone.minLevel
         const progress = adventureZoneProgress(game, area, zone.id)
         const locked = !progress.unlocked
-        const xpCopy = index === 0 ? 'XP ふつう' : index === 1 ? 'XP ちょい多め' : 'XP たくさん'
+        const xpCopy = index === 0 ? 'XP ふつう' : index === 1 ? 'XP ちょい多め' : 'XP たくさん・GETなし'
         return <button key={zone.id} disabled={locked} className={`${zoneId === zone.id ? 'active' : ''} ${danger ? 'danger' : 'ready'} ${locked ? 'zone-locked' : ''}`} onClick={() => selectZone(zone.id)}>
           <span className="zone-path-dot">{locked ? '🔒' : zoneId === zone.id ? '📍' : index + 1}</span><b>{zone.icon} {zone.name}</b><small>Lv.{zone.minLevel}〜{zone.maxLevel} ・ {xpCopy}</small><em>{locked ? progress.previousZoneName + ' あと' + progress.remaining + 'しゅるい' : danger ? '⚠️ かなり つよい' : zoneId === zone.id ? 'いま ここ！' : 'いけるよ'}</em>
         </button>
@@ -229,12 +229,20 @@ export function StageMap({ game, onStart, onExplore, goStudy, goHome, dailyCompl
         const isCleared = cleared.has(stage.id)
         const enemy = speciesOf(stage.enemySpeciesId)
         const canStart = unlocked && dailyCompleted && ticketCount > 0
-        const recommendationTag = stage.kind === 'boss' ? (isCleared ? '再戦' : 'おすすめ') : ['giga-challenge', 'burst-challenge'].includes(stage.kind) ? (isCleared ? '再挑戦' : '初回') : stage.kind === 'wild' ? (game.dex?.caught?.[stage.enemySpeciesId] ? '育成向け' : '未GET') : index === 0 ? 'おすすめ' : '挑戦'
+        const recommendationTag = stage.kind === 'boss'
+          ? (isCleared ? '再戦' : 'おすすめ')
+          : ['giga-challenge', 'burst-challenge'].includes(stage.kind)
+            ? (isCleared ? '再挑戦' : '初回')
+            : stage.deepRematch
+              ? '育成向け'
+              : stage.kind === 'wild'
+                ? (game.dex?.caught?.[stage.enemySpeciesId] ? '育成向け' : '未GET')
+                : index === 0 ? 'おすすめ' : '挑戦'
         return <article key={stage.id} className={`stage-card formal-stage-card area-${stage.adventureArea || stage.area} zone-${stage.zoneId || 'special'} ${!unlocked ? 'locked' : ''}`}>
           <div className="stage-number">{dailyMode ? <b>{index + 1}</b> : isCleared ? '✅' : unlocked ? stage.kind === 'boss' ? '👑' : '⚔️' : '🔒'}</div><span className={'recommendation-tag kind-' + stage.kind}>{recommendationTag}</span>
           <div className="encounter-art"><PlaceholderMonster speciesId={stage.enemySpeciesId} size={dailyMode ? 96 : 76} /></div>
           <div className="stage-copy">
-            <small>{stage.zoneIcon || '🗺️'} {stage.zoneName || stageKindLabel(stage.kind)}　・　{stageKindLabel(stage.kind)}　{enemy?.no ? `No.${enemy.no}` : ''}</small>
+            <small>{stage.zoneIcon || '🗺️'} {stage.zoneName || stageKindLabel(stage.kind)}　・　{stage.deepRematch ? 'つよいてき・育成' : stageKindLabel(stage.kind)}　{enemy?.no ? `No.${enemy.no}` : ''}</small>
             <strong>{stage.label}</strong>
             <span>{enemy?.name}　{stage.bossRank ? `BOSS ${stage.bossRank}` : stage.levelLabel || `Lv.${stage.enemyLevel || 1}`}</span>
             <TypePills types={enemy?.types} />
@@ -242,7 +250,7 @@ export function StageMap({ game, onStart, onExplore, goStudy, goHome, dailyCompl
           </div>
           <div className="stage-actions">
             <span>🎫×1</span>
-            {stage.deepRematch && <small>🔥 XP ×1.30</small>}
+            {stage.deepRematch && <><small>🔥 XP ×1.30</small><small>🚫 GETなし</small></>}
             {stage.id === 'a1-boss' && <small>🔷 はじめてなら ギガキー</small>}
             {stage.specialReward?.type === 'giga' && <small>🔷 ギガコア</small>}
             {stage.specialReward?.type === 'burst' && <small>💥 バーストのしるし</small>}
