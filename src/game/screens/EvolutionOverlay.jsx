@@ -50,7 +50,7 @@ export function EvolutionCelebration({ reveal, onClose }) {
   const after = statsFor(reveal.toId, reveal.level)
   const gain = (key) => Math.max(0, (after?.[key] || 0) - (before?.[key] || 0))
   const discoveryMessage = reveal.firstEvolutionDiscovery
-    ? '🗺️ じぶんで シンカした きろくが のこった！ この すがたは、これからの ぼうけんで であえる こうほに なったよ。'
+    ? `🥋 シンカしゅぎょうが ひらいた！ ${to?.name || 'このすがた'}と とっくんして、もっと そだてられるよ。`
     : '📖 じぶんで シンカした きろくが のこった！ ずかんの GET も こうしんされたよ。'
 
   return <div className="evolution-overlay" data-layout-surface="contextual" role="dialog" aria-modal="true" aria-label="シンカ！" aria-live="polite">
