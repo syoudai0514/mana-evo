@@ -67,6 +67,17 @@ test('same-task reinforcement can acknowledge a real mistake before the next sch
   }), true)
 })
 
+test('hard English keeps using generic SRS lapse history', () => {
+  const state = { srs: { 'hard:english': { 'hard:eng:grammar-1': { lapses: 1, due: 10 } } } }
+  assert.equal(isActualMistakeReviewOpportunity({
+    state,
+    domainId: 'english',
+    statsDomainId: 'hard:english',
+    itemKey: 'hard:eng:grammar-1',
+    today: 10
+  }), true)
+})
+
 test('conquered counter only increments for mastered items with actual lapse history', () => {
   assert.equal(shouldIncrementConquered({
     entryBefore: { lapses: 0 }, correct: true, wasDue: true, mastered: true, hard: false
