@@ -4,17 +4,17 @@ Status: **CURRENT / CANONICAL**
 Decision: **D-031**  
 Effective: 2026-09-05
 
-This document defines the canonical relationship between normal encounters, acquisition by capture, confirmed self-evolution, the ①→②→③ route, and post-evolution training. Where older documents describe evolved-form wild acquisition or a different zone-clear count, this D-031 contract takes precedence.
+This document defines the canonical relationship between normal encounters, acquisition by capture, confirmed self-evolution, the ①→②→③ route, and post-evolution training. Where older documents describe evolved-form wild acquisition, capturable deep-route rematches, or a different zone-clear count, this D-031 contract takes precedence.
 
 ---
 
 ## 1. Product goal
 
-ManaEvo must reward the child for **raising a monster and choosing to evolve it**, rather than letting later forms be bypassed by direct capture.
+ManaEvo must reward the child for **raising a monster and choosing to evolve it**, rather than letting later forms or high-level rematches bypass that growth experience.
 
 The intended loop is:
 
-`GET first form → raise it → confirm evolution → unlock training against that evolved form → gain XP more efficiently → continue raising/evolving`
+`GET first form in ①/② → raise it → confirm evolution → unlock training against that evolved form → gain XP more efficiently → continue raising/evolving`
 
 Evolution is therefore both:
 
@@ -28,17 +28,33 @@ Evolution is therefore both:
 ### 2.1 First form
 
 - Stage 1 / first-form species may be obtained by capture when their encounter otherwise permits capture.
-- Existing capture rules (HP gate, ring economics, attempt limit, etc.) remain authoritative.
+- In the normal ①→②→③ route, **① and ② are the first-form acquisition zones**.
+- ③ deep/rematch encounters are explicitly training-only and are not an acquisition route, even though their opponent is a first-form species.
+- Existing capture rules (HP gate, ball economics, attempt limit, etc.) remain authoritative only when the encounter itself permits capture.
 
 ### 2.2 Evolved forms
 
 - Stage 2 and final forms **cannot be newly acquired by capture**.
 - This applies to both capture during battle and post-win capture.
 - The first canonical acquisition of an evolved form is a **confirmed self-evolution** of an owned monster.
-- A blocked evolved-form capture must not consume a capture ring/item.
+- A blocked evolved-form capture must not consume a capture ball/item.
 - Existing owned evolved monsters are never deleted or downgraded.
 
-### 2.3 Legacy migration
+### 2.3 Stage-level capture prohibition
+
+`stage.captureDisabled` is a public capture authority independent of species stage.
+
+When it is true:
+
+- in-battle capture is unavailable;
+- post-win capture is unavailable;
+- no ball/item is consumed;
+- no new BOX instance is created;
+- Dex `caught` state is not increased by that attempt.
+
+D-031 requires this flag for all ③ deep/rematch encounters and all シンカしゅぎょう encounters. Species-stage rules and stage-level rules are cumulative; neither may bypass the other.
+
+### 2.4 Legacy migration
 
 Historical saves that predate reliable evolution provenance may retain grandfathered `evolutionDiscoveries` when the migration layer cannot distinguish old capture from old evolution. This is compatibility only; no new runtime path may create evolved-form ownership through capture.
 
@@ -64,20 +80,21 @@ On first confirmed evolution into a form:
 Each main area has three normal route zones.
 
 - ① is available when the area opens.
-- ② opens after **3 distinct eligible normal encounter first-clears** in ①.
-- ③ opens after **3 distinct eligible normal encounter first-clears** in ②.
+- ② opens after **3 distinct eligible enemy species first-clears** in ①.
+- ③ opens after **3 distinct eligible enemy species first-clears** in ②.
 
-The counter is based on distinct stage IDs; replaying the same stage does not increment it.
+The counter is based on distinct `enemySpeciesId` values, not distinct stage IDs. Replaying the same species through another stage/variant/rematch does not create another route-progress unit.
 
 The following do **not** count toward route progress:
 
 - シンカしゅぎょう;
+- ③ deep/rematch training encounters;
 - retired/hidden evolved-form wild stages;
 - bosses;
 - giga/burst/special challenges;
 - event/EX stages.
 
-This prevents an evolution lock from making normal route progression impossible.
+This keeps the child's visible promise literal: the next zone opens by defeating **three different monsters**, not by accumulating three internal stage IDs.
 
 ---
 
@@ -85,16 +102,23 @@ This prevents an evolution lock from making normal route progression impossible.
 
 ### ① / ②
 
-Normal discover-and-capture play using first-form species appropriate to the area.
+Normal discover-and-capture play using first-form species appropriate to the area. These are the normal route's first-form acquisition zones.
 
 ### ③
 
 ③ is the deeper, higher-level training part of the normal route. It uses strong/rematch encounters of **first-form species already belonging to that area**.
 
+③ is explicitly **GETなし**:
+
+- every deep/rematch stage has `captureDisabled = true`;
+- capture is unavailable both during battle and after victory;
+- a blocked attempt spends no ball/item and creates no BOX/Dex acquisition;
+- the same first-form species can still be captured normally from its acquisition encounter in ①/② when that encounter otherwise permits capture.
+
 Purpose:
 
 - keep ③ populated after evolved wild acquisition is removed;
-- preserve capture legality;
+- prevent high-level first-form capture from skipping the intended raising runway;
 - provide a clear place for higher-level normal training;
 - avoid using locked evolved forms as route blockers.
 
@@ -201,8 +225,9 @@ No migration may:
 
 ## 11. UX requirements
 
-- Locked normal zones show the remaining number of **different** normal encounter clears.
+- Locked normal zones show the remaining number of **different monster species** to defeat.
 - Zone cards communicate that deeper zones award more XP.
+- ③/deep rematches explicitly communicate **GETなし / 育成向け**.
 - Training is presented in a separate `🥋 シンカしゅぎょう` section.
 - Un-discovered evolved forms must not be exposed as normal daily encounter choices.
 - On first self-evolution, the celebration states that training against the new form has opened.
@@ -214,18 +239,23 @@ No migration may:
 
 D-031 is complete only when all of the following are covered by tests:
 
-1. first forms remain capturable under normal capture rules;
-2. stage 2/final forms are blocked in both normal and post-win capture with no ring spend;
-3. a pending/qualified evolution does not unlock training before confirmation;
-4. confirmed self-evolution records discovery and unlocks the exact training encounter;
-5. retired evolved wild stages remain unavailable even after self-evolution;
-6. ①→② and ②→③ require three distinct eligible normal clears;
-7. duplicate clears and training clears do not advance route progress;
-8. every ①/② zone has enough eligible normal encounters to avoid a deadlock;
-9. every ③ zone has visible first-form deep/rematch battles and no visible evolved-form wild capture target;
-10. XP increases ① < ② < ③;
-11. training XP uses one training multiplier only, never zone×training stacking;
-12. a two-stage family's final stage receives the final-form training tier;
-13. area boss learning gate remains 12 points + 2 distinct skills;
-14. existing owned evolved monsters remain intact through normalization/migration/cloud round-trip;
-15. iPhone/iPad adventure, evolution, battle and save regressions remain green.
+1. first forms in ordinary ①/② acquisition encounters remain capturable under normal capture rules;
+2. stage 2/final forms are blocked in both normal and post-win capture with no ball spend;
+3. every ③ first-form deep/rematch is blocked from in-battle capture;
+4. every ③ first-form deep/rematch is blocked from post-win capture;
+5. a blocked ③ capture spends zero balls, creates zero BOX instances and does not increase Dex `caught`;
+6. the same species remains capturable from its ordinary ①/② acquisition encounter;
+7. a pending/qualified evolution does not unlock training before confirmation;
+8. confirmed self-evolution records discovery and unlocks the exact training encounter;
+9. retired evolved wild stages remain unavailable even after self-evolution;
+10. ①→② and ②→③ require three distinct eligible enemy species;
+11. two different stage IDs for the same enemy species count only once; a third distinct species is required for 3/3;
+12. duplicate clears, ③ deep/rematches and training clears do not advance route progress;
+13. every ①/② zone has enough eligible distinct species to avoid a deadlock;
+14. every ③ zone has visible first-form deep/rematch battles, all marked capture-disabled, and no visible evolved-form wild capture target;
+15. XP increases ① < ② < ③;
+16. training XP uses one training multiplier only, never zone×training stacking;
+17. a two-stage family's final stage receives the final-form training tier;
+18. area boss learning gate remains 12 points + 2 distinct skills;
+19. existing owned evolved monsters remain intact through normalization/migration/cloud round-trip;
+20. iPhone/iPad adventure, evolution, battle and save regressions remain green.
