@@ -35,9 +35,10 @@ function routeStages(area = 1) {
   return zoneIds.flatMap((zoneId) => [1, 2, 3, 4].map((n) => ({
     id: `a${area}-${zoneId}-${n}`,
     kind: 'wild',
+    enemySpeciesId: `species-${area}-${zoneId}-${n}`,
     adventureArea: area,
     zoneId,
-    routeProgressEligible: true
+    routeProgressEligible: zoneId !== 'deep'
   })))
 }
 
@@ -68,6 +69,20 @@ test('first forms remain normal-wild candidates while every evolved wild form is
     assert.equal(evolved.captureDisabled, true)
     assert.equal(evolved.firstAcquireByEvolution, true)
   }
+})
+
+test('D-031 deep first-form rematches are training-only and capture-disabled', () => {
+  const deep = enrichStage({
+    id: 'a1-deep-001',
+    kind: 'wild',
+    area: 1,
+    zoneHint: 'deep',
+    deepRematch: true
+  }, { id: 'm001', no: '001', stage: 1, evolution: { to: 'm002' } })
+  assert.equal(deep.zoneId, 'deep')
+  assert.equal(deep.captureDisabled, true)
+  assert.equal(deep.captureDisabledReason, 'DEEP_TRAINING_ONLY')
+  assert.equal(deep.routeProgressEligible, false)
 })
 
 test('boss stages keep the canonical learning gate metadata', () => {
@@ -118,9 +133,9 @@ test('first boss clear unlocks only the next area once and does not move current
   assert.equal(again.unlockedArea, null)
 })
 
-test('D-031 route requires three distinct eligible normal clears and ignores training/duplicates', () => {
+test('D-031 route requires three distinct eligible enemy species and ignores training/duplicates', () => {
   const stages = routeStages(1)
-  stages.push({ id: 'training-m002', kind: 'training', adventureArea: 1, zoneId: 'meadow', routeProgressEligible: false })
+  stages.push({ id: 'training-m002', kind: 'training', enemySpeciesId: 'm002', adventureArea: 1, zoneId: 'meadow', routeProgressEligible: false })
   const game = gameState()
   assert.equal(ROUTE_CLEAR_TUNING_DEFAULT, 3)
   assert.equal(adventureZoneProgress(game, stages, 1, 'meadow').unlocked, true)
@@ -132,6 +147,24 @@ test('D-031 route requires three distinct eligible normal clears and ignores tra
   assert.equal(adventureZoneProgress(game, stages, 1, 'forest').unlocked, false)
   game.stagesCleared.push('a1-meadow-3')
   assert.equal(adventureZoneProgress(game, stages, 1, 'forest').unlocked, true)
+})
+
+test('two stage IDs for the same enemy still count as only one route species', () => {
+  const stages = [
+    { id: 'a1-meadow-a1', kind: 'wild', enemySpeciesId: 'species-a', adventureArea: 1, zoneId: 'meadow', routeProgressEligible: true },
+    { id: 'a1-meadow-a2', kind: 'wild', enemySpeciesId: 'species-a', adventureArea: 1, zoneId: 'meadow', routeProgressEligible: true },
+    { id: 'a1-meadow-b', kind: 'wild', enemySpeciesId: 'species-b', adventureArea: 1, zoneId: 'meadow', routeProgressEligible: true },
+    { id: 'a1-meadow-c', kind: 'wild', enemySpeciesId: 'species-c', adventureArea: 1, zoneId: 'meadow', routeProgressEligible: true }
+  ]
+  const game = gameState()
+  game.stagesCleared = ['a1-meadow-a1', 'a1-meadow-a2', 'a1-meadow-b']
+  const twoSpecies = adventureZoneProgress(game, stages, 1, 'forest')
+  assert.equal(twoSpecies.clears, 2)
+  assert.equal(twoSpecies.unlocked, false)
+  game.stagesCleared.push('a1-meadow-c')
+  const threeSpecies = adventureZoneProgress(game, stages, 1, 'forest')
+  assert.equal(threeSpecies.clears, 3)
+  assert.equal(threeSpecies.unlocked, true)
 })
 
 test('evolution training unlocks from self-evolution discovery independently of normal route depth', () => {
