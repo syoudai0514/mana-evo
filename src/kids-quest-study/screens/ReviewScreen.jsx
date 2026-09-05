@@ -1,13 +1,10 @@
 // ============================================================
-// とっくん（復習）画面 — 「まちがいは たからもの」
+// とっくん（復習）画面 — 忘れかけたころに、もう一度。
 //
 // v2: 間隔反復に対応。
 //   ここに出るのは「きょうが 復習の期限」の問題だけ。
 //   正解すると 次に会う日が のびていく（1→3→7→14→30日）ので、
 //   だんだん出てこなくなる ＝ 身についた しるし。
-//
-// 「まちがいから おぼえた数」を大きく見せて、
-// 失敗するほど知っていることが増える、を体感させる。
 // ============================================================
 
 import React, { useEffect } from 'react'
@@ -110,7 +107,7 @@ export default function ReviewScreen({ onBack, onStartTask }) {
       speak(
         normalizedNextInDays
           ? `すごい！ きょう ふくしゅうする もんだいは ないよ。つぎの ふくしゅうは ${normalizedNextInDays}にちごに でてくるね`
-          : `すごい！ いまは ぜんぶ おぼえてるよ。きみは まちがいから ${state.conquered}こも おぼえたんだ！`
+          : `すごい！ いまは ぜんぶ おぼえてるよ。とっくんで ${state.conquered}こも みにつけたよ！`
       )
     } else {
       speak(
@@ -142,10 +139,9 @@ export default function ReviewScreen({ onBack, onStartTask }) {
       <AppHeader onBack={onBack} title="🎯 とっくん" right={<div className="pill">⚡ {state.conquered}</div>} />
 
       <div className="center-col scroll-col">
-        {/* 「失敗から学んだ数」を主役に */}
         <div className="conquer-counter">
           <div className="conquer-counter__num">{state.conquered}</div>
-          <div className="conquer-counter__label">まちがいから おぼえた かず</div>
+          <div className="conquer-counter__label">とっくんで みについた かず</div>
         </div>
 
         {count === 0 ? (
@@ -165,9 +161,9 @@ export default function ReviewScreen({ onBack, onStartTask }) {
                 </>
               ) : (
                 <>
-                  まちがえたら ここに あつまるよ。
+                  まえに やった もんだいが ここに あつまるよ。
                   <br />
-                  まちがいは あたらしく おぼえられる チャンス！
+                  おぼえたことを、わすれる まえに もういちど やろう！
                 </>
               )}
             </div>

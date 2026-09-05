@@ -7,6 +7,7 @@ import { MAX_GRADE } from '../data/grades.js'
 import { dayNumber, isDue, scheduleAnswer, scheduleNext, dueCount } from '../engine/srs.js'
 import { DEFAULT_TTS_RATE, migrateTtsRate } from '../config/ttsRates.js'
 import { persistentReviewSnapshot } from '../engine/reviewKey.js'
+import { shouldIncrementConquered } from '../engine/reviewSemantics.js'
 import { advanceEnglishProgress, emptyEnglishProgress, englishDueEntries } from '../engine/englishProgress.js'
 import { recordUnitResult, promotionResult, unitLedger, unitReady } from '../engine/learningUnits.js'
 import { freshDailyMission, lowerGradeProgress } from '../engine/gradeReset.js'
@@ -251,7 +252,7 @@ function reduceProfile(state, action) {
           const snapshot = persistentReviewSnapshot(domainId, action.question, itemKey)
           if (snapshot) reviewQuestions = { ...reviewQuestions, [statsId]: { ...(reviewQuestions[statsId] || {}), [itemKey]: snapshot } }
         }
-        if (!hard && correct && wasDue && mastered) conquered += 1
+        if (shouldIncrementConquered({ entryBefore: prev, correct, wasDue, mastered, hard })) conquered += 1
       }
 
       const previousUnitReady = unitId ? unitReady(state.unitStats?.[grade]?.[statsId]?.[unitId]) : false
