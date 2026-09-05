@@ -3,22 +3,23 @@
 //
 // 学習効果のための仕掛け:
 //  - アダプティブ: いまの学年×習熟度から難易度を決める
-//  - 復習キュー: 前に間違えた問題を確率で混ぜて再出題（想起練習）
-//  - 「まちがいが ちからに なった！」: 復習キューの問題に正解すると
-//    金の演出＋ボーナス✨。失敗→知識が増える、を体感させる中心の仕掛け
-//  - とっくんタスク (task.plan): 復習キューの項目だけを分野横断で出題
+//  - 復習キュー: 忘れかけた問題や前に間違えた問題を適切な間隔で再出題
+//  - 「まちがいが ちからに なった！」: 実際に誤答履歴がある問題を克服した時だけ
+//    金の演出＋ボーナス✨。正解だけの期限復習は通常の復習成功として扱う
+//  - とっくんタスク (task.plan): 復習期限の項目を分野横断で出題
 //  - 苦手支援: 1ミス→ヒント音声 / 2ミス→正解を光らせ解説（責めない）
 // ============================================================
 
 import React, { useEffect, useRef, useState } from 'react'
 import { activeStatsDomainId, useGame, skillOf, needsReviewLesson } from '../state/GameContext.jsx'
 import { DOMAIN_BY_ID, domainName } from '../engine/activities.js'
-import { dueKeys, isDue, dayNumber } from '../engine/srs.js'
+import { dueKeys, dayNumber } from '../engine/srs.js'
 import LessonScreen from './LessonScreen.jsx'
 import { difficultyParams } from '../engine/difficulty.js'
 import { speak, cancelSpeak, hasEnglishVoice, subscribeEnglishVoice, speakEnglish, speakEnglishThenJapanese } from '../engine/tts.js'
 import { englishTaskForms, normalizeEnglishKey } from '../data/content/english.js'
 import { generatorReviewKey, reviewKeyFor, savedReviewQuestion, snapshotQuestion, withQuestionIds } from '../engine/reviewKey.js'
+import { focusedEnglishReviewKey, isActualMistakeReviewOpportunity } from '../engine/reviewSemantics.js'
 import { nextLearningUnit, selectPracticeUnit, unitStatsFor, withLearningUnit, lessonForUnit } from '../engine/learningUnits.js'
 import { questionForUnit } from '../engine/unitQuestions.js'
 import { reinforcementExtraCount, reinforcementTargetIndex } from '../engine/reinforcement.js'
@@ -122,8 +123,8 @@ export default function ActivityPlayer({ task, onDone }) {
   const shownAtRef = useRef(Date.now())
   const reinforcementQueueRef = useRef([])
   const reinforcementAttemptsRef = useRef({})
-  // 通常の英語タスクでは正答済みの同一項目を繰り返さない。
-  // 図鑑から指定した練習だけは、4問すべて同じ単語に固定する。
+  // 通常の英語タスクでは、同一項目を連続して繰り返さない。
+  // 図鑑から指定した練習も最初の1問だけ指定語にし、誤答時だけ間を空けて再出題する。
   const shownEnglishItemsRef = useRef([])
 
   const currentDomainId = () =>
@@ -148,8 +149,8 @@ export default function ActivityPlayer({ task, onDone }) {
       grade: stateRef.current.grade,
       englishAudioAvailable: domainId === 'english' ? englishAudioForTask : true,
       taskForm: domainId === 'english' && !isReviewTask && !reinforcementQueueRef.current.some((entry) => entry.after <= qIndex)
-        ? (task.focusWordId
-            ? ['listen-picture', 'picture-word', 'word-meaning', 'japanese-word'][Math.min(qIndex, 3)]
+        ? (task.focusWordId && qIndex === 0
+            ? 'listen-picture'
             : englishFormPlan[Math.min(qIndex, englishFormPlan.length - 1)])
         : undefined,
       englishWordStats: stateRef.current.englishWordStats,
@@ -172,8 +173,9 @@ export default function ActivityPlayer({ task, onDone }) {
     }
     setSupportHint(params.hint >= 2)
 
-    // 図鑑からの練習は4問すべて同じ語。形式だけを変えて結び付ける。
-    let review = task.focusWordId ? `enw:${task.focusWordId}` : null
+    // 図鑑からの指定語は最初の1問だけ固定する。一発正解なら次の語へ進み、
+    // 誤答した場合は reinforcementQueue から2問ほど間を空けて再出題する。
+    let review = domainId === 'english' ? focusedEnglishReviewKey(task.focusWordId, qIndex) : null
     let reinforcementSnapshot = null
     if (isReviewTask) {
       review = task.plan[Math.min(qIndex, task.plan.length - 1)].key
@@ -240,8 +242,8 @@ export default function ActivityPlayer({ task, onDone }) {
       const hasEarlierDaySuccess = (stat?.successDays || []).some((day) => day < dayNumber())
       if (!hasEarlierDaySuccess || !stat?.guideSeen) q = { ...q, stage: 'trace' }
     }
-    if (domainId === 'english' && q.itemKey) {
-      if (!review) shownEnglishItemsRef.current = [...new Set([...shownEnglishItemsRef.current, q.itemKey])]
+    if (domainId === 'english' && q.itemKey && !isReviewTask) {
+      shownEnglishItemsRef.current = [...new Set([...shownEnglishItemsRef.current, q.itemKey])]
     }
     setQuestion(q)
     setPhase('answering')
@@ -307,7 +309,7 @@ export default function ActivityPlayer({ task, onDone }) {
         task.kind === 'extra' && accuracy >= 2 / 3 && !suspicious
       const line =
         task.kind === 'review'
-          ? 'とっくん クリア！ まちがいが どんどん ちからに かわっていくよ！'
+          ? 'とっくん クリア！ ふくしゅうできたね。おぼえたことが もっと つよくなったよ！'
         : task.kind === 'extra'
             ? earnsBattleTicket
               ? ''
@@ -380,10 +382,19 @@ export default function ActivityPlayer({ task, onDone }) {
     })
   }
 
-  // この問題が復習キューにある（＝克服チャンス）か
-  const isConquerTarget = () =>
-    !!reviewKeyFor(question) &&
-    isDue(stateRef.current.srs?.[domainIdRef.current]?.[reviewKeyFor(question)], dayNumber())
+  // 「まちがいが ちからに なった」は、復習期限だけではなく
+  // 実際の誤答履歴があり、いまが復習/補強の機会である場合だけに限定する。
+  const isConquerTarget = () => {
+    const itemKey = reviewKeyFor(question)
+    return isActualMistakeReviewOpportunity({
+      state: stateRef.current,
+      domainId: domainIdRef.current,
+      statsDomainId: activeStatsDomainId(stateRef.current, domainIdRef.current),
+      itemKey,
+      today: dayNumber(),
+      reinforcement: question?.reinforcement === true
+    })
+  }
 
   const addReinforcement = (key) => {
     if (isReviewTask || !key) return
@@ -481,7 +492,7 @@ export default function ActivityPlayer({ task, onDone }) {
           ? { text: question.explain, spelling: isEnglish ? question.answerWord?.text : null }
           : null
       if (conquer) {
-        // まちがえたことのある問題を克服！ 金の演出＋ボーナス
+        // 実際にまちがえたことのある問題を克服！ 金の演出＋ボーナス
         sfx.levelUp()
         setFeedback({ good: true, word: 'ちからに なった！', gold: true, explain: learnedExplain })
         advanceAfterFeedback('まちがいが ちからに なった！ ボーナス ゲット！', {
@@ -607,7 +618,7 @@ export default function ActivityPlayer({ task, onDone }) {
         {String(question.itemKey || '').startsWith('hard:') && (
           <div className="hard-tag">🎓 むずかしいモードの もんだい</div>
         )}
-        {/* 復習キューの問題には「克服チャンス」の目印 */}
+        {/* 実際の誤答履歴がある復習問題にだけ「克服チャンス」の目印 */}
         {isConquerTarget() && phase === 'answering' && (
           <div className="conquer-tag">⭐ できたら「ちから」になる もんだい！</div>
         )}
