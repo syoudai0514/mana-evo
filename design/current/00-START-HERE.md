@@ -1,8 +1,8 @@
 # ManaEvo CURRENT — START HERE
 
 Status: **CURRENT NORMATIVE ENTRY POINT**  
-Date: 2026-08-31  
-Origin: W-114 canonical normalization; navigation updated after Monster Art final closeout
+Date: 2026-09-05  
+Origin: W-114 canonical normalization; navigation updated through D-031 Evolution Training & Route Progression
 
 ## 1. Purpose
 
@@ -11,6 +11,8 @@ This file is the single navigation entry point for implementing the approved Man
 This navigation role does **not** change the authority precedence in `REBUILD-START-HERE.md` or the decisions in `design/rebuild/DECISION-LOG.md`. In particular, an implementation, test, derived data master, historical review, or later unapproved document cannot override higher-authority evidence merely because it is newer or closer to runtime.
 
 When sources conflict, follow `REBUILD-START-HERE.md` / `DECISION-LOG.md`; do not invent a missing rule. Unresolved product choices remain unresolved until approved.
+
+D-031 is an explicit 2026-09-05 user decision. For evolved-form acquisition, evolution training, the ①→②→③ route-clear count, and zone/training XP progression, [`10-EVOLUTION-TRAINING-PROGRESSION.md`](./10-EVOLUTION-TRAINING-PROGRESSION.md) supersedes conflicting older text in W-102/W-104/W-105 while preserving their unrelated contracts.
 
 ## 2. CURRENT domain contracts
 
@@ -27,6 +29,7 @@ Read the contract that owns the behavior being changed.
 | W-107 | [`07-SAVE-PROFILES-PARENT-PWA.md`](./07-SAVE-PROFILES-PARENT-PWA.md) | save / profiles / parent / PWA boundaries |
 | W-108 | [`08-ACCEPTANCE-TEST-CONTRACT.md`](./08-ACCEPTANCE-TEST-CONTRACT.md) | behavioral acceptance contract |
 | W-109 | [`09-MONSTER-MASTER-ART-SPEC.md`](./09-MONSTER-MASTER-ART-SPEC.md) | monster identity / master / art contract |
+| W-110 / D-031 | [`10-EVOLUTION-TRAINING-PROGRESSION.md`](./10-EVOLUTION-TRAINING-PROGRESSION.md) | evolved acquisition / self-evolution training / ①②③ route / growth XP progression |
 
 A domain contract must not silently define behavior owned by another row. Cross-domain behavior follows the owning contract and the explicit dependencies recorded in these documents.
 
@@ -140,4 +143,4 @@ For Monster Art maintenance specifically:
 4. never use an old ZIP/chat SHA as CURRENT without refetching;
 5. never report a generated image, merged PR or successful deploy as the same completion state.
 
-W-114 performed canonical normalization only; this later navigation update adds no independent product rule beyond approved CURRENT/closeout evidence.
+W-114 performed canonical normalization only; later navigation updates may add explicitly approved decisions such as D-031 but do not create independent product rules without approval.

@@ -5,11 +5,23 @@ import { adventureZoneProgress, applyXpToInstance, evolveInstance, isAdventureZo
 import { getEvolutionTransition } from '../src/game/evolutionDomain.js'
 import { createGameState, normalizeGameState } from '../src/game/progression.js'
 
-test('stage1 level evolutions are never ready immediately at their wild-zone max level', () => {
-  for (const stage of STAGES.filter((entry) => entry.kind === 'wild' && !entry.hidden)) {
+function distinctSpeciesStages(stages, count) {
+  const seen = new Set()
+  const result = []
+  for (const stage of stages) {
+    if (!stage?.enemySpeciesId || seen.has(stage.enemySpeciesId)) continue
+    seen.add(stage.enemySpeciesId)
+    result.push(stage)
+    if (result.length >= count) break
+  }
+  return result
+}
+
+test('stage1 level evolutions are never ready immediately at a capturable wild-zone max level', () => {
+  for (const stage of STAGES.filter((entry) => entry.kind === 'wild' && !entry.hidden && !entry.captureDisabled)) {
     const species = speciesOf(stage.enemySpeciesId)
     if (species?.stage !== 1 || species.evolution?.method !== 'level') continue
-    assert.ok(species.evolution.level >= stage.maxEnemyLevel + 4, species.id + ' evo ' + species.evolution.level + ' vs wild max ' + stage.maxEnemyLevel)
+    assert.ok(species.evolution.level >= stage.maxEnemyLevel + 4, species.id + ' evo ' + species.evolution.level + ' vs capturable wild max ' + stage.maxEnemyLevel)
   }
 })
 
@@ -22,31 +34,33 @@ test('later level evolutions keep at least ten levels after an adjusted prior le
   }
 })
 
-test('zones unlock sequentially after two wild first-clears in the previous zone', () => {
+test('zones unlock sequentially after three distinct normal enemy species in the previous zone', () => {
   const game = createGameState()
   assert.equal(isAdventureZoneUnlocked(game, 1, 'meadow'), true)
   assert.equal(isAdventureZoneUnlocked(game, 1, 'forest'), false)
-  const meadow = STAGES.filter((stage) => stage.kind === 'wild' && stage.adventureArea === 1 && stage.zoneId === 'meadow').slice(0, 2)
-  game.stagesCleared = meadow.map((stage) => stage.id)
+  const meadow = distinctSpeciesStages(STAGES.filter((stage) => stage.kind === 'wild' && stage.routeProgressEligible && stage.adventureArea === 1 && stage.zoneId === 'meadow'), 3)
+  assert.equal(meadow.length, 3)
+  game.stagesCleared = meadow.slice(0, 2).map((stage) => stage.id)
+  assert.equal(isAdventureZoneUnlocked(game, 1, 'forest'), false)
+  game.stagesCleared.push(meadow[2].id)
   assert.equal(isAdventureZoneUnlocked(game, 1, 'forest'), true)
   assert.equal(isAdventureZoneUnlocked(game, 1, 'deep'), false)
-  const forest = STAGES.filter((stage) => stage.kind === 'wild' && stage.adventureArea === 1 && stage.zoneId === 'forest').slice(0, 2)
-  game.stagesCleared.push(...forest.map((stage) => stage.id))
+
+  const forest = distinctSpeciesStages(STAGES.filter((stage) => stage.kind === 'wild' && stage.routeProgressEligible && stage.adventureArea === 1 && stage.zoneId === 'forest'), 3)
+  assert.equal(forest.length, 3)
+  game.stagesCleared.push(...forest.slice(0, 2).map((stage) => stage.id))
+  assert.equal(isAdventureZoneUnlocked(game, 1, 'deep'), false)
+  game.stagesCleared.push(forest[2].id)
   assert.equal(isAdventureZoneUnlocked(game, 1, 'deep'), true)
   assert.equal(adventureZoneProgress(game, 1, 'deep').remaining, 0)
 })
 
-test('evolved wild unlock requires explicit self-evolution discovery, not dex ownership alone', () => {
-  const stage = STAGES.find((entry) => entry.kind === 'wild' && entry.requiresEvolutionDiscoverySpeciesId)
+test('evolution training requires explicit self-evolution discovery, not dex ownership alone', () => {
+  const stage = STAGES.find((entry) => entry.kind === 'training' && entry.requiresEvolutionDiscoverySpeciesId)
   assert.ok(stage)
   const game = createGameState()
   game.dex.caught[stage.enemySpeciesId] = true
-  game.stagesCleared = ['a1-boss', 'a2-boss', 'a3-boss']
-  const area = stage.adventureArea
-  const metaStages = STAGES.filter((entry) => entry.kind === 'wild' && entry.adventureArea === area)
-  for (const zoneId of ['coast', 'frost', 'city', 'skyway']) {
-    game.stagesCleared.push(...metaStages.filter((entry) => entry.zoneId === zoneId).slice(0, 2).map((entry) => entry.id))
-  }
+  if (stage.area > 1) game.stagesCleared.push(`a${stage.area - 1}-boss`)
   assert.equal(isStageUnlocked(game, stage), false)
   game.evolutionDiscoveries[stage.enemySpeciesId] = true
   assert.equal(isStageUnlocked(game, stage), true)

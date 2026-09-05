@@ -229,11 +229,14 @@ for (const row of growth) {
 const areaBossIds = { 1: 'a1-boss', 2: 'a2-boss', 3: 'a3-boss', 4: 'a4-boss' }
 const bossRanks = { 1: 'C', 2: 'B', 3: 'A', 4: 'S' }
 
+function difficultyForRank(rank) {
+  return rank <= 1 ? 'weak' : rank === 2 ? 'normal' : rank === 3 ? 'strong' : rank === 4 ? 'rare' : 'elite'
+}
+
 for (let area = 1; area <= 4; area += 1) {
   const areaWild = wildByArea.get(area) || []
   for (const row of areaWild) {
     const rank = num(row.catchRank, 1)
-    const enemyDifficulty = rank <= 1 ? 'weak' : rank === 2 ? 'normal' : rank === 3 ? 'strong' : rank === 4 ? 'rare' : 'elite'
     stages.push({
       id: `a${area}-wild-${no3(row.No)}`,
       kind: 'wild',
@@ -241,12 +244,36 @@ for (let area = 1; area <= 4; area += 1) {
       areaName: row.areaName,
       label: `No.${no3(row.No)} ${row.name}`,
       enemySpeciesId: row.id,
-      enemyDifficulty,
+      enemyDifficulty: difficultyForRank(rank),
       enemyLevel: 5,
       mana: 8 + area * 4 + rank * 2,
       areaGateBossId: area > 1 ? areaBossIds[area - 1] : null
     })
   }
+
+  // D-031: zone ③ is a training-only deep route. Re-use only first-form species
+  // as stronger rematches, but never expose these high-level encounters as a GET
+  // shortcut. Acquisition of first forms remains owned by the ordinary ①/② route.
+  for (const row of growth.filter((entry) => num(entry.area) === area && num(entry.stage) === 1 && bool(entry.wildCatchable))) {
+    const rank = num(row.catchRank, 1)
+    stages.push({
+      id: `a${area}-deep-${no3(row.No)}`,
+      kind: 'wild',
+      area,
+      areaName: row.areaName,
+      label: `つよい No.${no3(row.No)} ${row.name}`,
+      enemySpeciesId: row.id,
+      enemyDifficulty: difficultyForRank(rank),
+      enemyLevel: 5,
+      mana: 12 + area * 5 + rank * 2,
+      zoneHint: 'deep',
+      deepRematch: true,
+      captureDisabled: true,
+      captureDisabledReason: 'DEEP_TRAINING_ONLY',
+      areaGateBossId: area > 1 ? areaBossIds[area - 1] : null
+    })
+  }
+
   const finals = growth.filter((row) => num(row.area) === area && num(row.stage) === num(row.maxStage))
   const boss = finals.sort((a, b) => num(b.BST) - num(a.BST))[0]
   if (!boss) throw new Error(`Missing boss candidate for area ${area}`)
@@ -264,6 +291,28 @@ for (let area = 1; area <= 4; area += 1) {
     mana: 60 + area * 30,
     minAreaClears: Math.max(5, Math.ceil(areaWild.length * 0.5)),
     areaGateBossId: area > 1 ? areaBossIds[area - 1] : null,
+    captureDisabled: true
+  })
+}
+
+// D-031: every self-obtained evolved form gets its own non-capture training battle.
+// These stages are intentionally separate from kind=wild so they cannot unlock
+// route zones and cannot replace the requirement to explore normal encounters.
+for (const monster of Object.values(species).filter((entry) => Number(entry.stage) >= 2)) {
+  stages.push({
+    id: `a${monster.area}-training-${monster.no}`,
+    kind: 'training',
+    area: monster.area,
+    areaName: monster.areaName,
+    label: `${monster.name}の シンカしゅぎょう`,
+    enemySpeciesId: monster.id,
+    enemyDifficulty: monster.evolution ? 'strong' : 'rare',
+    enemyLevel: 5,
+    mana: 10 + monster.area * 4,
+    zoneHint: 'deep',
+    trainingEvolutionStage: monster.stage,
+    requiresEvolutionDiscoverySpeciesId: monster.id,
+    areaGateBossId: monster.area > 1 ? areaBossIds[monster.area - 1] : null,
     captureDisabled: true
   })
 }
