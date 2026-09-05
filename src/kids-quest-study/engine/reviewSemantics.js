@@ -23,7 +23,7 @@ export function isActualMistakeReviewOpportunity({
 }) {
   if (!itemKey) return false
 
-  if (domainId === 'english') {
+  if (domainId === 'english' && !String(statsDomainId).startsWith('hard:')) {
     const entry = englishProgressEntry(state, itemKey)
     if (!entry || (entry.wrong || 0) <= 0) return false
     return reinforcement || (entry.nextDue ?? Infinity) <= today
