@@ -63,7 +63,8 @@ export const WORLD_AREA_META = Object.freeze([
 ])
 
 export const MAIN_ADVENTURE_AREAS = Object.freeze([1, 2, 3, 4])
-export const ROUTE_CLEAR_TUNING_DEFAULT = 2
+// D-031: each next normal zone opens after three distinct normal encounter clears.
+export const ROUTE_CLEAR_TUNING_DEFAULT = 3
 export const AREA_BOSS_REQUIREMENT = Object.freeze({ minPoints: 12, minUniqueSkills: 2 })
 
 function positiveInt(value) {
@@ -185,7 +186,6 @@ export function applyFirstBossClear(game, area) {
   const cleared = clearedStageSet(game)
   const eligibility = areaBossEligibility(game, normalizedArea)
   // A persisted first-clear marker is authoritative for idempotency and legacy-save compatibility.
-  // Do not require newly introduced boss-progress state to re-validate an already cleared boss.
   if (cleared.has(id)) {
     return { ok: true, game, firstClear: false, unlockedArea: null, eligibility }
   }
@@ -206,28 +206,25 @@ function numberOf(species) {
   return Number.isFinite(parsed) ? parsed : 0
 }
 
-function adventureAreaForStage(stage, species) {
+function adventureAreaForStage(stage) {
   if (['event', 'ex'].includes(stage?.kind) || Number(stage?.area) > 4) return 5
-  const sourceArea = Math.max(1, Number(stage?.area) || 1)
-  const formStage = Math.max(1, Number(species?.stage) || 1)
-  const isFinalEvolution = formStage > 1 && !species?.evolution
-  // Continuity tuning only: source area stays untouched while later wild placement can differ.
-  if (stage?.kind === 'wild' && formStage >= 2 && !isFinalEvolution) {
-    if (sourceArea === 1) return 3
-    if (sourceArea === 2) return 4
-  }
-  return sourceArea
+  return Math.max(1, Number(stage?.area) || 1)
 }
 
-function metaForStage(stage, species) {
-  const adventureArea = adventureAreaForStage(stage, species)
+function metaForStage(stage) {
+  const adventureArea = adventureAreaForStage(stage)
   return WORLD_AREA_META.find((meta) => meta.area === adventureArea) || WORLD_AREA_META[0]
 }
 
 function zoneForStage(meta, stage, species) {
   if (meta.area === 5) return meta.zones[0]
-  if (stage?.kind === 'boss') return meta.zones[meta.zones.length - 1]
-  if (['evolution-trial', 'giga-challenge', 'burst-challenge'].includes(stage?.kind)) return meta.zones[meta.zones.length - 1]
+  if (stage?.zoneHint) {
+    const hinted = meta.zones.find((zone) => zone.id === stage.zoneHint)
+    if (hinted) return hinted
+  }
+  if (['boss', 'training', 'evolution-trial', 'giga-challenge', 'burst-challenge'].includes(stage?.kind)) {
+    return meta.zones[meta.zones.length - 1]
+  }
   const formStage = Math.max(1, Number(species?.stage) || 1)
   if (formStage >= 2) return meta.zones[meta.zones.length - 1]
   const earlyZones = meta.zones.slice(0, Math.min(2, meta.zones.length))
@@ -236,13 +233,12 @@ function zoneForStage(meta, stage, species) {
 
 export function enrichStage(stage, species) {
   if (!stage || stage.legacy) return stage
-  const meta = metaForStage(stage, species)
+  const meta = metaForStage(stage)
   const zone = zoneForStage(meta, stage, species)
   const zoneIndex = Math.max(0, meta.zones.findIndex((entry) => entry.id === zone.id))
   const formStage = Math.max(1, Number(species?.stage) || 1)
-  const isFinalEvolution = formStage > 1 && !species?.evolution
   const isEvolvedWild = stage.kind === 'wild' && formStage >= 2
-  const isFirstEvolvedForm = isEvolvedWild && !isFinalEvolution
+  const isTraining = stage.kind === 'training'
   const next = {
     ...stage,
     sourceArea: stage.area,
@@ -253,24 +249,29 @@ export function enrichStage(stage, species) {
     zoneIcon: zone.icon,
     zoneIndex,
     zoneGatePreviousId: zoneIndex > 0 ? meta.zones[zoneIndex - 1]?.id || null : null,
-    zoneGateMinClears: zoneIndex > 0 ? ROUTE_CLEAR_TUNING_DEFAULT : 0,
+    zoneGateMinClears: zoneIndex > 0 && !isTraining ? ROUTE_CLEAR_TUNING_DEFAULT : 0,
     minEnemyLevel: zone.minLevel,
     maxEnemyLevel: zone.maxLevel,
     levelLabel: `Lv.${zone.minLevel}〜${zone.maxLevel}`,
-    firstAcquireByEvolution: isFirstEvolvedForm,
-    advancedEvolutionWild: isFirstEvolvedForm
+    firstAcquireByEvolution: formStage >= 2,
+    routeProgressEligible: stage.kind === 'wild' && formStage === 1 && !stage.deepRematch
   }
 
-  if (stage.kind === 'wild' && meta.area !== Number(stage.area) && meta.area > 1 && meta.area <= 4) {
-    next.areaGateBossId = bossStageId(meta.area - 1)
-  }
-
-  if (isFirstEvolvedForm) next.requiresEvolutionDiscoverySpeciesId = species.id
-
-  if (stage.kind === 'wild' && isFinalEvolution) {
+  // D-031 supersedes the old evolved-wild placement rule: evolved forms remain
+  // represented for save/in-flight compatibility but can no longer be newly entered.
+  if (isEvolvedWild) {
     next.hidden = true
     next.captureDisabled = true
-    next.finalEvolutionOnly = true
+    next.retiredEvolvedWild = true
+    next.advancedEvolutionWild = false
+  }
+
+  // Self-evolution is the authority that unlocks the separate training battle.
+  if (isTraining) {
+    next.captureDisabled = true
+    next.requiresEvolutionDiscoverySpeciesId = species?.id || stage.enemySpeciesId
+    next.trainingEvolutionStage = Math.max(2, Number(stage.trainingEvolutionStage) || formStage)
+    next.routeProgressEligible = false
   }
 
   if (stage.kind === 'boss' && meta.area <= 4) {
@@ -284,7 +285,7 @@ export function enrichStage(stage, species) {
 function stagesClearedInZone(game, stages, area, zoneId) {
   const cleared = clearedStageSet(game)
   return new Set((stages || [])
-    .filter((stage) => stage?.kind === 'wild')
+    .filter((stage) => stage?.kind === 'wild' && stage?.routeProgressEligible !== false && !stage?.hidden)
     .filter((stage) => Number(stage.adventureArea || stage.area) === Number(area))
     .filter((stage) => stage.zoneId === zoneId)
     .filter((stage) => cleared.has(stage.id))
@@ -319,6 +320,15 @@ export function worldStageAvailability(game, stage, stages, { exUnlocked = null 
   if (!stage || stage.hidden) return { unlocked: false, reason: 'HIDDEN_STAGE' }
   const area = positiveInt(stage.adventureArea || stage.area)
   if (!isAdventureAreaUnlocked(game, area, { exUnlocked })) return { unlocked: false, reason: 'AREA_LOCKED' }
+
+  // Training is deliberately independent from the ①→②→③ route gate. It opens
+  // immediately after confirmed self-evolution, provided its source area is open.
+  if (stage.kind === 'training') {
+    if (!game?.evolutionDiscoveries?.[stage.requiresEvolutionDiscoverySpeciesId]) {
+      return { unlocked: false, reason: 'EVOLUTION_DISCOVERY_REQUIRED' }
+    }
+    return { unlocked: true, reason: null }
+  }
 
   if (stage.zoneId) {
     const zone = adventureZoneProgress(game, stages, area, stage.zoneId, { exUnlocked })
