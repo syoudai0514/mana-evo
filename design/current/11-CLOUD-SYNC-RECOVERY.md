@@ -71,6 +71,8 @@ The ordering is part of the product contract.
 
 If CLOUD does not exist, initialize it from LOCAL using the existing main-save insert path.
 
+Initial creation itself is race-safe. If another device creates the same main row after the empty read, or the INSERT response is ambiguous after the server may already have committed, re-read CLOUD and re-enter the same D-032 classifier. Do not leave the family in a generic creation-error loop when an authoritative CLOUD row now exists. A divergent non-fresh LOCAL still goes through `recover-pull`; a genuinely fresh device may pull directly.
+
 ### 3.2 Genuine fresh device + existing CLOUD
 
 A genuinely fresh device with no meaningful pre-existing ManaEvo save adopts CLOUD automatically.
@@ -156,6 +158,8 @@ If insertion fails because of network, Auth, RLS, schema, quota, or any other er
 - the child may continue locally; temporary sync failure must not erase progress.
 
 A client release that can generate `recover-pull` must not be deployed before the additive recovery-candidate table migration is live.
+
+Child activity is also protected while sync network work is in flight. Immediately before applying CLOUD, re-capture LOCAL. If its semantic hash changed after classification, defer the overwrite and retry from the newer LOCAL snapshot instead of applying a decision based on stale local evidence.
 
 ---
 
@@ -281,7 +285,9 @@ At minimum the same exact implementation head must prove:
 19. normal child UI contains no LOCAL-vs-CLOUD save chooser;
 20. ordinary Parent backup/restore remains separate;
 21. recovery table RLS / anon revocation / own-user insert+select / no browser update-delete are verified;
-22. existing complete snapshot round-trip, profile isolation, test-mode isolation, build, release readiness, and iPhone/iPad WebKit regressions stay green.
+22. existing complete snapshot round-trip, profile isolation, test-mode isolation, build, release readiness, and iPhone/iPad WebKit regressions stay green;
+23. initial main-row INSERT race/ambiguous response re-reads CLOUD and re-enters D-032 classification instead of looping on a creation error;
+24. if LOCAL changes while pull/recovery network work is in flight, CLOUD apply and sync-meta commit are deferred until reclassification from the newer LOCAL snapshot.
 
 ---
 
