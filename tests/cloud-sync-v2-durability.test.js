@@ -111,12 +111,12 @@ test('recover-pull preserves the classified snapshot but defers overwrite if new
   assert.deepEqual(order, ['persist'])
 })
 
-test('D-032 migration removes broad browser grants before granting append/read only', () => {
+test('D-032 migration removes broad browser grants and constrains inserts to unresolved evidence', () => {
   const sql = fs.readFileSync(new URL('../infra/shared-supabase/cloud-sync-v2-recovery-candidates.sql', import.meta.url), 'utf8')
   assert.match(sql, /revoke all privileges on table public\.app_save_recovery_candidates from anon/i)
   assert.match(sql, /revoke all privileges on table public\.app_save_recovery_candidates from authenticated/i)
   assert.match(sql, /grant select, insert on public\.app_save_recovery_candidates to authenticated/i)
   assert.doesNotMatch(sql, /grant[^;]*(update|delete)[^;]*app_save_recovery_candidates/i)
   assert.match(sql, /for select[\s\S]*auth\.uid\(\)\) = user_id/i)
-  assert.match(sql, /for insert[\s\S]*with check \(\(select auth\.uid\(\)\) = user_id\)/i)
+  assert.match(sql, /for insert[\s\S]*with check \([\s\S]*auth\.uid\(\)\) = user_id[\s\S]*status = 'unresolved'[\s\S]*resolved_at is null[\s\S]*resolution_note is null/i)
 })
