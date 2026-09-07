@@ -124,7 +124,12 @@ using ((select auth.uid()) = user_id);
 create policy "app_save_recovery_candidates_insert_own"
 on public.app_save_recovery_candidates for insert
 to authenticated
-with check ((select auth.uid()) = user_id);
+with check (
+  (select auth.uid()) = user_id
+  and status = 'unresolved'
+  and resolved_at is null
+  and resolution_note is null
+);
 
 -- No anon grants. The browser uses only a publishable key plus the signed-in user's JWT.
 -- Never expose service_role / secret keys in a game client.
