@@ -120,3 +120,13 @@ test('D-032 migration removes broad browser grants and constrains inserts to unr
   assert.match(sql, /for select[\s\S]*auth\.uid\(\)\) = user_id/i)
   assert.match(sql, /for insert[\s\S]*with check \([\s\S]*auth\.uid\(\)\) = user_id[\s\S]*status = 'unresolved'[\s\S]*resolved_at is null[\s\S]*resolution_note is null/i)
 })
+
+test('D-032 additive migration is transactional and safe to retry after a failed rollout attempt', () => {
+  const sql = fs.readFileSync(new URL('../infra/shared-supabase/cloud-sync-v2-recovery-candidates.sql', import.meta.url), 'utf8')
+  assert.match(sql, /^\s*--[\s\S]*\bbegin;/i)
+  assert.match(sql, /create table if not exists public\.app_save_recovery_candidates/i)
+  assert.match(sql, /create index if not exists app_save_recovery_candidates_owner_status_created_idx/i)
+  assert.match(sql, /drop policy if exists "app_save_recovery_candidates_select_own"/i)
+  assert.match(sql, /drop policy if exists "app_save_recovery_candidates_insert_own"/i)
+  assert.match(sql, /commit;\s*$/i)
+})
