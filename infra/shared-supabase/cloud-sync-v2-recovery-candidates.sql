@@ -1,7 +1,11 @@
 -- D-032 / Cloud Sync V2 additive migration.
 -- Apply to app-save-hub before releasing a client that can emit recovery candidates.
+-- Transactional + rerunnable so a failed rollout can be retried without leaving
+-- a half-configured browser privilege/RLS surface.
 
-create table public.app_save_recovery_candidates (
+begin;
+
+create table if not exists public.app_save_recovery_candidates (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
   app_id text not null,
@@ -29,7 +33,7 @@ create table public.app_save_recovery_candidates (
   check (device_profile_id is null or char_length(device_profile_id) between 1 and 160)
 );
 
-create index app_save_recovery_candidates_owner_status_created_idx
+create index if not exists app_save_recovery_candidates_owner_status_created_idx
   on public.app_save_recovery_candidates (user_id, app_id, slot_id, status, created_at desc);
 
 alter table public.app_save_recovery_candidates enable row level security;
@@ -41,11 +45,13 @@ revoke all privileges on table public.app_save_recovery_candidates from anon;
 revoke all privileges on table public.app_save_recovery_candidates from authenticated;
 grant select, insert on public.app_save_recovery_candidates to authenticated;
 
+drop policy if exists "app_save_recovery_candidates_select_own" on public.app_save_recovery_candidates;
 create policy "app_save_recovery_candidates_select_own"
 on public.app_save_recovery_candidates for select
 to authenticated
 using ((select auth.uid()) = user_id);
 
+drop policy if exists "app_save_recovery_candidates_insert_own" on public.app_save_recovery_candidates;
 create policy "app_save_recovery_candidates_insert_own"
 on public.app_save_recovery_candidates for insert
 to authenticated
@@ -55,3 +61,5 @@ with check (
   and resolved_at is null
   and resolution_note is null
 );
+
+commit;
