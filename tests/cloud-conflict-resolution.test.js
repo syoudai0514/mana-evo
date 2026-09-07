@@ -87,12 +87,15 @@ test('D-032 removes the LOCAL-vs-CLOUD chooser and keeps recovery history out of
   assert.doesNotMatch(shell, /chooseCloud|chooseLocal|setConflict/)
   assert.match(shell, /decision\.action === 'pull' \|\| decision\.action === 'recover-pull'/)
   assert.match(shell, /persistRecoveryCandidate: createRecoveryCandidate/)
+  assert.match(shell, /captureCurrentLocalPayload: captureCloudPayload/)
+  assert.match(shell, /if \(result\.deferred\)/)
   assert.match(shell, /この端末だけに未反映の進みがある場合は、復旧用に保護してから切り替えます/)
 
   const persistAt = guard.indexOf('await persistRecoveryCandidate(recoveryCandidate)')
+  const currentLocalAt = guard.indexOf('captureCurrentLocalPayload()')
   const applyAt = guard.indexOf('applyCloudPayload(cloud.payload)')
   const metaAt = guard.indexOf('commitSyncMeta(cloud)')
-  assert.ok(persistAt >= 0 && persistAt < applyAt && applyAt < metaAt)
+  assert.ok(persistAt >= 0 && persistAt < currentLocalAt && currentLocalAt < applyAt && applyAt < metaAt)
 
   assert.match(client, /app_save_recovery_candidates/)
   assert.match(shell, /<details className="cloud-card cloud-recovery">/)
