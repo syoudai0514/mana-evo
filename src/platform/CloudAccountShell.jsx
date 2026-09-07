@@ -107,7 +107,7 @@ export default function CloudAccountShell({ children }) {
 
     const adoptCloud = async () => {
       const protectedLocal = decision.action === 'recover-pull'
-      await adoptCloudAuthoritatively({
+      const result = await adoptCloudAuthoritatively({
         decision,
         localPayload,
         localHash,
@@ -115,11 +115,17 @@ export default function CloudAccountShell({ children }) {
         meta,
         deviceProfileId: currentDeviceProfileId(),
         persistRecoveryCandidate: createRecoveryCandidate,
+        captureCurrentLocalPayload: captureCloudPayload,
         applyCloudPayload,
         commitSyncMeta: (row) => setMeta(valid.user.id, row)
       })
+      if (result.deferred) {
+        setStatus('同期待ち・端末には保存済み')
+        return false
+      }
       setStatus(protectedLocal ? 'この端末の進みを保護して最新データを取得' : '別端末の最新データを取得')
       window.location.reload()
+      return true
     }
 
     if (decision.action === 'push-new') {
