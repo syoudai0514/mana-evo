@@ -1,5 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import fs from 'node:fs'
 
 import { makeCloudPayload, payloadHash } from '../src/platform/cloudSaveModel.js'
 import { adoptCloudAuthoritatively } from '../src/platform/cloudSyncV2.js'
@@ -108,4 +109,14 @@ test('recover-pull preserves the classified snapshot but defers overwrite if new
 
   assert.equal(result.deferred, true)
   assert.deepEqual(order, ['persist'])
+})
+
+test('D-032 migration removes broad browser grants before granting append/read only', () => {
+  const sql = fs.readFileSync(new URL('../infra/shared-supabase/cloud-sync-v2-recovery-candidates.sql', import.meta.url), 'utf8')
+  assert.match(sql, /revoke all privileges on table public\.app_save_recovery_candidates from anon/i)
+  assert.match(sql, /revoke all privileges on table public\.app_save_recovery_candidates from authenticated/i)
+  assert.match(sql, /grant select, insert on public\.app_save_recovery_candidates to authenticated/i)
+  assert.doesNotMatch(sql, /grant[^;]*(update|delete)[^;]*app_save_recovery_candidates/i)
+  assert.match(sql, /for select[\s\S]*auth\.uid\(\)\) = user_id/i)
+  assert.match(sql, /for insert[\s\S]*with check \(\(select auth\.uid\(\)\) = user_id\)/i)
 })
