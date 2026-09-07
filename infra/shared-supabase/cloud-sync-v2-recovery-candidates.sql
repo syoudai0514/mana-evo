@@ -33,7 +33,12 @@ create index app_save_recovery_candidates_owner_status_created_idx
   on public.app_save_recovery_candidates (user_id, app_id, slot_id, status, created_at desc);
 
 alter table public.app_save_recovery_candidates enable row level security;
+
+-- Supabase public-schema defaults can be broader than this feature needs.
+-- Remove inherited/default browser grants first, then add back the exact V2
+-- append/read surface. service_role/admin ownership remains outside this grant.
 revoke all privileges on table public.app_save_recovery_candidates from anon;
+revoke all privileges on table public.app_save_recovery_candidates from authenticated;
 grant select, insert on public.app_save_recovery_candidates to authenticated;
 
 create policy "app_save_recovery_candidates_select_own"
