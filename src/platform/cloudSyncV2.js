@@ -1,4 +1,4 @@
-import { payloadHash } from './cloudSaveModel.js'
+import { decideSync, payloadHash } from './cloudSaveModel.js'
 
 export function buildRecoveryCandidate({ decision, localPayload, localHash, cloud, meta = null, deviceProfileId = null }) {
   if (decision?.action !== 'recover-pull') throw new Error('recovery candidate requires recover-pull decision')
@@ -15,6 +15,49 @@ export function buildRecoveryCandidate({ decision, localPayload, localHash, clou
     cloudPayload: cloud.payload,
     deviceProfileId: deviceProfileId || null
   }
+}
+
+/**
+ * Initial cloud creation is also a cross-device race boundary. A second device
+ * can create the main row after our initial GET but before our INSERT. Treat an
+ * ambiguous/failed INSERT as a reason to re-read CLOUD, not as an instruction
+ * to keep showing a generic sync error. The normal D-032 classifier then owns
+ * the result; it will recover-pull if LOCAL may contain unique progress.
+ */
+export async function establishInitialCloud({
+  localPayload,
+  localHash,
+  meta = null,
+  insertMainSave,
+  fetchMainSave,
+  freshDevice = undefined
+}) {
+  if (!localPayload) throw new Error('initial cloud creation requires local payload')
+  if (typeof insertMainSave !== 'function' || typeof fetchMainSave !== 'function') throw new Error('initial cloud callbacks are required')
+
+  let insertError = null
+  try {
+    const row = await insertMainSave(localPayload)
+    if (row?.payload) return { created: true, row, cloud: row, decision: null }
+  } catch (error) {
+    insertError = error
+  }
+
+  let cloud = null
+  try {
+    cloud = await fetchMainSave()
+  } catch (error) {
+    throw insertError || error
+  }
+
+  if (!cloud?.payload) {
+    if (insertError) throw insertError
+    throw new Error('クラウド保存を作成できませんでした')
+  }
+
+  const args = { localHash: localHash || payloadHash(localPayload), meta, cloud }
+  if (typeof freshDevice === 'boolean') args.freshDevice = freshDevice
+  return { created: false, row: null, cloud, decision: decideSync(args), insertError }
 }
 
 /**
