@@ -113,6 +113,7 @@ create index if not exists app_save_recovery_candidates_owner_status_created_idx
 
 alter table public.app_save_recovery_candidates enable row level security;
 revoke all privileges on table public.app_save_recovery_candidates from anon;
+revoke all privileges on table public.app_save_recovery_candidates from authenticated;
 grant select, insert on public.app_save_recovery_candidates to authenticated;
 
 create policy "app_save_recovery_candidates_select_own"
