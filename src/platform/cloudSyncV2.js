@@ -44,7 +44,11 @@ export async function adoptCloudAuthoritatively({
   if (decision.action === 'recover-pull') {
     if (typeof persistRecoveryCandidate !== 'function') throw new Error('recovery persistence is required')
     recoveryCandidate = buildRecoveryCandidate({ decision, localPayload, localHash, cloud, meta, deviceProfileId })
-    await persistRecoveryCandidate(recoveryCandidate)
+    const receipt = await persistRecoveryCandidate(recoveryCandidate)
+    // The production PostgREST adapter returns either the inserted row or null.
+    // A fulfilled request without a returned row is not evidence that the exact
+    // recovery snapshot became durable, so do not cross the destructive boundary.
+    if (receipt === null) throw new Error('復旧候補を永続化できませんでした')
   }
 
   applyCloudPayload(cloud.payload)
