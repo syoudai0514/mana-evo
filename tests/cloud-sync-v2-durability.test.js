@@ -60,3 +60,52 @@ test('recover-pull accepts a durable inserted-row receipt before applying CLOUD'
 
   assert.deepEqual(order, ['persist', 'apply', 'meta'])
 })
+
+test('ordinary pull is deferred if LOCAL changes after classification and before apply', async () => {
+  const classifiedLocal = payload('base')
+  const newerLocal = payload('new-child-progress')
+  const cloudPayload = payload('cloud-progress')
+  let applied = false
+  let metaCommitted = false
+
+  const result = await adoptCloudAuthoritatively({
+    decision: { action: 'pull', cloudHash: payloadHash(cloudPayload) },
+    localPayload: classifiedLocal,
+    localHash: payloadHash(classifiedLocal),
+    cloud: { revision: 10, payload: cloudPayload },
+    captureCurrentLocalPayload: () => newerLocal,
+    applyCloudPayload: () => { applied = true },
+    commitSyncMeta: () => { metaCommitted = true }
+  })
+
+  assert.equal(result.deferred, true)
+  assert.equal(result.reason, 'LOCAL_CHANGED_DURING_SYNC')
+  assert.equal(applied, false)
+  assert.equal(metaCommitted, false)
+})
+
+test('recover-pull preserves the classified snapshot but defers overwrite if newer LOCAL activity appears', async () => {
+  const classifiedLocal = payload('local-before-network')
+  const newerLocal = payload('local-after-network')
+  const cloudPayload = payload('cloud-progress')
+  const order = []
+
+  const result = await adoptCloudAuthoritatively({
+    decision: {
+      action: 'recover-pull',
+      recoveryReason: 'LOCAL_AND_CLOUD_DIVERGED',
+      cloudHash: payloadHash(cloudPayload)
+    },
+    localPayload: classifiedLocal,
+    localHash: payloadHash(classifiedLocal),
+    cloud: { revision: 11, payload: cloudPayload },
+    meta: { revision: 10, hash: payloadHash(payload('base')) },
+    persistRecoveryCandidate: async () => { order.push('persist'); return { id: 'candidate-2' } },
+    captureCurrentLocalPayload: () => newerLocal,
+    applyCloudPayload: () => order.push('apply'),
+    commitSyncMeta: () => order.push('meta')
+  })
+
+  assert.equal(result.deferred, true)
+  assert.deepEqual(order, ['persist'])
+})
