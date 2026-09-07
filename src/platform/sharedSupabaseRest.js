@@ -212,6 +212,34 @@ export async function createBackup(payload, revision, reason = 'manual') {
   return Array.isArray(data) ? data[0] || null : null
 }
 
+export async function createRecoveryCandidate(candidate) {
+  const session = await getValidSession()
+  if (!session) throw new Error('ログインが必要です')
+  if (!candidate?.localPayload || !candidate?.cloudPayload) throw new Error('復旧候補の保存内容が不足しています')
+
+  const { data } = await dataFetch('app_save_recovery_candidates?select=id,reason,status,created_at', {
+    method: 'POST',
+    body: {
+      user_id: session.user.id,
+      app_id: CLOUD_APP_ID,
+      slot_id: CLOUD_SLOT_MAIN,
+      schema_version: CLOUD_SAVE_SCHEMA_VERSION,
+      status: 'unresolved',
+      reason: String(candidate.reason || 'LOCAL_DIVERGENCE'),
+      base_revision: candidate.baseRevision == null ? null : Math.max(0, Number(candidate.baseRevision) || 0),
+      base_hash: candidate.baseHash || null,
+      cloud_revision: Math.max(0, Number(candidate.cloudRevision) || 0),
+      cloud_hash: String(candidate.cloudHash || ''),
+      local_hash: String(candidate.localHash || ''),
+      device_profile_id: candidate.deviceProfileId || null,
+      local_payload: candidate.localPayload,
+      cloud_payload: candidate.cloudPayload
+    },
+    prefer: 'return=representation'
+  })
+  return Array.isArray(data) ? data[0] || null : null
+}
+
 export async function listBackups(limit = 30) {
   const session = await getValidSession()
   if (!session) return []
