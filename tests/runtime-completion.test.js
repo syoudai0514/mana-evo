@@ -38,14 +38,26 @@ function preparedGame(speciesId = 'm004', level = 40, day = 7000) {
   return addTickets(game, 10, day)
 }
 
+function distinctSpeciesStages(stages, count) {
+  const seen = new Set()
+  const picked = []
+  for (const stage of stages) {
+    if (!stage?.enemySpeciesId || seen.has(stage.enemySpeciesId)) continue
+    seen.add(stage.enemySpeciesId)
+    picked.push(stage)
+    if (picked.length >= count) break
+  }
+  return picked
+}
+
 function unlockAreaBoss(game, area) {
   const boss = STAGES.find((stage) => stage.id === `a${area}-boss`)
   if (area > 1) for (let a = 1; a < area; a += 1) game.stagesCleared.push(`a${a}-boss`)
-  const route = STAGES
-    .filter((stage) => stage.kind === 'wild')
+  const route = distinctSpeciesStages(STAGES
+    .filter((stage) => stage.kind === 'wild' && stage.routeProgressEligible)
     .filter((stage) => Number(stage.adventureArea || stage.area) === area)
-    .filter((stage) => stage.zoneId === boss.zoneGatePreviousId)
-    .slice(0, 2)
+    .filter((stage) => stage.zoneId === boss.zoneGatePreviousId), 3)
+  assert.equal(route.length, 3, `area ${area} boss needs three distinct route species in the previous zone`)
   game.stagesCleared = [...new Set([...(game.stagesCleared || []), ...route.map((stage) => stage.id)])]
   game = applyAreaBossProgressEvent(game, { id: `test:${area}:a`, area, points: 6, skillId: `skill-${area}-a` }).game
   game = applyAreaBossProgressEvent(game, { id: `test:${area}:b`, area, points: 6, skillId: `skill-${area}-b` }).game

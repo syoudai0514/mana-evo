@@ -70,21 +70,16 @@ function dailyCompletionRuntime() {
   )
 }
 
-function routeStages(area = 3) {
-  const zoneIdsByArea = {
-    1: ['meadow', 'forest', 'deep'],
-    2: ['foothill', 'magma', 'deep'],
-    3: ['coast', 'frost', 'deep'],
-    4: ['city', 'skyway', 'deep']
+function distinctSpeciesStages(stages, count) {
+  const seen = new Set()
+  const result = []
+  for (const stage of stages) {
+    if (!stage?.enemySpeciesId || seen.has(stage.enemySpeciesId)) continue
+    seen.add(stage.enemySpeciesId)
+    result.push(stage)
+    if (result.length >= count) break
   }
-  return (zoneIdsByArea[area] || ['ex']).flatMap((zoneId) => (
-    [1, 2, 3].map((n) => ({
-      id: `w219-a${area}-${zoneId}-${n}`,
-      kind: 'wild',
-      adventureArea: area,
-      zoneId
-    }))
-  ))
+  return result
 }
 
 test('vertical learning reward is exactly once and boss remains learning-gated after route clears', () => {
@@ -126,11 +121,11 @@ test('vertical learning reward is exactly once and boss remains learning-gated a
   assert.ok(boss)
 
   let routeCleared = structuredClone(replay.game)
-  const bossRoute = STAGES
-    .filter((stage) => stage.kind === 'wild')
+  const bossRoute = distinctSpeciesStages(STAGES
+    .filter((stage) => stage.kind === 'wild' && stage.routeProgressEligible)
     .filter((stage) => Number(stage.adventureArea || stage.area) === 1)
-    .filter((stage) => stage.zoneId === boss.zoneGatePreviousId)
-    .slice(0, 2)
+    .filter((stage) => stage.zoneId === boss.zoneGatePreviousId), 3)
+  assert.equal(bossRoute.length, 3)
   routeCleared.stagesCleared = [...new Set([...(routeCleared.stagesCleared || []), ...bossRoute.map((stage) => stage.id)])]
   assert.equal(isStageUnlocked(routeCleared, boss), false)
 
@@ -152,7 +147,7 @@ test('vertical learning reward is exactly once and boss remains learning-gated a
 })
 
 test('one ticket reserves, survives reload semantics, refunds on abandon, and commits on victory', () => {
-  const firstWild = STAGES.find((stage) => stage.kind === 'wild' && !stage.hidden)
+  const firstWild = STAGES.find((stage) => stage.kind === 'wild' && !stage.hidden && !stage.captureDisabled)
   assert.ok(firstWild)
 
   let game = addTickets(createGameState(), 1, DAY)
@@ -197,7 +192,7 @@ test('one ticket reserves, survives reload semantics, refunds on abandon, and co
   assert.equal(availableTicketCount(won.game, DAY), 0)
 })
 
-test('manual evolution records discovery and own evolution gates later-world encounter behavior', () => {
+test('manual evolution records discovery and unlocks the exact evolution training battle', () => {
   const stoneGame = createGameState()
   const stoneInstanceId = stoneGame.activeMonsterId
   stoneGame.box[stoneInstanceId] = {
@@ -241,32 +236,16 @@ test('manual evolution records discovery and own evolution gates later-world enc
   assert.equal(level.game.box[levelInstanceId].speciesId, 'm002')
   assert.equal(level.game.evolutionDiscoveries.m002, true)
 
-  const stages = routeStages(3)
-  const evolvedWild = {
-    id: 'w219-a3-evolved-m002',
-    kind: 'wild',
-    area: 1,
-    adventureArea: 3,
-    zoneId: 'deep',
-    requiresEvolutionDiscoverySpeciesId: 'm002'
-  }
-  stages.push(evolvedWild)
-
+  const training = STAGES.find((stage) => stage.kind === 'training' && stage.enemySpeciesId === 'm002')
+  assert.ok(training)
+  assert.equal(training.captureDisabled, true)
   const gatedGame = structuredClone(level.game)
-  gatedGame.stagesCleared = [
-    'a1-boss',
-    'a2-boss',
-    'w219-a3-coast-1',
-    'w219-a3-coast-2',
-    'w219-a3-frost-1',
-    'w219-a3-frost-2'
-  ]
   delete gatedGame.evolutionDiscoveries.m002
   gatedGame.dex.caught.m002 = true
-  assert.equal(worldStageAvailability(gatedGame, evolvedWild, stages).reason, 'EVOLUTION_DISCOVERY_REQUIRED')
+  assert.equal(worldStageAvailability(gatedGame, training, STAGES).reason, 'EVOLUTION_DISCOVERY_REQUIRED')
 
   gatedGame.evolutionDiscoveries.m002 = true
-  assert.equal(worldStageAvailability(gatedGame, evolvedWild, stages).unlocked, true)
+  assert.equal(worldStageAvailability(gatedGame, training, STAGES).unlocked, true)
 })
 
 test('child navigation ownership is exactly five top-level destinations and active battle suppresses it', () => {

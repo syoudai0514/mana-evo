@@ -246,7 +246,7 @@ test('manual stone evolution is Monster-owned, modal, and records first evolutio
   const celebration = page.getByRole('dialog', { name: 'シンカ！' })
   await expect(celebration).toBeVisible()
   await expect(celebration).toHaveAttribute('aria-modal', 'true')
-  await expect(celebration.getByText(/ぼうけんで であえる こうほ/)).toBeVisible()
+  await expect(celebration.getByText(/シンカしゅぎょうが ひらいた/)).toBeVisible()
 
   await expect.poll(async () => {
     const saved = await storedGame(page)

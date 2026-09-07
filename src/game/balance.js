@@ -1,16 +1,27 @@
-export const BALANCE_VERSION = 4
+export const BALANCE_VERSION = 5
 export const MAX_MONSTER_LEVEL = 100
 export const NORMAL_REPEAT_CAP = 1.10
 export const NORMAL_REPEAT_MASTERY_FLOOR = 0.70
 
-// Evolution pacing V5 keeps the reviewed stage reward values as the encounter
+// Evolution pacing keeps the reviewed stage reward values as the encounter
 // reward pool, then applies these multipliers when XP is settled to monsters.
-// The active battler receives 40% of the legacy pool; teammates receive 40% of
-// that active amount. This preserves learning-earned play opportunities without
-// letting a long first-day session evolve an entire three-monster party at once.
+// The active battler receives 40% of the pool; teammates receive 40% of that
+// active amount so a long first-day session cannot evolve a whole party at once.
 export const BATTLE_XP_GLOBAL_MULTIPLIER = 0.40
 export const BATTLE_XP_TEAMMATE_MULTIPLIER = 0.40
 export const CAPTURE_EVOLUTION_LEVEL_BUFFER = 5
+
+// D-031 progression reward tuning. Normal route depth increases XP without
+// changing capture probability or multiplying difficulty bonuses twice.
+export const ZONE_XP_MULTIPLIERS = Object.freeze({
+  0: 1.00,
+  1: 1.15,
+  2: 1.30
+})
+export const TRAINING_XP_MULTIPLIERS = Object.freeze({
+  2: 1.35,
+  final: 1.45
+})
 
 export const NORMAL_DIFFICULTY = Object.freeze({
   weak: { targetMultiplier: 0.82, label: 'いけそう', xp: 90 },
@@ -136,9 +147,20 @@ export function referencePower(game, speciesOf) {
   return normalReferencePower(game, speciesOf)
 }
 
+export function stageXpMultiplier(stage) {
+  if (stage?.bossRank) return 1
+  if (stage?.kind === 'training') {
+    return Number(stage?.trainingEvolutionStage) >= 3
+      ? TRAINING_XP_MULTIPLIERS.final
+      : TRAINING_XP_MULTIPLIERS[2]
+  }
+  return ZONE_XP_MULTIPLIERS[Math.max(0, Math.min(2, Number(stage?.zoneIndex) || 0))] || 1
+}
+
 export function battleXpForStage(stage) {
   if (stage?.bossRank) return (BOSS_RANKS[stage.bossRank] || BOSS_RANKS.A).xp
-  return (NORMAL_DIFFICULTY[stage?.enemyDifficulty] || NORMAL_DIFFICULTY.normal).xp
+  const base = (NORMAL_DIFFICULTY[stage?.enemyDifficulty] || NORMAL_DIFFICULTY.normal).xp
+  return Math.max(1, Math.round(base * stageXpMultiplier(stage)))
 }
 
 export function levelForTargetPower(species, targetPower, multipliers = null) {
@@ -174,8 +196,6 @@ function repeatMasteryMultipliers(currentRef, firstClearReferencePower) {
   const growthRatio = currentRef / Math.max(1, firstClearReferencePower)
   if (growthRatio <= 1) return normalizeStatMultipliers()
   // When the team has genuinely grown, old cleared stages should feel easier.
-  // At roughly +20% combat power this reaches 0.75 HP/DEF, while enemy attack
-  // stays intact so repeat farming is faster without becoming consequence-free.
   const ease = clamp(NORMAL_REPEAT_MASTERY_FLOOR, 1 - (growthRatio - 1) * 1.25, 1)
   return normalizeStatMultipliers({ hp: ease, attack: 1, defense: ease, speed: 1 })
 }
@@ -235,20 +255,20 @@ export function buildEnemyPlan(game, stage, speciesOf, existingSnapshot = null, 
   const stored = game?.normalStageSnapshots?.[stage.id]
   let ref = currentRef
   let repeatCap = null
-  let mode = 'normal-soft'
+  let mode = stage.kind === 'training' ? 'training-soft' : 'normal-soft'
   let statMultipliers = normalizeStatMultipliers()
   if (validNormalSnapshot(stored, stage)) {
     repeatCap = stored.firstClearReferencePower * NORMAL_REPEAT_CAP
     ref = Math.min(currentRef, repeatCap)
-    mode = currentRef > repeatCap ? 'normal-repeat-cap' : 'normal-repeat-soft'
+    mode = currentRef > repeatCap
+      ? (stage.kind === 'training' ? 'training-repeat-cap' : 'normal-repeat-cap')
+      : (stage.kind === 'training' ? 'training-repeat-soft' : 'normal-repeat-soft')
     statMultipliers = repeatMasteryMultipliers(currentRef, stored.firstClearReferencePower)
   }
 
   const difficulty = NORMAL_DIFFICULTY[stage.enemyDifficulty] || NORMAL_DIFFICULTY.normal
   const targetPower = ref * difficulty.targetMultiplier
-  // Pick the normal level from the capped reference first, then apply repeat
-  // mastery HP/DEF easing. Including easing in level search would cancel the
-  // intended "I got stronger" feeling by raising the enemy level again.
+  // Pick the level from the capped reference first, then apply repeat mastery easing.
   const level = clampStageLevel(stage, levelForTargetPower(species, targetPower))
   const actualPower = combatPowerFromStats(statsFromBase(species.base, level, statMultipliers))
   return {

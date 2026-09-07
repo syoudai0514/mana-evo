@@ -2,20 +2,24 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { SPECIES, STAGES, pickDailyEncounterStages, speciesOf } from '../src/game/content.js'
 
-test('early-area evolved wild forms move to later high-level adventure areas', () => {
-  const area1Second = STAGES.find((stage) => stage.kind === 'wild' && stage.area === 1 && speciesOf(stage.enemySpeciesId)?.stage === 2 && speciesOf(stage.enemySpeciesId)?.evolution)
-  const area2Second = STAGES.find((stage) => stage.kind === 'wild' && stage.area === 2 && speciesOf(stage.enemySpeciesId)?.stage === 2 && speciesOf(stage.enemySpeciesId)?.evolution)
-  assert.ok(area1Second)
-  assert.ok(area2Second)
-  assert.equal(area1Second.adventureArea, 3)
-  assert.equal(area1Second.zoneId, 'deep')
-  assert.equal(area1Second.areaGateBossId, 'a2-boss')
-  assert.equal(area2Second.adventureArea, 4)
-  assert.equal(area2Second.zoneId, 'deep')
-  assert.equal(area2Second.areaGateBossId, 'a3-boss')
+test('D-031 retires evolved wild forms in place and exposes them only through training after discovery', () => {
+  const evolvedWild = STAGES.find((stage) => stage.kind === 'wild' && stage.area === 1 && speciesOf(stage.enemySpeciesId)?.stage === 2)
+  assert.ok(evolvedWild)
+  assert.equal(evolvedWild.adventureArea, 1)
+  assert.equal(evolvedWild.hidden, true)
+  assert.equal(evolvedWild.captureDisabled, true)
+  assert.equal(evolvedWild.retiredEvolvedWild, true)
 
-  const area1First = STAGES.find((stage) => stage.kind === 'wild' && stage.area === 1 && speciesOf(stage.enemySpeciesId)?.stage === 1)
+  const training = STAGES.find((stage) => stage.kind === 'training' && stage.enemySpeciesId === evolvedWild.enemySpeciesId)
+  assert.ok(training)
+  assert.equal(training.adventureArea, 1)
+  assert.equal(training.captureDisabled, true)
+  assert.equal(training.requiresEvolutionDiscoverySpeciesId, evolvedWild.enemySpeciesId)
+
+  const area1First = STAGES.find((stage) => stage.kind === 'wild' && !stage.deepRematch && stage.area === 1 && speciesOf(stage.enemySpeciesId)?.stage === 1)
+  assert.ok(area1First)
   assert.equal(area1First.adventureArea, 1)
+  assert.equal(area1First.hidden, undefined)
 })
 
 test('area1 and area2 normal visible wild pools contain no evolved forms', () => {
@@ -42,6 +46,6 @@ test('daily encounter picker is deterministic, capped, and prioritizes useful ch
   assert.ok(first.some((stage) => !['s2', 's3', 's4'].includes(stage.id)))
 })
 
-test('all 238 species remain in the content master after adventure relocation', () => {
+test('all 238 species remain in the content master after D-031 route changes', () => {
   assert.equal(Object.keys(SPECIES).length, 238)
 })

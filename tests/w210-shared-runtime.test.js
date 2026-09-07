@@ -13,13 +13,25 @@ import { addTickets, availableTicketCount, createGameState, normalizeGameState }
 import { applyLearningQueues, performGameExploration } from '../src/game/sharedRuntime.js'
 import { applyAreaBossProgressEvent, areaBossEligibility } from '../src/game/worldProgression.js'
 
+function distinctSpeciesStages(stages, count) {
+  const seen = new Set()
+  const result = []
+  for (const stage of stages) {
+    if (!stage?.enemySpeciesId || seen.has(stage.enemySpeciesId)) continue
+    seen.add(stage.enemySpeciesId)
+    result.push(stage)
+    if (result.length >= count) break
+  }
+  return result
+}
+
 function clearBossRoute(game, area) {
   const boss = STAGES.find((stage) => stage.id === `a${area}-boss`)
-  const route = STAGES
-    .filter((stage) => stage.kind === 'wild')
+  const route = distinctSpeciesStages(STAGES
+    .filter((stage) => stage.kind === 'wild' && stage.routeProgressEligible)
     .filter((stage) => Number(stage.adventureArea || stage.area) === area)
-    .filter((stage) => stage.zoneId === boss.zoneGatePreviousId)
-    .slice(0, 2)
+    .filter((stage) => stage.zoneId === boss.zoneGatePreviousId), 3)
+  assert.equal(route.length, 3)
   game.stagesCleared = [...new Set([...(game.stagesCleared || []), ...route.map((stage) => stage.id)])]
   return boss
 }
