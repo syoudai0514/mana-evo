@@ -26,7 +26,7 @@ import {
   switchDeviceProfile
 } from './cloudSnapshot.js'
 import { decideSync, payloadHash, payloadPartHashes, syncMetaKey } from './cloudSaveModel.js'
-import { adoptCloudAuthoritatively } from './cloudSyncV2.js'
+import { adoptCloudAuthoritatively, establishInitialCloud } from './cloudSyncV2.js'
 import AdultCloudControls from './AdultCloudControls.jsx'
 
 const LOCAL_SAVE_EVENT = 'manaevo:local-save-changed'
@@ -129,10 +129,34 @@ export default function CloudAccountShell({ children }) {
     }
 
     if (decision.action === 'push-new') {
-      const row = await insertMainSave(localPayload)
-      setMeta(valid.user.id, row)
-      setStatus('クラウド同期済み')
-      return
+      const initial = await establishInitialCloud({
+        localPayload,
+        localHash,
+        meta,
+        insertMainSave,
+        fetchMainSave
+      })
+      if (initial.created) {
+        setMeta(valid.user.id, initial.row)
+        setStatus('クラウド同期済み')
+        return
+      }
+
+      // Another device may have created CLOUD after our initial empty read, or
+      // the INSERT response may have been ambiguous after the server committed.
+      // Re-enter D-032 authority instead of surfacing a generic creation error.
+      cloud = initial.cloud
+      decision = initial.decision
+      if (decision.action === 'pull' || decision.action === 'recover-pull') {
+        await adoptCloud()
+        return
+      }
+      if (decision.action === 'adopt' || decision.action === 'noop') {
+        setMeta(valid.user.id, cloud)
+        setStatus('クラウド同期済み')
+        return
+      }
+      throw new Error('クラウド保存を安全に初期化できませんでした')
     }
     if (decision.action === 'adopt' || decision.action === 'noop') {
       setMeta(valid.user.id, cloud)
@@ -282,7 +306,7 @@ export default function CloudAccountShell({ children }) {
     {children}
     {testMode && <div className="cloud-test-banner"><strong>🧪 TEST：{testMode.label}</strong><button onClick={() => setOpen(true)}>テスト管理</button></div>}
     {showAccountFab && <button className={`cloud-account-fab${needsCloudAttention ? ' warn' : ''}`} aria-label="アカウントとクラウド保存" onClick={() => setOpen(true)}>
-      <span>{needsCloudAttention ? '⚠️' : testMode ? '🧪' : session ? '☁️' : '👤'}</span><small>{needsCloudAttention ? '保存確認' : parentScreenOpen ? 'クラウド' : profileInfo.profiles?.[profileInfo.activeProfileId]?.name || 'ログイン'}</small>
+      <span>{needsCloudAttention ? '⚠️' : testMode ? '🧪' : session ? '☁️' : '👤'}</span><small>{needsCloudAttention ? '同期保留' : parentScreenOpen ? 'クラウド' : profileInfo.profiles?.[profileInfo.activeProfileId]?.name || 'ログイン'}</small>
     </button>}
 
     {open && <div className="cloud-modal-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) setOpen(false) }}>
