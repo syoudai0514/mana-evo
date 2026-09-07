@@ -1,5 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import fs from 'node:fs'
 
 import { makeCloudPayload, payloadHash } from '../src/platform/cloudSaveModel.js'
 import { establishInitialCloud } from '../src/platform/cloudSyncV2.js'
@@ -85,4 +86,14 @@ test('initial insert failure remains fail-closed when no authoritative CLOUD can
     fetchMainSave: async () => null,
     freshDevice: false
   }), (error) => error === original)
+})
+
+test('CloudAccountShell routes push-new ambiguity back through establishInitialCloud and does not revive save-choice copy', () => {
+  const shell = fs.readFileSync(new URL('../src/platform/CloudAccountShell.jsx', import.meta.url), 'utf8')
+  assert.match(shell, /decision\.action === 'push-new'/)
+  assert.match(shell, /establishInitialCloud\(\{[\s\S]*insertMainSave,[\s\S]*fetchMainSave[\s\S]*\}\)/)
+  assert.match(shell, /initial\.decision/)
+  assert.match(shell, /decision\.action === 'pull' \|\| decision\.action === 'recover-pull'/)
+  assert.doesNotMatch(shell, /保存確認/)
+  assert.match(shell, /同期保留/)
 })
