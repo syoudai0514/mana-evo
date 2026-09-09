@@ -71,13 +71,23 @@ The ordering is part of the product contract.
 
 If CLOUD does not exist, initialize it from LOCAL using the existing main-save insert path.
 
-Initial creation itself is race-safe. If another device creates the same main row after the empty read, or the INSERT response is ambiguous after the server may already have committed, re-read CLOUD and re-enter the same D-032 classifier. Do not leave the family in a generic creation-error loop when an authoritative CLOUD row now exists. A divergent non-fresh LOCAL still goes through `recover-pull`; a genuinely fresh device may pull directly.
+Initial creation itself is race-safe. If another device creates the same main row after the empty read, or the INSERT response is ambiguous after the server may already have committed, re-read CLOUD and re-enter the same D-032 classifier. Do not leave the family in a generic creation-error loop when an authoritative CLOUD row now exists. A divergent non-fresh LOCAL still goes through `recover-pull`; a genuinely pristine device may pull directly.
 
-### 3.2 Genuine fresh device + existing CLOUD
+The reclassification after an initial INSERT race must reuse the same sync-time pristine evidence used by the original classification. It must not fall back to a boot-only fresh-device flag.
 
-A genuinely fresh device with no meaningful pre-existing ManaEvo save adopts CLOUD automatically.
+### 3.2 Genuine fresh/pristine device + existing CLOUD
 
-No recovery candidate is required because there is no child progress to preserve.
+A genuinely pristine device with no meaningful pre-existing ManaEvo save adopts CLOUD automatically.
+
+Boot-time storage emptiness is **necessary but not sufficient** evidence. The client must also prove at the actual sync boundary that the current semantic LOCAL payload still equals the clean post-initialization baseline captured before child activity. A module-load/boot-only boolean is not freshness authority.
+
+Therefore:
+
+- clean boot → no learning/game/reward progress before login → existing CLOUD: direct `pull`, no recovery candidate;
+- clean boot → learning/game/reward progress created before login in the same app process → LOCAL is no longer pristine: `recover-pull`;
+- any inability to prove pristine state fails safe as non-fresh.
+
+No recovery candidate is required only when there is no child progress to preserve.
 
 No LOCAL-vs-CLOUD chooser is shown.
 
@@ -107,7 +117,7 @@ This rule applies even if the changed stable profile IDs appear disjoint. V2 del
 
 ### 3.7 No trusted base + divergent non-fresh LOCAL
 
-If CLOUD exists, LOCAL differs, and this device has no trustworthy synchronization metadata but is not genuinely fresh, treat LOCAL as potentially meaningful.
+If CLOUD exists, LOCAL differs, and this device has no trustworthy synchronization metadata but is not proven pristine at the current sync boundary, treat LOCAL as potentially meaningful.
 
 Create a recovery candidate first, then adopt CLOUD.
 
@@ -265,12 +275,12 @@ Production rollout order is:
 At minimum the same exact implementation head must prove:
 
 1. cloud empty + LOCAL → `push-new`;
-2. genuine fresh device + existing CLOUD → automatic `pull`, no recovery candidate;
+2. genuine sync-time pristine device + existing CLOUD → automatic `pull`, no recovery candidate;
 3. equal LOCAL/CLOUD → adopt/no-op;
 4. trusted base unchanged in CLOUD + LOCAL changed → optimistic `push`;
 5. CLOUD advanced + LOCAL unchanged → automatic `pull`;
 6. CLOUD advanced + LOCAL changed → `recover-pull`;
-7. no trusted base + non-fresh divergent LOCAL → `recover-pull`;
+7. no trusted base + non-pristine divergent LOCAL → `recover-pull`;
 8. revision regression/content anomaly + divergent LOCAL → `recover-pull`;
 9. different-profile concurrent changes are **not** auto-merged in V2;
 10. same-profile concurrent changes are **not** auto-merged in V2;
@@ -287,7 +297,10 @@ At minimum the same exact implementation head must prove:
 21. recovery table RLS / anon revocation / own-user insert+select / no browser update-delete are verified;
 22. existing complete snapshot round-trip, profile isolation, test-mode isolation, build, release readiness, and iPhone/iPad WebKit regressions stay green;
 23. initial main-row INSERT race/ambiguous response re-reads CLOUD and re-enters D-032 classification instead of looping on a creation error;
-24. if LOCAL changes while pull/recovery network work is in flight, CLOUD apply and sync-meta commit are deferred until reclassification from the newer LOCAL snapshot.
+24. if LOCAL changes while pull/recovery network work is in flight, CLOUD apply and sync-meta commit are deferred until reclassification from the newer LOCAL snapshot;
+25. clean boot + no LOCAL progress before login + existing CLOUD → direct `pull` and zero recovery-candidate writes;
+26. clean boot + LOCAL learning/game/reward progress before login + existing CLOUD → `recover-pull`, preserving the exact current LOCAL before CLOUD apply;
+27. in item 26, recovery persistence failure → zero CLOUD apply, zero sync-meta commit, and LOCAL remains authoritative on the device.
 
 ---
 
