@@ -76,16 +76,28 @@ test('normal local learning and game writes still request cloud sync', () => {
   }
 })
 
-test('conflict UX resolves once and keeps backup restore as recovery-only UI', () => {
+test('D-032 removes the LOCAL-vs-CLOUD chooser and keeps recovery history out of normal child UX', () => {
   const shell = fs.readFileSync(new URL('../src/platform/CloudAccountShell.jsx', import.meta.url), 'utf8')
-  assert.match(shell, /保存データが2つあります/)
-  assert.match(shell, /残したい方を1つ選ぶと、この保存確認は終わります/)
-  assert.match(shell, /クラウドのデータにそろえる/)
-  assert.match(shell, /この端末のデータを残す/)
-  assert.match(shell, /resolvingConflict\.current = true/)
-  assert.match(shell, /applyCloudPayload\(chosenCloud\.payload\)/)
-  assert.match(shell, /const settledLocalPayload = captureCloudPayload\(\)/)
-  assert.match(shell, /setConflict\(null\)/)
-  assert.match(shell, /setOpen\(false\)/)
+  const guard = fs.readFileSync(new URL('../src/platform/cloudSyncV2.js', import.meta.url), 'utf8')
+  const client = fs.readFileSync(new URL('../src/platform/sharedSupabaseRest.js', import.meta.url), 'utf8')
+
+  assert.doesNotMatch(shell, /保存データが2つあります/)
+  assert.doesNotMatch(shell, /クラウドのデータにそろえる/)
+  assert.doesNotMatch(shell, /この端末のデータを残す/)
+  assert.doesNotMatch(shell, /chooseCloud|chooseLocal|setConflict/)
+  assert.match(shell, /decision\.action === 'pull' \|\| decision\.action === 'recover-pull'/)
+  assert.match(shell, /persistRecoveryCandidate: createRecoveryCandidate/)
+  assert.match(shell, /captureCurrentLocalPayload: captureCloudPayload/)
+  assert.match(shell, /if \(result\.deferred\)/)
+  assert.match(shell, /この端末だけに未反映の進みがある場合は、復旧用に保護してから切り替えます/)
+
+  const persistAt = guard.indexOf('await persistRecoveryCandidate(recoveryCandidate)')
+  const currentLocalAt = guard.indexOf('captureCurrentLocalPayload()')
+  const applyAt = guard.indexOf('applyCloudPayload(cloud.payload)')
+  const metaAt = guard.indexOf('commitSyncMeta(cloud)')
+  assert.ok(persistAt >= 0 && persistAt < currentLocalAt && currentLocalAt < applyAt && applyAt < metaAt)
+
+  assert.match(client, /app_save_recovery_candidates/)
   assert.match(shell, /<details className="cloud-card cloud-recovery">/)
+  assert.doesNotMatch(shell, /listRecoveryCandidates|restoreRecoveryCandidate/)
 })

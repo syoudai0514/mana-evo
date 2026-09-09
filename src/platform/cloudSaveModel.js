@@ -6,18 +6,50 @@ export const DEVICE_PROFILE_KEY = 'manaevo:device-profile:v1'
 export const TEST_MODE_KEY = 'manaevo:test-mode:v1'
 export const TEST_RETURN_KEY = 'manaevo:test-return:v1'
 
+export const CLOUD_RECOVERY_REASONS = Object.freeze({
+  NO_TRUSTED_BASE: 'NO_TRUSTED_BASE',
+  LOCAL_AND_CLOUD_DIVERGED: 'LOCAL_AND_CLOUD_DIVERGED',
+  SAME_REVISION_DIVERGENCE: 'SAME_REVISION_DIVERGENCE',
+  CLOUD_REVISION_REGRESSION: 'CLOUD_REVISION_REGRESSION'
+})
+
 const PREEXISTING_LOCAL_SAVE_KEYS = Object.freeze([
   'mana-evo:kids-quest-learning:v2',
   'mana-evo-save-v2',
-  'mana-evo-save-v1'
+  'mana-evo-save-v1',
+  'mana-evo:learning-reward-bridge:v1'
 ])
 
-const FRESH_DEVICE_AT_BOOT = (() => {
+/**
+ * Boot evidence only. This is deliberately evaluated by the caller at app
+ * mount; it is not, by itself, authority that the device is still pristine at
+ * a later sync. Failure to inspect storage is treated as pre-existing state so
+ * the destructive boundary fails safe.
+ */
+export function hasPersistedLocalPayloadState() {
   try {
-    if (!globalThis.localStorage) return false
-    return !PREEXISTING_LOCAL_SAVE_KEYS.some((key) => globalThis.localStorage.getItem(key) != null)
-  } catch { return false }
-})()
+    if (!globalThis.localStorage) return true
+    return PREEXISTING_LOCAL_SAVE_KEYS.some((key) => globalThis.localStorage.getItem(key) != null)
+  } catch {
+    return true
+  }
+}
+
+/**
+ * A device is pristine for D-032 only when both pieces of evidence hold:
+ * 1) no cloud-payload local save existed at boot; and
+ * 2) the semantic LOCAL payload at sync still equals the post-initialization
+ *    pristine baseline captured before child activity.
+ *
+ * A clean boot that later creates learning/game progress therefore stops being
+ * pristine before login, even though the same app process is still running.
+ */
+export function isPristineLocalSnapshot({ hadPersistedLocalAtBoot, pristineLocalHash, localHash }) {
+  return hadPersistedLocalAtBoot === false
+    && typeof pristineLocalHash === 'string'
+    && pristineLocalHash.length > 0
+    && localHash === pristineLocalHash
+}
 
 function canonical(value) {
   if (Array.isArray(value)) return value.map(canonical)
@@ -76,69 +108,12 @@ function profilePayloadSlice(payload, profileId) {
   }
 }
 
+// Retained as recovery/debug metadata only. D-032 does not use part hashes to
+// automatically merge divergent snapshots.
 export function payloadPartHashes(payload) {
   const parts = { __global__: payloadHash(globalPayloadSlice(payload)) }
   for (const profileId of payloadProfileIds(payload)) parts[profileId] = payloadHash(profilePayloadSlice(payload, profileId))
   return parts
-}
-
-function changedPartKeys(current, base) {
-  const keys = new Set([...Object.keys(current || {}), ...Object.keys(base || {})])
-  return [...keys].filter((key) => current?.[key] !== base?.[key])
-}
-
-function clone(value) {
-  return value == null ? value : structuredClone(value)
-}
-
-function copyProfilePart(target, source, profileId) {
-  target.learning ||= {}
-  target.learning.profiles ||= {}
-  target.gameEnvelope ||= { formatVersion: source?.gameEnvelope?.formatVersion ?? 2, gameByProfile: {} }
-  target.gameEnvelope.gameByProfile ||= {}
-  target.learningRewardEnvelope ||= { version: source?.learningRewardEnvelope?.version ?? 1, byProfile: {} }
-  target.learningRewardEnvelope.byProfile ||= {}
-
-  const learning = source?.learning?.profiles?.[profileId]
-  const game = source?.gameEnvelope?.gameByProfile?.[profileId]
-  const reward = source?.learningRewardEnvelope?.byProfile?.[profileId]
-  if (learning == null) delete target.learning.profiles[profileId]
-  else target.learning.profiles[profileId] = clone(learning)
-  if (game == null) delete target.gameEnvelope.gameByProfile[profileId]
-  else target.gameEnvelope.gameByProfile[profileId] = clone(game)
-  if (reward == null) delete target.learningRewardEnvelope.byProfile[profileId]
-  else target.learningRewardEnvelope.byProfile[profileId] = clone(reward)
-}
-
-export function mergeDisjointProfilePayloads({ localPayload, cloudPayload, baseParts }) {
-  if (!localPayload || !cloudPayload || !baseParts) return null
-  const localParts = payloadPartHashes(localPayload)
-  const cloudParts = payloadPartHashes(cloudPayload)
-  const localChanged = changedPartKeys(localParts, baseParts)
-  const cloudChanged = changedPartKeys(cloudParts, baseParts)
-  const cloudChangedSet = new Set(cloudChanged)
-  const conflicts = localChanged.filter((key) => cloudChangedSet.has(key) && localParts[key] !== cloudParts[key])
-  if (conflicts.length) return { ok: false, conflicts, localParts, cloudParts }
-
-  const merged = clone(cloudPayload)
-  const localChangedSet = new Set(localChanged)
-  if (localChangedSet.has('__global__') && !cloudChangedSet.has('__global__')) {
-    merged.appId = localPayload.appId
-    merged.saveSchemaVersion = localPayload.saveSchemaVersion
-    merged.learning ||= {}
-    merged.learning.version = localPayload.learning?.version
-    merged.learning.contentVersion = localPayload.learning?.contentVersion
-    merged.gameEnvelope ||= {}
-    merged.gameEnvelope.formatVersion = localPayload.gameEnvelope?.formatVersion
-    merged.learningRewardEnvelope ||= {}
-    merged.learningRewardEnvelope.version = localPayload.learningRewardEnvelope?.version
-  }
-  for (const key of localChanged) {
-    if (key === '__global__') continue
-    if (!cloudChangedSet.has(key)) copyProfilePart(merged, localPayload, key)
-  }
-  merged.capturedAt = new Date().toISOString()
-  return { ok: true, payload: merged, localParts, cloudParts, localChanged, cloudChanged }
 }
 
 export function makeCloudPayload({ learning, gameEnvelope, learningRewardEnvelope = null, capturedAt = new Date().toISOString() }) {
@@ -156,25 +131,64 @@ export function syncMetaKey(userId) {
   return `${CLOUD_SYNC_META_PREFIX}${String(userId || '')}`
 }
 
-export function decideSync({ localHash, localPayload = null, meta = null, cloud = null, freshDevice = FRESH_DEVICE_AT_BOOT }) {
+/**
+ * D-032 Cloud Sync V2 decision authority.
+ *
+ * Normal cases stay automatic:
+ * - only local changed against the same trusted cloud base -> push
+ * - only cloud advanced -> pull
+ * - a LOCAL snapshot proven pristine at this sync -> pull
+ *
+ * `freshDevice` is intentionally fail-closed by default. Callers may pass true
+ * only from sync-time pristine evidence; a module-load/boot-only boolean is not
+ * sufficient because LOCAL can gain progress before login in the same process.
+ *
+ * If local data may contain progress that is not in cloud while cloud is also
+ * different, we never synthesize a merged snapshot. The caller must persist a
+ * recovery candidate first and only then apply cloud (`recover-pull`).
+ */
+export function decideSync({ localHash, meta = null, cloud = null, freshDevice = false }) {
   if (!cloud) return { action: 'push-new' }
+
   const cloudHash = payloadHash(cloud.payload)
+  const cloudRevision = Number(cloud.revision) || 0
+
   if (!meta) {
     if (localHash === cloudHash) return { action: 'adopt', cloudHash }
-    return freshDevice ? { action: 'pull', cloudHash } : { action: 'conflict', cloudHash }
+    return freshDevice
+      ? { action: 'pull', cloudHash }
+      : { action: 'recover-pull', cloudHash, recoveryReason: CLOUD_RECOVERY_REASONS.NO_TRUSTED_BASE }
   }
+
   const revision = Number(meta.revision) || 0
-  const cloudRevision = Number(cloud.revision) || 0
+  const localMatchesBase = localHash === meta.hash
+  const cloudMatchesBase = cloudHash === meta.hash
+
   if (cloudRevision === revision) {
-    return localHash === meta.hash
-      ? { action: 'noop', cloudHash }
-      : { action: 'push', cloudHash }
+    if (localHash === cloudHash) return { action: 'noop', cloudHash }
+    if (cloudMatchesBase && !localMatchesBase) return { action: 'push', cloudHash }
+    if (localMatchesBase && !cloudMatchesBase) return { action: 'pull', cloudHash }
+    return {
+      action: 'recover-pull',
+      cloudHash,
+      recoveryReason: CLOUD_RECOVERY_REASONS.SAME_REVISION_DIVERGENCE
+    }
   }
+
   if (cloudRevision > revision) {
-    if (localHash === meta.hash) return { action: 'pull', cloudHash }
-    const merged = mergeDisjointProfilePayloads({ localPayload, cloudPayload: cloud.payload, baseParts: meta.parts })
-    if (merged?.ok) return { action: 'merge', cloudHash, payload: merged.payload, merged }
-    return { action: 'conflict', cloudHash, conflicts: merged?.conflicts || [] }
+    if (localHash === cloudHash) return { action: 'adopt', cloudHash }
+    if (localMatchesBase) return { action: 'pull', cloudHash }
+    return {
+      action: 'recover-pull',
+      cloudHash,
+      recoveryReason: CLOUD_RECOVERY_REASONS.LOCAL_AND_CLOUD_DIVERGED
+    }
   }
-  return { action: 'conflict', cloudHash }
+
+  if (localHash === cloudHash) return { action: 'adopt', cloudHash }
+  return {
+    action: 'recover-pull',
+    cloudHash,
+    recoveryReason: CLOUD_RECOVERY_REASONS.CLOUD_REVISION_REGRESSION
+  }
 }
