@@ -16,15 +16,40 @@ export const CLOUD_RECOVERY_REASONS = Object.freeze({
 const PREEXISTING_LOCAL_SAVE_KEYS = Object.freeze([
   'mana-evo:kids-quest-learning:v2',
   'mana-evo-save-v2',
-  'mana-evo-save-v1'
+  'mana-evo-save-v1',
+  'mana-evo:learning-reward-bridge:v1'
 ])
 
-const FRESH_DEVICE_AT_BOOT = (() => {
+/**
+ * Boot evidence only. This is deliberately evaluated by the caller at app
+ * mount; it is not, by itself, authority that the device is still pristine at
+ * a later sync. Failure to inspect storage is treated as pre-existing state so
+ * the destructive boundary fails safe.
+ */
+export function hasPersistedLocalPayloadState() {
   try {
-    if (!globalThis.localStorage) return false
-    return !PREEXISTING_LOCAL_SAVE_KEYS.some((key) => globalThis.localStorage.getItem(key) != null)
-  } catch { return false }
-})()
+    if (!globalThis.localStorage) return true
+    return PREEXISTING_LOCAL_SAVE_KEYS.some((key) => globalThis.localStorage.getItem(key) != null)
+  } catch {
+    return true
+  }
+}
+
+/**
+ * A device is pristine for D-032 only when both pieces of evidence hold:
+ * 1) no cloud-payload local save existed at boot; and
+ * 2) the semantic LOCAL payload at sync still equals the post-initialization
+ *    pristine baseline captured before child activity.
+ *
+ * A clean boot that later creates learning/game progress therefore stops being
+ * pristine before login, even though the same app process is still running.
+ */
+export function isPristineLocalSnapshot({ hadPersistedLocalAtBoot, pristineLocalHash, localHash }) {
+  return hadPersistedLocalAtBoot === false
+    && typeof pristineLocalHash === 'string'
+    && pristineLocalHash.length > 0
+    && localHash === pristineLocalHash
+}
 
 function canonical(value) {
   if (Array.isArray(value)) return value.map(canonical)
@@ -112,13 +137,17 @@ export function syncMetaKey(userId) {
  * Normal cases stay automatic:
  * - only local changed against the same trusted cloud base -> push
  * - only cloud advanced -> pull
- * - genuinely fresh device -> pull
+ * - a LOCAL snapshot proven pristine at this sync -> pull
+ *
+ * `freshDevice` is intentionally fail-closed by default. Callers may pass true
+ * only from sync-time pristine evidence; a module-load/boot-only boolean is not
+ * sufficient because LOCAL can gain progress before login in the same process.
  *
  * If local data may contain progress that is not in cloud while cloud is also
  * different, we never synthesize a merged snapshot. The caller must persist a
  * recovery candidate first and only then apply cloud (`recover-pull`).
  */
-export function decideSync({ localHash, meta = null, cloud = null, freshDevice = FRESH_DEVICE_AT_BOOT }) {
+export function decideSync({ localHash, meta = null, cloud = null, freshDevice = false }) {
   if (!cloud) return { action: 'push-new' }
 
   const cloudHash = payloadHash(cloud.payload)
