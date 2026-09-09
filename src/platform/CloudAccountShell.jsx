@@ -25,7 +25,14 @@ import {
   applyCloudPayload,
   switchDeviceProfile
 } from './cloudSnapshot.js'
-import { decideSync, payloadHash, payloadPartHashes, syncMetaKey } from './cloudSaveModel.js'
+import {
+  decideSync,
+  hasPersistedLocalPayloadState,
+  isPristineLocalSnapshot,
+  payloadHash,
+  payloadPartHashes,
+  syncMetaKey
+} from './cloudSaveModel.js'
 import { adoptCloudAuthoritatively, establishInitialCloud } from './cloudSyncV2.js'
 import AdultCloudControls from './AdultCloudControls.jsx'
 
@@ -57,9 +64,28 @@ export default function CloudAccountShell({ children }) {
   const [busy, setBusy] = useState(false)
   const [parentScreenOpen, setParentScreenOpen] = useState(false)
   const syncTimer = useRef(null)
+  const hadPersistedLocalAtBoot = useRef(null)
+  const pristineLocalHash = useRef(null)
+  if (hadPersistedLocalAtBoot.current === null) hadPersistedLocalAtBoot.current = hasPersistedLocalPayloadState()
   const testMode = getTestMode()
   const config = cloudConfig()
   const profileInfo = useMemo(() => getLocalProfiles(), [open, status, testMode?.kind])
+
+  // LearningProvider initializes its default profile in a child effect before
+  // this parent effect runs. Capture that post-initialization semantic snapshot
+  // as the clean-device baseline. It is only usable when no persisted cloud
+  // payload component existed at boot, and it stops being pristine as soon as
+  // current LOCAL differs (for example, study/game progress before login).
+  useEffect(() => {
+    if (hadPersistedLocalAtBoot.current || pristineLocalHash.current) return
+    pristineLocalHash.current = payloadHash(captureCloudPayload())
+  }, [])
+
+  const currentLocalIsPristine = useCallback((localHash) => isPristineLocalSnapshot({
+    hadPersistedLocalAtBoot: hadPersistedLocalAtBoot.current,
+    pristineLocalHash: pristineLocalHash.current,
+    localHash
+  }), [])
 
   const setMeta = useCallback((userId, row) => {
     const hash = payloadHash(row.payload)
@@ -101,9 +127,10 @@ export default function CloudAccountShell({ children }) {
 
     const localPayload = captureCloudPayload()
     const localHash = payloadHash(localPayload)
+    const freshDevice = currentLocalIsPristine(localHash)
     let cloud = await fetchMainSave()
     const meta = readJson(syncMetaKey(valid.user.id))
-    let decision = decideSync({ localHash, meta, cloud })
+    let decision = decideSync({ localHash, meta, cloud, freshDevice })
 
     const adoptCloud = async () => {
       const protectedLocal = decision.action === 'recover-pull'
@@ -134,7 +161,8 @@ export default function CloudAccountShell({ children }) {
         localHash,
         meta,
         insertMainSave,
-        fetchMainSave
+        fetchMainSave,
+        freshDevice
       })
       if (initial.created) {
         setMeta(valid.user.id, initial.row)
@@ -144,7 +172,8 @@ export default function CloudAccountShell({ children }) {
 
       // Another device may have created CLOUD after our initial empty read, or
       // the INSERT response may have been ambiguous after the server committed.
-      // Re-enter D-032 authority instead of surfacing a generic creation error.
+      // Re-enter D-032 authority using the exact same sync-time pristine proof;
+      // a clean boot that gained LOCAL progress before login is not fresh here.
       cloud = initial.cloud
       decision = initial.decision
       if (decision.action === 'pull' || decision.action === 'recover-pull') {
@@ -194,7 +223,7 @@ export default function CloudAccountShell({ children }) {
       return
     }
     throw new Error(`未対応の同期判定です: ${decision.action}`)
-  }, [config.configured, maybeBackupCloud, setMeta, testMode])
+  }, [config.configured, currentLocalIsPristine, maybeBackupCloud, setMeta, testMode])
 
   const scheduleSync = useCallback(() => {
     if (syncTimer.current) clearTimeout(syncTimer.current)
